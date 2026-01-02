@@ -1,0 +1,73 @@
+{
+  "designTokens": {
+    "colors": {
+      "bg-accent": "#0033a0",
+      "bg-accent-secondary": "#98b3ee",
+      "bg-surface": "#ffffff",
+      "bg-subtle": "#eceff3",
+      "bg-semantic-error": "#d32f2f",
+      "text-primary": "#212529",
+      "text-secondary": "#495057",
+      "text-inverse": "#ffffff",
+      "text-accent": "#0033a0",
+      "text-disabled": "#9da4ab",
+      "border-default": "#dee2e6",
+      "border-accent": "#0033a0",
+      "border-subtle": "#e9ecef"
+    },
+    "spacing": {
+      "0": "0px",
+      "2": "2px",
+      "4": "4px",
+      "6": "6px",
+      "8": "8px",
+      "10": "10px",
+      "12": "12px",
+      "14": "14px",
+      "16": "16px",
+      "20": "20px",
+      "24": "24px",
+      "32": "32px",
+      "component-inset-button-y": "8px",
+      "component-inset-button-lg-x": "16px",
+      "component-inset-button-md-x": "14px",
+      "component-inset-button-sm-x": "12px",
+      "component-gap-icon-label-x-md": "8px",
+      "component-gap-icon-label-x-sm": "6px"
+    },
+    "fontSize": {
+      "typography-body-lg-medium": ["18px", { "lineHeight": "28px" }],
+      "typography-body-md-medium": ["16px", { "lineHeight": "24px" }],
+      "typography-body-md-regular": ["16px", { "lineHeight": "24px" }],
+      "typography-button-lg-medium": ["18px", { "lineHeight": "24px" }],
+      "typography-button-md-medium": ["16px", { "lineHeight": "20px" }],
+      "typography-button-sm-medium": ["14px", { "lineHeight": "20px" }]
+    },
+    "fontWeight": {
+      "typography-body-lg-medium": 500,
+      "typography-body-md-medium": 500,
+      "typography-body-md-regular": 400,
+      "typography-button-lg-medium": 500,
+      "typography-button-md-medium": 500,
+      "typography-button-sm-medium": 500
+    },
+    "fontFamily": {
+      "typography-body-lg-medium": ["Pretendard", "sans-serif"],
+      "typography-body-md-medium": ["Pretendard", "sans-serif"],
+      "typography-body-md-regular": ["Pretendard", "sans-serif"],
+      "typography-button-lg-medium": ["Pretendard", "sans-serif"],
+      "typography-button-md-medium": ["Pretendard", "sans-serif"],
+      "typography-button-sm-medium": ["Pretendard", "sans-serif"]
+    }
+  },
+  "tokenMapping": {
+    "bg-accent": "color/role/bg/accent",
+    "bg-surface": "color/role/bg/surface",
+    "text-primary": "color/role/text/primary"
+  },
+  "metadata": {
+    "generatedAt": "2025-12-31T00:00:00Z",
+    "generator": "aplus-cli",
+    "version": "1.0.0"
+  }
+}

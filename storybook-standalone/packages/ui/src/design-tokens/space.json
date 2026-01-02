@@ -1,0 +1,2532 @@
+{
+  "id": "VariableCollectionId:4:214",
+  "name": "space",
+  "modes": { "4:1": "base", "4:2": "compact" },
+  "variableIds": [
+    "VariableID:4:215",
+    "VariableID:4:216",
+    "VariableID:4:217",
+    "VariableID:4:218",
+    "VariableID:4:219",
+    "VariableID:140:6218",
+    "VariableID:4:220",
+    "VariableID:605:31988",
+    "VariableID:4:221",
+    "VariableID:4:222",
+    "VariableID:4:223",
+    "VariableID:4:224",
+    "VariableID:4:225",
+    "VariableID:4:226",
+    "VariableID:1073:21914",
+    "VariableID:4:227",
+    "VariableID:1073:21915",
+    "VariableID:4:228",
+    "VariableID:4:233",
+    "VariableID:163:9035",
+    "VariableID:4:234",
+    "VariableID:4:235",
+    "VariableID:4:236",
+    "VariableID:4:237",
+    "VariableID:1038:19109",
+    "VariableID:4:279",
+    "VariableID:4:282",
+    "VariableID:4:229",
+    "VariableID:4:230",
+    "VariableID:4:231",
+    "VariableID:1038:19108",
+    "VariableID:4:232",
+    "VariableID:140:768",
+    "VariableID:4:238",
+    "VariableID:140:766",
+    "VariableID:230:6074",
+    "VariableID:4:240",
+    "VariableID:4:241",
+    "VariableID:4:242",
+    "VariableID:230:16581",
+    "VariableID:4:275",
+    "VariableID:4:276",
+    "VariableID:4:244",
+    "VariableID:4:245",
+    "VariableID:4:278",
+    "VariableID:4:277",
+    "VariableID:4:246",
+    "VariableID:574:172302",
+    "VariableID:574:172303",
+    "VariableID:4:247",
+    "VariableID:4:263",
+    "VariableID:4:264",
+    "VariableID:4:261",
+    "VariableID:4:262",
+    "VariableID:4:267",
+    "VariableID:4:268",
+    "VariableID:4:265",
+    "VariableID:4:266",
+    "VariableID:4:269",
+    "VariableID:4:270",
+    "VariableID:4:248",
+    "VariableID:4:271",
+    "VariableID:4:272",
+    "VariableID:4:249",
+    "VariableID:4:250",
+    "VariableID:4:251",
+    "VariableID:4:283",
+    "VariableID:345:5559",
+    "VariableID:409:6715",
+    "VariableID:4:252",
+    "VariableID:409:6698",
+    "VariableID:4:284",
+    "VariableID:4:285",
+    "VariableID:4:255",
+    "VariableID:4:258",
+    "VariableID:263:5411",
+    "VariableID:1238:20131",
+    "VariableID:4:256",
+    "VariableID:1238:20132",
+    "VariableID:4:259",
+    "VariableID:409:6706",
+    "VariableID:409:6710",
+    "VariableID:4:260",
+    "VariableID:1238:20158",
+    "VariableID:4:257",
+    "VariableID:1238:20159",
+    "VariableID:4:253",
+    "VariableID:4:254",
+    "VariableID:4:273",
+    "VariableID:16:641",
+    "VariableID:4:274",
+    "VariableID:4:280",
+    "VariableID:4:281",
+    "VariableID:220:158",
+    "VariableID:220:160",
+    "VariableID:322:5547",
+    "VariableID:322:5546",
+    "VariableID:345:5546",
+    "VariableID:345:5581",
+    "VariableID:352:17901",
+    "VariableID:409:6699",
+    "VariableID:409:6704",
+    "VariableID:409:6707",
+    "VariableID:416:55894",
+    "VariableID:416:55895",
+    "VariableID:416:55898",
+    "VariableID:416:55899",
+    "VariableID:487:9762",
+    "VariableID:539:137214",
+    "VariableID:539:137215",
+    "VariableID:539:137216",
+    "VariableID:574:172300",
+    "VariableID:605:31464",
+    "VariableID:605:49996",
+    "VariableID:637:36402",
+    "VariableID:637:36403",
+    "VariableID:653:12037",
+    "VariableID:659:12564",
+    "VariableID:966:14446",
+    "VariableID:692:57626",
+    "VariableID:966:14447",
+    "VariableID:966:14448",
+    "VariableID:966:14449",
+    "VariableID:775:15421",
+    "VariableID:966:14432",
+    "VariableID:1073:57650",
+    "VariableID:966:14434",
+    "VariableID:1073:57657",
+    "VariableID:1073:57654",
+    "VariableID:1108:338456",
+    "VariableID:1108:338457",
+    "VariableID:1248:18053",
+    "VariableID:1248:18054",
+    "VariableID:1248:18055",
+    "VariableID:1248:18056",
+    "VariableID:1248:18057",
+    "VariableID:1248:18058",
+    "VariableID:1321:16410",
+    "VariableID:1321:16411",
+    "VariableID:1865:31451",
+    "VariableID:1865:31452",
+    "VariableID:1865:31733",
+    "VariableID:1865:31734"
+  ],
+  "variables": [
+    {
+      "id": "VariableID:4:215",
+      "name": "space/scale/0",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": { "4:1": 0, "4:2": 0 },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 0, "alias": null },
+        "4:2": { "resolvedValue": 0, "alias": null }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:216",
+      "name": "space/scale/2",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": { "4:1": 2, "4:2": 2 },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 2, "alias": null },
+        "4:2": { "resolvedValue": 2, "alias": null }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:217",
+      "name": "space/scale/4",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": { "4:1": 4, "4:2": 4 },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 4, "alias": null },
+        "4:2": { "resolvedValue": 4, "alias": null }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:218",
+      "name": "space/scale/6",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": { "4:1": 6, "4:2": 6 },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 6, "alias": null },
+        "4:2": { "resolvedValue": 6, "alias": null }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:219",
+      "name": "space/scale/8",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": { "4:1": 8, "4:2": 8 },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 8, "alias": null },
+        "4:2": { "resolvedValue": 8, "alias": null }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:220",
+      "name": "space/scale/12",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": { "4:1": 12, "4:2": 12 },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 12, "alias": null },
+        "4:2": { "resolvedValue": 12, "alias": null }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:221",
+      "name": "space/scale/16",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": { "4:1": 16, "4:2": 16 },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 16, "alias": null },
+        "4:2": { "resolvedValue": 16, "alias": null }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:222",
+      "name": "space/scale/20",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": { "4:1": 20, "4:2": 20 },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 20, "alias": null },
+        "4:2": { "resolvedValue": 20, "alias": null }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:223",
+      "name": "space/scale/24",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": { "4:1": 24, "4:2": 24 },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 24, "alias": null },
+        "4:2": { "resolvedValue": 24, "alias": null }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:224",
+      "name": "space/scale/32",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": { "4:1": 32, "4:2": 32 },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 32, "alias": null },
+        "4:2": { "resolvedValue": 32, "alias": null }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:225",
+      "name": "space/scale/40",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": { "4:1": 40, "4:2": 40 },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 40, "alias": null },
+        "4:2": { "resolvedValue": 40, "alias": null }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:226",
+      "name": "space/scale/48",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": { "4:1": 48, "4:2": 48 },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 48, "alias": null },
+        "4:2": { "resolvedValue": 48, "alias": null }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:227",
+      "name": "space/scale/64",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": { "4:1": 64, "4:2": 64 },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 64, "alias": null },
+        "4:2": { "resolvedValue": 64, "alias": null }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:228",
+      "name": "space/layout/stack/xs",
+      "description": "리스트 아이템의 제목과 바로 아래에 붙는 날짜, 작성자 등 메타데이터 텍스트 사이",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 4, "alias": "VariableID:4:217", "aliasName": "space/scale/4" },
+        "4:2": { "resolvedValue": 4, "alias": "VariableID:4:217", "aliasName": "space/scale/4" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:229",
+      "name": "space/layout/stack/sm",
+      "description": "필드와 바로 아래에 붙는 도움말 텍스트 사이 제목과 부제목 사이",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
+        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:230",
+      "name": "space/layout/stack/md",
+      "description": "필드와 필드 사이의 표준 간격 폼 필드, 리스트 아이템 사이",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
+        "4:2": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:231",
+      "name": "space/layout/stack/lg",
+      "description": "서로 다른 필드 그룹(예: 개인정보, 주소정보) 사이",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" },
+        "4:2": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:232",
+      "name": "space/layout/stack/xl",
+      "description": "연관성이 낮은 큰 섹션 사이의 구분",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" },
+        "4:2": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:233",
+      "name": "space/layout/inline/xs",
+      "description": "칩(Chip) 내부의 텍스트와 닫기(x) 아이콘 사이\n사용자 이름 옆 온라인/오프라인 상태 아이콘 사이",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 4, "alias": "VariableID:4:217", "aliasName": "space/scale/4" },
+        "4:2": { "resolvedValue": 4, "alias": "VariableID:4:217", "aliasName": "space/scale/4" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:234",
+      "name": "space/layout/inline/sm",
+      "description": "아이콘과 텍스트 라벨 사이의 간격으로 주로 사용",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" },
+        "4:2": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:235",
+      "name": "space/layout/inline/md",
+      "description": "가장 일반적으로 사용되는 수평 간격. 버튼 그룹, \n칩 그룹 사이에 주로 사용",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
+        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:236",
+      "name": "space/layout/inline/lg",
+      "description": "조금 더 넓은 수평 분리가 필요한 요소 그룹 사이",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
+        "4:2": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:237",
+      "name": "space/layout/inline/xl",
+      "description": "툴바의 아이콘 그룹처럼 \n시각적 분리가 더 필요할 때 사용.",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" },
+        "4:2": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:238",
+      "name": "space/component/inset/button/md/x",
+      "description": "버튼의 좌우 내부 여백",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:605:31988" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:605:31988" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 14, "alias": "VariableID:605:31988", "aliasName": "space/scale/14" },
+        "4:2": { "resolvedValue": 14, "alias": "VariableID:605:31988", "aliasName": "space/scale/14" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:240",
+      "name": "space/component/inset/pill/x",
+      "description": "배지, 태그의 좌우 내부 여백",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
+        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:241",
+      "name": "space/component/inset/pill/y",
+      "description": "배지, 태그의 상하 내부 여백",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:216" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:216" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 2, "alias": "VariableID:4:216", "aliasName": "space/scale/2" },
+        "4:2": { "resolvedValue": 2, "alias": "VariableID:4:216", "aliasName": "space/scale/2" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:242",
+      "name": "space/component/inset/fields/x",
+      "description": "입력 필드의 좌우 내부 여백",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
+        "4:2": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:244",
+      "name": "space/component/inset/table-cell/x",
+      "description": "테이블 셀의 좌우 내부 여백",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:140:6218" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
+        "4:2": { "resolvedValue": 10, "alias": "VariableID:140:6218", "aliasName": "space/scale/10" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:245",
+      "name": "space/component/inset/table-cell/y",
+      "description": "테이블 셀의 상하 내부 여백",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:140:6218" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 10, "alias": "VariableID:140:6218", "aliasName": "space/scale/10" },
+        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:246",
+      "name": "space/component/inset/card/x",
+      "description": "카드의 좌우 내부 여백",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:222" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:222" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 20, "alias": "VariableID:4:222", "aliasName": "space/scale/20" },
+        "4:2": { "resolvedValue": 20, "alias": "VariableID:4:222", "aliasName": "space/scale/20" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:247",
+      "name": "space/component/inset/card/y",
+      "description": "카드의 상하 내부 여백",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:222" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:222" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 20, "alias": "VariableID:4:222", "aliasName": "space/scale/20" },
+        "4:2": { "resolvedValue": 20, "alias": "VariableID:4:222", "aliasName": "space/scale/20" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:248",
+      "name": "space/component/inset/dialog/x",
+      "description": "모달의 좌우 내부 여백",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:224" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:224" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 32, "alias": "VariableID:4:224", "aliasName": "space/scale/32" },
+        "4:2": { "resolvedValue": 32, "alias": "VariableID:4:224", "aliasName": "space/scale/32" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:249",
+      "name": "space/component/inset/dialog/y",
+      "description": "모달의 상하 내부 여백",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:224" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:224" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 32, "alias": "VariableID:4:224", "aliasName": "space/scale/32" },
+        "4:2": { "resolvedValue": 32, "alias": "VariableID:4:224", "aliasName": "space/scale/32" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:250",
+      "name": "space/component/inset/section/x",
+      "description": "단일 토큰으로 “모든 섹션 컴포넌트의 기본 inset”에 적용. 섹션의 역할: 관련 있는 여러 컴포넌트(예: 카드들)를 그룹화하고, 그 그룹에 대한 맥락(제목 등)을 제공하는 컨테이너\n구조: 주로 카드, 리스트, 폼 등 이미 완성된 컴포넌트들을 내부에 포함하는 이중 구조를 가짐.",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:222" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" },
+        "4:2": { "resolvedValue": 20, "alias": "VariableID:4:222", "aliasName": "space/scale/20" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:251",
+      "name": "space/component/inset/section/y",
+      "description": "단일 토큰으로 “모든 섹션 컴포넌트의 기본 inset”에 적용. 섹션의 역할: 관련 있는 여러 컴포넌트(예: 카드들)를 그룹화하고, 그 그룹에 대한 맥락(제목 등)을 제공하는 컨테이너\n구조: 주로 카드, 리스트, 폼 등 이미 완성된 컴포넌트들을 내부에 포함하는 이중 구조를 가짐.",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:222" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 20, "alias": "VariableID:4:222", "aliasName": "space/scale/20" },
+        "4:2": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:252",
+      "name": "space/component/gap/icon-label/x/sm",
+      "description": "버튼, 칩 등에서 \n아이콘과 텍스트 사이의 범용 간격",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" },
+        "4:2": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:253",
+      "name": "space/component/gap/chips/x",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
+        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:254",
+      "name": "space/component/gap/breadcrumb/items/x",
+      "description": "브레드크럼 아이템(뎁스1>뎁스2와 같은 이동경로 표시)",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:215" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:215" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 0, "alias": "VariableID:4:215", "aliasName": "space/scale/0" },
+        "4:2": { "resolvedValue": 0, "alias": "VariableID:4:215", "aliasName": "space/scale/0" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:255",
+      "name": "space/component/gap/toolbar/items/x",
+      "description": "필터바/툴바(데이터 “조회 조건”을 바꾸는 컨트롤 묶음/ 버튼묶음)",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
+        "4:2": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:256",
+      "name": "space/component/gap/form/fields-inter/x/md",
+      "description": "2열 폼의 가로 간격",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
+        "4:2": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:257",
+      "name": "space/component/gap/form/fields-inter/y/md",
+      "description": "폼 필드 세로 간격",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
+        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:258",
+      "name": "space/component/gap/list/items/y",
+      "description": "리스트 아이템 세로간",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
+        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:259",
+      "name": "space/component/gap/card/header-body/y",
+      "description": "카드 헤더–본문",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
+        "4:2": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:260",
+      "name": "space/component/gap/table/cell/contents/x",
+      "description": "셀 내부 아이콘–텍스트",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
+        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:261",
+      "name": "space/component/inset/filterbar/x",
+      "description": "필터 바의 좌우 내부 여백",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" },
+        "4:2": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:262",
+      "name": "space/component/inset/filterbar/y",
+      "description": "필터 바의 상하 내부 여백",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" },
+        "4:2": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:263",
+      "name": "space/component/inset/toolbar/x",
+      "description": "툴바의 좌우 내부 여백",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" },
+        "4:2": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:264",
+      "name": "space/component/inset/toolbar/y",
+      "description": "툴바의 상하 내부 여백",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
+        "4:2": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:265",
+      "name": "space/component/inset/table/x",
+      "description": "테이블 래퍼(Table Wrapper)",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" },
+        "4:2": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:266",
+      "name": "space/component/inset/table/y",
+      "description": "테이블 래퍼(Table Wrapper)",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" },
+        "4:2": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:267",
+      "name": "space/component/inset/list/x",
+      "description": "리스트 블록(전체)의 좌우 내부 여백",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
+        "4:2": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:268",
+      "name": "space/component/inset/list/y",
+      "description": "리스트 블록(전체)의 상하 내부 여백",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
+        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:269",
+      "name": "space/component/inset/panel/x",
+      "description": "사이드/디테일 패널",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" },
+        "4:2": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:270",
+      "name": "space/component/inset/panel/y",
+      "description": "사이드/디테일 패널",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:222" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 20, "alias": "VariableID:4:222", "aliasName": "space/scale/20" },
+        "4:2": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:271",
+      "name": "space/component/inset/header/items/x",
+      "description": "헤더밴드(상단 바 전체 영역 **로고, 내비게이션 메뉴, 검색창, 유틸리티 버튼(알림, 프로필 등)**)",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" },
+        "4:2": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:272",
+      "name": "space/component/inset/header/items/y",
+      "description": "헤더밴드(상단 바 전체 영역 **로고, 내비게이션 메뉴, 검색창, 유틸리티 버튼(알림, 프로필 등)**)",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
+        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:273",
+      "name": "space/component/inset/footer/x",
+      "description": "푸터밴드(하단 바 전체 영역 **카피라이트, 서비스 링크 모음 (약관, 개인정보 처리방침, 고객센터 등),간단한 버튼(예: “문의하기”)**)",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" },
+        "4:2": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:274",
+      "name": "space/component/inset/footer/y",
+      "description": "푸터밴드(하단 바 전체 영역 **카피라이트, 서비스 링크 모음 (약관, 개인정보 처리방침, 고객센터 등),간단한 버튼(예: “문의하기”)**)",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
+        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:275",
+      "name": "space/component/inset/menu/x",
+      "description": "입력 필드의 좌우 내부 여백",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 4, "alias": "VariableID:4:217", "aliasName": "space/scale/4" },
+        "4:2": { "resolvedValue": 4, "alias": "VariableID:4:217", "aliasName": "space/scale/4" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:276",
+      "name": "space/component/inset/menu/y",
+      "description": "입력 필드의 상하 내부 여백",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 4, "alias": "VariableID:4:217", "aliasName": "space/scale/4" },
+        "4:2": { "resolvedValue": 4, "alias": "VariableID:4:217", "aliasName": "space/scale/4" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:277",
+      "name": "space/component/inset/item/y",
+      "description": "대시보드 위젯 등 독립된 정보 아이템의 상하 내부 여백",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
+        "4:2": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:278",
+      "name": "space/component/inset/item/x",
+      "description": "대시보드 위젯 등 독립된 정보 아이템의 좌우 내부 여백",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
+        "4:2": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:279",
+      "name": "space/layout/inline/xxl",
+      "description": "서로 다른 기능의 영역을 수평으로 분리할 때 사용하는 넓은 간격.",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" },
+        "4:2": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:280",
+      "name": "space/layout/stack/xxl",
+      "description": "서로 다른 의미를 가진 큰 섹션 그룹을 구분.",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:224" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:224" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 32, "alias": "VariableID:4:224", "aliasName": "space/scale/32" },
+        "4:2": { "resolvedValue": 32, "alias": "VariableID:4:224", "aliasName": "space/scale/32" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:281",
+      "name": "space/layout/stack/xxxl",
+      "description": "페이지 내에서 시각적으로 매우 명확한 분리가 필요할 때 사용하는 가장 넓은 수직 간격.",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:225" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:225" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 40, "alias": "VariableID:4:225", "aliasName": "space/scale/40" },
+        "4:2": { "resolvedValue": 40, "alias": "VariableID:4:225", "aliasName": "space/scale/40" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:282",
+      "name": "space/layout/inline/xxxl",
+      "description": "메인 콘텐츠 영역과 사이드바를 구분하는 등, 페이지의 가장 큰 단위를 수평으로 나눌 때 사용하는 가장 넓은 간격.",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:224" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:224" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 32, "alias": "VariableID:4:224", "aliasName": "space/scale/32" },
+        "4:2": { "resolvedValue": 32, "alias": "VariableID:4:224", "aliasName": "space/scale/32" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:283",
+      "name": "space/component/gap/contents/lg",
+      "description": "섹션 내부의 가장 큰 단위의 콘텐츠\n(타이틀, 내용, 액션등) 사이 간격.",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" },
+        "4:2": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:284",
+      "name": "space/component/gap/contents/md",
+      "description": "섹션 내부의 여러 요소로 구성된 그룹의 \n콘텐츠(타이틀, 내용, 액션등) 사이 간격.",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" },
+        "4:2": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:285",
+      "name": "space/component/gap/contents/sm",
+      "description": "섹션 내부의 작은 단위의 \n콘텐츠(타이틀, 내용, 액션등) 사이 간격.",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
+        "4:2": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:16:641",
+      "name": "space/component/inset/page/x",
+      "description": "페이지/컨테이너 가장자리 정렬용 여백. 이미 좌우 패딩을 갖고 있는 경우 이중적용 금지. 페이지/레이아웃 레벨에서만 이용하며, 컴포넌트 내부에는 사용하지 않습니다.",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" },
+        "4:2": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:140:766",
+      "name": "space/component/inset/button/sm/x",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
+        "4:2": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:140:768",
+      "name": "space/component/inset/button/lg/x",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" },
+        "4:2": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:140:6218",
+      "name": "space/scale/10",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": { "4:1": 10, "4:2": 10 },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 10, "alias": null },
+        "4:2": { "resolvedValue": 10, "alias": null }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:163:9035",
+      "name": "space/layout/gutter",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:222" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:222" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 20, "alias": "VariableID:4:222", "aliasName": "space/scale/20" },
+        "4:2": { "resolvedValue": 20, "alias": "VariableID:4:222", "aliasName": "space/scale/20" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:220:158",
+      "name": "space/component/inset/menu/item/x",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
+        "4:2": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:220:160",
+      "name": "space/component/inset/menu/item/y",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
+        "4:2": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:230:6074",
+      "name": "space/component/inset/button/y",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
+        "4:2": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:230:16581",
+      "name": "space/component/inset/fields/y",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" },
+        "4:2": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:263:5411",
+      "name": "space/component/gap/dialog/contents/y",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" },
+        "4:2": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:322:5546",
+      "name": "space/component/inset/chip/y",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" },
+        "4:2": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:322:5547",
+      "name": "space/component/inset/chip/x",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
+        "4:2": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:345:5546",
+      "name": "space/component/inset/pill-with-icon/x",
+      "description": "배지, 태그의 좌 혹은 우에 아이콘이  있을 때의 내부 여백",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" },
+        "4:2": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:345:5559",
+      "name": "space/component/gap/icon-label/x/xs",
+      "description": "태그, 뱃지 내부의  아이콘과 텍스트 사이의 범용 간격",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 4, "alias": "VariableID:4:217", "aliasName": "space/scale/4" },
+        "4:2": { "resolvedValue": 4, "alias": "VariableID:4:217", "aliasName": "space/scale/4" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:345:5581",
+      "name": "space/component/inset/chip-with-icon/x",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:140:6218" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:140:6218" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 10, "alias": "VariableID:140:6218", "aliasName": "space/scale/10" },
+        "4:2": { "resolvedValue": 10, "alias": "VariableID:140:6218", "aliasName": "space/scale/10" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:352:17901",
+      "name": "space/component/gap/tags/x",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 4, "alias": "VariableID:4:217", "aliasName": "space/scale/4" },
+        "4:2": { "resolvedValue": 4, "alias": "VariableID:4:217", "aliasName": "space/scale/4" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:409:6698",
+      "name": "space/component/gap/icon-label/x/md",
+      "description": "얼럿 등에서 \n아이콘과 텍스트 사이의 범용 간격",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
+        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:409:6699",
+      "name": "space/component/inset/alert/toast/x",
+      "description": "토스트 얼럿의 좌우간격",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" },
+        "4:2": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:409:6704",
+      "name": "space/component/inset/alert/toast/y",
+      "description": "토스트 얼럿의 상하 간격",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:140:6218" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
+        "4:2": { "resolvedValue": 10, "alias": "VariableID:140:6218", "aliasName": "space/scale/10" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:409:6706",
+      "name": "space/component/gap/alert/toast/label-close/x",
+      "description": "토스트 얼럿 내부의 타이블 혹은 본문\n과 닫기아이콘 사이의 간격",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:140:6218" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
+        "4:2": { "resolvedValue": 10, "alias": "VariableID:140:6218", "aliasName": "space/scale/10" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:409:6707",
+      "name": "space/component/gap/contents/xs",
+      "description": "섹션 내부의 아주 작은 단위의 콘텐츠\n(얼럿, 다이얼로그)사이 간격",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:216" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 4, "alias": "VariableID:4:217", "aliasName": "space/scale/4" },
+        "4:2": { "resolvedValue": 2, "alias": "VariableID:4:216", "aliasName": "space/scale/2" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:409:6710",
+      "name": "space/component/gap/alert/toast/text-actions/x",
+      "description": "토스트 얼럿 내부의 타이블 혹은 본문\n과 액션 사이의 간격",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
+        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:409:6715",
+      "name": "space/component/gap/actions/x",
+      "description": "동일 문맥의 액션들 사이의 수평 간격",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
+        "4:2": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:416:55894",
+      "name": "space/component/inset/alert/inline/x",
+      "description": "인라인 얼럿의 좌우간격",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:140:6218" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
+        "4:2": { "resolvedValue": 10, "alias": "VariableID:140:6218", "aliasName": "space/scale/10" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:416:55895",
+      "name": "space/component/inset/alert/inline/y",
+      "description": "인라인 얼럿의 상하간격",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:140:6218" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 10, "alias": "VariableID:140:6218", "aliasName": "space/scale/10" },
+        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:416:55898",
+      "name": "space/component/gap/alert/inline/text-actions/x",
+      "description": "인라인 얼럿 내부의 타이블 혹은 본문\n과 액션 사이의 간격",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
+        "4:2": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:416:55899",
+      "name": "space/component/gap/alert/inline/label-close/x",
+      "description": "인라인 얼럿 내부의 타이블 혹은 본문\n과 닫기아이콘 사이의 간격",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
+        "4:2": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:487:9762",
+      "name": "space/component/gap/dialog/header/label-close/x",
+      "description": "다이얼로그 헤더에서 \n제목블록과 닫기버튼의 수평 간격",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:140:6218" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
+        "4:2": { "resolvedValue": 10, "alias": "VariableID:140:6218", "aliasName": "space/scale/10" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:539:137214",
+      "name": "space/component/inset/tooltip/x",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
+        "4:2": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:539:137215",
+      "name": "space/component/inset/tooltip/y",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" },
+        "4:2": { "resolvedValue": 4, "alias": "VariableID:4:217", "aliasName": "space/scale/4" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:539:137216",
+      "name": "space/component/gap/overlay-anchor/xy",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
+        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:574:172300",
+      "name": "space/component/inset/menu/divider/y",
+      "description": "드롭다운 메뉴 가로 구분선의 상하 여백",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 4, "alias": "VariableID:4:217", "aliasName": "space/scale/4" },
+        "4:2": { "resolvedValue": 4, "alias": "VariableID:4:217", "aliasName": "space/scale/4" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:574:172302",
+      "name": "space/component/inset/divider/x",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
+        "4:2": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:574:172303",
+      "name": "space/component/inset/divider/bottom",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
+        "4:2": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:605:31464",
+      "name": "space/component/inset/field-multiline/y",
+      "description": "텍스트에어리어(여러 줄 입력), 리치 텍스트 에디터: 툴바가 위에 붙고 문단 단위로 쓰는 글쓰기 영역.\n제목(Title) 같이 길게 쓰는 단일행 필드: 한 줄이지만 크고 여유 있는 시각 밸런스가 필요할 때(목차/헤더 역할).\n초집중 입력 구간: 모달/작성 페이지의 주요 입력으로 시선을 오래 머무는 필드.",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:140:6218" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:140:6218" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 10, "alias": "VariableID:140:6218", "aliasName": "space/scale/10" },
+        "4:2": { "resolvedValue": 10, "alias": "VariableID:140:6218", "aliasName": "space/scale/10" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:605:31988",
+      "name": "space/scale/14",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": { "4:1": 14, "4:2": 14 },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 14, "alias": null },
+        "4:2": { "resolvedValue": 14, "alias": null }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:605:49996",
+      "name": "space/component/inset/field-editor/y",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:225" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:225" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 40, "alias": "VariableID:4:225", "aliasName": "space/scale/40" },
+        "4:2": { "resolvedValue": 40, "alias": "VariableID:4:225", "aliasName": "space/scale/40" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:637:36402",
+      "name": "space/component/gap/section/y",
+      "description": "섹션과 섹션 사이 수직 간격",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" },
+        "4:2": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:637:36403",
+      "name": "space/component/gap/section/x",
+      "description": "섹션과 섹션 사이 수평 간격",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" },
+        "4:2": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:653:12037",
+      "name": "space/component/gap/header/y",
+      "description": "헤더 아이템 사이의 수직 간격",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
+        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:659:12564",
+      "name": "space/component/inset/field-editor/x",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:224" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:224" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 32, "alias": "VariableID:4:224", "aliasName": "space/scale/32" },
+        "4:2": { "resolvedValue": 32, "alias": "VariableID:4:224", "aliasName": "space/scale/32" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:692:57626",
+      "name": "space/component/gap/speeddial/items/y",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
+        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:775:15421",
+      "name": "space/component/gap/field/prefix-lable/x",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
+        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:966:14432",
+      "name": "space/component/inset/segment/group/xy",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:216" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:216" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 2, "alias": "VariableID:4:216", "aliasName": "space/scale/2" },
+        "4:2": { "resolvedValue": 2, "alias": "VariableID:4:216", "aliasName": "space/scale/2" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:966:14434",
+      "name": "space/component/inset/optical/bottom",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
+        "4:2": { "resolvedValue": 4, "alias": "VariableID:4:217", "aliasName": "space/scale/4" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:966:14446",
+      "name": "space/component/inset/segment/item/lg/x",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:605:31988" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:605:31988" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 14, "alias": "VariableID:605:31988", "aliasName": "space/scale/14" },
+        "4:2": { "resolvedValue": 14, "alias": "VariableID:605:31988", "aliasName": "space/scale/14" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:966:14447",
+      "name": "space/component/inset/segment/item/md/x",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
+        "4:2": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:966:14448",
+      "name": "space/component/inset/segment/item/sm/x",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:140:6218" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:140:6218" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 10, "alias": "VariableID:140:6218", "aliasName": "space/scale/10" },
+        "4:2": { "resolvedValue": 10, "alias": "VariableID:140:6218", "aliasName": "space/scale/10" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:966:14449",
+      "name": "space/component/inset/segment/item/y",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" },
+        "4:2": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:1038:19108",
+      "name": "space/layout/stack/lg2",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:222" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:222" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 20, "alias": "VariableID:4:222", "aliasName": "space/scale/20" },
+        "4:2": { "resolvedValue": 20, "alias": "VariableID:4:222", "aliasName": "space/scale/20" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:1038:19109",
+      "name": "space/layout/inline/xl2",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:222" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:222" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 20, "alias": "VariableID:4:222", "aliasName": "space/scale/20" },
+        "4:2": { "resolvedValue": 20, "alias": "VariableID:4:222", "aliasName": "space/scale/20" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:1073:21914",
+      "name": "space/scale/56",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": { "4:1": 56, "4:2": 56 },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 56, "alias": null },
+        "4:2": { "resolvedValue": 56, "alias": null }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:1073:21915",
+      "name": "space/scale/72",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": { "4:1": 72, "4:2": 72 },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 72, "alias": null },
+        "4:2": { "resolvedValue": 72, "alias": null }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:1073:57650",
+      "name": "space/component/inset/optical/top",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
+        "4:2": { "resolvedValue": 4, "alias": "VariableID:4:217", "aliasName": "space/scale/4" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:1073:57654",
+      "name": "space/component/inset/optical/left",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
+        "4:2": { "resolvedValue": 4, "alias": "VariableID:4:217", "aliasName": "space/scale/4" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:1073:57657",
+      "name": "space/component/inset/optical/right",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
+        "4:2": { "resolvedValue": 4, "alias": "VariableID:4:217", "aliasName": "space/scale/4" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:1108:338456",
+      "name": "space/component/inset/tab/x",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
+        "4:2": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:1108:338457",
+      "name": "space/component/inset/tab/y",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
+        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:1238:20131",
+      "name": "space/component/gap/form/fields-inter/x/lg",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" },
+        "4:2": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:1238:20132",
+      "name": "space/component/gap/form/fields-inter/x/sm",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
+        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:1238:20158",
+      "name": "space/component/gap/form/fields-inter/y/lg",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:140:6218" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:140:6218" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 10, "alias": "VariableID:140:6218", "aliasName": "space/scale/10" },
+        "4:2": { "resolvedValue": 10, "alias": "VariableID:140:6218", "aliasName": "space/scale/10" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:1238:20159",
+      "name": "space/component/gap/form/fields-inter/y/sm",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" },
+        "4:2": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:1248:18053",
+      "name": "space/component/gap/form/fields-intra/x/lg",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:140:6218" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:140:6218" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 10, "alias": "VariableID:140:6218", "aliasName": "space/scale/10" },
+        "4:2": { "resolvedValue": 10, "alias": "VariableID:140:6218", "aliasName": "space/scale/10" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:1248:18054",
+      "name": "space/component/gap/form/fields-intra/x/md",
+      "description": "2열 폼의 가로 간격",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
+        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:1248:18055",
+      "name": "space/component/gap/form/fields-intra/x/sm",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" },
+        "4:2": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:1248:18056",
+      "name": "space/component/gap/form/fields-intra/y/lg",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" },
+        "4:2": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:1248:18057",
+      "name": "space/component/gap/form/fields-intra/y/md",
+      "description": "폼 필드 세로 간격",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 4, "alias": "VariableID:4:217", "aliasName": "space/scale/4" },
+        "4:2": { "resolvedValue": 4, "alias": "VariableID:4:217", "aliasName": "space/scale/4" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:1248:18058",
+      "name": "space/component/gap/form/fields-intra/y/sm",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 4, "alias": "VariableID:4:217", "aliasName": "space/scale/4" },
+        "4:2": { "resolvedValue": 4, "alias": "VariableID:4:217", "aliasName": "space/scale/4" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:1321:16410",
+      "name": "space/component/inset/popover/x",
+      "description": "팝오버의 좌우 여백",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:140:6218" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
+        "4:2": { "resolvedValue": 10, "alias": "VariableID:140:6218", "aliasName": "space/scale/10" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:1321:16411",
+      "name": "space/component/inset/popover/y",
+      "description": "팝오버의 상하 여백",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:140:6218" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 10, "alias": "VariableID:140:6218", "aliasName": "space/scale/10" },
+        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:1865:31451",
+      "name": "space/component/inset/post/x",
+      "description": "게시글의 좌우 내부 여백",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:224" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:224" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 32, "alias": "VariableID:4:224", "aliasName": "space/scale/32" },
+        "4:2": { "resolvedValue": 32, "alias": "VariableID:4:224", "aliasName": "space/scale/32" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:1865:31452",
+      "name": "space/component/inset/post/y",
+      "description": "게시글의 상하 내부 여백",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:224" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:224" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 32, "alias": "VariableID:4:224", "aliasName": "space/scale/32" },
+        "4:2": { "resolvedValue": 32, "alias": "VariableID:4:224", "aliasName": "space/scale/32" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:1865:31733",
+      "name": "space/component/gap/post-paragraph/y",
+      "description": "게시글 내의 문단사이의 수직 간격 (줄바꿈과 다름)",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:140:6218" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
+        "4:2": { "resolvedValue": 10, "alias": "VariableID:140:6218", "aliasName": "space/scale/10" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:1865:31734",
+      "name": "space/component/gap/post-block/y",
+      "description": "게시글 내의 문단과 단일 블록 요소 (이미지, 표 등)사이의 수직 간격",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:222" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" },
+        "4:2": { "resolvedValue": 20, "alias": "VariableID:4:222", "aliasName": "space/scale/20" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    }
+  ]
+}

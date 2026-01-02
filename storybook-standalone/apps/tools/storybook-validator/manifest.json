@@ -1,0 +1,40 @@
+{
+  "dxt_version": "0.1",
+  "name": "storybook-validator",
+  "display_name": "Storybook Validator",
+  "version": "0.2.4",
+  "description": "Storybook 컴포넌트 스타일을 자연어로 질의하는 MCP Extension. 디자이너가 구현된 컴포넌트의 색상, 패딩, 폰트 등을 Figma 토큰 이름과 함께 확인할 수 있습니다.",
+  "author": {
+    "name": "A-Plus World"
+  },
+  "server": {
+    "type": "node",
+    "entry_point": "server/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/server/index.js"],
+      "env": {
+        "UI_PACKAGE_PATH": "${user_config.ui_package_path}"
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "list_components",
+      "description": "구현된 컴포넌트 목록을 조회합니다. category 파라미터로 특정 컴포넌트만 필터링할 수 있습니다."
+    },
+    {
+      "name": "get_implemented_style",
+      "description": "Storybook 컴포넌트의 스타일을 조회합니다. component(필수), variant, size, property, state 파라미터 지원. state로 hover/focus-visible/active 상태 스타일 조회 가능."
+    }
+  ],
+  "user_config": {
+    "ui_package_path": {
+      "type": "string",
+      "title": "UI 패키지 경로 (선택사항)",
+      "description": "외부 JSON 파일 경로. 비워두면 패키지 내장 데이터를 사용합니다.",
+      "required": false,
+      "default": ""
+    }
+  }
+}

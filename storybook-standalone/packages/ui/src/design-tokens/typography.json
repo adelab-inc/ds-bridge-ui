@@ -1,0 +1,271 @@
+{
+  "name": "typography",
+  "variables": [
+    {
+      "name": "heading/xl/bold",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "700", "fontSize": "28px", "lineHeight": "36px" }
+      }
+    },
+    {
+      "name": "heading/lg/bold",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "700", "fontSize": "24px", "lineHeight": "32px" }
+      }
+    },
+    {
+      "name": "heading/md/semibold",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "600", "fontSize": "20px", "lineHeight": "28px" }
+      }
+    },
+    {
+      "name": "body/lg/medium",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "500", "fontSize": "18px", "lineHeight": "28px" }
+      }
+    },
+    {
+      "name": "body/lg/regular",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "400", "fontSize": "18px", "lineHeight": "28px" }
+      }
+    },
+    {
+      "name": "body/md/medium",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "500", "fontSize": "16px", "lineHeight": "24px" }
+      }
+    },
+    {
+      "name": "body/md/regular",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "400", "fontSize": "16px", "lineHeight": "24px" }
+      }
+    },
+    {
+      "name": "body/sm/medium",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "500", "fontSize": "14px", "lineHeight": "20px" }
+      }
+    },
+    {
+      "name": "body/sm/regular",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "400", "fontSize": "14px", "lineHeight": "20px" }
+      }
+    },
+    {
+      "name": "caption/sm/medium",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "500", "fontSize": "14px", "lineHeight": "20px" }
+      }
+    },
+    {
+      "name": "caption/sm/regular",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "400", "fontSize": "14px", "lineHeight": "20px" }
+      }
+    },
+    {
+      "name": "caption/xs/medium",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "500", "fontSize": "14px", "lineHeight": "16px" }
+      }
+    },
+    {
+      "name": "caption/xs/regular",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "400", "fontSize": "14px", "lineHeight": "16px" }
+      }
+    },
+    {
+      "name": "navigation/menu/medium",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "500", "fontSize": "14px", "lineHeight": "20px" }
+      }
+    },
+    {
+      "name": "navigation/menu/regular",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "400", "fontSize": "14px", "lineHeight": "20px" }
+      }
+    },
+    {
+      "name": "form/label/md/medium",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "500", "fontSize": "16px", "lineHeight": "24px" }
+      }
+    },
+    {
+      "name": "form/label/sm/medium",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "500", "fontSize": "14px", "lineHeight": "20px" }
+      }
+    },
+    {
+      "name": "form/helper-text/md/regular",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "400", "fontSize": "14px", "lineHeight": "20px" }
+      }
+    },
+    {
+      "name": "form/helper-text/sm/regular",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "400", "fontSize": "12px", "lineHeight": "20px" }
+      }
+    },
+    {
+      "name": "table/header/medium",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "500", "fontSize": "16px", "lineHeight": "24px" }
+      }
+    },
+    {
+      "name": "table/cell/text/regular",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "400", "fontSize": "16px", "lineHeight": "24px" }
+      }
+    },
+    {
+      "name": "table/cell/number/regular-num",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "400", "fontSize": "16px", "lineHeight": "24px" }
+      }
+    },
+    {
+      "name": "table/caption/regular",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "400", "fontSize": "14px", "lineHeight": "20px" }
+      }
+    },
+    {
+      "name": "chart/axis-label/regular",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "400", "fontSize": "14px", "lineHeight": "20px" }
+      }
+    },
+    {
+      "name": "chart/graph-label/medium-num",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "500", "fontSize": "14px", "lineHeight": "20px" }
+      }
+    },
+    {
+      "name": "chart/legend/medium",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "500", "fontSize": "14px", "lineHeight": "20px" }
+      }
+    },
+    {
+      "name": "button/lg/medium",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "500", "fontSize": "18px", "lineHeight": "24px" }
+      }
+    },
+    {
+      "name": "button/md/medium",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "500", "fontSize": "16px", "lineHeight": "20px" }
+      }
+    },
+    {
+      "name": "button/sm/medium",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "500", "fontSize": "14px", "lineHeight": "20px" }
+      }
+    },
+    {
+      "name": "chip/label/md/medium",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "500", "fontSize": "14px", "lineHeight": "20px" }
+      }
+    },
+    {
+      "name": "chip/label/sm/medium",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "500", "fontSize": "12px", "lineHeight": "16px" }
+      }
+    },
+    {
+      "name": "display/value/xxxl/bold-num",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "700", "fontSize": "32px", "lineHeight": "40px" }
+      }
+    },
+    {
+      "name": "display/value/xxl/semibold-num",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "600", "fontSize": "28px", "lineHeight": "36px" }
+      }
+    },
+    {
+      "name": "display/value/xl/semibold-num",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "600", "fontSize": "24px", "lineHeight": "32px" }
+      }
+    },
+    {
+      "name": "display/caption/md/medium",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "500", "fontSize": "16px", "lineHeight": "20px" }
+      }
+    },
+    {
+      "name": "display/caption/lg/medium",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "500", "fontSize": "18px", "lineHeight": "24px" }
+      }
+    },
+    {
+      "name": "display/unit/lg/medium",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "500", "fontSize": "18px", "lineHeight": "24px" }
+      }
+    },
+    {
+      "name": "display/indicator/md/medium",
+      "type": "TYPOGRAPHY",
+      "valuesByMode": {
+        "3:13": { "fontFamily": "Pretendard", "fontWeight": "500", "fontSize": "16px", "lineHeight": "20px" }
+      }
+    }
+  ]
+}

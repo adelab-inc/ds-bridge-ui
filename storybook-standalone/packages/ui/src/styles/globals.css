@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Design Token based UI styles */
+@layer base {
+  html {
+    font-family: 'Pretendard', sans-serif;
+  }
+}
+
+@layer components {
+  /* Custom component styles if needed */
+}
+
+@layer utilities {
+  /* Custom utility styles if needed */
+}
+
+/* Menu 컴포넌트 스크롤바 스타일 */
+.menu-scroll-container {
+  position: relative;
+  overflow: visible; /* 하위 메뉴가 잘리지 않도록 */
+}
+
+.menu-scroll-inner {
+  overflow-y: auto;
+  /* overflow-x 제거 - 하위 메뉴가 밖에서 렌더링되므로 불필요 */
+
+  /* 스크롤바 완전히 숨김 (공간도 차지하지 않음) */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+/* Webkit browsers: 스크롤바 완전히 숨김 */
+.menu-scroll-inner::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}

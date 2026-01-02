@@ -1,0 +1,67 @@
+{
+  "dependencies": {
+    "ag-charts-community": "^12.2.0",
+    "ag-charts-enterprise": "^12.2.0",
+    "ag-charts-react": "^12.2.0",
+    "ag-grid-community": "34.2.0",
+    "ag-grid-react": "34.2.0",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.0.0",
+    "lottie-react": "^2.4.1",
+    "tailwind-merge": "^2.0.0"
+  },
+  "description": "A+ World UI 공통 UI 컴포넌트 라이브러리",
+  "devDependencies": {
+    "@storybook/react": "8.6.14",
+    "@storybook/test": "^8.6.14",
+    "@tanstack/react-router": "^1.43.0",
+    "@testing-library/jest-dom": "^6.8.0",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/jest-axe": "^3.5.9",
+    "@types/node": "^24.3.0",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "jest-axe": "^10.0.0",
+    "tailwind-scrollbar": "^4.0.2",
+    "typescript": "^5.0.0",
+    "vitest": "3.2.4"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./components": "./src/components/index.ts",
+    "./tailwind.preset.js": "./tailwind.preset.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "ui",
+    "components",
+    "react",
+    "design-system"
+  ],
+  "license": "ISC",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "name": "@aplus/ui",
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
+  "private": false,
+  "publishConfig": {
+    "registry": "http://1.2.3.4:9000/repository/pnpm-hosted/"
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist .turbo node_modules/.cache",
+    "dev": "pnpm build --watch",
+    "lint": "echo 'UI 린트 - ESLint + @aplus/eslint-config 사용'",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "type-check": "echo 'UI 타입 체크 - TypeScript + @aplus/tsconfig'"
+  },
+  "types": "./dist/index.d.ts",
+  "version": "0.0.2"
+}

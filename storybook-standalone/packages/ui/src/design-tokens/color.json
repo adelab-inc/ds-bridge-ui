@@ -1,0 +1,4070 @@
+{
+  "id": "VariableCollectionId:4:55",
+  "name": "color",
+  "modes": { "4:0": "Mode 1" },
+  "variableIds": [
+    "VariableID:4:85",
+    "VariableID:4:86",
+    "VariableID:4:176",
+    "VariableID:4:135",
+    "VariableID:4:87",
+    "VariableID:4:88",
+    "VariableID:4:89",
+    "VariableID:4:92",
+    "VariableID:4:90",
+    "VariableID:4:91",
+    "VariableID:320:10858",
+    "VariableID:4:117",
+    "VariableID:4:119",
+    "VariableID:4:124",
+    "VariableID:4:126",
+    "VariableID:4:120",
+    "VariableID:4:121",
+    "VariableID:4:125",
+    "VariableID:4:122",
+    "VariableID:4:191",
+    "VariableID:4:123",
+    "VariableID:4:82",
+    "VariableID:4:96",
+    "VariableID:4:93",
+    "VariableID:4:94",
+    "VariableID:4:95",
+    "VariableID:4:210",
+    "VariableID:4:209",
+    "VariableID:4:211",
+    "VariableID:4:212",
+    "VariableID:4:202",
+    "VariableID:4:83",
+    "VariableID:4:84",
+    "VariableID:4:203",
+    "VariableID:4:204",
+    "VariableID:4:81",
+    "VariableID:2351:26881",
+    "VariableID:4:177",
+    "VariableID:4:164",
+    "VariableID:4:180",
+    "VariableID:4:166",
+    "VariableID:4:165",
+    "VariableID:4:167",
+    "VariableID:4:169",
+    "VariableID:4:170",
+    "VariableID:4:173",
+    "VariableID:4:171",
+    "VariableID:4:172",
+    "VariableID:4:174",
+    "VariableID:4:175",
+    "VariableID:4:107",
+    "VariableID:4:113",
+    "VariableID:4:109",
+    "VariableID:4:104",
+    "VariableID:4:130",
+    "VariableID:4:97",
+    "VariableID:4:131",
+    "VariableID:4:132",
+    "VariableID:4:133",
+    "VariableID:4:192",
+    "VariableID:334:21774",
+    "VariableID:4:195",
+    "VariableID:4:194",
+    "VariableID:4:196",
+    "VariableID:4:197",
+    "VariableID:4:198",
+    "VariableID:4:199",
+    "VariableID:4:200",
+    "VariableID:4:201",
+    "VariableID:4:106",
+    "VariableID:4:115",
+    "VariableID:4:114",
+    "VariableID:4:116",
+    "VariableID:4:110",
+    "VariableID:4:112",
+    "VariableID:4:111",
+    "VariableID:4:56",
+    "VariableID:4:57",
+    "VariableID:4:58",
+    "VariableID:4:59",
+    "VariableID:4:62",
+    "VariableID:4:61",
+    "VariableID:4:60",
+    "VariableID:4:63",
+    "VariableID:4:64",
+    "VariableID:4:65",
+    "VariableID:4:66",
+    "VariableID:4:67",
+    "VariableID:4:68",
+    "VariableID:4:127",
+    "VariableID:4:69",
+    "VariableID:4:70",
+    "VariableID:4:71",
+    "VariableID:4:207",
+    "VariableID:4:72",
+    "VariableID:4:73",
+    "VariableID:4:74",
+    "VariableID:4:75",
+    "VariableID:4:76",
+    "VariableID:4:205",
+    "VariableID:4:80",
+    "VariableID:4:149",
+    "VariableID:4:78",
+    "VariableID:4:148",
+    "VariableID:4:77",
+    "VariableID:4:150",
+    "VariableID:4:79",
+    "VariableID:4:151",
+    "VariableID:336:5732",
+    "VariableID:336:5727",
+    "VariableID:336:5735",
+    "VariableID:336:5724",
+    "VariableID:336:5730",
+    "VariableID:336:5728",
+    "VariableID:336:5729",
+    "VariableID:336:5733",
+    "VariableID:4:98",
+    "VariableID:4:99",
+    "VariableID:4:100",
+    "VariableID:4:101",
+    "VariableID:4:139",
+    "VariableID:4:142",
+    "VariableID:4:143",
+    "VariableID:4:136",
+    "VariableID:4:137",
+    "VariableID:4:138",
+    "VariableID:4:140",
+    "VariableID:4:144",
+    "VariableID:4:145",
+    "VariableID:4:141",
+    "VariableID:4:146",
+    "VariableID:4:147",
+    "VariableID:2679:30344",
+    "VariableID:2679:30345",
+    "VariableID:2351:26880",
+    "VariableID:206:4152",
+    "VariableID:206:4165",
+    "VariableID:206:4166",
+    "VariableID:206:4167",
+    "VariableID:206:4168",
+    "VariableID:2291:26542",
+    "VariableID:2291:26546",
+    "VariableID:2291:26547",
+    "VariableID:2291:26545",
+    "VariableID:2291:26543",
+    "VariableID:2291:26541",
+    "VariableID:206:4169",
+    "VariableID:2291:26538",
+    "VariableID:336:5696",
+    "VariableID:336:5697",
+    "VariableID:2291:26540",
+    "VariableID:336:5705",
+    "VariableID:336:5706",
+    "VariableID:336:5707",
+    "VariableID:336:5714",
+    "VariableID:336:5712",
+    "VariableID:336:5718",
+    "VariableID:336:5716",
+    "VariableID:336:5709",
+    "VariableID:336:5719",
+    "VariableID:336:5717",
+    "VariableID:336:5715",
+    "VariableID:336:5713",
+    "VariableID:336:5710",
+    "VariableID:336:5708",
+    "VariableID:4:128",
+    "VariableID:4:129",
+    "VariableID:4:153",
+    "VariableID:4:152",
+    "VariableID:4:154",
+    "VariableID:4:155",
+    "VariableID:4:186",
+    "VariableID:4:181",
+    "VariableID:4:182",
+    "VariableID:4:183",
+    "VariableID:4:189",
+    "VariableID:4:184",
+    "VariableID:4:185",
+    "VariableID:4:190",
+    "VariableID:4:187",
+    "VariableID:4:188",
+    "VariableID:4:158",
+    "VariableID:4:159",
+    "VariableID:4:156",
+    "VariableID:4:157",
+    "VariableID:4:160",
+    "VariableID:4:161",
+    "VariableID:4:162",
+    "VariableID:4:163",
+    "VariableID:4:206",
+    "VariableID:4:208",
+    "VariableID:4:134",
+    "VariableID:206:4532",
+    "VariableID:206:4549",
+    "VariableID:206:4550",
+    "VariableID:320:10856",
+    "VariableID:320:10859",
+    "VariableID:322:59",
+    "VariableID:322:60",
+    "VariableID:323:26737",
+    "VariableID:332:2",
+    "VariableID:332:3",
+    "VariableID:332:133",
+    "VariableID:494:8589",
+    "VariableID:334:20717",
+    "VariableID:333:1428",
+    "VariableID:334:20906",
+    "VariableID:334:20907",
+    "VariableID:334:20908",
+    "VariableID:334:20909",
+    "VariableID:334:15615",
+    "VariableID:334:15618",
+    "VariableID:334:15619",
+    "VariableID:334:15620",
+    "VariableID:334:22264",
+    "VariableID:334:22281",
+    "VariableID:334:22480",
+    "VariableID:334:22481",
+    "VariableID:352:18372",
+    "VariableID:352:18371",
+    "VariableID:966:14545",
+    "VariableID:416:65720",
+    "VariableID:448:10195",
+    "VariableID:494:9448",
+    "VariableID:494:9449",
+    "VariableID:494:9452",
+    "VariableID:494:9453",
+    "VariableID:520:132832",
+    "VariableID:966:14543",
+    "VariableID:1820:28564",
+    "VariableID:2681:30375",
+    "VariableID:2681:30376"
+  ],
+  "variables": [
+    {
+      "id": "VariableID:4:56",
+      "name": "color/palette/brand/blue/50",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.8823529481887817, "g": 0.9176470637321472, "b": 1, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": { "resolvedValue": { "r": 0.8823529481887817, "g": 0.9176470637321472, "b": 1, "a": 1 }, "alias": null }
+      },
+      "scopes": ["ALL_FILLS"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:57",
+      "name": "color/palette/brand/blue/100",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.7647058963775635, "g": 0.8392156958580017, "b": 1, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": { "resolvedValue": { "r": 0.7647058963775635, "g": 0.8392156958580017, "b": 1, "a": 1 }, "alias": null }
+      },
+      "scopes": ["ALL_FILLS"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:58",
+      "name": "color/palette/brand/blue/200",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.5960784554481506, "g": 0.7019608020782471, "b": 0.9333333373069763, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.5960784554481506, "g": 0.7019608020782471, "b": 0.9333333373069763, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:59",
+      "name": "color/palette/brand/blue/300",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.4117647111415863, "g": 0.5607843399047852, "b": 0.8784313797950745, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.4117647111415863, "g": 0.5607843399047852, "b": 0.8784313797950745, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:60",
+      "name": "color/palette/brand/blue/600",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0, "g": 0.20000000298023224, "b": 0.6274510025978088, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": { "resolvedValue": { "r": 0, "g": 0.20000000298023224, "b": 0.6274510025978088, "a": 1 }, "alias": null }
+      },
+      "scopes": ["ALL_FILLS"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:61",
+      "name": "color/palette/brand/blue/500",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.08235294371843338, "g": 0.2980392277240753, "b": 0.7568627595901489, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.08235294371843338, "g": 0.2980392277240753, "b": 0.7568627595901489, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:62",
+      "name": "color/palette/brand/blue/400",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": {
+        "4:0": { "r": 0.24313725531101227, "g": 0.42352941632270813, "b": 0.8117647171020508, "a": 1 }
+      },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.24313725531101227, "g": 0.42352941632270813, "b": 0.8117647171020508, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:63",
+      "name": "color/palette/brand/blue/700",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0, "g": 0.1411764770746231, "b": 0.501960813999176, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": { "resolvedValue": { "r": 0, "g": 0.1411764770746231, "b": 0.501960813999176, "a": 1 }, "alias": null }
+      },
+      "scopes": ["ALL_FILLS"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:64",
+      "name": "color/palette/brand/blue/800",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0, "g": 0.11372549086809158, "b": 0.38823530077934265, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0, "g": 0.11372549086809158, "b": 0.38823530077934265, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:65",
+      "name": "color/palette/brand/blue/900",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0, "g": 0.08235294371843338, "b": 0.29019609093666077, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0, "g": 0.08235294371843338, "b": 0.29019609093666077, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:66",
+      "name": "color/palette/neutral/gray/0",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 1, "g": 1, "b": 1, "a": 1 } },
+      "resolvedValuesByMode": { "4:0": { "resolvedValue": { "r": 1, "g": 1, "b": 1, "a": 1 }, "alias": null } },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:67",
+      "name": "color/palette/neutral/gray/50",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.9764705896377563, "g": 0.9803921580314636, "b": 0.9843137264251709, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9764705896377563, "g": 0.9803921580314636, "b": 0.9843137264251709, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:68",
+      "name": "color/palette/neutral/gray/100",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.95686274766922, "g": 0.9647058844566345, "b": 0.9725490212440491, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.95686274766922, "g": 0.9647058844566345, "b": 0.9725490212440491, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:69",
+      "name": "color/palette/neutral/gray/200",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.9137254953384399, "g": 0.9254902005195618, "b": 0.9372549057006836, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9137254953384399, "g": 0.9254902005195618, "b": 0.9372549057006836, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:70",
+      "name": "color/palette/neutral/gray/300",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.8705882430076599, "g": 0.886274516582489, "b": 0.9019607901573181, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.8705882430076599, "g": 0.886274516582489, "b": 0.9019607901573181, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:71",
+      "name": "color/palette/neutral/gray/400",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.8078431487083435, "g": 0.8313725590705872, "b": 0.8549019694328308, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.8078431487083435, "g": 0.8313725590705872, "b": 0.8549019694328308, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:72",
+      "name": "color/palette/neutral/gray/500",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.615686297416687, "g": 0.6431372761726379, "b": 0.6705882549285889, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.615686297416687, "g": 0.6431372761726379, "b": 0.6705882549285889, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:73",
+      "name": "color/palette/neutral/gray/600",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.42352941632270813, "g": 0.4588235318660736, "b": 0.4901960790157318, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.42352941632270813, "g": 0.4588235318660736, "b": 0.4901960790157318, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:74",
+      "name": "color/palette/neutral/gray/700",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.2862745225429535, "g": 0.3137255012989044, "b": 0.34117648005485535, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.2862745225429535, "g": 0.3137255012989044, "b": 0.34117648005485535, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:75",
+      "name": "color/palette/neutral/gray/800",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.20392157137393951, "g": 0.22745098173618317, "b": 0.250980406999588, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.20392157137393951, "g": 0.22745098173618317, "b": 0.250980406999588, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:76",
+      "name": "color/palette/neutral/gray/900",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": {
+        "4:0": { "r": 0.12941177189350128, "g": 0.14509804546833038, "b": 0.16078431904315948, "a": 1 }
+      },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.12941177189350128, "g": 0.14509804546833038, "b": 0.16078431904315948, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:77",
+      "name": "color/palette/semantic/warning/500",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": {
+        "4:0": { "r": 0.929411768913269, "g": 0.42352941632270813, "b": 0.007843137718737125, "a": 1 }
+      },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.929411768913269, "g": 0.42352941632270813, "b": 0.007843137718737125, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:78",
+      "name": "color/palette/semantic/success/500",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": {
+        "4:0": { "r": 0.18039216101169586, "g": 0.4901960790157318, "b": 0.19607843458652496, "a": 1 }
+      },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.18039216101169586, "g": 0.4901960790157318, "b": 0.19607843458652496, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:79",
+      "name": "color/palette/semantic/error/500",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": {
+        "4:0": { "r": 0.8274509906768799, "g": 0.18431372940540314, "b": 0.18431372940540314, "a": 1 }
+      },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.8274509906768799, "g": 0.18431372940540314, "b": 0.18431372940540314, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:80",
+      "name": "color/palette/semantic/info/500",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": {
+        "4:0": { "r": 0.007843137718737125, "g": 0.5333333611488342, "b": 0.8196078538894653, "a": 1 }
+      },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.007843137718737125, "g": 0.5333333611488342, "b": 0.8196078538894653, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:81",
+      "name": "color/role/overlay/scrim",
+      "description": "모달 등 새로운 레이어가 나타날 때 배경 콘텐츠를 덮는 어두운 오버레이 색상. 콘텐츠의 계층을 명확히 구분하는 기능적 목적 외에는 사용하지 않습니다. 피그마 내에서는 동명의 effect style과 함께 적용됩니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:206:4169" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0, "g": 0, "b": 0, "a": 0.5600000023841858 },
+          "alias": "VariableID:206:4169",
+          "aliasName": "color/palette/overlay/gray/1000-56"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:82",
+      "name": "color/role/brand/primary",
+      "description": "로그인 버튼, \n가장 중요한 CTA 버튼 - 서비스의 핵심 브랜드 색상. 가장 중요한 액션을 유도하는 데 사용하며, 오류나 경고 등 상태 표현에는 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:60" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0, "g": 0.20000000298023224, "b": 0.6274510025978088, "a": 1 },
+          "alias": "VariableID:4:60",
+          "aliasName": "color/palette/brand/blue/600"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:83",
+      "name": "color/role/brand/primary/hover",
+      "description": "로그인 버튼에 \n마우스 올렸을 때 - 핵심 브랜드 색상의 호버 상태. 마우스 오버 외의 다른 인터랙션 상태에는 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:61" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.08235294371843338, "g": 0.2980392277240753, "b": 0.7568627595901489, "a": 1 },
+          "alias": "VariableID:4:61",
+          "aliasName": "color/palette/brand/blue/500"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:84",
+      "name": "color/role/brand/primary/pressed",
+      "description": "로그인 버튼을 \n클릭하는 순간 - 핵심 브랜드 색상의 클릭/활성 상태. 단순 호버나 비활성 상태에는 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:63" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0, "g": 0.1411764770746231, "b": 0.501960813999176, "a": 1 },
+          "alias": "VariableID:4:63",
+          "aliasName": "color/palette/brand/blue/700"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:85",
+      "name": "color/role/text/primary",
+      "description": "본문, 페이지 제목- 가장 중요한 텍스트. 본문, 헤딩 등 일반적인 모든 텍스트에 기본으로 사용하며, 보조적인 텍스트 용도로는 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:76" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.12941177189350128, "g": 0.14509804546833038, "b": 0.16078431904315948, "a": 1 },
+          "alias": "VariableID:4:76",
+          "aliasName": "color/palette/neutral/gray/900"
+        }
+      },
+      "scopes": ["TEXT_FILL"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:86",
+      "name": "color/role/text/secondary",
+      "description": "입력 필드 도움말, 작성자, \n날짜 등 메타데이터 - 부가 정보를 제공하는 보조 텍스트입니다. 중요한 정보나 클릭 가능한 요소에는 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:74" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.2862745225429535, "g": 0.3137255012989044, "b": 0.34117648005485535, "a": 1 },
+          "alias": "VariableID:4:74",
+          "aliasName": "color/palette/neutral/gray/700"
+        }
+      },
+      "scopes": ["TEXT_FILL"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:87",
+      "name": "color/role/text/disabled",
+      "description": "비활성화된 버튼의 텍스트 - 비활성화된 컴포넌트의 텍스트. 선택하거나 입력할 수 없는 상태를 나타내는 용도로만 사용합니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:72" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.615686297416687, "g": 0.6431372761726379, "b": 0.6705882549285889, "a": 1 },
+          "alias": "VariableID:4:72",
+          "aliasName": "color/palette/neutral/gray/500"
+        }
+      },
+      "scopes": ["TEXT_FILL"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:88",
+      "name": "color/role/bg/canvas",
+      "description": "페이지의 가장 바깥 배경 - 화면 전체의 기본 배경. 카드나 모달 등 특정 컴포넌트의 배경으로는 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:68" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.95686274766922, "g": 0.9647058844566345, "b": 0.9725490212440491, "a": 1 },
+          "alias": "VariableID:4:68",
+          "aliasName": "color/palette/neutral/gray/100"
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:89",
+      "name": "color/role/bg/surface",
+      "description": "카드, 모달창, \n사이드 패널 배경 - 콘텐츠를 감싸는 표면의 배경. 페이지 전체 배경으로 사용하는 것은 지양합니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:66" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 1, "g": 1, "b": 1, "a": 1 },
+          "alias": "VariableID:4:66",
+          "aliasName": "color/palette/neutral/gray/0"
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:90",
+      "name": "color/role/bg/subtle",
+      "description": "테이블 헤더(Header)\n배경 - 미묘한 구분이 필요한 영역의 배경. Primary 버튼 등 주요 인터랙션 요소에는 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:127" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9254902005195618, "g": 0.9372549057006836, "b": 0.9529411792755127, "a": 1 },
+          "alias": "VariableID:4:127",
+          "aliasName": "color/palette/neutral/gray/150"
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:91",
+      "name": "color/role/border/default",
+      "description": "일반적인 구분이 필요한 기본 테두리.-일반 구분선, \n테이블 로우 라인",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:70" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.8705882430076599, "g": 0.886274516582489, "b": 0.9019607901573181, "a": 1 },
+          "alias": "VariableID:4:70",
+          "aliasName": "color/palette/neutral/gray/300"
+        }
+      },
+      "scopes": ["STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:92",
+      "name": "color/role/border/subtle",
+      "description": "얕은 미묘한 테두리. 포커스 상태 등 시각적 강조가 필요할 때는 사용하지 않습니다. - 카드컴포넌트 외곽선",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:69" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9137254953384399, "g": 0.9254902005195618, "b": 0.9372549057006836, "a": 1 },
+          "alias": "VariableID:4:69",
+          "aliasName": "color/palette/neutral/gray/200"
+        }
+      },
+      "scopes": ["STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:93",
+      "name": "color/role/semantic/success",
+      "description": "긍정적인 상태를 나타내는 색상. 일반적인 버튼이나 긍정적 의미가 없는 UI에는 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:78" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.18039216101169586, "g": 0.4901960790157318, "b": 0.19607843458652496, "a": 1 },
+          "alias": "VariableID:4:78",
+          "aliasName": "color/palette/semantic/success/500"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:94",
+      "name": "color/role/semantic/warning",
+      "description": "주의가 필요한 상태를 나타내는 색상. 일반적인 정보 전달이나 강조 목적에는 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:77" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.929411768913269, "g": 0.42352941632270813, "b": 0.007843137718737125, "a": 1 },
+          "alias": "VariableID:4:77",
+          "aliasName": "color/palette/semantic/warning/500"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:95",
+      "name": "color/role/semantic/error",
+      "description": "오류 상태를 나타내는 색상. 성공이나 일반 정보 알림에는 절대 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:79" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.8274509906768799, "g": 0.18431372940540314, "b": 0.18431372940540314, "a": 1 },
+          "alias": "VariableID:4:79",
+          "aliasName": "color/palette/semantic/error/500"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:96",
+      "name": "color/role/semantic/info",
+      "description": "정보성 상태를 나타내는 색상. 오류나 경고처럼 시급성이 높은 상태에는 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:80" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.007843137718737125, "g": 0.5333333611488342, "b": 0.8196078538894653, "a": 1 },
+          "alias": "VariableID:4:80",
+          "aliasName": "color/palette/semantic/info/500"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:97",
+      "name": "color/role/chip/bg/selected",
+      "description": "선택된 칩의 배경. 기본 상태에는 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:206" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9254902005195618, "g": 0.9411764740943909, "b": 0.9803921580314636, "a": 1 },
+          "alias": "VariableID:4:206",
+          "aliasName": "color/role/bg/selection"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:98",
+      "name": "color/palette/tint/brand-primary/500-08",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.9254902005195618, "g": 0.9411764740943909, "b": 0.9803921580314636, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9254902005195618, "g": 0.9411764740943909, "b": 0.9803921580314636, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:99",
+      "name": "color/palette/tint/brand-primary/500-12",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.886274516582489, "g": 0.9137254953384399, "b": 0.9686274528503418, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.886274516582489, "g": 0.9137254953384399, "b": 0.9686274528503418, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:100",
+      "name": "color/palette/tint/brand-primary/500-16",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.8509804010391235, "g": 0.886274516582489, "b": 0.9607843160629272, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.8509804010391235, "g": 0.886274516582489, "b": 0.9607843160629272, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:101",
+      "name": "color/palette/tint/brand-primary/500-20",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.8156862854957581, "g": 0.8588235378265381, "b": 0.9490196108818054, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.8156862854957581, "g": 0.8588235378265381, "b": 0.9490196108818054, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:104",
+      "name": "color/role/control/stroke/default",
+      "description": "기본 컨트롤(체크박스·라디오)의 테두리. 라디오는 선택상태에서도 사용하며, 체크박스의 경우 기본상태에서만 사용합니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:208" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.8078431487083435, "g": 0.8313725590705872, "b": 0.8549019694328308, "a": 1 },
+          "alias": "VariableID:4:208",
+          "aliasName": "color/role/border/strong"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:106",
+      "name": "color/role/control/stroke/disabled",
+      "description": "비활성화된 라디오버튼의 테두리.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:323:26737" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.8705882430076599, "g": 0.886274516582489, "b": 0.9019607901573181, "a": 1 },
+          "alias": "VariableID:323:26737",
+          "aliasName": "color/role/border/disabled"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:107",
+      "name": "color/role/control/bg/on",
+      "description": "활성화된 Toggle 스위치 트랙채운 체크박스·라디오",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:332:133" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0, "g": 0.20000000298023224, "b": 0.6274510025978088, "a": 1 },
+          "alias": "VariableID:332:133",
+          "aliasName": "color/role/bg/accent"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:109",
+      "name": "color/role/control/bg/disabled",
+      "description": "비활성화된 Toggle 스위치 트랙 채운 체크박스·라디오 배경",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:332:3" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.8078431487083435, "g": 0.8313725590705872, "b": 0.8549019694328308, "a": 1 },
+          "alias": "VariableID:332:3",
+          "aliasName": "color/role/bg/disabled-on-filled"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:110",
+      "name": "color/role/control/icon/on",
+      "description": "배경이 없는 활성 아이콘. 배경 채움 없이 아이콘 색상만으로 상태를 표현할 때 사용합니다.(선택된 체크박스의 체크 표시)",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:126" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 1, "g": 1, "b": 1, "a": 1 },
+          "alias": "VariableID:4:126",
+          "aliasName": "color/role/icon/interactive/inverse"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:111",
+      "name": "color/role/control/icon/disabled",
+      "description": "비활성화된 컨트롤(라디오, 체크박스)의 아이콘.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:124" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.615686297416687, "g": 0.6431372761726379, "b": 0.6705882549285889, "a": 1 },
+          "alias": "VariableID:4:124",
+          "aliasName": "color/role/icon/interactive/disabled"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:112",
+      "name": "color/role/control/icon/selected",
+      "description": "'전체 선택' 활성 아이콘\n필터 툴바, 즐겨찾기 아이콘('전체 선택' 활성 아이콘\n필터 툴바, 즐겨찾기 아이콘)",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:320:10858" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0, "g": 0.20000000298023224, "b": 0.6274510025978088, "a": 1 },
+          "alias": "VariableID:320:10858",
+          "aliasName": "color/role/icon/decorative/accent"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:113",
+      "name": "color/role/control/bg/off",
+      "description": "'꺼짐' 상태 토글 스위치의 트랙 배경. \n체크박스나 라디오에는 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:332:3" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.8078431487083435, "g": 0.8313725590705872, "b": 0.8549019694328308, "a": 1 },
+          "alias": "VariableID:332:3",
+          "aliasName": "color/role/bg/disabled-on-filled"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:114",
+      "name": "color/role/control/knob/off",
+      "description": "'꺼짐' 상태 토글 스위치의 손잡이(knob).",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:89" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 1, "g": 1, "b": 1, "a": 1 },
+          "alias": "VariableID:4:89",
+          "aliasName": "color/role/bg/surface"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:115",
+      "name": "color/role/control/knob/on",
+      "description": "'켜짐' 상태 토글 스위치의 손잡이(knob).",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:89" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 1, "g": 1, "b": 1, "a": 1 },
+          "alias": "VariableID:4:89",
+          "aliasName": "color/role/bg/surface"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:116",
+      "name": "color/role/control/knob/disabled",
+      "description": "비활성화된 토글 스위치의 손잡이(knob).",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:332:2" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9254902005195618, "g": 0.9372549057006836, "b": 0.9529411792755127, "a": 1 },
+          "alias": "VariableID:332:2",
+          "aliasName": "color/role/bg/disabled-on-light"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:117",
+      "name": "color/role/icon/interactive/default",
+      "description": "클릭 가능한 아이콘의 기본 색상. 장식용 아이콘에는 사용하지 않습니다. 기본 상태 — 툴바, 버튼, 테이블 액션",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:86" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.2862745225429535, "g": 0.3137255012989044, "b": 0.34117648005485535, "a": 1 },
+          "alias": "VariableID:4:86",
+          "aliasName": "color/role/text/secondary"
+        }
+      },
+      "scopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:119",
+      "name": "color/role/icon/interactive/on-selection",
+      "description": "클릭되었거나 활성화된 아이콘의 색상.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:320:10856" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0, "g": 0.20000000298023224, "b": 0.6274510025978088, "a": 1 },
+          "alias": "VariableID:320:10856",
+          "aliasName": "color/role/text/on-selection"
+        }
+      },
+      "scopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:120",
+      "name": "color/role/icon/decorative/default",
+      "description": "장식용 아이콘의 기본 색상.  클릭 등 인터랙션이 없는 경우에만 사용합니다. 텍스트 앞 불릿, 카드 썸네일 등 비클릭",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:86" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.2862745225429535, "g": 0.3137255012989044, "b": 0.34117648005485535, "a": 1 },
+          "alias": "VariableID:4:86",
+          "aliasName": "color/role/text/secondary"
+        }
+      },
+      "scopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:121",
+      "name": "color/role/icon/decorative/tertiary",
+      "description": "은은한 장식용 아이콘 색상. Empty-State 등 \n덜 중요한 장식에 사용합니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:176" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.42352941632270813, "g": 0.4588235318660736, "b": 0.4901960790157318, "a": 1 },
+          "alias": "VariableID:4:176",
+          "aliasName": "color/role/text/tertiary"
+        }
+      },
+      "scopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:122",
+      "name": "color/role/icon/semantic/success",
+      "description": "'성공' 상태를 나타내는 아이콘 색상.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:93" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.18039216101169586, "g": 0.4901960790157318, "b": 0.19607843458652496, "a": 1 },
+          "alias": "VariableID:4:93",
+          "aliasName": "color/role/semantic/success"
+        }
+      },
+      "scopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:123",
+      "name": "color/role/icon/semantic/error",
+      "description": "'오류' 상태를 나타내는 아이콘 색상.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:95" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.8274509906768799, "g": 0.18431372940540314, "b": 0.18431372940540314, "a": 1 },
+          "alias": "VariableID:4:95",
+          "aliasName": "color/role/semantic/error"
+        }
+      },
+      "scopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:124",
+      "name": "color/role/icon/interactive/disabled",
+      "description": "비활성화",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:87" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.615686297416687, "g": 0.6431372761726379, "b": 0.6705882549285889, "a": 1 },
+          "alias": "VariableID:4:87",
+          "aliasName": "color/role/text/disabled"
+        }
+      },
+      "scopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:125",
+      "name": "color/role/icon/semantic/info",
+      "description": "'정보' 상태를 나타내는 아이콘 색상.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:96" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.007843137718737125, "g": 0.5333333611488342, "b": 0.8196078538894653, "a": 1 },
+          "alias": "VariableID:4:96",
+          "aliasName": "color/role/semantic/info"
+        }
+      },
+      "scopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:126",
+      "name": "color/role/icon/interactive/inverse",
+      "description": "- 블루 500 Filled 버튼 안 아이콘\n- 칩·배지 내부 White 아이콘",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:129" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 1, "g": 1, "b": 1, "a": 1 },
+          "alias": "VariableID:4:129",
+          "aliasName": "color/role/text/inverse"
+        }
+      },
+      "scopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:127",
+      "name": "color/palette/neutral/gray/150",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.9254902005195618, "g": 0.9372549057006836, "b": 0.9529411792755127, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9254902005195618, "g": 0.9372549057006836, "b": 0.9529411792755127, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:128",
+      "name": "color/role/focus",
+      "description": "웹 접근성을 위해 키보드로 포커스된 요소를 보여주는 색상.  피그마 내에서는 effect style로 적용하여 표현됩니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:82" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0, "g": 0.20000000298023224, "b": 0.6274510025978088, "a": 1 },
+          "alias": "VariableID:4:82",
+          "aliasName": "color/role/brand/primary"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:129",
+      "name": "color/role/text/inverse",
+      "description": "어두운 배경 위 텍스트 - 어두운 색상 배경 위의 텍스트. 높은 대비가 필요할 때 사용하며, 밝은 배경 위에서는 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:66" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 1, "g": 1, "b": 1, "a": 1 },
+          "alias": "VariableID:4:66",
+          "aliasName": "color/palette/neutral/gray/0"
+        }
+      },
+      "scopes": ["TEXT_FILL"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:130",
+      "name": "color/role/chip/bg/off",
+      "description": "선택되지 않은 기본 칩의 배경. 선택되었거나 비활성 상태에는 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:90" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9254902005195618, "g": 0.9372549057006836, "b": 0.9529411792755127, "a": 1 },
+          "alias": "VariableID:4:90",
+          "aliasName": "color/role/bg/subtle"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:131",
+      "name": "color/role/chip/bg/disabled",
+      "description": "비활성화된 칩의 배경.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:332:2" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9254902005195618, "g": 0.9372549057006836, "b": 0.9529411792755127, "a": 1 },
+          "alias": "VariableID:332:2",
+          "aliasName": "color/role/bg/disabled-on-light"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:132",
+      "name": "color/role/chip/bg/selected/hover",
+      "description": "이미 선택된 칩에 마우스를 올렸을 때의 배경.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:322:59" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.886274516582489, "g": 0.9137254953384399, "b": 0.9686274528503418, "a": 1 },
+          "alias": "VariableID:322:59",
+          "aliasName": "color/role/brand/selection/hover"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:133",
+      "name": "color/role/chip/bg/selected/pressed",
+      "description": "이미 선택된 칩을 다시 클릭하는 순간의 배경.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:322:60" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.8509804010391235, "g": 0.886274516582489, "b": 0.9607843160629272, "a": 1 },
+          "alias": "VariableID:322:60",
+          "aliasName": "color/role/brand/selection/pressed"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:134",
+      "name": "color/role/border/accent",
+      "description": "구조적 강조선 / 인디케이터.( 탭 선택 언더라인, 현재 내비, 섹션 헤더 하단 라인, 배지 외곽선 등) 포커스의 역할로 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:82" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0, "g": 0.20000000298023224, "b": 0.6274510025978088, "a": 1 },
+          "alias": "VariableID:4:82",
+          "aliasName": "color/role/brand/primary"
+        }
+      },
+      "scopes": ["STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:135",
+      "name": "color/role/text/accent",
+      "description": "'더보기' 링크, \n선택된 탭 메뉴 - 인터랙션이 가능한 강조 텍스트. 링크, 탭 메뉴 등 클릭 가능한 요소에 사용하며, 일반 본문에는 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:82" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0, "g": 0.20000000298023224, "b": 0.6274510025978088, "a": 1 },
+          "alias": "VariableID:4:82",
+          "aliasName": "color/role/brand/primary"
+        }
+      },
+      "scopes": ["TEXT_FILL"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:136",
+      "name": "color/palette/tint/success/500-08",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.9333333373069763, "g": 0.9607843160629272, "b": 0.9372549057006836, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9333333373069763, "g": 0.9607843160629272, "b": 0.9372549057006836, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:137",
+      "name": "color/palette/tint/success/500-12",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.9019607901573181, "g": 0.9372549057006836, "b": 0.9019607901573181, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9019607901573181, "g": 0.9372549057006836, "b": 0.9019607901573181, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:138",
+      "name": "color/palette/tint/success/500-16",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.8705882430076599, "g": 0.9176470637321472, "b": 0.8705882430076599, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.8705882430076599, "g": 0.9176470637321472, "b": 0.8705882430076599, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:139",
+      "name": "color/palette/tint/info/500-08",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.9215686321258545, "g": 0.9607843160629272, "b": 0.9843137264251709, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9215686321258545, "g": 0.9607843160629272, "b": 0.9843137264251709, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:140",
+      "name": "color/palette/tint/warning/500-08",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.9960784316062927, "g": 0.9529411792755127, "b": 0.9215686321258545, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9960784316062927, "g": 0.9529411792755127, "b": 0.9215686321258545, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:141",
+      "name": "color/palette/tint/error/500-08",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.9843137264251709, "g": 0.9333333373069763, "b": 0.9333333373069763, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9843137264251709, "g": 0.9333333373069763, "b": 0.9333333373069763, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:142",
+      "name": "color/palette/tint/info/500-12",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.8823529481887817, "g": 0.9450980424880981, "b": 0.9764705896377563, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.8823529481887817, "g": 0.9450980424880981, "b": 0.9764705896377563, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:143",
+      "name": "color/palette/tint/info/500-16",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.843137264251709, "g": 0.9254902005195618, "b": 0.9725490212440491, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.843137264251709, "g": 0.9254902005195618, "b": 0.9725490212440491, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:144",
+      "name": "color/palette/tint/warning/500-12",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.9921568632125854, "g": 0.929411768913269, "b": 0.8823529481887817, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9921568632125854, "g": 0.929411768913269, "b": 0.8823529481887817, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:145",
+      "name": "color/palette/tint/warning/500-16",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.9882352948188782, "g": 0.9058823585510254, "b": 0.843137264251709, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9882352948188782, "g": 0.9058823585510254, "b": 0.843137264251709, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:146",
+      "name": "color/palette/tint/error/500-12",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.9803921580314636, "g": 0.9019607901573181, "b": 0.9019607901573181, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9803921580314636, "g": 0.9019607901573181, "b": 0.9019607901573181, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:147",
+      "name": "color/palette/tint/error/500-16",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.9725490212440491, "g": 0.8705882430076599, "b": 0.8705882430076599, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9725490212440491, "g": 0.8705882430076599, "b": 0.8705882430076599, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:148",
+      "name": "color/palette/semantic/success/700",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.11764705926179886, "g": 0.27450981736183167, "b": 0.125490203499794, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.11764705926179886, "g": 0.27450981736183167, "b": 0.125490203499794, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:149",
+      "name": "color/palette/semantic/info/700",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": {
+        "4:0": { "r": 0.003921568859368563, "g": 0.26274511218070984, "b": 0.3803921639919281, "a": 1 }
+      },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.003921568859368563, "g": 0.26274511218070984, "b": 0.3803921639919281, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:150",
+      "name": "color/palette/semantic/warning/700",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.4000000059604645, "g": 0.23529411852359772, "b": 0, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": { "resolvedValue": { "r": 0.4000000059604645, "g": 0.23529411852359772, "b": 0, "a": 1 }, "alias": null }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:151",
+      "name": "color/palette/semantic/error/700",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.37254902720451355, "g": 0.12941177189350128, "b": 0.125490203499794, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.37254902720451355, "g": 0.12941177189350128, "b": 0.125490203499794, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:152",
+      "name": "color/role/text/semantic/on-success",
+      "description": "긍정적인 상태를 나타내는 텍스트. 작업 완료, 성공 메시지 외의 일반적인 용도로는 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:148" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.11764705926179886, "g": 0.27450981736183167, "b": 0.125490203499794, "a": 1 },
+          "alias": "VariableID:4:148",
+          "aliasName": "color/palette/semantic/success/700"
+        }
+      },
+      "scopes": ["TEXT_FILL"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:153",
+      "name": "color/role/text/semantic/on-info",
+      "description": "정보성 상태를 나타내는 텍스트. 단순 안내 메시지 외의 오류나 경고를 표현하는 데 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:149" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.003921568859368563, "g": 0.26274511218070984, "b": 0.3803921639919281, "a": 1 },
+          "alias": "VariableID:4:149",
+          "aliasName": "color/palette/semantic/info/700"
+        }
+      },
+      "scopes": ["TEXT_FILL"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:154",
+      "name": "color/role/text/semantic/on-warning",
+      "description": "주의가 필요한 상태를 나타내는 텍스트. 단순 강조가 아닌, 잠재적 위험을 경고하는 상황에만 사용합니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:150" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.4000000059604645, "g": 0.23529411852359772, "b": 0, "a": 1 },
+          "alias": "VariableID:4:150",
+          "aliasName": "color/palette/semantic/warning/700"
+        }
+      },
+      "scopes": ["TEXT_FILL"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:155",
+      "name": "color/role/text/semantic/on-error",
+      "description": "오류 상태를 나타내는 텍스트. 단순 부정적 의미(예: 삭제)가 아닌, 시스템 오류/실패 상태에만 사용합니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:151" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.37254902720451355, "g": 0.12941177189350128, "b": 0.125490203499794, "a": 1 },
+          "alias": "VariableID:4:151",
+          "aliasName": "color/palette/semantic/error/700"
+        }
+      },
+      "scopes": ["TEXT_FILL"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:156",
+      "name": "color/role/alert/success/bg",
+      "description": "'성공' Alert의 배경. 다른 상태의 Alert에는 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:334:15618" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9019607901573181, "g": 0.9372549057006836, "b": 0.9019607901573181, "a": 1 },
+          "alias": "VariableID:334:15618",
+          "aliasName": "color/role/bg/semantic-success-subtle"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:157",
+      "name": "color/role/alert/success/text",
+      "description": "'성공' Alert의 텍스트. 배경과 충분한 대비를 이룹니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:152" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.11764705926179886, "g": 0.27450981736183167, "b": 0.125490203499794, "a": 1 },
+          "alias": "VariableID:4:152",
+          "aliasName": "color/role/text/semantic/on-success"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:158",
+      "name": "color/role/alert/info/bg",
+      "description": "'정보' Alert의 배경. 다른 상태의 Alert에는 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:334:15615" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.8823529481887817, "g": 0.9450980424880981, "b": 0.9764705896377563, "a": 1 },
+          "alias": "VariableID:334:15615",
+          "aliasName": "color/role/bg/semantic-info-subtle"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:159",
+      "name": "color/role/alert/info/text",
+      "description": "'정보' Alert의 텍스트. 배경과 충분한 대비를 이룹니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:153" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.003921568859368563, "g": 0.26274511218070984, "b": 0.3803921639919281, "a": 1 },
+          "alias": "VariableID:4:153",
+          "aliasName": "color/role/text/semantic/on-info"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:160",
+      "name": "color/role/alert/warning/bg",
+      "description": "'경고' Alert의 배경. 다른 상태의 Alert에는 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:334:15619" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9921568632125854, "g": 0.929411768913269, "b": 0.8823529481887817, "a": 1 },
+          "alias": "VariableID:334:15619",
+          "aliasName": "color/role/bg/semantic-warning-subtle"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:161",
+      "name": "color/role/alert/warning/text",
+      "description": "'경고' Alert의 텍스트. 배경과 충분한 대비를 이룹니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:154" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.4000000059604645, "g": 0.23529411852359772, "b": 0, "a": 1 },
+          "alias": "VariableID:4:154",
+          "aliasName": "color/role/text/semantic/on-warning"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:162",
+      "name": "color/role/alert/error/bg",
+      "description": "'오류' Alert의 배경. 다른 상태의 Alert에는 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:334:15620" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9803921580314636, "g": 0.9019607901573181, "b": 0.9019607901573181, "a": 1 },
+          "alias": "VariableID:334:15620",
+          "aliasName": "color/role/bg/semantic-error-subtle"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:163",
+      "name": "color/role/alert/error/text",
+      "description": "'오류' Alert의 텍스트. 배경과 충분한 대비를 이룹니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:155" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.37254902720451355, "g": 0.12941177189350128, "b": 0.125490203499794, "a": 1 },
+          "alias": "VariableID:4:155",
+          "aliasName": "color/role/text/semantic/on-error"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:164",
+      "name": "color/role/field/bg/surface",
+      "description": "기본 Outline 스타일 입력 필드의 배경. Filled 스타일 등 다른 변형에는 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:89" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 1, "g": 1, "b": 1, "a": 1 },
+          "alias": "VariableID:4:89",
+          "aliasName": "color/role/bg/surface"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:165",
+      "name": "color/role/field/bg/disabled",
+      "description": "비활성화된 필드의 배경. 수정 불가 상태의 입력 필드",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:332:2" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9254902005195618, "g": 0.9372549057006836, "b": 0.9529411792755127, "a": 1 },
+          "alias": "VariableID:332:2",
+          "aliasName": "color/role/bg/disabled-on-light"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:166",
+      "name": "color/role/field/bg/readonly",
+      "description": "읽기 전용 필드의 배경. 수정 가능한 필드에는 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:90" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9254902005195618, "g": 0.9372549057006836, "b": 0.9529411792755127, "a": 1 },
+          "alias": "VariableID:4:90",
+          "aliasName": "color/role/bg/subtle"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:167",
+      "name": "color/role/field/border/default",
+      "description": "기본 Outline 스타일 입력 필드의 테두리. 포커스나 오류 등 특정 상태에는 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:91" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.8705882430076599, "g": 0.886274516582489, "b": 0.9019607901573181, "a": 1 },
+          "alias": "VariableID:4:91",
+          "aliasName": "color/role/border/default"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:169",
+      "name": "color/role/field/border/focus",
+      "description": "포커스(아웃라인 색)포커스 링은 색만 위 토큰을 쓰고, 실제 효과는effect/ focus/ primary(2px 링) 를 적용.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:128" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0, "g": 0.20000000298023224, "b": 0.6274510025978088, "a": 1 },
+          "alias": "VariableID:4:128",
+          "aliasName": "color/role/focus"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:170",
+      "name": "color/role/field/border/disabled",
+      "description": "비활성화된 필드의 테두리.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:323:26737" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.8705882430076599, "g": 0.886274516582489, "b": 0.9019607901573181, "a": 1 },
+          "alias": "VariableID:323:26737",
+          "aliasName": "color/role/border/disabled"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:171",
+      "name": "color/role/field/border/error",
+      "description": "유효성 검사 실패 시의 테두리. 오류가 아닌 상황에 주의를 끄는 용도로 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:494:9453" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.8274509906768799, "g": 0.18431372940540314, "b": 0.18431372940540314, "a": 1 },
+          "alias": "VariableID:494:9453",
+          "aliasName": "color/role/border/semantic-error"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:172",
+      "name": "color/role/field/border/warning",
+      "description": "주의가 필요한 필드의 테두리. 선택적으로 사용합니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:494:9452" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.929411768913269, "g": 0.42352941632270813, "b": 0.007843137718737125, "a": 1 },
+          "alias": "VariableID:494:9452",
+          "aliasName": "color/role/border/semantic-warning"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:173",
+      "name": "color/role/field/border/success",
+      "description": "유효성 검사를 통과한 필드의 테두리. 선택적으로 사용합니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:494:9449" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.18039216101169586, "g": 0.4901960790157318, "b": 0.19607843458652496, "a": 1 },
+          "alias": "VariableID:494:9449",
+          "aliasName": "color/role/border/semantic-success"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:174",
+      "name": "color/role/field/text/placeholder",
+      "description": "입력 필드 내부의 플레이스홀더 텍스트. \n실제 입력된 값에 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:176" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.42352941632270813, "g": 0.4588235318660736, "b": 0.4901960790157318, "a": 1 },
+          "alias": "VariableID:4:176",
+          "aliasName": "color/role/text/tertiary"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:175",
+      "name": "color/role/field/text/help",
+      "description": "입력 필드 하단의 도움말 텍스트.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:86" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.2862745225429535, "g": 0.3137255012989044, "b": 0.34117648005485535, "a": 1 },
+          "alias": "VariableID:4:86",
+          "aliasName": "color/role/text/secondary"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:176",
+      "name": "color/role/text/tertiary",
+      "description": "흐리게 표시되는 보조 텍스트. 입력 필드의 플레이스홀더(Placeholder) 혹은 선택되지 않은 버튼, 캡션의 용도로 사용합니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:73" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.42352941632270813, "g": 0.4588235318660736, "b": 0.4901960790157318, "a": 1 },
+          "alias": "VariableID:4:73",
+          "aliasName": "color/palette/neutral/gray/600"
+        }
+      },
+      "scopes": ["TEXT_FILL"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:177",
+      "name": "color/role/field/caret",
+      "description": "입력 필드 내부 텍스트 커서(Caret)의 색상.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:135" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0, "g": 0.20000000298023224, "b": 0.6274510025978088, "a": 1 },
+          "alias": "VariableID:4:135",
+          "aliasName": "color/role/text/accent"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:180",
+      "name": "color/role/field/bg/filled",
+      "description": "검색/필터바 같은 영역에서 변형으로 사용(기본은 Outline 권장) - Filled 스타일 입력 필드의 배경. 기본 Outline 스타일에는 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:206:4532" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0, "g": 0, "b": 0, "a": 0.03999999910593033 },
+          "alias": "VariableID:206:4532",
+          "aliasName": "color/role/bg/container/low"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:181",
+      "name": "color/role/chart/series/1",
+      "description": "차트의 첫 번째 데이터 계열에 사용하는 대표 색상.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:60" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0, "g": 0.20000000298023224, "b": 0.6274510025978088, "a": 1 },
+          "alias": "VariableID:4:60",
+          "aliasName": "color/palette/brand/blue/600"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:182",
+      "name": "color/role/chart/series/2",
+      "description": "차트의 두 번째 데이터 계열에 사용하는 색상.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:62" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.24313725531101227, "g": 0.42352941632270813, "b": 0.8117647171020508, "a": 1 },
+          "alias": "VariableID:4:62",
+          "aliasName": "color/palette/brand/blue/400"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:183",
+      "name": "color/role/chart/series/3",
+      "description": "차트의 세 번째 데이터 계열에 사용하는 색상.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:58" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.5960784554481506, "g": 0.7019608020782471, "b": 0.9333333373069763, "a": 1 },
+          "alias": "VariableID:4:58",
+          "aliasName": "color/palette/brand/blue/200"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:184",
+      "name": "color/role/chart/series/5",
+      "description": "차트의 다섯 번째 데이터 계열에 사용하는 색상.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:72" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.615686297416687, "g": 0.6431372761726379, "b": 0.6705882549285889, "a": 1 },
+          "alias": "VariableID:4:72",
+          "aliasName": "color/palette/neutral/gray/500"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:185",
+      "name": "color/role/chart/series/6",
+      "description": "차트의 여섯 번째 데이터 계열에 사용하는 색상.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:73" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.42352941632270813, "g": 0.4588235318660736, "b": 0.4901960790157318, "a": 1 },
+          "alias": "VariableID:4:73",
+          "aliasName": "color/palette/neutral/gray/600"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:186",
+      "name": "color/role/chart/label",
+      "description": "차트 내의기본 라벨(축, 데이터, 범례 라벨) 텍스트 색상.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:75" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.20392157137393951, "g": 0.22745098173618317, "b": 0.250980406999588, "a": 1 },
+          "alias": "VariableID:4:75",
+          "aliasName": "color/palette/neutral/gray/800"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:187",
+      "name": "color/role/chart/label/inverse",
+      "description": "어두운 강조 선 위의 라벨 텍스트 색상.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:66" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 1, "g": 1, "b": 1, "a": 1 },
+          "alias": "VariableID:4:66",
+          "aliasName": "color/palette/neutral/gray/0"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:188",
+      "name": "color/role/chart/axis/line",
+      "description": "차트의 X, Y축 등 축 선과 기본 그리드에 사용하는 색상.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:70" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.8705882430076599, "g": 0.886274516582489, "b": 0.9019607901573181, "a": 1 },
+          "alias": "VariableID:4:70",
+          "aliasName": "color/palette/neutral/gray/300"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:189",
+      "name": "color/role/chart/series/4",
+      "description": "차트의 네 번째 데이터 계열에 사용하는 색상.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:59" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.4117647111415863, "g": 0.5607843399047852, "b": 0.8784313797950745, "a": 1 },
+          "alias": "VariableID:4:59",
+          "aliasName": "color/palette/brand/blue/300"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:190",
+      "name": "color/role/chart/series/line",
+      "description": "차트의 X, Y축 등 축 선과 기본 그리드에 사용하는 색상.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:65" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0, "g": 0.08235294371843338, "b": 0.29019609093666077, "a": 1 },
+          "alias": "VariableID:4:65",
+          "aliasName": "color/palette/brand/blue/900"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:191",
+      "name": "color/role/icon/semantic/warning",
+      "description": "'경고' 상태를 나타내는 아이콘 색상.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:94" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.929411768913269, "g": 0.42352941632270813, "b": 0.007843137718737125, "a": 1 },
+          "alias": "VariableID:4:94",
+          "aliasName": "color/role/semantic/warning"
+        }
+      },
+      "scopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:192",
+      "name": "color/role/badge/primary/solid/bg",
+      "description": "'공지' 등 중요도가 높은 항목을 부드럽게 강조하기 위한 칩의 배경.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:332:133" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0, "g": 0.20000000298023224, "b": 0.6274510025978088, "a": 1 },
+          "alias": "VariableID:332:133",
+          "aliasName": "color/role/bg/accent"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:194",
+      "name": "color/role/badge/status/info/subtle/text",
+      "description": "'정보' 상태 칩의 텍스트.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:153" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.003921568859368563, "g": 0.26274511218070984, "b": 0.3803921639919281, "a": 1 },
+          "alias": "VariableID:4:153",
+          "aliasName": "color/role/text/semantic/on-info"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:195",
+      "name": "color/role/badge/status/info/subtle/bg",
+      "description": "'정보' 상태 칩의 배경.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:334:15615" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.8823529481887817, "g": 0.9450980424880981, "b": 0.9764705896377563, "a": 1 },
+          "alias": "VariableID:334:15615",
+          "aliasName": "color/role/bg/semantic-info-subtle"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:196",
+      "name": "color/role/badge/status/success/subtle/bg",
+      "description": "'성공' 상태 칩의 배경.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:334:15618" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9019607901573181, "g": 0.9372549057006836, "b": 0.9019607901573181, "a": 1 },
+          "alias": "VariableID:334:15618",
+          "aliasName": "color/role/bg/semantic-success-subtle"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:197",
+      "name": "color/role/badge/status/success/subtle/text",
+      "description": "'성공' 상태 칩의 텍스트.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:152" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.11764705926179886, "g": 0.27450981736183167, "b": 0.125490203499794, "a": 1 },
+          "alias": "VariableID:4:152",
+          "aliasName": "color/role/text/semantic/on-success"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:198",
+      "name": "color/role/badge/status/warning/subtle/bg",
+      "description": "'경고' 상태 칩의 배경.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:334:15619" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9921568632125854, "g": 0.929411768913269, "b": 0.8823529481887817, "a": 1 },
+          "alias": "VariableID:334:15619",
+          "aliasName": "color/role/bg/semantic-warning-subtle"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:199",
+      "name": "color/role/badge/status/warning/subtle/text",
+      "description": "'경고' 상태 칩의 텍스트.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:154" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.4000000059604645, "g": 0.23529411852359772, "b": 0, "a": 1 },
+          "alias": "VariableID:4:154",
+          "aliasName": "color/role/text/semantic/on-warning"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:200",
+      "name": "color/role/badge/status/error/subtle/bg",
+      "description": "'오류' 상태 칩의 배경.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:334:15620" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9803921580314636, "g": 0.9019607901573181, "b": 0.9019607901573181, "a": 1 },
+          "alias": "VariableID:334:15620",
+          "aliasName": "color/role/bg/semantic-error-subtle"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:201",
+      "name": "color/role/badge/status/error/subtle/text",
+      "description": "'오류' 상태 칩의 텍스트.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:155" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.37254902720451355, "g": 0.12941177189350128, "b": 0.125490203499794, "a": 1 },
+          "alias": "VariableID:4:155",
+          "aliasName": "color/role/text/semantic/on-error"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:202",
+      "name": "color/role/brand/secondary",
+      "description": "서비스의 보조 브랜드 색상. Primary 다음으로 중요한 긍정적 액션을 유도하며, Primary 버튼과 함께 사용될 경우 보조적인 역할을 합니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:58" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.5960784554481506, "g": 0.7019608020782471, "b": 0.9333333373069763, "a": 1 },
+          "alias": "VariableID:4:58",
+          "aliasName": "color/palette/brand/blue/200"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:203",
+      "name": "color/role/brand/secondary/hover",
+      "description": "보조 브랜드 색상의 호버 상태. 마우스 오버 외의 다른 인터랙션 상태에는 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:59" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.4117647111415863, "g": 0.5607843399047852, "b": 0.8784313797950745, "a": 1 },
+          "alias": "VariableID:4:59",
+          "aliasName": "color/palette/brand/blue/300"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:204",
+      "name": "color/role/brand/secondary/pressed",
+      "description": "보조 브랜드 색상의 클릭/활성 상태. 단순 호버나 비활성 상태에는 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:62" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.24313725531101227, "g": 0.42352941632270813, "b": 0.8117647171020508, "a": 1 },
+          "alias": "VariableID:4:62",
+          "aliasName": "color/palette/brand/blue/400"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:205",
+      "name": "color/palette/neutral/gray/1000",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0, "g": 0, "b": 0, "a": 1 } },
+      "resolvedValuesByMode": { "4:0": { "resolvedValue": { "r": 0, "g": 0, "b": 0, "a": 1 }, "alias": null } },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:206",
+      "name": "color/role/bg/selection",
+      "description": "테이블 행, 리스트 아이템 등 선택된 항목의 배경색으로 사용하는 범용적인 틴트 컬러.-테이블 행, 리스트 아이템 선택했을 때",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:98" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9254902005195618, "g": 0.9411764740943909, "b": 0.9803921580314636, "a": 1 },
+          "alias": "VariableID:4:98",
+          "aliasName": "color/palette/tint/brand-primary/500-08"
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:207",
+      "name": "color/palette/neutral/gray/450",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.7490196228027344, "g": 0.772549033164978, "b": 0.800000011920929, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.7490196228027344, "g": 0.772549033164978, "b": 0.800000011920929, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:208",
+      "name": "color/role/border/strong",
+      "description": "모달 창의 외곽선 - 명확한 구분이 필요한 강한 테두리. 일반적인 카드 등 미묘한 구분이 필요할 때는 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:71" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.8078431487083435, "g": 0.8313725590705872, "b": 0.8549019694328308, "a": 1 },
+          "alias": "VariableID:4:71",
+          "aliasName": "color/palette/neutral/gray/400"
+        }
+      },
+      "scopes": ["STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:209",
+      "name": "color/role/state/overlay/on-neutral/pressed",
+      "description": "무채색 계열의 컴포넌트를 클릭한 경우 오버레이하여 사용합니다.\n브랜드, 시멘틱컬러에는 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:206:4167" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0, "g": 0, "b": 0, "a": 0.10000000149011612 },
+          "alias": "VariableID:206:4167",
+          "aliasName": "color/palette/overlay/gray/1000-10"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:210",
+      "name": "color/role/state/overlay/on-neutral/hover",
+      "description": "무채색 계열의 컴포넌트를 호버한 경우 오버레이하여 사용합니다.\n브랜드, 시멘틱컬러에는 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:206:4165" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0, "g": 0, "b": 0, "a": 0.05999999865889549 },
+          "alias": "VariableID:206:4165",
+          "aliasName": "color/palette/overlay/gray/1000-06"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:211",
+      "name": "color/role/state/overlay/on-colored/hover",
+      "description": "컬러 계열의 컴포넌트를 호버한 경우 오버레이하여 사용합니다.\n브랜드 컬러에는 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:206:4166" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0, "g": 0, "b": 0, "a": 0.07999999821186066 },
+          "alias": "VariableID:206:4166",
+          "aliasName": "color/palette/overlay/gray/1000-08"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:212",
+      "name": "color/role/state/overlay/on-colored/pressed",
+      "description": "컬러 계열의 컴포넌트를 클릭한 경우 오버레이하여 사용합니다.\n브랜드 컬러에는 사용하지 않습니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:206:4168" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0, "g": 0, "b": 0, "a": 0.11999999731779099 },
+          "alias": "VariableID:206:4168",
+          "aliasName": "color/palette/overlay/gray/1000-12"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:206:4152",
+      "name": "color/palette/overlay/gray/1000-04",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0, "g": 0, "b": 0, "a": 0.03999999910593033 } },
+      "resolvedValuesByMode": {
+        "4:0": { "resolvedValue": { "r": 0, "g": 0, "b": 0, "a": 0.03999999910593033 }, "alias": null }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:206:4165",
+      "name": "color/palette/overlay/gray/1000-06",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0, "g": 0, "b": 0, "a": 0.05999999865889549 } },
+      "resolvedValuesByMode": {
+        "4:0": { "resolvedValue": { "r": 0, "g": 0, "b": 0, "a": 0.05999999865889549 }, "alias": null }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:206:4166",
+      "name": "color/palette/overlay/gray/1000-08",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0, "g": 0, "b": 0, "a": 0.07999999821186066 } },
+      "resolvedValuesByMode": {
+        "4:0": { "resolvedValue": { "r": 0, "g": 0, "b": 0, "a": 0.07999999821186066 }, "alias": null }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:206:4167",
+      "name": "color/palette/overlay/gray/1000-10",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0, "g": 0, "b": 0, "a": 0.10000000149011612 } },
+      "resolvedValuesByMode": {
+        "4:0": { "resolvedValue": { "r": 0, "g": 0, "b": 0, "a": 0.10000000149011612 }, "alias": null }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:206:4168",
+      "name": "color/palette/overlay/gray/1000-12",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0, "g": 0, "b": 0, "a": 0.11999999731779099 } },
+      "resolvedValuesByMode": {
+        "4:0": { "resolvedValue": { "r": 0, "g": 0, "b": 0, "a": 0.11999999731779099 }, "alias": null }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:206:4169",
+      "name": "color/palette/overlay/gray/1000-56",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0, "g": 0, "b": 0, "a": 0.5600000023841858 } },
+      "resolvedValuesByMode": {
+        "4:0": { "resolvedValue": { "r": 0, "g": 0, "b": 0, "a": 0.5600000023841858 }, "alias": null }
+      },
+      "scopes": [],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:206:4532",
+      "name": "color/role/bg/container/low",
+      "description": "canvas와 surface 등 어떤 배경 위에서든 항상 일관된 수준의 미세한 깊이감을 표현하는 컨테이너 배경색입니다. 주요 콘텐츠 영역을 구분하거나 보조적인 정보를 담는 박스에 사용합니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:206:4152" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0, "g": 0, "b": 0, "a": 0.03999999910593033 },
+          "alias": "VariableID:206:4152",
+          "aliasName": "color/palette/overlay/gray/1000-04"
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:206:4549",
+      "name": "color/role/bg/container/medium",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:206:4166" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0, "g": 0, "b": 0, "a": 0.07999999821186066 },
+          "alias": "VariableID:206:4166",
+          "aliasName": "color/palette/overlay/gray/1000-08"
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:206:4550",
+      "name": "color/role/bg/container/high",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:206:4168" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0, "g": 0, "b": 0, "a": 0.11999999731779099 },
+          "alias": "VariableID:206:4168",
+          "aliasName": "color/palette/overlay/gray/1000-12"
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:320:10856",
+      "name": "color/role/text/on-selection",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:135" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0, "g": 0.20000000298023224, "b": 0.6274510025978088, "a": 1 },
+          "alias": "VariableID:4:135",
+          "aliasName": "color/role/text/accent"
+        }
+      },
+      "scopes": ["TEXT_FILL"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:320:10858",
+      "name": "color/role/icon/decorative/accent",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:135" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0, "g": 0.20000000298023224, "b": 0.6274510025978088, "a": 1 },
+          "alias": "VariableID:4:135",
+          "aliasName": "color/role/text/accent"
+        }
+      },
+      "scopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:320:10859",
+      "name": "color/role/border/selection",
+      "description": "선택된 상태를 표현하는 테두리",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:134" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0, "g": 0.20000000298023224, "b": 0.6274510025978088, "a": 1 },
+          "alias": "VariableID:4:134",
+          "aliasName": "color/role/border/accent"
+        }
+      },
+      "scopes": ["STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:322:59",
+      "name": "color/role/brand/selection/hover",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:99" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.886274516582489, "g": 0.9137254953384399, "b": 0.9686274528503418, "a": 1 },
+          "alias": "VariableID:4:99",
+          "aliasName": "color/palette/tint/brand-primary/500-12"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:322:60",
+      "name": "color/role/brand/selection/pressed",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:100" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.8509804010391235, "g": 0.886274516582489, "b": 0.9607843160629272, "a": 1 },
+          "alias": "VariableID:4:100",
+          "aliasName": "color/palette/tint/brand-primary/500-16"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:323:26737",
+      "name": "color/role/border/disabled",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:70" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.8705882430076599, "g": 0.886274516582489, "b": 0.9019607901573181, "a": 1 },
+          "alias": "VariableID:4:70",
+          "aliasName": "color/palette/neutral/gray/300"
+        }
+      },
+      "scopes": ["STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:332:2",
+      "name": "color/role/bg/disabled-on-light",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:127" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9254902005195618, "g": 0.9372549057006836, "b": 0.9529411792755127, "a": 1 },
+          "alias": "VariableID:4:127",
+          "aliasName": "color/palette/neutral/gray/150"
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:332:3",
+      "name": "color/role/bg/disabled-on-filled",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:71" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.8078431487083435, "g": 0.8313725590705872, "b": 0.8549019694328308, "a": 1 },
+          "alias": "VariableID:4:71",
+          "aliasName": "color/palette/neutral/gray/400"
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:332:133",
+      "name": "color/role/bg/accent",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:82" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0, "g": 0.20000000298023224, "b": 0.6274510025978088, "a": 1 },
+          "alias": "VariableID:4:82",
+          "aliasName": "color/role/brand/primary"
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:333:1428",
+      "name": "color/role/bg/text-selection",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:101" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.8156862854957581, "g": 0.8588235378265381, "b": 0.9490196108818054, "a": 1 },
+          "alias": "VariableID:4:101",
+          "aliasName": "color/palette/tint/brand-primary/500-20"
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:334:15615",
+      "name": "color/role/bg/semantic-info-subtle",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:142" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.8823529481887817, "g": 0.9450980424880981, "b": 0.9764705896377563, "a": 1 },
+          "alias": "VariableID:4:142",
+          "aliasName": "color/palette/tint/info/500-12"
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:334:15618",
+      "name": "color/role/bg/semantic-success-subtle",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:137" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9019607901573181, "g": 0.9372549057006836, "b": 0.9019607901573181, "a": 1 },
+          "alias": "VariableID:4:137",
+          "aliasName": "color/palette/tint/success/500-12"
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:334:15619",
+      "name": "color/role/bg/semantic-warning-subtle",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:144" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9921568632125854, "g": 0.929411768913269, "b": 0.8823529481887817, "a": 1 },
+          "alias": "VariableID:4:144",
+          "aliasName": "color/palette/tint/warning/500-12"
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:334:15620",
+      "name": "color/role/bg/semantic-error-subtle",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:146" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9803921580314636, "g": 0.9019607901573181, "b": 0.9019607901573181, "a": 1 },
+          "alias": "VariableID:4:146",
+          "aliasName": "color/palette/tint/error/500-12"
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:334:20717",
+      "name": "color/role/bg/accent-subtle",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:100" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.8509804010391235, "g": 0.886274516582489, "b": 0.9607843160629272, "a": 1 },
+          "alias": "VariableID:4:100",
+          "aliasName": "color/palette/tint/brand-primary/500-16"
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:334:20906",
+      "name": "color/role/bg/semantic-info",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:96" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.007843137718737125, "g": 0.5333333611488342, "b": 0.8196078538894653, "a": 1 },
+          "alias": "VariableID:4:96",
+          "aliasName": "color/role/semantic/info"
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:334:20907",
+      "name": "color/role/bg/semantic-success",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:93" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.18039216101169586, "g": 0.4901960790157318, "b": 0.19607843458652496, "a": 1 },
+          "alias": "VariableID:4:93",
+          "aliasName": "color/role/semantic/success"
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:334:20908",
+      "name": "color/role/bg/semantic-warning",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:94" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.929411768913269, "g": 0.42352941632270813, "b": 0.007843137718737125, "a": 1 },
+          "alias": "VariableID:4:94",
+          "aliasName": "color/role/semantic/warning"
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:334:20909",
+      "name": "color/role/bg/semantic-error",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:95" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.8274509906768799, "g": 0.18431372940540314, "b": 0.18431372940540314, "a": 1 },
+          "alias": "VariableID:4:95",
+          "aliasName": "color/role/semantic/error"
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:334:21774",
+      "name": "color/role/badge/solid/text",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:129" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 1, "g": 1, "b": 1, "a": 1 },
+          "alias": "VariableID:4:129",
+          "aliasName": "color/role/text/inverse"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:334:22264",
+      "name": "color/role/badge/primary/subtle/bg",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:334:20717" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.8509804010391235, "g": 0.886274516582489, "b": 0.9607843160629272, "a": 1 },
+          "alias": "VariableID:334:20717",
+          "aliasName": "color/role/bg/accent-subtle"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:334:22281",
+      "name": "color/role/badge/primary/subtle/text",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:135" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0, "g": 0.20000000298023224, "b": 0.6274510025978088, "a": 1 },
+          "alias": "VariableID:4:135",
+          "aliasName": "color/role/text/accent"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:334:22480",
+      "name": "color/role/tag/default/bg",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:90" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9254902005195618, "g": 0.9372549057006836, "b": 0.9529411792755127, "a": 1 },
+          "alias": "VariableID:4:90",
+          "aliasName": "color/role/bg/subtle"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:334:22481",
+      "name": "color/role/tag/default/text",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:85" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.12941177189350128, "g": 0.14509804546833038, "b": 0.16078431904315948, "a": 1 },
+          "alias": "VariableID:4:85",
+          "aliasName": "color/role/text/primary"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:336:5696",
+      "name": "color/palette/hue/red/500",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.9372549057006836, "g": 0.2666666805744171, "b": 0.2666666805744171, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9372549057006836, "g": 0.2666666805744171, "b": 0.2666666805744171, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:336:5697",
+      "name": "color/palette/hue/red/800",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": {
+        "4:0": { "r": 0.6000000238418579, "g": 0.10588235408067703, "b": 0.10588235408067703, "a": 1 }
+      },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.6000000238418579, "g": 0.10588235408067703, "b": 0.10588235408067703, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:336:5705",
+      "name": "color/palette/hue/orange/500",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": {
+        "4:0": { "r": 0.9764705896377563, "g": 0.45098039507865906, "b": 0.08627451211214066, "a": 1 }
+      },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9764705896377563, "g": 0.45098039507865906, "b": 0.08627451211214066, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:336:5706",
+      "name": "color/palette/hue/orange/800",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": {
+        "4:0": { "r": 0.6039215922355652, "g": 0.20392157137393951, "b": 0.07058823853731155, "a": 1 }
+      },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.6039215922355652, "g": 0.20392157137393951, "b": 0.07058823853731155, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:336:5707",
+      "name": "color/palette/hue/yellow/500",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.9176470637321472, "g": 0.7019608020782471, "b": 0.0313725508749485, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9176470637321472, "g": 0.7019608020782471, "b": 0.0313725508749485, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:336:5708",
+      "name": "color/palette/hue/yellow/800",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": {
+        "4:0": { "r": 0.5215686559677124, "g": 0.3019607961177826, "b": 0.054901961237192154, "a": 1 }
+      },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.5215686559677124, "g": 0.3019607961177826, "b": 0.054901961237192154, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:336:5709",
+      "name": "color/palette/hue/lime/500",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.5176470875740051, "g": 0.800000011920929, "b": 0.08627451211214066, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.5176470875740051, "g": 0.800000011920929, "b": 0.08627451211214066, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:336:5710",
+      "name": "color/palette/hue/lime/800",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": {
+        "4:0": { "r": 0.24705882370471954, "g": 0.3843137323856354, "b": 0.07058823853731155, "a": 1 }
+      },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.24705882370471954, "g": 0.3843137323856354, "b": 0.07058823853731155, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:336:5712",
+      "name": "color/palette/hue/green/500",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.13333334028720856, "g": 0.772549033164978, "b": 0.3686274588108063, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.13333334028720856, "g": 0.772549033164978, "b": 0.3686274588108063, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:336:5713",
+      "name": "color/palette/hue/green/800",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": {
+        "4:0": { "r": 0.08627451211214066, "g": 0.3960784375667572, "b": 0.20392157137393951, "a": 1 }
+      },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.08627451211214066, "g": 0.3960784375667572, "b": 0.20392157137393951, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:336:5714",
+      "name": "color/palette/hue/cyan/500",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.0235294122248888, "g": 0.7137255072593689, "b": 0.8313725590705872, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.0235294122248888, "g": 0.7137255072593689, "b": 0.8313725590705872, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:336:5715",
+      "name": "color/palette/hue/cyan/800",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.08235294371843338, "g": 0.3686274588108063, "b": 0.4588235318660736, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.08235294371843338, "g": 0.3686274588108063, "b": 0.4588235318660736, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:336:5716",
+      "name": "color/palette/hue/violet/500",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.545098066329956, "g": 0.3607843220233917, "b": 0.9647058844566345, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.545098066329956, "g": 0.3607843220233917, "b": 0.9647058844566345, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:336:5717",
+      "name": "color/palette/hue/violet/800",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": {
+        "4:0": { "r": 0.35686275362968445, "g": 0.12941177189350128, "b": 0.7137255072593689, "a": 1 }
+      },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.35686275362968445, "g": 0.12941177189350128, "b": 0.7137255072593689, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:336:5718",
+      "name": "color/palette/hue/pink/500",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.9254902005195618, "g": 0.2823529541492462, "b": 0.6000000238418579, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9254902005195618, "g": 0.2823529541492462, "b": 0.6000000238418579, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:336:5719",
+      "name": "color/palette/hue/pink/800",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.615686297416687, "g": 0.09019608050584793, "b": 0.3019607961177826, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.615686297416687, "g": 0.09019608050584793, "b": 0.3019607961177826, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:336:5724",
+      "name": "color/palette/tint/red/500-12",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.9921568632125854, "g": 0.9137254953384399, "b": 0.9137254953384399, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9921568632125854, "g": 0.9137254953384399, "b": 0.9137254953384399, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:336:5727",
+      "name": "color/palette/tint/orange/500-12",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.9960784316062927, "g": 0.9333333373069763, "b": 0.8901960849761963, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9960784316062927, "g": 0.9333333373069763, "b": 0.8901960849761963, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:336:5728",
+      "name": "color/palette/tint/yellow/500-12",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.9882352948188782, "g": 0.9647058844566345, "b": 0.8823529481887817, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9882352948188782, "g": 0.9647058844566345, "b": 0.8823529481887817, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:336:5729",
+      "name": "color/palette/tint/lime/500-12",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.9411764740943909, "g": 0.9764705896377563, "b": 0.8901960849761963, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9411764740943909, "g": 0.9764705896377563, "b": 0.8901960849761963, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:336:5730",
+      "name": "color/palette/tint/green/500-12",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.8941176533699036, "g": 0.9725490212440491, "b": 0.9254902005195618, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.8941176533699036, "g": 0.9725490212440491, "b": 0.9254902005195618, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:336:5732",
+      "name": "color/palette/tint/cyan/500-12",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.8823529481887817, "g": 0.9647058844566345, "b": 0.9803921580314636, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.8823529481887817, "g": 0.9647058844566345, "b": 0.9803921580314636, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:336:5733",
+      "name": "color/palette/tint/violet/500-12",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.9450980424880981, "g": 0.9215686321258545, "b": 0.9960784316062927, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9450980424880981, "g": 0.9215686321258545, "b": 0.9960784316062927, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:336:5735",
+      "name": "color/palette/tint/pink/500-12",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.9921568632125854, "g": 0.9137254953384399, "b": 0.9529411792755127, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9921568632125854, "g": 0.9137254953384399, "b": 0.9529411792755127, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_FILLS", "STROKE_COLOR"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:352:18371",
+      "name": "color/role/tag/more/border",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:91" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.8705882430076599, "g": 0.886274516582489, "b": 0.9019607901573181, "a": 1 },
+          "alias": "VariableID:4:91",
+          "aliasName": "color/role/border/default"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:352:18372",
+      "name": "color/role/tag/more/bg",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:89" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 1, "g": 1, "b": 1, "a": 1 },
+          "alias": "VariableID:4:89",
+          "aliasName": "color/role/bg/surface"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:416:65720",
+      "name": "color/role/text/semantic/error",
+      "description": "삭제, 탈퇴등 파괴적 행위의 텍스트 버튼에 강조색으로 사용합니다.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:95" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.8274509906768799, "g": 0.18431372940540314, "b": 0.18431372940540314, "a": 1 },
+          "alias": "VariableID:4:95",
+          "aliasName": "color/role/semantic/error"
+        }
+      },
+      "scopes": ["TEXT_FILL"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:448:10195",
+      "name": "color/role/border/contrast",
+      "description": "복잡하더나 다양한 배경 위에서도 개체의 외곽을 또렷하게 보이게 하기위해 사용하는 범용 테두리.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:89" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 1, "g": 1, "b": 1, "a": 1 },
+          "alias": "VariableID:4:89",
+          "aliasName": "color/role/bg/surface"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:494:8589",
+      "name": "color/role/bg/accent-secondary",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:202" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.5960784554481506, "g": 0.7019608020782471, "b": 0.9333333373069763, "a": 1 },
+          "alias": "VariableID:4:202",
+          "aliasName": "color/role/brand/secondary"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:494:9448",
+      "name": "color/role/border/semantic-info",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:96" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.007843137718737125, "g": 0.5333333611488342, "b": 0.8196078538894653, "a": 1 },
+          "alias": "VariableID:4:96",
+          "aliasName": "color/role/semantic/info"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:494:9449",
+      "name": "color/role/border/semantic-success",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:93" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.18039216101169586, "g": 0.4901960790157318, "b": 0.19607843458652496, "a": 1 },
+          "alias": "VariableID:4:93",
+          "aliasName": "color/role/semantic/success"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:494:9452",
+      "name": "color/role/border/semantic-warning",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:94" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.929411768913269, "g": 0.42352941632270813, "b": 0.007843137718737125, "a": 1 },
+          "alias": "VariableID:4:94",
+          "aliasName": "color/role/semantic/warning"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:494:9453",
+      "name": "color/role/border/semantic-error",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:95" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.8274509906768799, "g": 0.18431372940540314, "b": 0.18431372940540314, "a": 1 },
+          "alias": "VariableID:4:95",
+          "aliasName": "color/role/semantic/error"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:520:132832",
+      "name": "color/role/text/semantic/info",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:96" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.007843137718737125, "g": 0.5333333611488342, "b": 0.8196078538894653, "a": 1 },
+          "alias": "VariableID:4:96",
+          "aliasName": "color/role/semantic/info"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:966:14543",
+      "name": "color/role/segment/group/bg",
+      "description": "세그먼트 컨테이너의 배경.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:89" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 1, "g": 1, "b": 1, "a": 1 },
+          "alias": "VariableID:4:89",
+          "aliasName": "color/role/bg/surface"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:966:14545",
+      "name": "color/role/segment/item/bg/selected",
+      "description": "선택된 세그먼트 버튼의 배경.",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:206" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9254902005195618, "g": 0.9411764740943909, "b": 0.9803921580314636, "a": 1 },
+          "alias": "VariableID:4:206",
+          "aliasName": "color/role/bg/selection"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:1820:28564",
+      "name": "color/role/icon/interactive/on-secondary",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:85" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.12941177189350128, "g": 0.14509804546833038, "b": 0.16078431904315948, "a": 1 },
+          "alias": "VariableID:4:85",
+          "aliasName": "color/role/text/primary"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:2291:26538",
+      "name": "color/palette/hue/red/300",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.9607843160629272, "g": 0.5568627715110779, "b": 0.5568627715110779, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9607843160629272, "g": 0.5568627715110779, "b": 0.5568627715110779, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:2291:26540",
+      "name": "color/palette/hue/orange/300",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.9843137264251709, "g": 0.6705882549285889, "b": 0.45098039507865906, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9843137264251709, "g": 0.6705882549285889, "b": 0.45098039507865906, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:2291:26541",
+      "name": "color/palette/hue/yellow/300",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.9490196108818054, "g": 0.8196078538894653, "b": 0.4156862795352936, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9490196108818054, "g": 0.8196078538894653, "b": 0.4156862795352936, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:2291:26542",
+      "name": "color/palette/hue/lime/300",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.7098039388656616, "g": 0.8784313797950745, "b": 0.45098039507865906, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.7098039388656616, "g": 0.8784313797950745, "b": 0.45098039507865906, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:2291:26543",
+      "name": "color/palette/hue/green/300",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.47843137383461, "g": 0.8627451062202454, "b": 0.6196078658103943, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.47843137383461, "g": 0.8627451062202454, "b": 0.6196078658103943, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:2291:26545",
+      "name": "color/palette/hue/violet/300",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.7254902124404907, "g": 0.615686297416687, "b": 0.9764705896377563, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.7254902124404907, "g": 0.615686297416687, "b": 0.9764705896377563, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:2291:26546",
+      "name": "color/palette/hue/pink/300",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.9529411792755127, "g": 0.5686274766921997, "b": 0.7568627595901489, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9529411792755127, "g": 0.5686274766921997, "b": 0.7568627595901489, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:2291:26547",
+      "name": "color/palette/hue/cyan/300",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.4117647111415863, "g": 0.8274509906768799, "b": 0.8980392217636108, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.4117647111415863, "g": 0.8274509906768799, "b": 0.8980392217636108, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:2351:26880",
+      "name": "color/palette/overlay/gray/1000-00",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0, "g": 0, "b": 0, "a": 0 } },
+      "resolvedValuesByMode": { "4:0": { "resolvedValue": { "r": 0, "g": 0, "b": 0, "a": 0 }, "alias": null } },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:2351:26881",
+      "name": "color/role/overlay/transparent",
+      "description": "투명 처리가 필요할 때 사용하는 역할(주로 AG grid)",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:2351:26880" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0, "g": 0, "b": 0, "a": 0 },
+          "alias": "VariableID:2351:26880",
+          "aliasName": "color/palette/overlay/gray/1000-00"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:2679:30344",
+      "name": "color/palette/overlay/white/0-08",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 1, "g": 1, "b": 1, "a": 0.11999999731779099 } },
+      "resolvedValuesByMode": {
+        "4:0": { "resolvedValue": { "r": 1, "g": 1, "b": 1, "a": 0.11999999731779099 }, "alias": null }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:2679:30345",
+      "name": "color/palette/overlay/white/0-16",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 1, "g": 1, "b": 1, "a": 0.1599999964237213 } },
+      "resolvedValuesByMode": {
+        "4:0": { "resolvedValue": { "r": 1, "g": 1, "b": 1, "a": 0.1599999964237213 }, "alias": null }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:2681:30375",
+      "name": "color/role/state/overlay/on-inverse/hover",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:2679:30344" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 1, "g": 1, "b": 1, "a": 0.11999999731779099 },
+          "alias": "VariableID:2679:30344",
+          "aliasName": "color/palette/overlay/white/0-08"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:2681:30376",
+      "name": "color/role/state/overlay/on-inverse/pressed",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:2679:30345" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 1, "g": 1, "b": 1, "a": 0.1599999964237213 },
+          "alias": "VariableID:2679:30345",
+          "aliasName": "color/palette/overlay/white/0-16"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "name": "@aplus/eslint-config",
+  "version": "0.0.1",
+  "private": true,
+  "description": "A+ World UI ESLint 공통 설정",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "type": "module",
+  "scripts": {
+    "test": "echo 'No tests for config package'"
+  },
+  "keywords": [
+    "eslint",
+    "config",
+    "javascript",
+    "typescript",
+    "react"
+  ],
+  "peerDependencies": {
+    "eslint": "^9.36.0",
+    "typescript": "^5.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0"
+  },
+  "devDependencies": {
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "eslint-plugin-react": "^7.37.2",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "globals": "^15.9.0",
+    "prettier": "^3.6.2",
+    "typescript-eslint": "^7.18.0"
+  },
+  "dependencies": {}
+}
