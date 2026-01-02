@@ -74,6 +74,16 @@
     },
     "clean": {
       "cache": false
+    },
+    "schema:extract": {
+      "dependsOn": ["storybook#build"],
+      "outputs": ["dist/component-schema.json"],
+      "inputs": [
+        "scripts/extract-component-schema.ts",
+        "apps/storybook/storybook-static/index.json",
+        "packages/ui/src/components/**"
+      ],
+      "cache": true
     }
   }
 }

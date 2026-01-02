@@ -141,7 +141,7 @@ index.json                    react-docgen-typescript
 
 ## 구현 계획
 
-### Phase 1: 스크립트 개발
+### Phase 1: 스크립트 개발 ✅
 
 **파일**: `scripts/extract-component-schema.ts`
 
@@ -153,24 +153,45 @@ index.json                    react-docgen-typescript
 5. dist/component-schema.json으로 출력
 ```
 
-### Phase 2: 빌드 통합
+**실행 결과**: 22개 컴포넌트 스키마 생성
 
-**package.json 스크립트 추가**:
+### Phase 2: 빌드 통합 ✅
+
+**package.json 스크립트**:
 
 ```json
 {
   "scripts": {
-    "schema:extract": "ts-node scripts/extract-component-schema.ts",
-    "schema:build": "pnpm build:storybook && pnpm schema:extract"
+    "build:storybook": "turbo build --filter=storybook && pnpm schema:extract",
+    "schema:extract": "tsx scripts/extract-component-schema.ts"
   }
 }
 ```
 
-### Phase 3: CI/CD 통합 (선택)
+**turbo.json 태스크**:
 
-- Storybook 빌드 후 자동으로 스키마 추출
-- 스키마 파일을 아티팩트로 배포
-- 버전 관리 및 변경 감지
+```json
+{
+  "tasks": {
+    "schema:extract": {
+      "dependsOn": ["storybook#build"],
+      "outputs": ["dist/component-schema.json"],
+      "inputs": [
+        "scripts/extract-component-schema.ts",
+        "apps/storybook/storybook-static/index.json",
+        "packages/ui/src/components/**"
+      ],
+      "cache": true
+    }
+  }
+}
+```
+
+### Phase 3: 자동 스키마 추출 ✅
+
+- [x] Storybook 빌드 후 자동으로 스키마 추출 (`build:storybook` 실행 시 자동 실행)
+- [ ] 스키마 파일을 아티팩트로 배포 (선택)
+- [ ] 버전 관리 및 변경 감지 (선택)
 
 ## 의존성
 
@@ -194,10 +215,21 @@ index.json                    react-docgen-typescript
 
 ## 체크리스트
 
-- [ ] react-docgen-typescript 의존성 추가
-- [ ] 추출 스크립트 개발 (`scripts/extract-component-schema.ts`)
-- [ ] index.json 파싱 로직 구현
-- [ ] 결합 로직 구현
-- [ ] 출력 스키마 검증
-- [ ] package.json 스크립트 추가
+### Phase 1: 스크립트 개발
+- [x] react-docgen-typescript 의존성 추가
+- [x] 추출 스크립트 개발 (`scripts/extract-component-schema.ts`)
+- [x] index.json 파싱 로직 구현
+- [x] 결합 로직 구현
+- [x] 출력 스키마 검증 (22개 컴포넌트 추출 완료)
+
+### Phase 2: 빌드 통합
+- [x] package.json 스크립트 추가 (`schema:extract`)
+- [x] turbo.json 태스크 추가 (캐싱 및 의존성 설정)
+
+### Phase 3: 자동화
+- [x] Storybook 빌드 후 자동 스키마 추출
+
+### 추가 작업 (선택)
 - [ ] README 문서화
+- [ ] CI/CD 아티팩트 배포
+- [ ] 스키마 버전 관리
