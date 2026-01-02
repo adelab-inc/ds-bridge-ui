@@ -1,0 +1,937 @@
+{
+  "button": {
+    "base": "inline-flex justify-center items-center py-component-inset-button-y",
+    "variants": {
+      "variant": {
+        "primary": "bg-bg-accent",
+        "secondary": "bg-bg-accent-secondary",
+        "outline": "outline outline-1 outline-border-accent",
+        "tertiary": "bg-bg-container-medium",
+        "destructive": "",
+        "outline-destructive": "outline outline-1"
+      },
+      "size": {
+        "lg": "min-w-[56px] px-component-inset-button-lg-x text-button-lg-medium rounded-lg gap-component-gap-icon-label-x-md",
+        "md": "min-w-[52px] px-component-inset-button-md-x text-button-md-medium rounded-lg gap-component-gap-icon-label-x-md",
+        "sm": "min-w-[49px] px-component-inset-button-sm-x text-button-sm-medium rounded-md gap-component-gap-icon-label-x-sm"
+      },
+      "isLoading": {
+        "true": "cursor-wait",
+        "false": ""
+      },
+      "isDisabled": {
+        "true": "",
+        "false": ""
+      }
+    },
+    "compoundVariants": [
+      {
+        "variant": ["primary", "secondary", "destructive"],
+        "isDisabled": true,
+        "isLoading": false,
+        "class": "bg-bg-disabled-on-filled text-text-disabled"
+      },
+      {
+        "variant": ["outline", "outline-destructive"],
+        "isDisabled": true,
+        "isLoading": false,
+        "class": "bg-bg-disabled-on-light outline outline-1 outline-border-disabled text-text-disabled"
+      },
+      {
+        "variant": "tertiary",
+        "isDisabled": true,
+        "isLoading": false,
+        "class": "bg-bg-disabled-on-light text-text-disabled"
+      },
+      {
+        "variant": "primary",
+        "isDisabled": false,
+        "isLoading": false,
+        "class": "hover:bg-brand-primary-hover active:bg-brand-primary-pressed focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus"
+      },
+      {
+        "variant": "secondary",
+        "isDisabled": false,
+        "isLoading": false,
+        "class": "hover:bg-brand-secondary-hover active:bg-brand-secondary-pressed focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus"
+      },
+      {
+        "variant": "outline",
+        "isDisabled": false,
+        "isLoading": false,
+        "class": "hover:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-hover),theme(colors.state-overlay-on-neutral-hover))] active:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-pressed),theme(colors.state-overlay-on-neutral-pressed))] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus"
+      },
+      {
+        "variant": "tertiary",
+        "isDisabled": false,
+        "isLoading": false,
+        "class": "hover:bg-[linear-gradient(0deg,#0000000f,#0000000f)] active:bg-[linear-gradient(0deg,#00000019,#00000019)] focus-visible:bg-bg-subtle focus-visible:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]"
+      },
+      {
+        "variant": "destructive",
+        "isDisabled": false,
+        "isLoading": false,
+        "class": "hover:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-colored-hover),theme(colors.state-overlay-on-colored-hover))] active:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-colored-pressed),theme(colors.state-overlay-on-colored-pressed))] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus"
+      },
+      {
+        "variant": "outline-destructive",
+        "isDisabled": false,
+        "isLoading": false,
+        "class": "hover:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-hover),theme(colors.state-overlay-on-neutral-hover))] active:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-pressed),theme(colors.state-overlay-on-neutral-pressed))] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus"
+      },
+      {
+        "variant": "primary",
+        "isDisabled": false,
+        "class": "text-text-inverse"
+      },
+      {
+        "variant": "secondary",
+        "isDisabled": false,
+        "class": "text-text-primary"
+      },
+      {
+        "variant": "outline",
+        "isDisabled": false,
+        "class": "text-text-accent"
+      },
+      {
+        "variant": "tertiary",
+        "isDisabled": false,
+        "class": "text-text-primary"
+      },
+      {
+        "variant": "destructive",
+        "isDisabled": false,
+        "class": "text-text-inverse"
+      },
+      {
+        "variant": "outline-destructive",
+        "isDisabled": false,
+        "class": "text-text-semantic-error"
+      },
+      {
+        "variant": "destructive",
+        "isDisabled": false,
+        "class": "bg-bg-semantic-error"
+      },
+      {
+        "variant": "outline-destructive",
+        "isDisabled": false,
+        "class": "bg-bg-surface"
+      },
+      {
+        "variant": "outline",
+        "isDisabled": false,
+        "class": "bg-bg-surface"
+      }
+    ],
+    "defaultVariants": {
+      "variant": "primary",
+      "size": "md",
+      "isLoading": false,
+      "isDisabled": false
+    }
+  },
+  "iconButton": {
+    "base": "flex justify-center items-center flex-shrink-0",
+    "variants": {
+      "variant": {
+        "ghost": "text-icon-interactive-default",
+        "ghost-destructive": "",
+        "secondary": "bg-bg-accent-secondary",
+        "tertiary": "bg-bg-subtle"
+      },
+      "size": {
+        "lg": "w-[40px] h-[40px] text-button-lg-medium rounded-lg",
+        "md": "w-[36px] h-[36px] text-button-md-medium rounded-lg",
+        "sm": "w-[32px] h-[32px] text-button-sm-medium rounded-[6px]"
+      },
+      "isLoading": {
+        "true": "cursor-wait",
+        "false": ""
+      },
+      "isDisabled": {
+        "true": "",
+        "false": ""
+      }
+    },
+    "compoundVariants": [
+      {
+        "variant": "ghost",
+        "isDisabled": false,
+        "isLoading": false,
+        "class": "hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus"
+      },
+      {
+        "variant": "ghost",
+        "isDisabled": true,
+        "isLoading": false,
+        "class": "text-icon-interactive-disabled"
+      },
+      {
+        "variant": "secondary",
+        "isDisabled": false,
+        "isLoading": false,
+        "class": "hover:bg-brand-secondary-hover active:bg-brand-secondary-pressed focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus"
+      },
+      {
+        "variant": "secondary",
+        "isDisabled": false,
+        "class": "text-icon-interactive-default"
+      },
+      {
+        "variant": "secondary",
+        "isDisabled": true,
+        "isLoading": false,
+        "class": "bg-bg-disabled-on-filled text-icon-interactive-disabled"
+      },
+      {
+        "variant": "tertiary",
+        "isDisabled": false,
+        "isLoading": false,
+        "class": "hover:bg-[linear-gradient(0deg,#0000000f,#0000000f)] active:bg-[linear-gradient(0deg,#00000019,#00000019)] focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus"
+      },
+      {
+        "variant": "tertiary",
+        "isDisabled": false,
+        "class": "text-icon-interactive-default"
+      },
+      {
+        "variant": "tertiary",
+        "isDisabled": true,
+        "isLoading": false,
+        "class": "bg-bg-disabled-on-filled text-icon-interactive-disabled"
+      },
+      {
+        "variant": "ghost-destructive",
+        "isDisabled": false,
+        "isLoading": false,
+        "class": "hover:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-hover),theme(colors.state-overlay-on-neutral-hover))] active:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-pressed),theme(colors.state-overlay-on-neutral-pressed))] focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus"
+      },
+      {
+        "variant": "ghost-destructive",
+        "isDisabled": false,
+        "class": "bg-bg-surface text-icon-semantic-error"
+      },
+      {
+        "variant": "ghost-destructive",
+        "isDisabled": true,
+        "isLoading": false,
+        "class": "bg-bg-disabled-on-light text-icon-interactive-disabled"
+      },
+      {
+        "isLoading": true,
+        "class": "cursor-wait"
+      }
+    ],
+    "defaultVariants": {
+      "variant": "ghost",
+      "size": "md",
+      "isLoading": false,
+      "isDisabled": false
+    }
+  },
+  "link": {
+    "base": "inline-flex justify-center items-center",
+    "variants": {
+      "variant": {
+        "on-hover-link": "text-text-semantic-info hover:underline hover:underline-offset-auto",
+        "on-hover-inherit": "text-text-primary hover:underline hover:underline-offset-auto",
+        "always-link": "text-text-semantic-info underline underline-offset-auto",
+        "always-inherit": "text-text-primary underline underline-offset-auto",
+        "none-link": "text-text-semantic-info",
+        "none-inherit": "text-text-primary"
+      },
+      "size": {
+        "lg": "text-body-lg-regular",
+        "md": "text-body-md-regular",
+        "sm": "text-body-sm-regular"
+      }
+    },
+    "defaultVariants": {
+      "variant": "on-hover-link",
+      "size": "md"
+    }
+  },
+  "pagination.numberButton": {
+    "base": "flex items-center justify-center w-[32px] h-[32px] rounded-lg text-body-md-regular",
+    "variants": {
+      "variant": {
+        "active": "bg-bg-accent text-text-inverse border border-border-accent",
+        "default": "text-text-tertiary bg-bg-surface"
+      }
+    },
+    "compoundVariants": [
+      {
+        "variant": "default",
+        "class": "hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed"
+      }
+    ],
+    "defaultVariants": {
+      "variant": "default"
+    }
+  },
+  "pagination": {
+    "base": "flex items-center justify-center gap-layout-stack-xs",
+    "variants": {
+      "disabled": {
+        "true": "cursor-not-allowed opacity-50",
+        "false": ""
+      }
+    },
+    "defaultVariants": {
+      "disabled": false
+    }
+  },
+  "pagination.ellipsis": {
+    "base": "flex items-center justify-center w-[32px] h-[32px] text-text-tertiary"
+  },
+  "divider": {
+    "base": "flex-shrink-0",
+    "variants": {
+      "orientation": {
+        "horizontal": "h-px w-full",
+        "vertical": "w-px h-full self-stretch"
+      },
+      "color": {
+        "default": "bg-border-default",
+        "subtle": "bg-border-subtle",
+        "strong": "bg-border-strong"
+      }
+    },
+    "defaultVariants": {
+      "orientation": "horizontal",
+      "color": "default"
+    }
+  },
+  "badge": {
+    "base": "inline-flex items-center shrink-0 rounded-full",
+    "variants": {
+      "type": {
+        "level": "py-component-inset-pill-y px-component-inset-pill-x gap-component-gap-icon-label-x-xs text-caption-xs-regular",
+        "status": "py-component-inset-pill-y px-component-inset-pill-x gap-component-gap-icon-label-x-xs text-caption-xs-regular",
+        "count": "py-component-inset-pill-y px-component-inset-pill-x gap-component-gap-icon-label-x-xs text-caption-xs-medium",
+        "dot": "w-[6px] h-[6px]"
+      },
+      "levelVariant": {
+        "announcement": ""
+      },
+      "statusVariant": {
+        "info": "",
+        "success": "",
+        "warning": "",
+        "error": ""
+      },
+      "variant": {
+        "announcement-solid": "",
+        "announcement-subtle": "",
+        "info-solid": "",
+        "info-subtle": "",
+        "success-solid": "",
+        "success-subtle": "",
+        "warning-solid": "",
+        "warning-subtle": "",
+        "error-solid": "",
+        "error-subtle": "",
+        "solid": "",
+        "subtle": ""
+      }
+    },
+    "compoundVariants": [
+      {
+        "type": "level",
+        "levelVariant": "announcement",
+        "variant": "announcement-solid",
+        "class": "bg-badge-primary-solid-bg text-badge-solid-text"
+      },
+      {
+        "type": "level",
+        "levelVariant": "announcement",
+        "variant": "announcement-subtle",
+        "class": "bg-badge-primary-subtle-bg text-badge-primary-subtle-text"
+      },
+      {
+        "type": "status",
+        "statusVariant": "info",
+        "variant": "info-solid",
+        "class": "bg-bg-semantic-info text-badge-solid-text"
+      },
+      {
+        "type": "status",
+        "statusVariant": "info",
+        "variant": "info-subtle",
+        "class": "bg-badge-status-info-subtle-bg text-badge-status-info-subtle-text"
+      },
+      {
+        "type": "status",
+        "statusVariant": "success",
+        "variant": "success-solid",
+        "class": "bg-bg-semantic-success text-badge-solid-text"
+      },
+      {
+        "type": "status",
+        "statusVariant": "success",
+        "variant": "success-subtle",
+        "class": "bg-badge-status-success-subtle-bg text-badge-status-success-subtle-text"
+      },
+      {
+        "type": "status",
+        "statusVariant": "warning",
+        "variant": "warning-solid",
+        "class": "bg-bg-semantic-warning text-badge-solid-text"
+      },
+      {
+        "type": "status",
+        "statusVariant": "warning",
+        "variant": "warning-subtle",
+        "class": "bg-badge-status-warning-subtle-bg text-badge-status-warning-subtle-text"
+      },
+      {
+        "type": "status",
+        "statusVariant": "error",
+        "variant": "error-solid",
+        "class": "bg-bg-semantic-error text-badge-solid-text"
+      },
+      {
+        "type": "status",
+        "statusVariant": "error",
+        "variant": "error-subtle",
+        "class": "bg-badge-status-error-subtle-bg text-badge-status-error-subtle-text"
+      },
+      {
+        "type": "dot",
+        "class": "bg-badge-primary-solid-bg"
+      },
+      {
+        "type": "count",
+        "class": "bg-badge-primary-solid-bg text-badge-solid-text"
+      }
+    ],
+    "defaultVariants": {
+      "type": "level",
+      "levelVariant": "announcement",
+      "variant": "announcement-solid"
+    }
+  },
+  "scrollbar": {
+    "base": "overflow-auto bg-role-bg-surface",
+    "variants": {
+      "variant": {
+        "default": ""
+      }
+    },
+    "defaultVariants": {
+      "variant": "default"
+    }
+  },
+  "chip": {
+    "base": "inline-flex items-center rounded-full px-component-inset-chip-x py-component-inset-chip-y cursor-pointer",
+    "variants": {
+      "size": {
+        "md": "text-chip-label-md-medium",
+        "sm": "text-chip-label-sm-medium"
+      },
+      "state": {
+        "default": "bg-chip-bg-off text-text-primary border border-transparent",
+        "selected": "",
+        "disabled": "text-text-disabled bg-chip-bg-disabled"
+      },
+      "selectionStyle": {
+        "single": "",
+        "multiple": ""
+      },
+      "hasIcon": {
+        "true": "pl-component-inset-chip-with-icon-x",
+        "false": ""
+      },
+      "hasCloseButton": {
+        "true": "",
+        "false": ""
+      }
+    },
+    "compoundVariants": [
+      {
+        "state": "default",
+        "class": "hover:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-hover),theme(colors.state-overlay-on-neutral-hover)),theme(colors.chip-bg-off)] active:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-pressed),theme(colors.state-overlay-on-neutral-pressed)),theme(colors.chip-bg-off)] focus:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]"
+      },
+      {
+        "state": "selected",
+        "selectionStyle": "single",
+        "class": "text-text-on-selection bg-chip-bg-off border border-transparent"
+      },
+      {
+        "state": "selected",
+        "selectionStyle": "multiple",
+        "class": "text-text-on-selection border border-border-selection bg-chip-bg-selected"
+      }
+    ],
+    "defaultVariants": {
+      "size": "md",
+      "state": "default",
+      "selectionStyle": "multiple",
+      "hasIcon": false,
+      "hasCloseButton": false
+    }
+  },
+  "chipGroup": {
+    "base": "flex gap-component-gap-tags-x",
+    "variants": {
+      "variant": {
+        "scroll": "whitespace-nowrap",
+        "no-scroll": "flex-wrap"
+      }
+    },
+    "defaultVariants": {
+      "variant": "scroll"
+    }
+  },
+  "chipCloseButton": {
+    "base": "flex items-center justify-center rounded-full text-icon-interactive-default",
+    "variants": {
+      "size": {
+        "md": "w-[20px] h-[20px]",
+        "sm": "w-[16px] h-[16px]"
+      }
+    },
+    "compoundVariants": [
+      {
+        "state": "default",
+        "class": "hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed"
+      }
+    ],
+    "defaultVariants": {
+      "size": "md"
+    }
+  },
+  "dialog": {
+    "base": "flex flex-col items-start py-component-inset-dialog-y px-component-inset-dialog-x gap-component-gap-dialog-contents-y rounded-xl border border-border-subtle bg-bg-surface shadow-[0_4px_8px_0_rgba(0,0,0,0.20)]",
+    "variants": {
+      "size": {
+        "sm": "w-[480px] max-h-[80vh]",
+        "md": "w-[612px] max-h-[80vh]",
+        "lg": "w-[928px] max-h-[80vh]",
+        "xl": "w-[1244px] max-h-[80vh]"
+      }
+    },
+    "defaultVariants": {
+      "size": "md"
+    }
+  },
+  "alert": {
+    "base": "inline-flex items-center min-w-[483px] py-component-inset-alert-inline-y px-component-inset-alert-inline-x gap-component-gap-alert-inline-label-close-x rounded-lg",
+    "variants": {
+      "variant": {
+        "default": "bg-[var(--color-role-bg-container-low,rgba(0,0,0,0.04))] text-text-primary",
+        "info": "",
+        "success": "",
+        "warning": "",
+        "error": ""
+      },
+      "isToast": {
+        "true": "w-[360px] shadow-[0_4px_8px_0_rgba(0,0,0,0.20)]",
+        "false": ""
+      }
+    },
+    "compoundVariants": [
+      {
+        "variant": "info",
+        "class": "bg-alert-info-bg text-alert-info-text"
+      },
+      {
+        "variant": "success",
+        "class": "bg-alert-success-bg text-alert-success-text"
+      },
+      {
+        "variant": "warning",
+        "class": "bg-alert-warning-bg text-alert-warning-text"
+      },
+      {
+        "variant": "error",
+        "class": "bg-alert-error-bg text-alert-error-text"
+      }
+    ],
+    "defaultVariants": {
+      "variant": "default",
+      "isToast": false
+    }
+  },
+  "tag": {
+    "base": "text-caption-xs-regular text-tag-default-text flex py-component-inset-pill-y pr-component-inset-pill-x pl-component-inset-pill-with-icon-x items-center gap-component-gap-icon-label-x-xs self-stretch rounded-full whitespace-nowrap flex-shrink-0",
+    "variants": {
+      "variant": {
+        "default": "bg-tag-default-bg",
+        "more": "border border-tag-more-border bg-tag-more-bg cursor-pointer relative"
+      },
+      "hasCloseButton": {
+        "true": "",
+        "false": ""
+      }
+    },
+    "compoundVariants": [
+      {
+        "variant": "more",
+        "class": "before:absolute before:inset-0 before:rounded-full before:bg-transparent hover:before:bg-black/[0.06] active:before:bg-black/[0.10] before:transition-colors"
+      }
+    ],
+    "defaultVariants": {
+      "variant": "default",
+      "hasCloseButton": false
+    }
+  },
+  "tagGroup": {
+    "base": "flex gap-component-gap-tags-x",
+    "variants": {
+      "layout": {
+        "wrap": "",
+        "singleLineWithMore": "",
+        "horizontalScroll": "flex-nowrap"
+      }
+    },
+    "defaultVariants": {
+      "layout": "wrap"
+    }
+  },
+  "tooltip": {
+    "base": "flex justify-center items-center py-component-inset-tooltip-y px-component-inset-tooltip-x rounded-md border border-border-default bg-bg-surface shadow-md text-text-primary text-caption-xs-regular",
+    "variants": {
+      "truncation": {
+        "true": "",
+        "false": ""
+      }
+    },
+    "compoundVariants": [
+      {
+        "truncation": false,
+        "class": "max-w-[320px] max-h-[44px]"
+      },
+      {
+        "truncation": true,
+        "class": "max-w-[540px] max-h-[240px] overflow-y-scroll"
+      }
+    ],
+    "defaultVariants": {
+      "truncation": false
+    }
+  },
+  "toggleSwitch": {
+    "base": "relative inline-flex items-center flex-shrink-0 w-[32px] h-[18px] rounded-full transition-colors duration-300 cursor-pointer shadow-[0_0_1px_0_rgba(0,0,0,0.08)]",
+    "variants": {
+      "checked": {
+        "true": "bg-control-bg-on",
+        "false": "bg-control-bg-off"
+      },
+      "disabled": {
+        "true": "bg-control-bg-disabled cursor-not-allowed",
+        "false": ""
+      }
+    },
+    "compoundVariants": [
+      {
+        "checked": true,
+        "disabled": false,
+        "class": "bg-control-bg-on"
+      },
+      {
+        "checked": false,
+        "disabled": false,
+        "class": "bg-control-bg-off"
+      },
+      {
+        "disabled": true,
+        "class": "bg-control-bg-disabled"
+      }
+    ],
+    "defaultVariants": {
+      "checked": false,
+      "disabled": false
+    }
+  },
+  "radio": {
+    "base": "flex items-center justify-center flex-shrink-0 w-[18px] h-[18px] rounded-full border cursor-pointer transition-colors",
+    "variants": {
+      "checked": {
+        "true": "",
+        "false": ""
+      },
+      "disabled": {
+        "true": "cursor-not-allowed",
+        "false": ""
+      }
+    },
+    "compoundVariants": [
+      {
+        "checked": false,
+        "disabled": false,
+        "class": "border-control-stroke-default bg-bg-surface"
+      },
+      {
+        "checked": false,
+        "disabled": true,
+        "class": "border-control-stroke-disabled bg-control-bg-disabled"
+      },
+      {
+        "checked": true,
+        "disabled": false,
+        "class": "border-control-stroke-default bg-bg-surface hover:border-control-bg-on active:border-control-bg-on focus-visible:shadow-[0_0_0_1px_var(--color-role-border-contrast,#FFF)_inset,0_0_0_2px_var(--color-role-focus,#0033A0)]"
+      },
+      {
+        "checked": true,
+        "disabled": true,
+        "class": "border-control-stroke-disabled bg-control-bg-disabled"
+      },
+      {
+        "checked": false,
+        "disabled": false,
+        "class": "focus-visible:shadow-[0_0_0_1px_var(--color-role-border-contrast,#FFF)_inset,0_0_0_2px_var(--color-role-focus,#0033A0)]"
+      }
+    ],
+    "defaultVariants": {
+      "checked": false,
+      "disabled": false
+    }
+  },
+  "checkbox": {
+    "base": "flex items-center justify-center flex-shrink-0 w-[18px] h-[18px] rounded-[2px] border cursor-pointer transition-colors",
+    "variants": {
+      "checked": {
+        "true": "",
+        "false": ""
+      },
+      "disabled": {
+        "true": "cursor-not-allowed",
+        "false": ""
+      }
+    },
+    "compoundVariants": [
+      {
+        "checked": false,
+        "disabled": false,
+        "class": "border-control-stroke-default bg-bg-surface"
+      },
+      {
+        "checked": false,
+        "disabled": true,
+        "class": "border-control-stroke-disabled bg-bg-surface"
+      },
+      {
+        "checked": true,
+        "disabled": false,
+        "class": "bg-control-bg-on border-0 hover:bg-brand-primary-hover active:bg-brand-primary-hover"
+      },
+      {
+        "checked": true,
+        "disabled": true,
+        "class": "bg-control-bg-disabled border-0"
+      },
+      {
+        "checked": false,
+        "disabled": false,
+        "class": "focus-visible:shadow-[0_0_0_1px_var(--color-role-border-contrast,#FFF)_inset,0_0_0_2px_var(--color-role-focus,#0033A0)]"
+      },
+      {
+        "checked": true,
+        "disabled": false,
+        "class": "focus-visible:shadow-[0_0_0_1px_var(--color-role-border-contrast,#FFF)_inset,0_0_0_2px_var(--color-role-focus,#0033A0)]"
+      }
+    ],
+    "defaultVariants": {
+      "checked": false,
+      "disabled": false
+    }
+  },
+  "field": {
+    "base": "flex flex-col w-[222px] gap-component-gap-contents-sm",
+    "variants": {
+      "size": {
+        "md": "",
+        "sm": ""
+      },
+      "multiline": {
+        "true": "",
+        "false": ""
+      },
+      "rowsVariant": {
+        "flexible": "",
+        "rows4": "",
+        "rows6": "",
+        "rows8": ""
+      },
+      "hasError": {
+        "true": "",
+        "false": ""
+      },
+      "isDisabled": {
+        "true": "",
+        "false": ""
+      },
+      "isReadOnly": {
+        "true": "",
+        "false": ""
+      }
+    },
+    "defaultVariants": {
+      "size": "md",
+      "multiline": false,
+      "rowsVariant": "flexible",
+      "hasError": false,
+      "isDisabled": false,
+      "isReadOnly": false
+    }
+  },
+  "select": {
+    "base": "flex py-component-inset-fields-y px-component-inset-fields-x items-center flex-1 border appearance-none",
+    "variants": {
+      "size": {
+        "md": "gap-component-gap-icon-label-x-md rounded-lg text-body-md-medium",
+        "sm": "gap-component-gap-icon-label-x-xs rounded-md text-body-sm-medium"
+      },
+      "error": {
+        "true": "",
+        "false": ""
+      },
+      "hasValue": {
+        "true": "",
+        "false": ""
+      }
+    },
+    "compoundVariants": [
+      {
+        "error": false,
+        "hasValue": false,
+        "class": "border-field-border-default bg-field-bg-surface text-text-primary hover:bg-[#f0f0f0] active:bg-[#e6e6e6] focus:shadow-[0_0_0_1px_#212529_inset_0_0_0_2px_#0066ff]"
+      },
+      {
+        "error": false,
+        "hasValue": true,
+        "class": "text-text-accent border-field-border-focus bg-bg-selection hover:bg-[#dde1eb] active:bg-[#d3d7e1] focus:shadow-[0_0_0_1px_#212529_inset_0_0_0_2px_#0066ff]"
+      },
+      {
+        "error": true,
+        "class": "border-field-border-error bg-field-bg-surface text-text-primary hover:bg-[#f0f0f0] active:bg-[#e6e6e6] focus:shadow-[0_0_0_1px_#212529_inset_0_0_0_2px_#0066ff]"
+      }
+    ],
+    "defaultVariants": {
+      "size": "md",
+      "error": false,
+      "hasValue": false
+    }
+  },
+  "option": {
+    "base": "inline-flex items-center gap-layout-inline-md",
+    "variants": {},
+    "defaultVariants": {}
+  },
+  "optionGroup": {
+    "base": "inline-flex flex-col items-start gap-component-gap-contents-sm",
+    "variants": {
+      "size": {
+        "lg": "",
+        "md": "",
+        "sm": ""
+      },
+      "orientation": {
+        "horizontal": "",
+        "vertical": ""
+      }
+    },
+    "defaultVariants": {
+      "size": "md",
+      "orientation": "vertical"
+    }
+  },
+  "menu": {
+    "base": "flex flex-col min-w-[180px] max-w-[240px] py-component-inset-menu-y px-component-inset-menu-x rounded-lg border border-border-default bg-bg-surface shadow-[0_2px_4px_0_rgba(0,0,0,0.16)]",
+    "variants": {
+      "size": {
+        "md": "",
+        "sm": ""
+      }
+    },
+    "defaultVariants": {
+      "size": "md"
+    }
+  },
+  "menu.item": {
+    "base": "flex min-w-[168px] max-w-[264px] py-component-inset-menu-item-y px-component-inset-menu-item-x items-center gap-component-gap-icon-label-x-md cursor-pointer transition-colors",
+    "variants": {
+      "size": {
+        "md": "text-button-md-medium",
+        "sm": "text-button-sm-medium"
+      },
+      "state": {
+        "default": "text-text-primary",
+        "hover": "",
+        "pressed": "",
+        "disabled": "",
+        "selected": "",
+        "selected-hover": "",
+        "selected-pressed": "",
+        "focused": ""
+      },
+      "destructive": {
+        "true": "",
+        "false": ""
+      }
+    },
+    "compoundVariants": [
+      {
+        "state": "default",
+        "destructive": false,
+        "class": "text-text-primary"
+      },
+      {
+        "state": "hover",
+        "destructive": false,
+        "class": "bg-state-overlay-on-neutral-hover"
+      },
+      {
+        "state": "pressed",
+        "destructive": false,
+        "class": "bg-state-overlay-on-colored-pressed"
+      },
+      {
+        "state": "disabled",
+        "class": "text-text-disabled cursor-not-allowed"
+      },
+      {
+        "state": "selected",
+        "class": "bg-bg-selection"
+      },
+      {
+        "state": "selected-hover",
+        "class": "bg-brand-selection-hover"
+      },
+      {
+        "state": "selected-pressed",
+        "class": "bg-brand-selection-pressed"
+      },
+      {
+        "state": "focused",
+        "destructive": false,
+        "class": "outline outline-2 outline-focus outline-offset-[-2px]"
+      },
+      {
+        "destructive": true,
+        "class": "text-alert-error-text"
+      },
+      {
+        "destructive": true,
+        "state": "hover",
+        "class": "bg-state-overlay-on-neutral-hover"
+      },
+      {
+        "destructive": true,
+        "state": "pressed",
+        "class": "bg-state-overlay-on-colored-pressed"
+      }
+    ],
+    "defaultVariants": {
+      "size": "md",
+      "state": "default",
+      "destructive": false
+    }
+  },
+  "menu.heading": {
+    "base": "flex py-component-inset-menu-item-y px-component-inset-menu-item-x pb-layout-stack-xs items-center text-text-tertiary text-button-sm-medium"
+  }
+}

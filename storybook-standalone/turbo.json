@@ -1,0 +1,79 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "tui",
+  "cacheDir": ".turbo",
+  "envMode": "strict",
+  "globalDependencies": ["**/.env*", "pnpm-workspace.yaml", "turbo.json"],
+  "globalEnv": ["NODE_ENV", "CI", "PNPM_*"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", "build/**", "storybook-static/**", ".astro/**", ".turbo/**"],
+      "env": ["REACT_APP_*", "ASTRO_*", "STORYBOOK_*"],
+      "inputs": [
+        "src/**",
+        "public/**",
+        "package.json",
+        "tsconfig.json",
+        "webpack.config.*",
+        "astro.config.*",
+        ".storybook/**",
+        "stories/**"
+      ],
+      "cache": true
+    },
+    "dev": {
+      "dependsOn": ["^build"],
+      "persistent": true,
+      "cache": false
+    },
+    "preview": {
+      "dependsOn": ["build"],
+      "cache": false
+    },
+    "start": {
+      "dependsOn": ["build"],
+      "persistent": true,
+      "cache": false
+    },
+    "lint": {
+      "outputs": [],
+      "inputs": ["src/**", "stories/**", ".eslintrc.*", "eslint.config.*", "packages/eslint-config/**"],
+      "cache": true
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**", "test-results/**"],
+      "inputs": [
+        "src/**",
+        "tests/**",
+        "test/**",
+        "__tests__/**",
+        "stories/**",
+        "jest.config.*",
+        "vitest.config.*",
+        "playwright.config.*"
+      ],
+      "cache": true
+    },
+    "test:e2e": {
+      "dependsOn": ["build"],
+      "outputs": ["test-results/**", "playwright-report/**"],
+      "cache": false
+    },
+    "test:visual": {
+      "dependsOn": ["build"],
+      "outputs": [],
+      "cache": false
+    },
+    "type-check": {
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "inputs": ["src/**", "tsconfig.json", "packages/tsconfig/**"],
+      "cache": true
+    },
+    "clean": {
+      "cache": false
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "extends": "../../packages/tsconfig/library.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "src",
+    "jsx": "react-jsx",
+    "lib": ["DOM", "DOM.Iterable", "ES2019"],
+    "baseUrl": ".",
+    "paths": {
+      "@aplus/shared/*": ["../shared/src/*"],
+      "@aplus/api-client": ["../api-client/src"]
+    },
+    "types": ["node", "@testing-library/jest-dom"]
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist", "src/**/*.stories.tsx", "src/stories", "**/*.test.ts"]
+}

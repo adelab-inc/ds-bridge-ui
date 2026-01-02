@@ -1,0 +1,79 @@
+{
+  "button": {
+    "base": "inline-flex justify-center items-center py-component-inset-button-y",
+    "variants": {
+      "variant": {
+        "primary": "bg-bg-accent",
+        "secondary": "bg-bg-accent-secondary",
+        "outline": "outline outline-1 outline-border-accent"
+      },
+      "size": {
+        "lg": "min-w-[56px] px-component-inset-button-lg-x text-button-lg-medium rounded-lg",
+        "md": "min-w-[52px] px-component-inset-button-md-x text-button-md-medium rounded-lg",
+        "sm": "min-w-[49px] px-component-inset-button-sm-x text-button-sm-medium rounded-md"
+      }
+    },
+    "compoundVariants": [
+      {
+        "variant": "primary",
+        "isDisabled": false,
+        "class": "text-text-inverse"
+      },
+      {
+        "variant": "secondary",
+        "isDisabled": false,
+        "class": "text-text-primary"
+      }
+    ],
+    "defaultVariants": {
+      "variant": "primary",
+      "size": "md",
+      "isLoading": false,
+      "isDisabled": false
+    }
+  },
+  "badge": {
+    "base": "inline-flex items-center shrink-0 rounded-full",
+    "variants": {
+      "type": {
+        "level": "py-component-inset-pill-y px-component-inset-pill-x text-caption-xs-regular",
+        "status": "py-component-inset-pill-y px-component-inset-pill-x text-caption-xs-regular",
+        "dot": "w-[6px] h-[6px]"
+      },
+      "variant": {
+        "solid": "",
+        "subtle": ""
+      }
+    },
+    "defaultVariants": {
+      "type": "level",
+      "variant": "solid"
+    }
+  },
+  "iconButton": {
+    "base": "flex justify-center items-center flex-shrink-0",
+    "variants": {
+      "variant": {
+        "ghost": "text-icon-interactive-default",
+        "secondary": "bg-bg-accent-secondary",
+        "tertiary": "bg-bg-subtle"
+      },
+      "size": {
+        "lg": "w-[40px] h-[40px] text-button-lg-medium rounded-lg",
+        "md": "w-[36px] h-[36px] text-button-md-medium rounded-lg",
+        "sm": "w-[32px] h-[32px] text-button-sm-medium rounded-[6px]"
+      }
+    },
+    "compoundVariants": [
+      {
+        "variant": ["ghost", "secondary"],
+        "size": "lg",
+        "class": "shadow-lg"
+      }
+    ],
+    "defaultVariants": {
+      "variant": "ghost",
+      "size": "md"
+    }
+  }
+}

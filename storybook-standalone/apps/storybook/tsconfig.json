@@ -1,0 +1,21 @@
+{
+  "extends": "../../packages/tsconfig/base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@aplus/ui": ["../../packages/ui/src"],
+      "@aplus/ui/*": ["../../packages/ui/src/*"],
+      "@aplus/shared": ["../../packages/shared/src"],
+      "@aplus/shared/*": ["../../packages/shared/src/*"],
+      "@aplus/types": ["../../packages/types/src"],
+      "@aplus/types/*": ["../../packages/types/src/*"]
+    },
+    "jsx": "react-jsx",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": false,
+    "noEmit": true,
+    "isolatedModules": true
+  },
+  "include": [".storybook/**/*", "stories/**/*", "../../packages/ui/src/**/*"],
+  "exclude": ["node_modules", "storybook-static"]
+}
