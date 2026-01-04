@@ -14,19 +14,19 @@ Storybook → ds.json → Runtime Hub → Copy for AI → IDE
 
 | 문서 | 설명 | 주요 독자 |
 |------|------|----------|
-| [01. 프로젝트 개요](./01-project-overview.md) | 프로젝트 비전, 핵심 가치, 사용 시나리오 | 전체 팀 |
-| [02. 시스템 아키텍처](./02-architecture.md) | 전체 시스템 구조와 데이터 흐름 | 개발자, PM |
-| [03. 기술 스택](./03-tech-stack.md) | 선정된 기술과 선정 이유 | 개발자 |
-| [04. API 계약](./04-api-contract.md) | 6개 핵심 API 엔드포인트 정의 | FE, AI 개발자 |
-| [05. 개발 워크플로우](./05-development-workflow.md) | MVP 4단계, 협업 방식 | 전체 팀 |
-| [06. 디렉토리 구조](./06-directory-structure.md) | 코드베이스 구조 가이드 | 개발자 |
+| [01. 프로젝트 개요](./specs/01-project-overview.md) | 프로젝트 비전, 핵심 가치, 사용 시나리오 | 전체 팀 |
+| [02. 시스템 아키텍처](./specs/02-architecture.md) | 전체 시스템 구조와 데이터 흐름 | 개발자, PM |
+| [03. 기술 스택](./specs/03-tech-stack.md) | 선정된 기술과 선정 이유 | 개발자 |
+| [04. API 계약](./specs/04-api-contract.md) | 6개 핵심 API 엔드포인트 정의 | FE, AI 개발자 |
+| [05. 개발 워크플로우](./specs/05-development-workflow.md) | MVP 4단계, 협업 방식 | 전체 팀 |
+| [06. 디렉토리 구조](./specs/06-directory-structure.md) | 코드베이스 구조 가이드 | 개발자 |
 
 ### 참고 문서
 
 | 문서 | 설명 |
 |------|------|
 | [ds-runtime-hub-summary.md](./ds-runtime-hub-summary.md) | PM 작성 프로젝트 요약 |
-| [ds-runtime-hub-claude-code-prd.md](./ds-runtime-hub-claude-code-prd.md) | 상세 PRD 및 스키마 정의 |
+| [ds-runtime-hub-claude-code-prd.md](./specs/ds-runtime-hub-claude-code-prd.md) | 상세 PRD 및 스키마 정의 |
 
 ---
 
