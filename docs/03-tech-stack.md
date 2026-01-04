@@ -3,276 +3,356 @@
 > **대상 독자**: 개발자 (필수), PM/디자이너 (참고)
 > **기술 수준**: 중급
 
-## TL;DR (핵심 요약)
+## TL;DR
 
-| 영역 | 선택 기술 | 한줄 설명 |
-|------|----------|----------|
-| 모노레포 | Turborepo + pnpm | 빠른 빌드, 효율적 패키지 관리 |
-| FE 프레임워크 | Next.js 15 | React 기반 풀스택 프레임워크 |
-| 스타일링 | Tailwind CSS | 유틸리티 기반 CSS |
-| UI 컴포넌트 | Shadcn/ui | 복사해서 쓰는 컴포넌트 라이브러리 |
-| 코드 에디터 | Monaco Editor | VS Code와 동일한 에디터 |
-| 코드 프리뷰 | Sandpack | 브라우저 내 코드 실행 환경 |
-| AI 통합 | Vercel AI SDK | AI 스트리밍 응답 처리 |
-
----
-
-## 기술 선택 원칙
-
-1. **검증된 기술**: 커뮤니티가 크고 문서화가 잘 된 기술 우선
-2. **개발 생산성**: 빠른 개발과 디버깅이 가능한 도구
-3. **AI 친화적**: AI가 생성하기 쉬운 코드 패턴 지원
-4. **확장성**: 향후 기능 추가가 용이한 구조
-
----
-
-## 빌드 & 패키지 관리
-
-### Turborepo
-
-**무엇인가요?**
-여러 프로젝트를 하나의 저장소에서 효율적으로 관리하는 도구입니다.
-
-**왜 선택했나요?**
-| 장점 | 설명 |
-|------|------|
-| 캐싱 | 변경되지 않은 부분은 다시 빌드하지 않음 |
-| 병렬 실행 | 여러 작업을 동시에 실행 |
-| Vercel 통합 | 배포 플랫폼과 긴밀한 연동 |
-
-**대안 비교**:
-| 도구 | 장점 | 단점 |
+| 영역 | 선택 | 이유 |
 |------|------|------|
-| **Turborepo** ✓ | 빠름, 설정 간단 | 기능이 Nx보다 적음 |
-| Nx | 기능 풍부 | 학습 곡선 높음 |
-| Lerna | 역사가 김 | 성능이 느림 |
-
-### pnpm
-
-**무엇인가요?**
-npm, yarn과 같은 패키지 매니저입니다.
-
-**왜 선택했나요?**
-| 장점 | 설명 |
-|------|------|
-| 디스크 절약 | 패키지를 한 번만 저장하고 링크로 공유 |
-| 빠른 설치 | npm 대비 2배 이상 빠름 |
-| 엄격한 의존성 | 명시하지 않은 패키지 사용 방지 |
+| Framework | Next.js 14+ (App Router) | RSC, API Routes, Streaming |
+| Language | TypeScript | 타입 안정성, 향상된 DX |
+| Styling | Tailwind CSS | Utility-first, 빠른 프로토타이핑 |
+| State | Zustand | 단순함, 가벼움 |
+| AI | Anthropic Claude API | 가이드형 채팅 |
+| Parsing | Puppeteer/Playwright | 토큰 추출, 런타임 스타일 |
 
 ---
 
-## 프론트엔드 프레임워크
+## 핵심 스택
 
-### Next.js 15
+### Next.js 14+ (App Router)
 
-**무엇인가요?**
-React 기반의 풀스택 웹 프레임워크입니다.
+**정의**: React 기반 풀스택 프레임워크
 
-**왜 선택했나요?**
-| 기능 | 우리 프로젝트에서의 활용 |
-|------|------------------------|
-| App Router | 직관적인 파일 기반 라우팅 |
-| Server Components | 초기 로딩 성능 개선 |
-| API Routes | 간단한 백엔드 API 구현 (Mock 서버) |
-| Streaming | AI 응답 실시간 표시 |
+**DS-Runtime Hub에서의 활용**:
 
-**버전 선택 이유**:
-- Next.js 15 + React 19 조합으로 최신 기능 활용
-- Streaming UI가 AI 응답에 최적화
+| 기능 | 사용처 |
+|------|--------|
+| App Router | 파일 기반 라우팅, 레이아웃 |
+| API Routes | Storybook 파싱, chat API, export |
+| Server Components | 초기 데이터 패칭 |
+| Streaming | 채팅 응답용 SSE |
 
-### React 19
+**버전**: 14.x 또는 15.x
 
-**새로운 기능 활용**:
-| 기능 | 설명 |
-|------|------|
-| Server Components | 서버에서 렌더링되는 컴포넌트 |
-| Actions | 폼 제출 간소화 |
-| use() Hook | 비동기 데이터 처리 개선 |
+```bash
+npx create-next-app@latest ds-runtime-hub --typescript --tailwind --app
+```
 
----
+### TypeScript
 
-## 스타일링
+**정의**: 타입이 있는 JavaScript
+
+**선택 이유**:
+- ds.json 스키마에 대한 타입 안정성
+- 향상된 IDE 지원
+- 컴파일 타임 에러 감지
+
+**정의해야 할 주요 타입**:
+```typescript
+// FE/AI 협업에 핵심적인 공유 타입
+interface DSJson { ... }
+interface Composition { ... }
+interface ChatMessage { ... }
+interface ChatAction { ... }
+```
 
 ### Tailwind CSS
 
-**무엇인가요?**
-HTML에 직접 스타일을 작성하는 유틸리티 CSS 프레임워크입니다.
+**정의**: Utility-first CSS 프레임워크
 
-**왜 선택했나요?**
+**선택 이유**:
+- 빠른 UI 개발
+- 일관된 디자인 토큰
+- 쉬운 반응형 디자인
+- CSS 파일 관리 불필요
 
-**1. AI 코드 생성에 최적화**
-```jsx
-// AI가 생성하기 쉬운 형태
-<button className="bg-blue-500 text-white px-4 py-2 rounded">
-  클릭
-</button>
+**설정**:
+```bash
+# create-next-app에서 --tailwind 옵션으로 이미 포함
 ```
 
-**2. 디자인 시스템 통합 용이**
-```js
-// tailwind.config.js에서 브랜드 색상 정의
-colors: {
-  brand: {
-    primary: '#3B82F6',
-    secondary: '#10B981',
+---
+
+## 상태 관리
+
+### Zustand
+
+**정의**: 가벼운 상태 관리 라이브러리
+
+**Redux/Jotai 대비 장점**:
+| 기준 | Zustand | Redux | Jotai |
+|------|---------|-------|-------|
+| 번들 크기 | 1.1kb | 7kb+ | 2.4kb |
+| 보일러플레이트 | 최소 | 많음 | 최소 |
+| 학습 곡선 | 낮음 | 높음 | 중간 |
+| DevTools | 있음 | 있음 | 제한적 |
+
+**Store 구조**:
+```typescript
+interface AppStore {
+  // DS 데이터
+  dsJson: DSJson | null;
+  setDsJson: (ds: DSJson) => void;
+
+  // UI 상태
+  selectedComponent: string | null;
+  selectComponent: (id: string) => void;
+
+  // Composition
+  composition: Composition | null;
+  addToComposition: (node: CompositionNode) => void;
+
+  // 채팅
+  messages: ChatMessage[];
+  addMessage: (msg: ChatMessage) => void;
+}
+```
+
+---
+
+## AI 연동
+
+### Anthropic Claude API
+
+**정의**: 가이드형 채팅을 위한 LLM API
+
+**Claude 선택 이유**:
+- 뛰어난 지시 따르기 능력
+- 구조화된 출력에 강함
+- 스트리밍 지원
+
+**모델 선택**:
+| 모델 | 사용 사례 | 비용 |
+|------|----------|------|
+| claude-3-5-sonnet | 기본, 균형 잡힌 성능 | 중간 |
+| claude-3-haiku | 빠른 응답 | 낮음 |
+| claude-3-opus | 복잡한 쿼리 | 높음 |
+
+**연동 패턴**:
+```typescript
+// 직접 API 호출 (Vercel AI SDK 미사용)
+// 이유: System Prompt + Action 파싱에 대한 더 많은 제어
+
+const response = await fetch('https://api.anthropic.com/v1/messages', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'x-api-key': process.env.ANTHROPIC_API_KEY,
+    'anthropic-version': '2023-06-01'
+  },
+  body: JSON.stringify({
+    model: 'claude-3-5-sonnet-20241022',
+    max_tokens: 1024,
+    system: SYSTEM_PROMPT,
+    messages: chatHistory
+  })
+});
+```
+
+**System Prompt 설계**:
+```
+You are a Design System Navigator.
+
+CRITICAL RULES:
+1. 제공된 ds.json에 있는 컴포넌트만 참조
+2. 절대 컴포넌트를 생성하거나 추측하지 않음
+3. 실행 가능한 제안으로 응답
+
+액션 형식:
+[ACTION:show_component:Button]
+[ACTION:add_composition:Card:Primary]
+```
+
+---
+
+## Storybook 파싱
+
+### Puppeteer / Playwright
+
+**정의**: 헤드리스 브라우저 자동화
+
+**필요한 경우**:
+- computed styles에서 토큰 추출
+- JavaScript로 렌더링되는 Storybook 컨텐츠
+- 스크린샷 캡처
+
+**비교**:
+| 기능 | Puppeteer | Playwright |
+|------|-----------|------------|
+| 브라우저 지원 | Chrome | Chrome, Firefox, Safari |
+| 속도 | 빠름 | 빠름 |
+| API | 유사 | 유사 |
+| 크기 | 큼 | 큼 |
+
+**권장**: Playwright (브라우저 지원이 더 좋음)
+
+**배포 고려사항**:
+```
+Serverless (Vercel): 제한적 (timeout, memory)
+Docker/VM: 완전 지원
+Edge: 지원 안 됨
+```
+
+### 단순 파싱 (Puppeteer 없이)
+
+MVP에서는 직접 fetch 사용:
+```typescript
+// Storybook v7+
+const response = await fetch(`${storybookUrl}/index.json`);
+const data = await response.json();
+
+// Storybook v6
+const response = await fetch(`${storybookUrl}/stories.json`);
+const data = await response.json();
+```
+
+---
+
+## UI 컴포넌트
+
+### 접근 방식: Custom + Radix Primitives
+
+**Shadcn/ui 전체를 사용하지 않는 이유**:
+- DS-Runtime Hub에는 특정 UI 요구사항이 있음
+- 미리보기되는 DS와의 디자인 충돌 방지
+- 최소한의 중립적인 스타일링 유지
+
+**권장 Primitives**:
+```bash
+npm install @radix-ui/react-dialog
+npm install @radix-ui/react-tabs
+npm install @radix-ui/react-collapsible
+npm install @radix-ui/react-tooltip
+```
+
+**필요한 커스텀 컴포넌트**:
+| 컴포넌트 | 목적 |
+|----------|------|
+| ChatPanel | 메시지 목록 + 입력 |
+| ComponentTree | 접히는 컴포넌트 목록 |
+| PropsEditor | props용 동적 폼 |
+| PreviewFrame | Storybook iframe 래퍼 |
+| ActionButton | Copy for AI, Export |
+
+---
+
+## 개발 도구
+
+### 패키지 매니저
+
+**pnpm** (권장)
+```bash
+npm install -g pnpm
+pnpm install
+```
+
+이유:
+- npm/yarn보다 빠름
+- 디스크 효율적
+- 엄격한 의존성 해석
+
+### Linting & Formatting
+
+```json
+// package.json
+{
+  "devDependencies": {
+    "eslint": "^8.x",
+    "eslint-config-next": "^14.x",
+    "prettier": "^3.x",
+    "@typescript-eslint/parser": "^6.x"
   }
 }
 ```
 
-**3. 빠른 프로토타이핑**
-- CSS 파일 왔다갔다 없이 컴포넌트에서 바로 스타일링
-- 디자이너가 정의한 spacing, color 시스템 그대로 적용
+### 테스팅
 
-### Shadcn/ui
-
-**무엇인가요?**
-"설치"하는 게 아니라 "복사"해서 쓰는 UI 컴포넌트 모음입니다.
-
-**왜 선택했나요?**
-| 장점 | 설명 |
+| 유형 | 도구 |
 |------|------|
-| 커스터마이징 | 코드를 직접 소유하므로 자유롭게 수정 가능 |
-| 접근성 | Radix UI 기반으로 접근성 표준 준수 |
-| 일관성 | 디자인 토큰으로 일관된 스타일 유지 |
-| AI 친화적 | AI가 컴포넌트 구조를 학습하기 쉬움 |
-
-**디자이너 참고**:
-- 기본 컴포넌트가 제공되므로 디자인 시스템 구축 시간 단축
-- 색상, 간격, 타이포그래피는 커스터마이징 가능
+| Unit | Vitest |
+| Component | Testing Library |
+| E2E | Playwright |
 
 ---
 
-## 코드 에디터
+## 환경 변수
 
-### Monaco Editor
+```bash
+# .env.local
 
-**무엇인가요?**
-VS Code에서 사용하는 것과 동일한 코드 에디터입니다.
+# Anthropic API
+ANTHROPIC_API_KEY=sk-ant-...
 
-**왜 선택했나요?**
-| 기능 | 설명 |
-|------|------|
-| 문법 하이라이팅 | 코드 색상 구분 |
-| 자동 완성 | IntelliSense 지원 |
-| 에러 표시 | 빨간 밑줄로 오류 표시 |
-| 다중 파일 | 탭으로 여러 파일 관리 |
+# App
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 
-**대안 비교**:
-| 도구 | 장점 | 단점 |
-|------|------|------|
-| **Monaco** ✓ | 기능 풍부, VS Code 동일 | 번들 크기 큼 |
-| CodeMirror | 가벼움 | 기능이 적음 |
-| Ace Editor | 역사가 김 | 업데이트 느림 |
+# (선택) 저장된 composition용 Database
+DATABASE_URL=...
 
----
-
-## 코드 프리뷰
-
-### Sandpack
-
-**무엇인가요?**
-CodeSandbox 팀이 만든 브라우저 내 코드 실행 환경입니다.
-
-**왜 선택했나요?**
-| 장점 | 설명 |
-|------|------|
-| React 최적화 | React 코드 실행에 특화 |
-| 빠른 업데이트 | 코드 수정 시 즉시 반영 |
-| 안전한 샌드박스 | 격리된 환경에서 실행 |
-| npm 패키지 지원 | 외부 라이브러리 사용 가능 |
-
-**대안 비교**:
-| 도구 | 장점 | 단점 |
-|------|------|------|
-| **Sandpack** ✓ | 가벼움, React 특화 | 커스텀 빌드 제한 |
-| WebContainer | Node.js 실행 가능 | 복잡함, 무거움 |
-| iframe + Blob | 단순함 | 보안 위험, 느림 |
-
----
-
-## AI 통합
-
-### Vercel AI SDK
-
-**무엇인가요?**
-AI 모델의 스트리밍 응답을 프론트엔드에서 쉽게 처리하는 라이브러리입니다.
-
-**왜 선택했나요?**
-```typescript
-// 스트리밍 응답을 간단하게 처리
-import { useChat } from 'ai/react';
-
-function CodeGenerator() {
-  const { messages, input, handleSubmit } = useChat({
-    api: '/api/generate'
-  });
-
-  return (
-    <form onSubmit={handleSubmit}>
-      <input value={input} />
-      {/* 코드가 실시간으로 나타남 */}
-      <pre>{messages[messages.length - 1]?.content}</pre>
-    </form>
-  );
-}
+# (선택) Analytics
+NEXT_PUBLIC_ANALYTICS_ID=...
 ```
 
-**지원 AI 모델**:
-- Anthropic Claude
-- OpenAI GPT-4
-- Google Gemini
-- 기타 OpenAI 호환 API
-
 ---
 
-## AI 서버 (AI 개발자 영역)
+## 배포 고려사항
 
-### 기술 선택 자유도
+### Vercel (MVP 권장)
 
-AI 개발자는 다음 중 자유롭게 선택할 수 있습니다:
+장점:
+- Next.js에 대한 제로 설정
+- Edge functions
+- Preview deployments
 
-| 기술 | 장점 | 적합한 경우 |
-|------|------|------------|
-| **Python + FastAPI** | LangChain 생태계, 빠른 개발 | LLM 오케스트레이션 필요 시 |
-| **Python + LangChain** | 프롬프트 체이닝, 에이전트 | 복잡한 AI 파이프라인 |
-| **Node.js** | FE와 동일 언어 | 단순한 API 래핑 |
-| **Go** | 높은 성능 | 대규모 트래픽 처리 |
+단점:
+- Puppeteer 제한적 (외부 서비스 사용하거나 생략)
+- Serverless function timeout (hobby 10s, pro 60s)
 
-### 권장 구성 (Python)
+### Docker (전체 기능용)
 
+```dockerfile
+FROM node:20-alpine
+WORKDIR /app
+COPY package.json pnpm-lock.yaml ./
+RUN npm install -g pnpm && pnpm install
+COPY . .
+RUN pnpm build
+CMD ["pnpm", "start"]
 ```
-ai-service/
-├── src/
-│   ├── api/
-│   │   └── routes.py       # FastAPI 라우트
-│   ├── prompts/
-│   │   └── templates.py    # 프롬프트 템플릿
-│   ├── generators/
-│   │   └── code_gen.py     # 코드 생성 로직
-│   └── validators/
-│       └── syntax.py       # 코드 검증
-├── pyproject.toml
-└── Dockerfile
-```
+
+필요한 경우:
+- Puppeteer/Playwright 토큰 추출
+- 장시간 실행 프로세스
+- 커스텀 서버 요구사항
 
 ---
 
 ## 버전 요약
 
-| 기술 | 버전 | 비고 |
+| 기술 | 버전 | 필수 |
 |------|------|------|
-| Node.js | 20.x LTS | 필수 |
-| pnpm | 8.x | 필수 |
-| Next.js | 15.x | 필수 |
-| React | 19.x | 필수 |
-| TypeScript | 5.x | 필수 |
-| Tailwind CSS | 3.x | 필수 |
-| Monaco Editor | 최신 | 필수 |
-| Sandpack | 최신 | 필수 |
+| Node.js | 20.x LTS | 예 |
+| pnpm | 8.x+ | 권장 |
+| Next.js | 14.x 또는 15.x | 예 |
+| React | 18.x 또는 19.x | 예 |
+| TypeScript | 5.x | 예 |
+| Tailwind CSS | 3.x | 예 |
+| Zustand | 4.x | 예 |
+
+---
+
+## 사용하지 않는 것 (결정)
+
+| 기술 | 사용하지 않는 이유 |
+|------|-------------------|
+| Monaco Editor | 코드 편집 기능 불필요 |
+| Sandpack | 코드 생성 안 함, Storybook iframe 사용 |
+| Vercel AI SDK | Claude 프롬프트에 대한 더 많은 제어 필요 |
+| Redux | 이 앱 규모에 과함 |
+| Prisma/DB | MVP는 localStorage 사용, 나중에 추가 |
 
 ---
 
 ## 다음 문서
 
-- [04. API 계약](./04-api-contract.md) - FE ↔ AI 인터페이스 상세
-- [06. 디렉토리 구조](./06-directory-structure.md) - 코드베이스 구조
+- [04. API Contract](./04-api-contract.md) - 6개 API 엔드포인트
+- [06. 디렉토리 구조](./06-directory-structure.md) - 코드 조직

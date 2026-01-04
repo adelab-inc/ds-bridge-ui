@@ -1,371 +1,512 @@
 # 06. 디렉토리 구조
 
-> **대상 독자**: FE 개발자, AI 개발자 (필수), PM/디자이너 (참고)
+> **대상 독자**: FE 개발자, AI 개발자 (필수), PM (참고)
 
-## TL;DR (핵심 요약)
+## TL;DR
 
-- **모노레포**: `apps/` (실행 앱) + `packages/` (공유 패키지)
-- **소유권 명확**: 각 디렉토리별 담당자 지정
-- **타입 공유**: `packages/types`에서 API 계약 관리
+- **단일 Next.js 앱**: 모노레포 없이 단순한 프로젝트 구조
+- **명확한 소유권**: 각 디렉토리별 담당자 지정
+- **공유 타입**: FE/AI 계약 관리를 위한 `types/`
 
 ---
 
-## 전체 구조 한눈에 보기
+## 프로젝트 구조 개요
 
 ```
-ds-bridge-ui/
+ds-runtime-hub/
 │
-├── 📁 apps/                      # 실행 가능한 애플리케이션
-│   ├── 📁 web/                   # 🟦 FE - 메인 웹 앱
-│   └── 📁 preview/               # 🟦 FE - 프리뷰 샌드박스
+├── 📁 app/                       # Next.js App Router
+│   ├── 📁 api/                   # API Routes
+│   └── 📁 (main)/                # 메인 페이지
 │
-├── 📁 packages/                  # 공유 패키지
-│   ├── 📁 ui/                    # 🟦 FE - UI 컴포넌트
-│   ├── 📁 ai-client/             # 🟦 FE - AI API 클라이언트
-│   ├── 📁 editor/                # 🟦 FE - 에디터 유틸리티
-│   └── 📁 types/                 # 🟩 공동 - 공유 타입
+├── 📁 components/                # React 컴포넌트
+│   ├── 📁 chat/                  # 🟩 AI Dev - Chat UI
+│   ├── 📁 composition/           # 🟦 FE Dev - Composition
+│   ├── 📁 layout/                # 🟦 FE Dev - 레이아웃
+│   ├── 📁 preview/               # 🟦 FE Dev - 미리보기
+│   └── 📁 ui/                    # 🟦 FE Dev - 기본 UI
+│
+├── 📁 lib/                       # 유틸리티 & 헬퍼
+│   ├── 📁 storybook/             # 🟦 FE Dev - Parser
+│   ├── 📁 ai/                    # 🟩 AI Dev - Claude 연동
+│   └── 📁 utils/                 # 🟩 공유 유틸리티
+│
+├── 📁 types/                     # 🟩 공유 - 타입 정의
+│
+├── 📁 stores/                    # 🟦 FE Dev - Zustand stores
+│
+├── 📁 hooks/                     # 🟦 FE Dev - 커스텀 훅
 │
 ├── 📁 docs/                      # 📚 문서
 │
-├── 📄 turbo.json                 # Turborepo 설정
-├── 📄 pnpm-workspace.yaml        # pnpm 워크스페이스
-├── 📄 package.json               # 루트 패키지
-└── 📄 README.md                  # 프로젝트 소개
+├── 📄 next.config.js
+├── 📄 tailwind.config.js
+├── 📄 tsconfig.json
+├── 📄 package.json
+└── 📄 README.md
 ```
 
 **범례**
 - 🟦 FE 개발자 담당
 - 🟨 AI 개발자 담당
-- 🟩 공동 관리
+- 🟩 공동 담당
 
 ---
 
-## apps/ - 실행 애플리케이션
+## app/ - Next.js App Router
 
-### apps/web - 메인 웹 앱
-
-사용자가 접속하는 메인 애플리케이션입니다.
+### app/api/ - API Routes
 
 ```
-apps/web/
-├── 📁 app/                       # Next.js App Router
-│   ├── 📁 (main)/                # 메인 레이아웃 그룹
-│   │   ├── 📄 layout.tsx         # 공통 레이아웃
-│   │   ├── 📄 page.tsx           # 랜딩 페이지 (/)
-│   │   └── 📁 editor/            # 에디터 페이지
-│   │       └── 📄 page.tsx       # /editor
-│   │
-│   ├── 📁 api/                   # API Routes
-│   │   └── 📁 generate/          # Mock AI API
-│   │       └── 📄 route.ts       # POST /api/generate
-│   │
-│   ├── 📄 layout.tsx             # 루트 레이아웃
-│   └── 📄 globals.css            # 전역 스타일
+app/api/
+├── 📁 storybook/
+│   └── 📁 parse/
+│       └── 📄 route.ts           # POST /api/storybook/parse
 │
-├── 📁 components/                # 앱 전용 컴포넌트
-│   ├── 📁 editor/                # 에디터 관련
-│   │   ├── 📄 CodeEditor.tsx     # Monaco 래퍼
-│   │   ├── 📄 EditorTabs.tsx     # 파일 탭
-│   │   └── 📄 EditorToolbar.tsx  # 툴바
-│   │
-│   ├── 📁 preview/               # 프리뷰 관련
-│   │   ├── 📄 PreviewPane.tsx    # Sandpack 래퍼
-│   │   └── 📄 PreviewError.tsx   # 에러 표시
-│   │
-│   ├── 📁 prompt/                # 프롬프트 입력
-│   │   ├── 📄 PromptInput.tsx    # 입력 폼
-│   │   └── 📄 PromptHistory.tsx  # 히스토리
-│   │
-│   └── 📁 layout/                # 레이아웃
-│       ├── 📄 Header.tsx         # 헤더
-│       ├── 📄 Sidebar.tsx        # 사이드바
-│       └── 📄 Footer.tsx         # 푸터
+├── 📁 chat/
+│   └── 📄 route.ts               # POST /api/chat (SSE)
 │
-├── 📁 hooks/                     # 커스텀 훅
-│   ├── 📄 useCodeGeneration.ts   # AI 코드 생성 훅
-│   ├── 📄 useEditor.ts           # 에디터 상태 훅
-│   └── 📄 usePreview.ts          # 프리뷰 상태 훅
+├── 📁 composition/
+│   └── 📄 route.ts               # POST /api/composition
 │
-├── 📁 lib/                       # 유틸리티
-│   ├── 📄 utils.ts               # 공통 유틸
-│   └── 📄 constants.ts           # 상수
+├── 📁 export/
+│   └── 📁 copy-for-ai/
+│       └── 📄 route.ts           # POST /api/export/copy-for-ai
 │
-├── 📁 stores/                    # 상태 관리 (Zustand)
-│   ├── 📄 editorStore.ts         # 에디터 상태
-│   └── 📄 projectStore.ts        # 프로젝트 상태
-│
-├── 📄 next.config.js             # Next.js 설정
-├── 📄 tailwind.config.js         # Tailwind 설정
-├── 📄 tsconfig.json              # TypeScript 설정
-└── 📄 package.json
+└── 📁 tokens/
+    └── 📁 extract/
+        └── 📄 route.ts           # POST /api/tokens/extract
 ```
 
-### apps/preview - 프리뷰 샌드박스
-
-생성된 코드를 안전하게 실행하는 격리 환경입니다.
+### app/(main)/ - 메인 페이지
 
 ```
-apps/preview/
-├── 📁 src/
-│   ├── 📄 index.tsx              # 엔트리 포인트
-│   ├── 📄 SandpackProvider.tsx   # Sandpack 설정
-│   └── 📄 PreviewFrame.tsx       # iframe 통신
+app/
+├── 📄 layout.tsx                 # 루트 레이아웃
+├── 📄 globals.css                # 전역 스타일
 │
-├── 📄 vite.config.ts             # Vite 설정
-├── 📄 tsconfig.json
-└── 📄 package.json
+└── 📁 (main)/
+    ├── 📄 layout.tsx             # 패널이 있는 메인 레이아웃
+    ├── 📄 page.tsx               # 홈 페이지 (/)
+    └── 📄 loading.tsx            # 로딩 상태
 ```
 
 ---
 
-## packages/ - 공유 패키지
+## components/ - React 컴포넌트
 
-### packages/ui - UI 컴포넌트
+### components/layout/ 🟦
 
-Shadcn/ui 기반 공유 컴포넌트 라이브러리입니다.
+메인 레이아웃 컴포넌트.
 
 ```
-packages/ui/
-├── 📁 src/
-│   ├── 📁 components/
-│   │   ├── 📄 button.tsx         # 버튼
-│   │   ├── 📄 input.tsx          # 입력 필드
-│   │   ├── 📄 card.tsx           # 카드
-│   │   ├── 📄 dialog.tsx         # 모달
-│   │   ├── 📄 tabs.tsx           # 탭
-│   │   ├── 📄 toast.tsx          # 토스트 알림
-│   │   └── 📄 index.ts           # 컴포넌트 export
-│   │
-│   ├── 📁 styles/
-│   │   └── 📄 globals.css        # 공통 스타일
-│   │
-│   └── 📄 index.ts               # 패키지 엔트리
-│
-├── 📄 tailwind.config.js         # Tailwind 설정
-├── 📄 tsconfig.json
-└── 📄 package.json
+components/layout/
+├── 📄 Header.tsx                 # 로고, URL 입력, Upload JSON
+├── 📄 LeftPanel.tsx              # Chat + Component 목록 + Actions
+├── 📄 RightPanel.tsx             # Storybook iframe / Preview
+├── 📄 PanelResizer.tsx           # 리사이즈 가능한 패널 구분선
+└── 📄 index.ts
 ```
 
-**사용 방법**:
+### components/chat/ 🟨🟦
+
+채팅 인터페이스 컴포넌트.
+
+```
+components/chat/
+├── 📄 ChatPanel.tsx              # 메인 채팅 컨테이너
+├── 📄 ChatMessages.tsx           # 스트리밍이 있는 메시지 목록
+├── 📄 ChatInput.tsx              # 메시지 입력 필드
+├── 📄 ChatMessage.tsx            # 단일 메시지 버블
+├── 📄 ActionButton.tsx           # AI의 클릭 가능한 액션
+└── 📄 index.ts
+```
+
+### components/composition/ 🟦
+
+페이지 composition 관리.
+
+```
+components/composition/
+├── 📄 CompositionPanel.tsx       # Composition 관리자
+├── 📄 CompositionNode.tsx        # Composition 내 단일 컴포넌트
+├── 📄 CompositionPreview.tsx     # 렌더링된 미리보기
+├── 📄 PropsEditor.tsx            # 동적 props 폼
+└── 📄 index.ts
+```
+
+### components/preview/ 🟦
+
+Storybook 미리보기 및 iframe 처리.
+
+```
+components/preview/
+├── 📄 PreviewFrame.tsx           # Storybook iframe 래퍼
+├── 📄 ComponentList.tsx          # 접히는 컴포넌트 트리
+├── 📄 ComponentItem.tsx          # 목록 내 단일 컴포넌트
+├── 📄 StoryList.tsx              # Story variants
+└── 📄 index.ts
+```
+
+### components/ui/ 🟦
+
+기본 UI 컴포넌트 (Radix primitives).
+
+```
+components/ui/
+├── 📄 Button.tsx
+├── 📄 Input.tsx
+├── 📄 Card.tsx
+├── 📄 Dialog.tsx
+├── 📄 Tabs.tsx
+├── 📄 Collapsible.tsx
+├── 📄 Tooltip.tsx
+├── 📄 Toast.tsx
+└── 📄 index.ts
+```
+
+---
+
+## lib/ - 유틸리티 & 헬퍼
+
+### lib/storybook/ 🟦
+
+Storybook 파싱 유틸리티.
+
+```
+lib/storybook/
+├── 📄 parser.ts                  # stories.json / index.json 파싱
+├── 📄 transformer.ts             # ds.json으로 변환
+├── 📄 validators.ts              # URL 및 데이터 유효성 검사
+└── 📄 index.ts
+```
+
+**주요 함수**:
 ```typescript
-// apps/web에서 사용
-import { Button, Card, Input } from '@ds-bridge/ui';
+// lib/storybook/parser.ts
+export async function parseStorybookUrl(url: string): Promise<RawStorybookData>;
 
-function MyComponent() {
-  return (
-    <Card>
-      <Input placeholder="프롬프트 입력..." />
-      <Button>생성</Button>
-    </Card>
-  );
-}
+// lib/storybook/transformer.ts
+export function transformToDsJson(raw: RawStorybookData, sourceUrl: string): DSJson;
 ```
 
-### packages/ai-client - AI API 클라이언트
+### lib/ai/ 🟨
 
-AI 서버와 통신하는 클라이언트 라이브러리입니다.
+Claude API 연동 및 프롬프트 관리.
 
 ```
-packages/ai-client/
-├── 📁 src/
-│   ├── 📄 index.ts               # 패키지 엔트리
-│   ├── 📄 client.ts              # API 클라이언트
-│   ├── 📄 streaming.ts           # 스트리밍 처리
-│   ├── 📄 config.ts              # 환경 설정
-│   └── 📁 errors/
-│       └── 📄 index.ts           # 에러 클래스
-│
-├── 📄 tsconfig.json
-└── 📄 package.json
+lib/ai/
+├── 📄 client.ts                  # Claude API 클라이언트
+├── 📄 prompts.ts                 # System prompt 템플릿
+├── 📄 actions.ts                 # Action 파싱 로직
+├── 📄 streaming.ts               # SSE 스트리밍 유틸리티
+└── 📄 index.ts
 ```
 
-**사용 방법**:
+**주요 함수**:
 ```typescript
-import { generateCode } from '@ds-bridge/ai-client';
+// lib/ai/client.ts
+export async function streamChatResponse(
+  dsJson: DSJson,
+  messages: ChatMessage[],
+  composition?: Composition
+): AsyncGenerator<ChatChunk>;
 
-// 스트리밍 코드 생성
-for await (const chunk of generateCode({
-  prompt: "로그인 폼 만들어줘",
-  options: { framework: 'react' }
-})) {
-  console.log(chunk.content);
-}
+// lib/ai/prompts.ts
+export function buildSystemPrompt(
+  dsJson: DSJson,
+  composition?: Composition
+): string;
+
+// lib/ai/actions.ts
+export function parseActions(content: string): ChatAction[];
 ```
 
-### packages/editor - 에디터 유틸리티
+### lib/utils/ 🟩
 
-Monaco Editor 관련 유틸리티입니다.
-
-```
-packages/editor/
-├── 📁 src/
-│   ├── 📄 index.ts               # 패키지 엔트리
-│   ├── 📄 monaco-setup.ts        # Monaco 초기화
-│   ├── 📄 themes.ts              # 에디터 테마
-│   ├── 📄 languages.ts           # 언어 설정
-│   └── 📁 extensions/
-│       ├── 📄 typescript.ts      # TS 설정
-│       └── 📄 tailwind.ts        # Tailwind 자동완성
-│
-├── 📄 tsconfig.json
-└── 📄 package.json
-```
-
-### packages/types - 공유 타입 정의 🟩
-
-**FE ↔ AI 계약의 핵심**. 양 팀이 공동 관리합니다.
+공유 유틸리티 함수.
 
 ```
-packages/types/
-├── 📁 src/
-│   ├── 📄 index.ts               # 모든 타입 export
-│   ├── 📄 api.ts                 # API 요청/응답 타입
-│   ├── 📄 editor.ts              # 에디터 관련 타입
-│   ├── 📄 preview.ts             # 프리뷰 관련 타입
-│   └── 📄 common.ts              # 공통 타입
-│
-├── 📄 tsconfig.json
-└── 📄 package.json
+lib/utils/
+├── 📄 cn.ts                      # classnames 유틸리티
+├── 📄 clipboard.ts               # Clipboard API 헬퍼
+├── 📄 format.ts                  # 포맷팅 유틸리티
+└── 📄 index.ts
 ```
 
-**주요 타입**:
+---
+
+## types/ - 공유 타입 정의 🟩
+
+**FE ↔ AI 협업에 핵심적**. 양 팀 모두 변경 사항 리뷰 필수.
+
+```
+types/
+├── 📄 ds-json.ts                 # DSJson, Component, Story, Tokens
+├── 📄 composition.ts             # Composition, CompositionNode
+├── 📄 chat.ts                    # ChatMessage, ChatAction, ChatResponse
+├── 📄 api.ts                     # Request/Response 타입
+└── 📄 index.ts                   # 모든 타입 re-export
+```
+
+### ds-json.ts
+
 ```typescript
-// packages/types/src/api.ts
-export interface CodeGenerationRequest { ... }
-export interface CodeGenerationResponse { ... }
-export interface CodeChunk { ... }
+// 핵심 DS 구조
+export interface DSJson { ... }
+export interface Component { ... }
+export interface PropDefinition { ... }
+export interface Story { ... }
+export interface DesignTokens { ... }
+```
+
+### composition.ts
+
+```typescript
+// 페이지 composition
+export interface Composition { ... }
+export interface CompositionNode { ... }
+```
+
+### chat.ts
+
+```typescript
+// 채팅 타입
+export interface ChatMessage { ... }
+export interface ChatAction { ... }
+export interface ChatResponse { ... }
+export type ChatActionType =
+  | 'show_component'
+  | 'show_props'
+  | 'add_to_composition'
+  | 'navigate';
+```
+
+### api.ts
+
+```typescript
+// API 타입
+export interface StorybookParseRequest { ... }
+export interface StorybookParseResponse { ... }
+export interface ChatRequest { ... }
+export interface CopyForAIRequest { ... }
 export interface ErrorResponse { ... }
 ```
 
 ---
 
-## AI 서버 구조 (별도 저장소) 🟨
+## stores/ - 상태 관리 🟦
 
-AI 개발자가 관리하는 별도 프로젝트입니다.
+애플리케이션 상태를 위한 Zustand stores.
 
 ```
-ai-service/                       # 별도 저장소
-├── 📁 src/
-│   ├── 📁 api/                   # API 엔드포인트
-│   │   ├── 📄 __init__.py
-│   │   ├── 📄 routes.py          # FastAPI 라우트
-│   │   └── 📄 middleware.py      # 미들웨어
-│   │
-│   ├── 📁 prompts/               # 프롬프트 템플릿
-│   │   ├── 📄 __init__.py
-│   │   ├── 📄 react.py           # React 생성 프롬프트
-│   │   ├── 📄 vue.py             # Vue 생성 프롬프트
-│   │   └── 📄 base.py            # 기본 프롬프트
-│   │
-│   ├── 📁 generators/            # 코드 생성 로직
-│   │   ├── 📄 __init__.py
-│   │   ├── 📄 code_generator.py  # 메인 생성기
-│   │   └── 📄 llm_client.py      # LLM API 클라이언트
-│   │
-│   ├── 📁 validators/            # 코드 검증
-│   │   ├── 📄 __init__.py
-│   │   ├── 📄 syntax.py          # 문법 검사
-│   │   └── 📄 security.py        # 보안 검사
-│   │
-│   └── 📄 main.py                # 앱 엔트리
-│
-├── 📁 tests/                     # 테스트
-│   ├── 📄 test_api.py
-│   ├── 📄 test_generator.py
-│   └── 📄 test_prompts.py
-│
-├── 📄 pyproject.toml             # Python 의존성 (Poetry)
-├── 📄 Dockerfile                 # 컨테이너 설정
-├── 📄 .env.example               # 환경 변수 예시
-└── 📄 README.md
+stores/
+├── 📄 dsStore.ts                 # DS 데이터 상태
+├── 📄 compositionStore.ts        # Composition 상태
+├── 📄 chatStore.ts               # 채팅 메시지 상태
+├── 📄 uiStore.ts                 # UI 상태 (패널, 탭)
+└── 📄 index.ts
+```
+
+### Store Slices
+
+```typescript
+// stores/dsStore.ts
+interface DSStore {
+  dsJson: DSJson | null;
+  loadingState: 'idle' | 'parsing' | 'ready' | 'error';
+  error: string | null;
+  selectedComponent: string | null;
+  selectedStory: string | null;
+  setDsJson: (ds: DSJson) => void;
+  selectComponent: (id: string) => void;
+}
+
+// stores/compositionStore.ts
+interface CompositionStore {
+  composition: Composition | null;
+  addNode: (node: CompositionNode) => void;
+  removeNode: (nodeId: string) => void;
+  updateProps: (nodeId: string, props: Record<string, any>) => void;
+}
+
+// stores/chatStore.ts
+interface ChatStore {
+  messages: ChatMessage[];
+  isStreaming: boolean;
+  addMessage: (msg: ChatMessage) => void;
+  setStreaming: (val: boolean) => void;
+}
 ```
 
 ---
 
-## 설정 파일 설명
+## hooks/ - 커스텀 훅 🟦
 
-### turbo.json - Turborepo 설정
+공통 기능을 위한 React 훅.
+
+```
+hooks/
+├── 📄 useStorybookParser.ts      # Storybook URL 파싱
+├── 📄 useChat.ts                 # 스트리밍 채팅
+├── 📄 useComposition.ts          # Composition 작업
+├── 📄 useCopyForAI.ts            # 프롬프트 생성 및 복사
+├── 📄 useLocalStorage.ts         # 로컬 데이터 유지
+└── 📄 index.ts
+```
+
+### 훅 예시
+
+```typescript
+// hooks/useStorybookParser.ts
+export function useStorybookParser() {
+  const setDsJson = useDSStore((s) => s.setDsJson);
+
+  async function parse(url: string) {
+    const response = await fetch('/api/storybook/parse', {
+      method: 'POST',
+      body: JSON.stringify({ url })
+    });
+    const data = await response.json();
+    if (data.success) setDsJson(data.data);
+  }
+
+  return { parse };
+}
+
+// hooks/useChat.ts
+export function useChat() {
+  const { messages, addMessage, setStreaming } = useChatStore();
+  const dsJson = useDSStore((s) => s.dsJson);
+
+  async function send(content: string) {
+    addMessage({ role: 'user', content });
+    setStreaming(true);
+
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      body: JSON.stringify({ dsJson, messages })
+    });
+
+    // SSE 스트리밍 처리...
+  }
+
+  return { messages, send };
+}
+```
+
+---
+
+## CLI 패키지 (별도) 🟨
+
+로컬 DS 추출을 위한 별도 npm 패키지.
+
+```
+ds-hub-cli/                       # 별도 저장소
+├── 📁 src/
+│   ├── 📄 index.ts               # CLI 엔트리 포인트
+│   ├── 📄 extractor.ts           # Storybook 추출
+│   ├── 📄 tokenParser.ts         # 토큰 파일 파싱
+│   └── 📄 output.ts              # ds.json 생성
+│
+├── 📄 package.json               # "ds-hub-cli"
+├── 📄 tsconfig.json
+└── 📄 README.md
+```
+
+**사용법**:
+```bash
+npx ds-hub extract --output ./ds.json --include-tokens
+```
+
+---
+
+## 설정 파일
+
+### package.json
 
 ```json
 {
-  "$schema": "https://turbo.build/schema.json",
-  "tasks": {
-    "build": {
-      "dependsOn": ["^build"],
-      "outputs": [".next/**", "dist/**"]
-    },
-    "dev": {
-      "cache": false,
-      "persistent": true
-    },
-    "lint": {},
-    "typecheck": {}
+  "name": "ds-runtime-hub",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "^14.0.0",
+    "react": "^18.0.0",
+    "zustand": "^4.0.0",
+    "@radix-ui/react-dialog": "^1.0.0",
+    "@radix-ui/react-tabs": "^1.0.0",
+    "@radix-ui/react-collapsible": "^1.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "tailwindcss": "^3.0.0",
+    "@types/react": "^18.0.0",
+    "eslint": "^8.0.0",
+    "prettier": "^3.0.0"
   }
 }
 ```
 
-| 속성 | 설명 |
-|------|------|
-| `dependsOn: ["^build"]` | 의존 패키지 먼저 빌드 |
-| `outputs` | 캐시할 빌드 결과물 |
-| `cache: false` | dev 서버는 캐시 안 함 |
-
-### pnpm-workspace.yaml - 워크스페이스 설정
-
-```yaml
-packages:
-  - 'apps/*'
-  - 'packages/*'
-```
-
-### package.json (루트)
+### tsconfig.json
 
 ```json
 {
-  "name": "ds-bridge-ui",
-  "private": true,
-  "scripts": {
-    "dev": "turbo dev",
-    "build": "turbo build",
-    "lint": "turbo lint",
-    "typecheck": "turbo typecheck"
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "strict": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "jsx": "preserve",
+    "paths": {
+      "@/*": ["./*"]
+    }
   },
-  "devDependencies": {
-    "turbo": "^2.0.0",
-    "typescript": "^5.0.0"
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules"]
+}
+```
+
+### tailwind.config.js
+
+```javascript
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    './app/**/*.{ts,tsx}',
+    './components/**/*.{ts,tsx}',
+  ],
+  theme: {
+    extend: {},
   },
-  "packageManager": "pnpm@8.0.0"
+  plugins: [],
 }
 ```
 
 ---
 
-## 패키지 의존성 관계
+## 디렉토리 소유권 요약
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│                        apps/web                              │
-│                           │                                  │
-│         ┌─────────────────┼─────────────────┐               │
-│         │                 │                 │               │
-│         ▼                 ▼                 ▼               │
-│   packages/ui     packages/editor    packages/ai-client     │
-│         │                 │                 │               │
-│         └─────────────────┼─────────────────┘               │
-│                           │                                  │
-│                           ▼                                  │
-│                    packages/types                            │
-└──────────────────────────────────────────────────────────────┘
-
-apps/preview
-     │
-     └─→ packages/types
-```
-
-**의존 방향**:
-- `apps/*` → `packages/*` ✅
-- `packages/*` → `packages/types` ✅
-- `packages/*` → `apps/*` ❌ (금지)
+| 디렉토리 | 담당 | 책임 |
+|----------|------|------|
+| `app/api/storybook` | FE | Storybook URL 파싱 |
+| `app/api/chat` | AI | Claude API 스트리밍 |
+| `app/api/tokens` | AI | 토큰 추출 |
+| `components/chat` | 공동 | Chat UI + 액션 처리 |
+| `components/composition` | FE | Composition 관리 |
+| `components/preview` | FE | Storybook iframe |
+| `lib/storybook` | FE | 파싱 로직 |
+| `lib/ai` | AI | Claude 연동 |
+| `types/` | 공동 | 계약 타입 (PR 승인 필요) |
+| `stores/` | FE | 상태 관리 |
+| `hooks/` | FE | React 훅 |
 
 ---
 
@@ -375,19 +516,25 @@ apps/preview
 
 | 유형 | 규칙 | 예시 |
 |------|------|------|
-| React 컴포넌트 | PascalCase | `CodeEditor.tsx` |
-| 훅 | camelCase + use 접두사 | `useCodeGeneration.ts` |
-| 유틸리티 | camelCase | `formatCode.ts` |
-| 상수 | UPPER_SNAKE_CASE | `API_ENDPOINTS.ts` |
-| 타입 정의 | camelCase | `api.ts` |
+| React Component | PascalCase | `ChatPanel.tsx` |
+| Hook | camelCase + use | `useChat.ts` |
+| Utility | camelCase | `parser.ts` |
+| Type Definition | camelCase | `ds-json.ts` |
+| Store | camelCase + Store | `chatStore.ts` |
 
-### 디렉토리
+### Import 패턴
 
-| 유형 | 규칙 | 예시 |
-|------|------|------|
-| 기능 그룹 | kebab-case | `ai-client` |
-| 컴포넌트 그룹 | camelCase | `components/editor` |
-| 앱 | kebab-case | `apps/web` |
+```typescript
+// 절대 경로 import (권장)
+import { DSJson } from '@/types';
+import { useChat } from '@/hooks';
+import { ChatPanel } from '@/components/chat';
+
+// Barrel exports
+// components/chat/index.ts
+export { ChatPanel } from './ChatPanel';
+export { ChatInput } from './ChatInput';
+```
 
 ---
 
@@ -395,14 +542,14 @@ apps/preview
 
 이 문서를 읽은 후:
 
-1. **FE 개발자**: `apps/web` 구조를 참고하여 개발 시작
-2. **AI 개발자**: `ai-service` 구조를 참고하여 프로젝트 생성
-3. **공동**: `packages/types` 타입 정의부터 시작
+1. **FE 개발자**: `app/` 구조와 `components/layout`으로 시작
+2. **AI 개발자**: `lib/ai/`와 `types/chat.ts`에 집중
+3. **공동**: 구현 전에 `types/` 함께 정의
 
 ---
 
 ## 관련 문서
 
-- [02. 시스템 아키텍처](./02-architecture.md) - 전체 시스템 구조
-- [03. 기술 스택](./03-tech-stack.md) - 각 기술 선택 이유
-- [04. API 계약](./04-api-contract.md) - 타입 정의 상세
+- [02. 아키텍처](./02-architecture.md) - 시스템 개요
+- [03. 기술 스택](./03-tech-stack.md) - 기술 선택
+- [04. API Contract](./04-api-contract.md) - API 스펙
