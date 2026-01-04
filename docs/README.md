@@ -25,7 +25,8 @@ Storybook → ds.json → Runtime Hub → Copy for AI → IDE
 
 | 문서 | 설명 |
 |------|------|
-| [ds-runtime-hub-summary.md](./ds-runtime-hub-summary.md) | PM 작성 프로젝트 요약 |
+| [Design_System_Runtime_Hub_Summary.md](./hub/Design_System_Runtime_Hub_Summary.md) | 📌 **원본** - PM 작성 프로젝트 요약 |
+| [ds-runtime-hub-summary.md](./hub/ds-runtime-hub-summary.md) | 참조용 요약본 |
 | [ds-runtime-hub-claude-code-prd.md](./specs/ds-runtime-hub-claude-code-prd.md) | 상세 PRD 및 스키마 정의 |
 
 ---
