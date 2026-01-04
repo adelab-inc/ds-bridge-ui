@@ -1,0 +1,21 @@
+{
+  "name": "@aplus/tsconfig",
+  "version": "0.0.1",
+  "private": true,
+  "description": "A+ World UI TypeScript 공통 설정",
+  "main": "base.json",
+  "files": [
+    "base.json",
+    "react.json",
+    "node.json",
+    "library.json"
+  ],
+  "scripts": {
+    "test": "echo 'No tests for config package'"
+  },
+  "keywords": [
+    "typescript",
+    "config",
+    "tsconfig"
+  ]
+}

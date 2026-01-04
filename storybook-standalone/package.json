@@ -1,0 +1,54 @@
+{
+  "name": "@storybook/standalone",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Storybook Standalone - UI Component Library",
+  "packageManager": "pnpm@10.15.0",
+  "engines": {
+    "node": "^20.0.0",
+    "pnpm": "^10.0.0"
+  },
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "dev:storybook": "turbo dev --filter=storybook",
+    "start:storybook": "turbo start --filter=storybook",
+    "build:storybook": "turbo build --filter=storybook && pnpm schema:extract",
+    "build:ui": "turbo build --filter=@aplus/ui",
+    "build:validator": "pnpm --filter storybook-validator build",
+    "schema:extract": "tsx scripts/extract-component-schema.ts",
+    "lint": "turbo lint",
+    "test": "turbo test",
+    "type-check": "turbo type-check",
+    "clean": "turbo clean && rm -rf node_modules .turbo"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "postcss-loader": "^8.2.0",
+    "prettier": "^3.6.2",
+    "react-docgen-typescript": "^2.4.0",
+    "serve": "^14.2.4",
+    "tailwindcss": "^3.4.17",
+    "tsx": "^4.21.0",
+    "turbo": "^2.5.6"
+  },
+  "pnpm": {
+    "overrides": {
+      "react": "18.3.1",
+      "react-dom": "18.3.1",
+      "@types/react": "18.3.24",
+      "@types/react-dom": "18.3.7",
+      "typescript": "5.9.2",
+      "eslint": "9.36.0",
+      "vitest": "3.2.4",
+      "ag-grid-community": "34.2.0",
+      "ag-grid-react": "34.2.0",
+      "ag-charts-community": "12.2.0",
+      "ag-charts-react": "12.2.0",
+      "ag-charts-enterprise": "12.2.0",
+      "@types/node": "24.3.0"
+    }
+  }
+}

@@ -1,0 +1,10 @@
+# pnpm workspace configuration
+# Storybook Standalone
+
+packages:
+  # Applications
+  - 'apps/*'
+  - 'apps/tools/*'
+
+  # Shared packages
+  - 'packages/*'
