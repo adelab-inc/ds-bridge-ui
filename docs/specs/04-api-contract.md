@@ -5,22 +5,77 @@
 
 ## TL;DR
 
-- **6개 API 엔드포인트**: Parse, Chat, Composition, Export, Tokens, CLI
+- **모노레포 API 구조**: Next.js (BFF) + FastAPI (AI 서비스)
 - **SSE Streaming**: 실시간 채팅 응답
 - **Contract-First**: 스키마 먼저 정의, 병렬 개발 가능
 
 ---
 
+## API 아키텍처 개요
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                         클라이언트 (Browser)                      │
+└─────────────────────────────┬────────────────────────────────────┘
+                              │
+                              ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                    Next.js BFF (apps/web)                        │
+│  ┌────────────────────────────────────────────────────────────┐  │
+│  │  직접 처리 API                                              │  │
+│  │  • /api/storybook/parse     Storybook 파싱                 │  │
+│  │  • /api/composition         Composition 관리               │  │
+│  │  • /api/export/copy-for-ai  Export 생성                    │  │
+│  ├────────────────────────────────────────────────────────────┤  │
+│  │  프록시 API (FastAPI 전달)                                  │  │
+│  │  • /api/ai/chat             → FastAPI /chat                │  │
+│  │  • /api/ai/tokens/extract   → FastAPI /tokens/extract      │  │
+│  └────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────┬────────────────────────────────────┘
+                              │
+                              ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                FastAPI AI Service (apps/ai-service)              │
+│  ┌────────────────────────────────────────────────────────────┐  │
+│  │  • POST /chat               Claude API SSE 스트리밍         │  │
+│  │  • POST /tokens/extract     Playwright 토큰 추출           │  │
+│  │  • GET /health              헬스체크                        │  │
+│  └────────────────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## API 엔드포인트 개요
 
-| # | 엔드포인트 | Method | 목적 |
-|---|------------|--------|------|
-| 1 | `/api/storybook/parse` | POST | Storybook URL을 ds.json으로 파싱 |
-| 2 | `/api/chat` | POST | 가이드형 AI 채팅 |
-| 3 | `/api/composition` | POST | 페이지 composition 관리 |
-| 4 | `/api/export/copy-for-ai` | POST | Copy for AI 출력 생성 |
-| 5 | `/api/tokens/extract` | POST | computed styles에서 토큰 추출 |
-| 6 | CLI: `npx ds-hub extract` | - | 로컬 DS 추출 |
+### Next.js 직접 처리 API (apps/web)
+
+| # | 엔드포인트 | Method | 담당 | 목적 |
+|---|------------|--------|------|------|
+| 1 | `/api/storybook/parse` | POST | FE | Storybook URL을 ds.json으로 파싱 |
+| 2 | `/api/composition` | POST | FE | 페이지 composition 관리 |
+| 3 | `/api/export/copy-for-ai` | POST | FE | Copy for AI 출력 생성 |
+
+### Next.js 프록시 API (→ FastAPI)
+
+| # | 엔드포인트 | Method | 전달 대상 | 목적 |
+|---|------------|--------|----------|------|
+| 4 | `/api/ai/chat` | POST | FastAPI /chat | 가이드형 AI 채팅 |
+| 5 | `/api/ai/tokens/extract` | POST | FastAPI /tokens/extract | 토큰 추출 |
+
+### FastAPI 내부 API (apps/ai-service)
+
+| # | 엔드포인트 | Method | 담당 | 목적 |
+|---|------------|--------|------|------|
+| 1 | `POST /chat` | POST | AI | Claude API 채팅 (SSE) |
+| 2 | `POST /tokens/extract` | POST | AI | Playwright 토큰 추출 |
+| 3 | `GET /health` | GET | AI | 헬스체크 |
+
+### CLI (별도 패키지)
+
+| # | 명령어 | 목적 |
+|---|--------|------|
+| 1 | `npx ds-hub extract` | 로컬 DS 추출 |
 
 ---
 
@@ -75,38 +130,68 @@ export async function POST(req: Request) {
 
 ## 2. Chat API
 
-**엔드포인트**: `POST /api/chat`
+### Next.js 프록시 (apps/web)
 
-**목적**: AI 기반 가이드 네비게이션 (코드 생성 아님)
+**엔드포인트**: `POST /api/ai/chat`
 
-### Request
+**목적**: FastAPI로 요청 전달 및 SSE 스트림 프록시
 
 ```typescript
-interface ChatRequest {
-  dsJson: DSJson;
-  messages: ChatMessage[];
-  currentComposition?: Composition;
-}
+// apps/web/app/api/ai/chat/route.ts
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
 
-interface ChatMessage {
-  role: 'user' | 'assistant';
-  content: string;
+export async function POST(req: Request) {
+  const body = await req.json();
+
+  const response = await fetch(`${AI_SERVICE_URL}/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  // SSE 스트림 전달
+  return new Response(response.body, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+    },
+  });
 }
+```
+
+### FastAPI 구현 (apps/ai-service)
+
+**엔드포인트**: `POST /chat`
+
+**목적**: Claude API 호출 및 SSE 스트리밍
+
+### Request Schema (Pydantic)
+
+```python
+# apps/ai-service/src/schemas/chat.py
+from pydantic import BaseModel
+from typing import Literal
+
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+
+class ChatRequest(BaseModel):
+    ds_json: dict
+    messages: list[ChatMessage]
+    current_composition: dict | None = None
 ```
 
 ### Response (SSE Streaming)
 
-```typescript
-interface ChatResponse {
-  message: string;
-  actions?: ChatAction[];
-}
+```python
+# SSE 이벤트 형식
+data: {"type": "text", "content": "안녕하세요"}
 
-interface ChatAction {
-  type: 'show_component' | 'show_props' | 'show_stories' |
-        'add_to_composition' | 'update_composition' | 'navigate';
-  payload: any;
-}
+data: {"type": "action", "action": {"type": "show_component", "payload": "Button"}}
+
+data: [DONE]
 ```
 
 ### SSE (Server-Sent Events) 설명
@@ -139,10 +224,63 @@ User <──chunk3── Server (즉시 표시)
 | WebSocket | 양방향 | 높음 | 과함 |
 | Long Polling | 서버 → 클라이언트 | 중간 | 비효율적 |
 
+### FastAPI 구현
+
+```python
+# apps/ai-service/src/api/chat.py
+from fastapi import APIRouter
+from fastapi.responses import StreamingResponse
+from src.schemas.chat import ChatRequest
+from src.services.chat_service import ChatService
+
+router = APIRouter()
+chat_service = ChatService()
+
+@router.post("")
+async def chat(request: ChatRequest):
+    return StreamingResponse(
+        chat_service.stream_response(request),
+        media_type="text/event-stream"
+    )
+```
+
+```python
+# apps/ai-service/src/services/chat_service.py
+import anthropic
+from src.prompts.navigator import build_system_prompt
+
+class ChatService:
+    def __init__(self):
+        self.client = anthropic.Anthropic()
+
+    async def stream_response(self, request: ChatRequest):
+        system_prompt = build_system_prompt(
+            request.ds_json,
+            request.current_composition
+        )
+
+        messages = [{"role": m.role, "content": m.content} for m in request.messages]
+
+        async with self.client.messages.stream(
+            model="claude-3-5-sonnet-20241022",
+            max_tokens=1024,
+            system=system_prompt,
+            messages=messages
+        ) as stream:
+            async for text in stream.text_stream:
+                yield f"data: {json.dumps({'type': 'text', 'content': text})}\n\n"
+
+        yield "data: [DONE]\n\n"
+```
+
 ### System Prompt 설계
 
-```typescript
-const SYSTEM_PROMPT = `
+```python
+# apps/ai-service/src/prompts/navigator.py
+def build_system_prompt(ds_json: dict, composition: dict = None) -> str:
+    component_names = [c["name"] for c in ds_json.get("components", [])]
+
+    return f"""
 You are a Design System Navigator for DS-Runtime Hub.
 
 핵심 규칙:
@@ -152,49 +290,16 @@ You are a Design System Navigator for DS-Runtime Hub.
 4. 항상 실행 가능한 제안으로 응답
 
 사용 가능한 컴포넌트:
-${JSON.stringify(dsJson.components.map(c => c.name))}
+{component_names}
 
 현재 COMPOSITION:
-${JSON.stringify(currentComposition)}
+{composition}
 
 액션 제안 형식:
 [ACTION:show_component:Button]
 [ACTION:add_composition:Button:Primary]
 [ACTION:show_props:Card]
-`;
-```
-
-### 구현
-
-```typescript
-export async function POST(req: Request) {
-  const { dsJson, messages, currentComposition } = await req.json();
-
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': process.env.ANTHROPIC_API_KEY!,
-      'anthropic-version': '2023-06-01'
-    },
-    body: JSON.stringify({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 1024,
-      stream: true,
-      system: buildSystemPrompt(dsJson, currentComposition),
-      messages
-    })
-  });
-
-  // 스트림 응답
-  return new Response(response.body, {
-    headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive'
-    }
-  });
-}
+"""
 ```
 
 ---
@@ -305,72 +410,121 @@ Use the tokens above for spacing and colors.
 
 ## 5. Token Extraction API
 
-**엔드포인트**: `POST /api/tokens/extract`
+### Next.js 프록시 (apps/web)
 
-**목적**: Storybook computed styles에서 디자인 토큰 추출
+**엔드포인트**: `POST /api/ai/tokens/extract`
 
-### Request
-
-```typescript
-interface TokenExtractionRequest {
-  storybookUrl: string;
-  sampleStories: string[];  // 샘플링할 스토리 ID들
-}
-```
-
-### Response
+**목적**: FastAPI로 요청 전달
 
 ```typescript
-interface TokenExtractionResponse {
-  tokens: DesignTokens;
-  source: 'computed';
-}
+// apps/web/app/api/ai/tokens/route.ts
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
 
-interface DesignTokens {
-  colors?: Record<string, string>;
-  spacing?: Record<string, string>;
-  typography?: {
-    fontFamily?: Record<string, string>;
-    fontSize?: Record<string, string>;
-    fontWeight?: Record<string, string>;
-    lineHeight?: Record<string, string>;
-  };
-  borderRadius?: Record<string, string>;
-  shadows?: Record<string, string>;
-}
-```
-
-### 구현 (Puppeteer/Playwright)
-
-```typescript
 export async function POST(req: Request) {
-  const { storybookUrl, sampleStories } = await req.json();
+  const body = await req.json();
 
-  const browser = await chromium.launch();
-  const page = await browser.newPage();
+  const response = await fetch(`${AI_SERVICE_URL}/tokens/extract`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
 
-  const tokens: DesignTokens = { colors: {}, spacing: {} };
-
-  for (const storyId of sampleStories) {
-    await page.goto(`${storybookUrl}/iframe.html?id=${storyId}`);
-
-    // computed styles 추출
-    const styles = await page.evaluate(() => {
-      const button = document.querySelector('button');
-      if (!button) return null;
-      return window.getComputedStyle(button);
-    });
-
-    // 토큰 파싱 및 중복 제거
-    if (styles) {
-      tokens.colors[styles.backgroundColor] = styles.backgroundColor;
-      // ... 더 많은 추출
-    }
-  }
-
-  await browser.close();
-  return Response.json({ tokens, source: 'computed' });
+  return Response.json(await response.json());
 }
+```
+
+### FastAPI 구현 (apps/ai-service)
+
+**엔드포인트**: `POST /tokens/extract`
+
+**목적**: Playwright로 Storybook computed styles에서 디자인 토큰 추출
+
+### Request Schema (Pydantic)
+
+```python
+# apps/ai-service/src/schemas/tokens.py
+from pydantic import BaseModel
+
+class TokenExtractionRequest(BaseModel):
+    storybook_url: str
+    sample_stories: list[str]  # 샘플링할 스토리 ID들
+```
+
+### Response Schema
+
+```python
+class DesignTokens(BaseModel):
+    colors: dict[str, str] | None = None
+    spacing: dict[str, str] | None = None
+    typography: dict | None = None
+    border_radius: dict[str, str] | None = None
+    shadows: dict[str, str] | None = None
+
+class TokenExtractionResponse(BaseModel):
+    tokens: DesignTokens
+    source: str = "computed"
+```
+
+### FastAPI 구현 (Playwright)
+
+```python
+# apps/ai-service/src/api/tokens.py
+from fastapi import APIRouter
+from src.schemas.tokens import TokenExtractionRequest, TokenExtractionResponse
+from src.services.token_extractor import TokenExtractor
+
+router = APIRouter()
+extractor = TokenExtractor()
+
+@router.post("/extract", response_model=TokenExtractionResponse)
+async def extract_tokens(request: TokenExtractionRequest):
+    tokens = await extractor.extract(
+        request.storybook_url,
+        request.sample_stories
+    )
+    return TokenExtractionResponse(tokens=tokens, source="computed")
+```
+
+```python
+# apps/ai-service/src/services/token_extractor.py
+from playwright.async_api import async_playwright
+from src.schemas.tokens import DesignTokens
+
+class TokenExtractor:
+    async def extract(self, storybook_url: str, sample_stories: list[str]) -> DesignTokens:
+        async with async_playwright() as p:
+            browser = await p.chromium.launch()
+            page = await browser.new_page()
+
+            colors = {}
+            spacing = {}
+
+            for story_id in sample_stories:
+                await page.goto(f"{storybook_url}/iframe.html?id={story_id}")
+
+                # computed styles 추출
+                styles = await page.evaluate("""
+                    () => {
+                        const button = document.querySelector('button');
+                        if (!button) return null;
+                        const computed = window.getComputedStyle(button);
+                        return {
+                            backgroundColor: computed.backgroundColor,
+                            color: computed.color,
+                            padding: computed.padding,
+                            borderRadius: computed.borderRadius
+                        };
+                    }
+                """)
+
+                if styles:
+                    if styles.get("backgroundColor"):
+                        colors[styles["backgroundColor"]] = styles["backgroundColor"]
+                    # ... 더 많은 추출
+
+            await browser.close()
+
+            return DesignTokens(colors=colors, spacing=spacing)
 ```
 
 ---

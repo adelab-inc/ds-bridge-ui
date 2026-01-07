@@ -5,14 +5,24 @@
 
 ## TL;DR
 
+### 웹 애플리케이션 (apps/web)
+
 | 영역 | 선택 | 이유 |
 |------|------|------|
 | Framework | Next.js 14+ (App Router) | RSC, API Routes, Streaming |
 | Language | TypeScript | 타입 안정성, 향상된 DX |
 | Styling | Tailwind CSS | Utility-first, 빠른 프로토타이핑 |
 | State | Zustand | 단순함, 가벼움 |
-| AI | Anthropic Claude API | 가이드형 채팅 |
-| Parsing | Puppeteer/Playwright | 토큰 추출, 런타임 스타일 |
+
+### AI 서비스 (apps/ai-service)
+
+| 영역 | 선택 | 이유 |
+|------|------|------|
+| Framework | FastAPI | 비동기 지원, OpenAPI 자동 문서화 |
+| Language | Python 3.11+ | LLM 생태계, 풍부한 라이브러리 |
+| LLM | Anthropic Claude API | 가이드형 채팅, 뛰어난 지시 따르기 |
+| Schema | Pydantic v2 | 타입 검증, JSON Schema 호환 |
+| Browser | Playwright | 토큰 추출, 런타임 스타일 |
 
 ---
 
@@ -109,6 +119,65 @@ interface AppStore {
 
 ---
 
+## AI 서비스 스택 (Python)
+
+### FastAPI
+
+**정의**: 고성능 비동기 Python 웹 프레임워크
+
+**선택 이유**:
+- 비동기 지원 (async/await)
+- OpenAPI/Swagger 자동 문서화
+- Pydantic 통합 타입 검증
+- SSE (Server-Sent Events) 네이티브 지원
+
+**기본 구조**:
+```python
+from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
+
+app = FastAPI(title="DS-Runtime Hub AI Service")
+
+@app.post("/chat")
+async def chat(request: ChatRequest) -> StreamingResponse:
+    return StreamingResponse(
+        stream_chat_response(request),
+        media_type="text/event-stream"
+    )
+```
+
+### Python 패키지 관리
+
+**Poetry 또는 uv** (권장)
+```bash
+# Poetry
+poetry install
+poetry add fastapi uvicorn anthropic
+
+# uv (더 빠름)
+uv pip install -r requirements.txt
+```
+
+### Pydantic v2
+
+**정의**: 데이터 검증 및 설정 관리 라이브러리
+
+**활용**:
+```python
+from pydantic import BaseModel
+
+class ChatRequest(BaseModel):
+    ds_json: DSJson
+    messages: list[ChatMessage]
+    current_composition: Composition | None = None
+
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+```
+
+---
+
 ## AI 연동
 
 ### Anthropic Claude API
@@ -127,29 +196,33 @@ interface AppStore {
 | claude-3-haiku | 빠른 응답 | 낮음 |
 | claude-3-opus | 복잡한 쿼리 | 높음 |
 
-**연동 패턴**:
-```typescript
-// 직접 API 호출 (Vercel AI SDK 미사용)
-// 이유: System Prompt + Action 파싱에 대한 더 많은 제어
+**Python 연동 패턴** (FastAPI에서):
+```python
+import anthropic
+from src.core.config import settings
 
-const response = await fetch('https://api.anthropic.com/v1/messages', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'x-api-key': process.env.ANTHROPIC_API_KEY,
-    'anthropic-version': '2023-06-01'
-  },
-  body: JSON.stringify({
-    model: 'claude-3-5-sonnet-20241022',
-    max_tokens: 1024,
-    system: SYSTEM_PROMPT,
-    messages: chatHistory
-  })
-});
+class ClaudeClient:
+    def __init__(self):
+        self.client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+
+    async def stream_chat(self, system_prompt: str, messages: list):
+        """SSE 스트리밍 응답 생성"""
+        async with self.client.messages.stream(
+            model="claude-3-5-sonnet-20241022",
+            max_tokens=1024,
+            system=system_prompt,
+            messages=messages
+        ) as stream:
+            async for text in stream.text_stream:
+                yield f"data: {text}\n\n"
 ```
 
 **System Prompt 설계**:
-```
+```python
+def build_system_prompt(ds_json: dict, composition: dict = None) -> str:
+    component_names = [c["name"] for c in ds_json.get("components", [])]
+
+    return f"""
 You are a Design System Navigator.
 
 CRITICAL RULES:
@@ -157,9 +230,13 @@ CRITICAL RULES:
 2. 절대 컴포넌트를 생성하거나 추측하지 않음
 3. 실행 가능한 제안으로 응답
 
+사용 가능한 컴포넌트: {component_names}
+현재 COMPOSITION: {composition}
+
 액션 형식:
 [ACTION:show_component:Button]
 [ACTION:add_composition:Card:Primary]
+"""
 ```
 
 ---
@@ -328,6 +405,8 @@ CMD ["pnpm", "start"]
 
 ## 버전 요약
 
+### 웹 애플리케이션 (apps/web)
+
 | 기술 | 버전 | 필수 |
 |------|------|------|
 | Node.js | 20.x LTS | 예 |
@@ -337,6 +416,18 @@ CMD ["pnpm", "start"]
 | TypeScript | 5.x | 예 |
 | Tailwind CSS | 3.x | 예 |
 | Zustand | 4.x | 예 |
+
+### AI 서비스 (apps/ai-service)
+
+| 기술 | 버전 | 필수 |
+|------|------|------|
+| Python | 3.11+ | 예 |
+| FastAPI | 0.109+ | 예 |
+| Pydantic | 2.6+ | 예 |
+| anthropic | 0.18+ | 예 |
+| uvicorn | 0.27+ | 예 |
+| Playwright | 1.41+ | 토큰 추출 시 |
+| Poetry/uv | 최신 | 권장 |
 
 ---
 
