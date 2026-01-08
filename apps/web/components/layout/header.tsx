@@ -10,6 +10,7 @@ import {
 } from "@hugeicons/core-free-icons"
 
 import { cn } from "@/lib/utils"
+import { HeaderLogo } from "@/components/layout/header-logo"
 import { Button } from "@/components/ui/button"
 import {
   InputGroup,
@@ -78,15 +79,8 @@ function Header({
         )}
         {...props}
       >
-        {/* Logo */}
-        <div className="flex shrink-0 items-center gap-2">
-          <div className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-lg font-bold">
-            DS
-          </div>
-          <span className="text-foreground hidden font-semibold sm:inline-block">
-            Runtime Hub
-          </span>
-        </div>
+        {/* Logo (Server Component) */}
+        <HeaderLogo />
 
         {/* URL Input Form */}
         <form onSubmit={handleSubmit} className="flex flex-1 items-center gap-2">
