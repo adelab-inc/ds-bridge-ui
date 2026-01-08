@@ -13,6 +13,24 @@
 | Base UI | 1.0.0 | Headless 컴포넌트 |
 | shadcn/ui | 3.6.3 | 스타일 프리셋 |
 | Hugeicons | 1.1.4 | 아이콘 라이브러리 |
+| react-resizable-panels | 4.3.0 | 리사이즈 패널 레이아웃 |
+
+## 중요: 공식 문서 확인 필수
+
+> **Context7 MCP를 통해 공식 문서를 반드시 확인 후 작업할 것**
+
+아래 라이브러리 작업 시 API가 자주 변경되므로 Context7로 최신 문서 확인 필수:
+
+| 라이브러리 | Context7 Library ID | 확인 사항 |
+|-----------|---------------------|----------|
+| Base UI | `/mui/base-ui` | SSR/Hydration, 컴포넌트 API |
+| react-resizable-panels | `/bvaughn/react-resizable-panels` | Panel props, CSS 단위 지원 |
+
+### 주의사항
+
+- **react-resizable-panels**: `minSize`/`maxSize`는 CSS 단위 문자열(`"280px"`) 사용 권장
+- **Base UI**: `useId()` 사용으로 SSR Hydration 이슈 발생 가능 → `ClientOnly` 래퍼 필요
+- **shadcn/ui**: Base UI 기반이므로 동일한 주의사항 적용
 
 ## 디렉토리 구조
 
@@ -92,15 +110,24 @@ const buttonVariants = cva("px-4 py-2 rounded-md", {
 ### 구현됨 (components/ui/)
 
 - AlertDialog, Badge, Button, Card
-- Combobox, DropdownMenu, Field
-- Input, InputGroup, Label
-- Select, Separator, Textarea
+- Collapsible, Combobox, DropdownMenu
+- Field, Input, InputGroup, Label
+- Resizable, ScrollArea, Select
+- Separator, Tabs, Textarea, Tooltip
+- ClientOnly (SSR Hydration 래퍼)
 
-### 미구현 (계획)
+### 구현됨 (components/layout/)
 
-- Chat UI 컴포넌트
-- Composition 관리 컴포넌트
-- Preview 렌더러
+- Header, LeftPanel, RightPanel
+- MainLayout (리사이즈 패널)
+- MobileSheet (모바일 바텀시트)
+
+### 구현됨 (components/features/)
+
+- Chat: ChatSection, ChatInput, ChatMessage, ChatMessageList
+- ComponentList: ComponentListSection, ComponentItem, ComponentTree
+- Actions: ActionsSection
+- Preview: PreviewSection, StorybookIframe, CompositionPreview
 
 ## 개발 명령어
 
@@ -141,11 +168,11 @@ pnpm typecheck
 
 ## 현재 상태
 
-**MVP 단계** - 기본 UI 컴포넌트 구현 완료
+**Phase 1 완료** - UI 레이아웃 및 기본 컴포넌트 구현 완료
 
 ### 다음 구현 예정
 
 1. Zustand 상태 관리 스토어
-2. Chat 인터페이스 컴포넌트
-3. API 라우트 (BFF 패턴)
-4. Storybook Parser 로직
+2. API 라우트 (BFF 패턴)
+3. Storybook Parser 로직
+4. AI Chat 연동
