@@ -56,8 +56,8 @@ X-API-Key: sk-your-secret-key
 ### 응답 형식 (Streaming)
 
 ```
-data: {"type": "conversation", "text": "모던한 로그인 폼입니다."}
-data: {"type": "file", "path": "src/pages/Login.tsx", "content": "..."}
+data: {"type": "chat", "text": "모던한 로그인 폼입니다."}
+data: {"type": "code", "path": "src/pages/Login.tsx", "content": "..."}
 data: {"type": "done"}
 ```
 """,
@@ -151,6 +151,14 @@ def custom_openapi():
             "description": "API 키 인증. Chat API 엔드포인트에 필요합니다.",
         }
     }
+
+    # /health 제외 모든 엔드포인트에 security 적용
+    for path, methods in openapi_schema["paths"].items():
+        if path == "/health":
+            continue
+        for method in methods.values():
+            if isinstance(method, dict):
+                method["security"] = [{"X-API-Key": []}]
 
     app.openapi_schema = openapi_schema
     return app.openapi_schema
