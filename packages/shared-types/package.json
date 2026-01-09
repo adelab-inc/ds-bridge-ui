@@ -1,0 +1,16 @@
+{
+  "name": "@ds-hub/shared-types",
+  "version": "1.0.0",
+  "description": "Shared types and constants for DS Hub monorepo",
+  "private": true,
+  "scripts": {
+    "gen:firebase-types": "npm run gen:ts && npm run gen:py",
+    "gen:ts": "node scripts/generate-typescript.js",
+    "gen:py": "python3 scripts/generate-python.py"
+  },
+  "exports": {
+    "./firebase": "./typescript/firebase/index.ts",
+    "./firebase/collections": "./typescript/firebase/collections.ts",
+    "./firebase/storage": "./typescript/firebase/storage.ts"
+  }
+}
