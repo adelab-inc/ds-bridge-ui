@@ -80,6 +80,9 @@ next-env.d.ts
 # Security
 # ================================
 *.pem
+*.key
+service-account-key.json
+*-credentials.json
 
 # ================================
 # Claude Code
@@ -98,14 +101,19 @@ next-env.d.ts
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
 .venv/
 venv/
+ENV/
 .Python
 pip-log.txt
 pip-delete-this-directory.txt
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
 
 #firebase-debug.log
 firebase-debug.log
