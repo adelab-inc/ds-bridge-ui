@@ -14,6 +14,7 @@
 | shadcn/ui | 3.6.3 | 스타일 프리셋 |
 | Hugeicons | 1.1.4 | 아이콘 라이브러리 |
 | react-resizable-panels | 4.3.0 | 리사이즈 패널 레이아웃 |
+| Firebase | 12.7.0 | Auth, Firestore, Storage |
 
 ## 중요: 공식 문서 확인 필수
 
@@ -50,7 +51,9 @@ apps/web/
 │   └── *.tsx               # 기능 컴포넌트
 │
 ├── lib/
-│   └── utils.ts            # cn() 유틸리티
+│   ├── utils.ts            # cn() 유틸리티
+│   ├── constants.ts        # 상수 정의
+│   └── firebase.ts         # Firebase 초기화
 │
 └── package.json            # @ds-hub/web
 ```
@@ -157,6 +160,82 @@ pnpm typecheck
 ```
 
 사용: `import { Button } from "@/components/ui/button"`
+
+## Firebase 설정
+
+### 초기화
+
+Firebase는 `lib/firebase.ts`에서 초기화됩니다. 필요한 서비스를 import하여 사용:
+
+```typescript
+import { auth, db, storage } from "@/lib/firebase";
+
+// Authentication
+import { signInWithEmailAndPassword } from "firebase/auth";
+
+// Firestore
+import { collection, addDoc } from "firebase/firestore";
+
+// Storage
+import { ref, uploadBytes } from "firebase/storage";
+```
+
+### 환경 변수
+
+`.env.local` 파일에 Firebase 설정을 추가하세요:
+
+```bash
+NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_auth_domain
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_storage_bucket
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
+```
+
+## Vercel 배포 (모노레포)
+
+### GitHub 연동 배포
+
+1. **Vercel 프로젝트 생성**
+   - Vercel 대시보드에서 "Add New Project"
+   - GitHub 저장소 선택
+
+2. **모노레포 설정**
+   - Root Directory: `apps/web` 설정
+   - Framework Preset: Next.js (자동 감지)
+   - Build Settings는 `vercel.json`에서 자동 적용됨
+
+3. **환경 변수 설정**
+
+   Vercel 대시보드 → Settings → Environment Variables에 추가:
+
+   ```
+   NEXT_PUBLIC_FIREBASE_API_KEY
+   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+   NEXT_PUBLIC_FIREBASE_PROJECT_ID
+   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+   NEXT_PUBLIC_FIREBASE_APP_ID
+   NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+   ```
+
+4. **배포**
+   - `main` 브랜치에 push하면 자동 배포
+   - PR 생성 시 Preview 배포 자동 생성
+
+### vercel.json 설정
+
+모노레포 환경에서 빌드 명령어가 루트에서 실행되도록 설정:
+
+```json
+{
+  "buildCommand": "cd ../.. && pnpm install && pnpm --filter @ds-hub/web build",
+  "installCommand": "pnpm install",
+  "framework": "nextjs"
+}
+```
 
 ## 참조 문서
 
