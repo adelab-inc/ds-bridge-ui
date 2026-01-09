@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Firebase Storage paths - Single Source of Truth",
+  "paths": {
+    "screenshots": {
+      "path": "screenshots",
+      "description": "Component screenshots from Storybook"
+    },
+    "assets": {
+      "path": "assets",
+      "description": "Design system assets (icons, images)"
+    },
+    "user_uploads": {
+      "path": "user_uploads",
+      "description": "User uploaded files"
+    },
+    "exports": {
+      "path": "exports",
+      "description": "Generated export files (code, specs)"
+    }
+  }
+}

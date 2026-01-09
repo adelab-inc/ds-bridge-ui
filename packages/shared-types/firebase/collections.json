@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Firebase Firestore collection names - Single Source of Truth",
+  "collections": {
+    "chat_rooms": {
+      "name": "chat_rooms",
+      "description": "Chat room metadata"
+    },
+    "chat_messages": {
+      "name": "chat_messages",
+      "description": "Individual messages within chat sessions"
+    }
+  }
+}

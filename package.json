@@ -10,7 +10,8 @@
     "dev": "pnpm --filter @ds-hub/web dev",
     "build": "pnpm --filter @ds-hub/web build",
     "lint": "pnpm -r lint",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "gen:firebase-types": "pnpm --filter @ds-hub/shared-types gen:firebase-types"
   },
   "devDependencies": {
     "typescript": "^5.0.0"
