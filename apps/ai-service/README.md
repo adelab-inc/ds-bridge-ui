@@ -156,9 +156,7 @@ Content-Type: application/json
 **Request Body:**
 ```json
 {
-  "messages": [
-    {"role": "user", "content": "Create a login form"}
-  ],
+  "message": "Create a login form",
   "schema_key": "schemas/v1/component-schema.json"
 }
 ```
@@ -200,9 +198,7 @@ Content-Type: application/json
 **Request Body:**
 ```json
 {
-  "messages": [
-    {"role": "user", "content": "Create a dashboard"}
-  ],
+  "message": "Create a dashboard",
   "schema_key": "schemas/v1/component-schema.json"
 }
 ```
@@ -210,11 +206,11 @@ Content-Type: application/json
 **Response:** Server-Sent Events (SSE) stream
 
 ```
-data: {"type": "conversation", "text": "모던한 "}
+data: {"type": "chat", "text": "모던한 "}
 
-data: {"type": "conversation", "text": "대시보드입니다."}
+data: {"type": "chat", "text": "대시보드입니다."}
 
-data: {"type": "file", "path": "src/pages/Dashboard.tsx", "content": "import..."}
+data: {"type": "code", "path": "src/pages/Dashboard.tsx", "content": "import..."}
 
 data: {"type": "done"}
 ```
@@ -354,8 +350,8 @@ The streaming API uses a hybrid approach:
 
 | Type | Description | Fields |
 |------|-------------|--------|
-| `conversation` | Real-time chat text | `text` |
-| `file` | Complete code file | `path`, `content` |
+| `chat` | Real-time chat text | `text` |
+| `code` | Complete code file | `path`, `content` |
 | `done` | Stream complete | - |
 | `error` | Error occurred | `error` |
 
@@ -378,7 +374,7 @@ Pass `schema_key` in the request to load schema from Firebase Storage:
 
 ```json
 {
-  "messages": [...],
+  "message": "로그인 페이지 만들어줘",
   "schema_key": "schemas/v1/component-schema.json"
 }
 ```

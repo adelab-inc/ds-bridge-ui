@@ -92,7 +92,7 @@ def parse_ai_response(content: str) -> ParsedResponse:
 
 
 class StreamingParser:
-    """스트리밍 응답에서 실시간으로 대화/파일 분리"""
+    """스트리밍 응답에서 실시간으로 텍스트/코드 분리"""
 
     # <file 태그 감지를 위한 최소 버퍼 크기
     TAG_BUFFER_SIZE = 30
@@ -108,7 +108,7 @@ class StreamingParser:
         청크 처리 후 이벤트 목록 반환
 
         Returns:
-            List of events: {'type': 'conversation'|'file', ...}
+            List of events: {'type': 'chat'|'code', ...}
         """
         self.buffer += chunk
         events: list[dict] = []
@@ -121,7 +121,7 @@ class StreamingParser:
                     # 태그 이전 텍스트 = 대화
                     before_tag = self.buffer[: start_match.start()]
                     if before_tag:
-                        events.append({"type": "conversation", "text": before_tag})
+                        events.append({"type": "chat", "text": before_tag})
 
                     # 파일 모드 시작
                     self.inside_file = True
@@ -132,11 +132,11 @@ class StreamingParser:
                     # < 가 있으면 태그 시작일 수 있으므로 그 이전까지만 전송
                     tag_start = self.buffer.rfind("<")
                     if tag_start > 0:
-                        events.append({"type": "conversation", "text": self.buffer[:tag_start]})
+                        events.append({"type": "chat", "text": self.buffer[:tag_start]})
                         self.buffer = self.buffer[tag_start:]
                     elif tag_start == -1 and self.buffer:
                         # < 가 없으면 전체를 대화로 즉시 전송
-                        events.append({"type": "conversation", "text": self.buffer})
+                        events.append({"type": "chat", "text": self.buffer})
                         self.buffer = ""
                     break
             else:
@@ -147,7 +147,7 @@ class StreamingParser:
                     self.current_file_content += self.buffer[: end_match.start()]
                     events.append(
                         {
-                            "type": "file",
+                            "type": "code",
                             "path": self.current_file_path,
                             "content": self.current_file_content.strip(),
                         }
@@ -169,7 +169,7 @@ class StreamingParser:
         events: list[dict] = []
         remaining = self.buffer.strip()
         if remaining and not self.inside_file:
-            events.append({"type": "conversation", "text": remaining})
+            events.append({"type": "chat", "text": remaining})
         return events
 
 
@@ -188,9 +188,7 @@ class StreamingParser:
 ## 요청 예시
 ```json
 {
-  "messages": [
-    {"role": "user", "content": "로그인 페이지 만들어줘"}
-  ],
+  "message": "로그인 페이지 만들어줘",
   "schema_key": "schemas/component-schema.json"
 }
 ```
@@ -231,7 +229,10 @@ async def chat(request: ChatRequest):
 
         provider = get_ai_provider()
         system_prompt = await resolve_system_prompt(request.schema_key)
-        messages = [Message(role="system", content=system_prompt)] + request.messages
+        messages = [
+            Message(role="system", content=system_prompt),
+            Message(role="user", content=request.message),
+        ]
 
         response_message, usage = await provider.chat(messages)
         parsed = parse_ai_response(response_message.content)
@@ -252,9 +253,7 @@ SSE(Server-Sent Events)를 통해 실시간 스트리밍 응답을 받습니다.
 ## 요청 예시
 ```json
 {
-  "messages": [
-    {"role": "user", "content": "로그인 페이지 만들어줘"}
-  ],
+  "message": "로그인 페이지 만들어줘",
   "schema_key": "schemas/component-schema.json"
 }
 ```
@@ -263,18 +262,18 @@ SSE(Server-Sent Events)를 통해 실시간 스트리밍 응답을 받습니다.
 
 | 타입 | 설명 | 필드 |
 |------|------|------|
-| `conversation` | 대화 텍스트 (실시간) | `text` |
-| `file` | 코드 파일 (완성 후) | `path`, `content` |
+| `text` | 대화 텍스트 (실시간) | `text` |
+| `code` | 코드 파일 (완성 후) | `path`, `content` |
 | `done` | 스트리밍 완료 | - |
 | `error` | 오류 발생 | `error` |
 
 ## SSE 응답 예시
 ```
-data: {"type": "conversation", "text": "모던한 "}
+data: {"type": "chat", "text": "모던한 "}
 
-data: {"type": "conversation", "text": "로그인 페이지입니다."}
+data: {"type": "chat", "text": "로그인 페이지입니다."}
 
-data: {"type": "file", "path": "src/pages/Login.tsx", "content": "import..."}
+data: {"type": "code", "path": "src/pages/Login.tsx", "content": "import..."}
 
 data: {"type": "done"}
 ```
@@ -285,7 +284,7 @@ data: {"type": "done"}
             "description": "SSE 스트림",
             "content": {
                 "text/event-stream": {
-                    "example": 'data: {"type": "conversation", "text": "모던한 로그인"}\n\ndata: {"type": "done"}\n\n'
+                    "example": 'data: {"type": "chat", "text": "모던한 로그인"}\n\ndata: {"type": "done"}\n\n'
                 }
             },
         },
@@ -304,7 +303,10 @@ async def chat_stream(request: ChatRequest):
     try:
         provider = get_ai_provider()
         system_prompt = await resolve_system_prompt(request.schema_key)
-        messages = [Message(role="system", content=system_prompt)] + request.messages
+        messages = [
+            Message(role="system", content=system_prompt),
+            Message(role="user", content=request.message),
+        ]
 
         async def generate():
             parser = StreamingParser()

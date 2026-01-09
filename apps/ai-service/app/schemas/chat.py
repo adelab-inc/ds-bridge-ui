@@ -98,10 +98,10 @@ class ParsedResponse(BaseModel):
 class ChatRequest(BaseModel):
     """채팅 요청"""
 
-    messages: list[Message] = Field(
+    message: str = Field(
         ...,
-        description="대화 메시지 목록 (최소 1개의 user 메시지 필요)",
-        min_length=1,
+        description="사용자 메시지",
+        json_schema_extra={"example": "로그인 페이지 만들어줘"},
     )
     stream: bool = Field(
         default=False,
@@ -117,14 +117,10 @@ class ChatRequest(BaseModel):
         "json_schema_extra": {
             "examples": [
                 {
-                    "messages": [{"role": "user", "content": "로그인 페이지 만들어줘"}],
-                    "stream": False,
+                    "message": "로그인 페이지 만들어줘",
                 },
                 {
-                    "messages": [
-                        {"role": "user", "content": "대시보드 만들어줘"},
-                    ],
-                    "stream": False,
+                    "message": "대시보드 만들어줘",
                     "schema_key": "schemas/v1/component-schema.json",
                 },
             ]
@@ -187,21 +183,21 @@ class ChatResponse(BaseModel):
 class StreamEvent(BaseModel):
     """SSE 스트리밍 이벤트"""
 
-    type: Literal["conversation", "file", "done", "error"] = Field(
+    type: Literal["chat", "code", "done", "error"] = Field(
         ...,
-        description="이벤트 타입: conversation(대화), file(코드파일), done(완료), error(오류)",
+        description="이벤트 타입: chat(대화), code(코드파일), done(완료), error(오류)",
     )
     text: str | None = Field(
         default=None,
-        description="대화 텍스트 (type=conversation일 때)",
+        description="대화 텍스트 (type=chat일 때)",
     )
     path: str | None = Field(
         default=None,
-        description="파일 경로 (type=file일 때)",
+        description="파일 경로 (type=code일 때)",
     )
     content: str | None = Field(
         default=None,
-        description="파일 내용 (type=file일 때)",
+        description="파일 내용 (type=code일 때)",
     )
     error: str | None = Field(
         default=None,
@@ -211,9 +207,9 @@ class StreamEvent(BaseModel):
     model_config = {
         "json_schema_extra": {
             "examples": [
-                {"type": "conversation", "text": "모던한 로그인 페이지입니다."},
+                {"type": "chat", "text": "모던한 로그인 페이지입니다."},
                 {
-                    "type": "file",
+                    "type": "code",
                     "path": "src/pages/Login.tsx",
                     "content": "import { Button } from '@/components';...",
                 },

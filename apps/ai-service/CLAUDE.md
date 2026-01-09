@@ -62,9 +62,9 @@ apps/ai-service/
 ```python
 # Pydantic 모델
 class ChatRequest(BaseModel):
-    messages: list[Message]
+    message: str                    # 사용자 메시지
     stream: bool = False
-    schema_key: str | None = None  # Firebase Storage 경로
+    schema_key: str | None = None   # Firebase Storage 경로
 
 # 의존성 주입 패턴
 def get_ai_provider() -> AIProvider:
@@ -107,13 +107,13 @@ async def chat_stream(self, messages: list[Message]) -> AsyncGenerator[str, None
 ## 스트리밍 응답 형식
 
 하이브리드 스트리밍 방식:
-- **conversation**: 실시간 청크 단위 스트리밍
-- **file**: 완성 후 한 번에 전송
+- **chat**: 실시간 청크 단위 스트리밍
+- **code**: 완성 후 한 번에 전송
 
 ```
-data: {"type": "conversation", "text": "모던한 "}
-data: {"type": "conversation", "text": "로그인 페이지입니다."}
-data: {"type": "file", "path": "src/pages/Login.tsx", "content": "..."}
+data: {"type": "chat", "text": "모던한 "}
+data: {"type": "chat", "text": "로그인 페이지입니다."}
+data: {"type": "code", "path": "src/pages/Login.tsx", "content": "..."}
 data: {"type": "done"}
 ```
 
@@ -207,7 +207,7 @@ class AIProvider(ABC):
 
 ```json
 {
-  "messages": [...],
+  "message": "로그인 페이지 만들어줘",
   "schema_key": "schemas/v1/component-schema.json"
 }
 ```
