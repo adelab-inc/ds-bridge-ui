@@ -119,3 +119,4 @@ firebase-debug.*.log
 PROJECT_GUIDE.md
 
 .github/commands
+.github/.gitmessage.txt
