@@ -13,6 +13,7 @@
 | Language | TypeScript | 타입 안정성, 향상된 DX |
 | Styling | Tailwind CSS | Utility-first, 빠른 프로토타이핑 |
 | State | Zustand | 단순함, 가벼움 |
+| Data Fetching | TanStack Query | 서버 상태 관리, 캐싱 |
 
 ### AI 서비스 (apps/ai-service)
 
@@ -416,6 +417,7 @@ CMD ["pnpm", "start"]
 | TypeScript | 5.x | 예 |
 | Tailwind CSS | 3.x | 예 |
 | Zustand | 4.x | 예 |
+| TanStack Query | 5.x | 예 |
 
 ### AI 서비스 (apps/ai-service)
 

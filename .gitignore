@@ -117,3 +117,5 @@ firebase-debug.*.log
 .claude
 
 PROJECT_GUIDE.md
+
+.github/commands
