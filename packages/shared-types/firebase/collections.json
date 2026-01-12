@@ -5,73 +5,37 @@
     "chat_rooms": {
       "name": "chat_rooms",
       "description": "Chat room metadata",
-      "schema": {
-        "id": {
-          "type": "string",
-          "required": true,
-          "description": "Unique chat room identifier"
-        },
-        "storybook_url": {
-          "type": "string",
-          "required": true,
-          "description": "URL of the Storybook instance"
-        },
-        "user_id": {
-          "type": "string",
-          "required": true,
-          "description": "User who created the chat room"
+      "fields": {
+        "id": { "type": "string", "description": "Chat room ID (UUID)" },
+        "storybook_url": { "type": "string", "description": "Storybook URL" },
+        "user_id": { "type": "string", "description": "User ID" },
+        "created_at": {
+          "type": "number",
+          "description": "Created timestamp (ms)"
         }
       }
     },
     "chat_messages": {
       "name": "chat_messages",
-      "description": "Individual messages within chat sessions",
-      "schema": {
-        "id": {
-          "type": "string",
-          "required": true,
-          "description": "Unique message identifier"
-        },
-        "status": {
-          "type": "enum",
-          "values": ["ERROR", "DONE", "GENERATING"],
-          "required": true,
-          "description": "Message status"
-        },
-        "content": {
-          "type": "string",
-          "required": true,
-          "description": "React code content"
-        },
-        "path": {
-          "type": "string",
-          "required": true,
-          "description": "Component path"
-        },
-        "text": {
-          "type": "string",
-          "required": true,
-          "description": "Message text"
-        },
-        "room_id": {
-          "type": "string",
-          "required": true,
-          "description": "Reference to chat room"
-        },
+      "description": "Chat messages within sessions",
+      "fields": {
+        "id": { "type": "string", "description": "Message ID (UUID)" },
+        "text": { "type": "string", "description": "AI text response" },
+        "content": { "type": "string", "description": "React code content" },
+        "path": { "type": "string", "description": "File path" },
+        "room_id": { "type": "string", "description": "Chat room ID" },
         "question_created_at": {
-          "type": "string",
-          "required": true,
-          "description": "Question timestamp"
+          "type": "number",
+          "description": "Question timestamp (ms)"
         },
         "answer_created_at": {
-          "type": "string",
-          "required": false,
-          "description": "Answer timestamp"
+          "type": "number",
+          "description": "Answer timestamp (ms)"
         },
-        "answer_completed": {
-          "type": "boolean",
-          "required": true,
-          "description": "Whether answer is completed"
+        "status": {
+          "type": "string",
+          "enum": ["GENERATING", "DONE", "ERROR"],
+          "description": "Response status"
         }
       }
     }

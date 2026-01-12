@@ -14,38 +14,4 @@ class Collections:
     """Firestore collection names"""
 
     CHAT_ROOMS = "chat_rooms"  # Chat room metadata
-    CHAT_MESSAGES = "chat_messages"  # Individual messages within chat sessions
-
-
-class ChatRoomsDocument(TypedDict):
-    """Document schema for chat_rooms collection"""
-
-    # Unique chat room identifier
-    id: str
-    # URL of the Storybook instance
-    storybook_url: str
-    # User who created the chat room
-    user_id: str
-
-
-class ChatMessagesDocument(TypedDict):
-    """Document schema for chat_messages collection"""
-
-    # Unique message identifier
-    id: str
-    # Message status
-    status: Literal["ERROR", "DONE", "GENERATING"]
-    # React code content
-    content: str
-    # Component path
-    path: str
-    # Message text
-    text: str
-    # Reference to chat room
-    room_id: str
-    # Question timestamp
-    question_created_at: str
-    # Answer timestamp
-    answer_created_at: NotRequired[str]
-    # Whether answer is completed
-    answer_completed: bool
+    CHAT_MESSAGES = "chat_messages"  # Chat messages within sessions

@@ -97,10 +97,12 @@ async def chat_stream(self, messages: list[Message]) -> AsyncGenerator[str, None
 | Method | Path | 설명 |
 |--------|------|------|
 | GET | `/health` | 헬스 체크 |
-| POST | `/api/chat` | 채팅 (non-streaming) |
-| POST | `/api/chat/stream` | 채팅 (SSE streaming) |
-| GET | `/api/components` | 컴포넌트 스키마 조회 |
-| POST | `/api/components/reload` | 스키마 리로드 |
+| POST | `/room/create` | 채팅방 생성 |
+| GET | `/room/get/{room_id}` | 채팅방 조회 |
+| POST | `/chat/send` | 채팅 (non-streaming) |
+| POST | `/chat/stream` | 채팅 (SSE streaming) |
+| GET | `/component/schema` | 컴포넌트 스키마 조회 |
+| POST | `/component/reload` | 스키마 리로드 |
 
 **인증**: `X-API-Key` 헤더 필요 (`/health` 제외)
 
@@ -135,11 +137,6 @@ ANTHROPIC_MODEL=claude-sonnet-4-20250514
 GEMINI_API_KEY=AIzaxxx
 GEMINI_MODEL=gemini-2.5-flash
 
-# 서버
-HOST=0.0.0.0
-PORT=8000
-DEBUG=false
-
 # API 인증 (비어있으면 비활성화)
 X_API_KEY=sk-your-secret-key
 
@@ -147,7 +144,7 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:5173
 
 # Firebase
 FIREBASE_STORAGE_BUCKET=your-project.appspot.com
-GOOGLE_APPLICATION_CREDENTIALS=./service-account.json
+# 로컬 개발: service-account.json 파일을 apps/ai-service/ 폴더에 위치
 ```
 
 ## 개발 명령어

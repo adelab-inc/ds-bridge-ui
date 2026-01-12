@@ -7,3 +7,4 @@
 
 export * from './collections';
 export * from './storage';
+export * from './types';
