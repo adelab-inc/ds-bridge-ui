@@ -9,6 +9,7 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
+        extra="ignore",  # 정의되지 않은 환경 변수 무시
     )
 
     # AI Provider
@@ -39,7 +40,7 @@ class Settings(BaseSettings):
 
     # Firebase
     firebase_storage_bucket: str = ""
-    google_application_credentials: str = ""  # 서비스 계정 JSON 경로 (로컬용)
+    firebase_service_account_key: str = ""  # 서비스 계정 JSON 경로 (로컬용)
 
     @property
     def cors_origins_list(self) -> list[str]:

@@ -342,9 +342,9 @@ class MessageDocument(BaseModel):
     """채팅 메시지 문서"""
 
     id: str = Field(..., description="메시지 ID (UUID)")
-    type: Literal["text", "code", "done", "error"] = Field(
-        ...,
-        description="메시지 타입",
+    text: str = Field(
+        default="",
+        description="AI 텍스트 응답",
     )
     content: str = Field(
         default="",
@@ -354,14 +354,7 @@ class MessageDocument(BaseModel):
         default="",
         description="파일 경로",
     )
-    text: str = Field(
-        default="",
-        description="메시지 텍스트",
-    )
     room_id: str = Field(..., description="채팅방 ID")
-    question_created_at: str = Field(..., description="질문 생성 시간")
-    answer_created_at: str = Field(..., description="응답 생성 시간")
-    answer_completed: bool = Field(
-        default=False,
-        description="응답 완료 여부",
-    )
+    question_created_at: str = Field(..., description="질문 생성 시간 (ms timestamp)")
+    answer_created_at: str = Field(..., description="응답 생성 시간 (ms timestamp)")
+    status: Literal["GENERATING", "DONE", "ERROR"] = Field(..., description="응답 상태")

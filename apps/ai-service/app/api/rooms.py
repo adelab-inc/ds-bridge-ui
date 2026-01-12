@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.auth import verify_api_key
 from app.schemas.chat import CreateRoomRequest, RoomResponse
-from app.services.firestore import create_chat_room, get_chat_room
+from app.services.firestore import FirestoreError, create_chat_room, get_chat_room
 
 router = APIRouter(dependencies=[Depends(verify_api_key)])
 logger = logging.getLogger(__name__)
@@ -49,6 +49,12 @@ async def create_room(request: CreateRoomRequest):
             user_id=request.user_id,
         )
         return RoomResponse(**room_data)
+    except FirestoreError as e:
+        logger.error("Failed to create room: %s", str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e),
+        ) from e
     except Exception as e:
         logger.error("Failed to create room: %s", str(e))
         raise HTTPException(
@@ -65,16 +71,32 @@ async def create_room(request: CreateRoomRequest):
     responses={
         200: {"description": "조회 성공"},
         404: {"description": "채팅방을 찾을 수 없음"},
+        500: {"description": "서버 오류"},
     },
 )
 async def get_room(room_id: str):
     """채팅방 조회"""
-    room_data = await get_chat_room(room_id)
+    try:
+        room_data = await get_chat_room(room_id)
 
-    if not room_data:
+        if not room_data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Room not found: {room_id}",
+            )
+
+        return RoomResponse(**room_data)
+    except HTTPException:
+        raise
+    except FirestoreError as e:
+        logger.error("Failed to get room %s: %s", room_id, str(e))
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Room not found: {room_id}",
-        )
-
-    return RoomResponse(**room_data)
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e),
+        ) from e
+    except Exception as e:
+        logger.error("Failed to get room %s: %s", room_id, str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get room: {str(e)}",
+        ) from e

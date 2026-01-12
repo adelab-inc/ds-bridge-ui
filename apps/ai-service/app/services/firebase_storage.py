@@ -33,10 +33,10 @@ def init_firebase() -> None:
     except ValueError:
         pass
 
+    # 로컬에서는 서비스 계정 키 파일 사용
     # Cloud Run에서는 기본 서비스 계정 사용
-    # 로컬에서는 GOOGLE_APPLICATION_CREDENTIALS 환경변수 또는 설정 사용
-    if settings.google_application_credentials:
-        cred = credentials.Certificate(settings.google_application_credentials)
+    if settings.firebase_service_account_key:
+        cred = credentials.Certificate(settings.firebase_service_account_key)
         firebase_admin.initialize_app(cred, {
             "storageBucket": settings.firebase_storage_bucket
         })
