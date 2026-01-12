@@ -131,7 +131,7 @@ OPENAI_MODEL=gpt-4.1
 
 # Anthropic
 ANTHROPIC_API_KEY=sk-ant-xxx
-ANTHROPIC_MODEL=claude-sonnet-4-20250514
+ANTHROPIC_MODEL=claude-sonnet-4-5
 
 # Gemini
 GEMINI_API_KEY=AIzaxxx

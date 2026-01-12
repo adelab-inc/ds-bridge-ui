@@ -326,7 +326,7 @@ X-API-Key: your-api-key
 | `OPENAI_API_KEY` | - | OpenAI API key |
 | `OPENAI_MODEL` | `gpt-4.1` | OpenAI model identifier |
 | `ANTHROPIC_API_KEY` | - | Anthropic API key |
-| `ANTHROPIC_MODEL` | `claude-sonnet-4-20250514` | Anthropic model identifier |
+| `ANTHROPIC_MODEL` | `claude-sonnet-4-5` | Anthropic model identifier |
 | `GEMINI_API_KEY` | - | Google Gemini API key |
 | `GEMINI_MODEL` | `gemini-2.5-flash` | Gemini model identifier |
 | `X_API_KEY` | - | API key for authentication (empty = disabled) |
@@ -345,7 +345,7 @@ OPENAI_MODEL=gpt-4.1
 
 # Anthropic Configuration
 ANTHROPIC_API_KEY=sk-ant-xxxxx
-ANTHROPIC_MODEL=claude-sonnet-4-20250514
+ANTHROPIC_MODEL=claude-sonnet-4-5
 
 # Gemini Configuration
 GEMINI_API_KEY=AIzaxxxxx
@@ -371,9 +371,8 @@ The service supports three AI providers through a unified abstraction layer:
 - **Features**: Full streaming support, token usage tracking
 
 ### Anthropic Provider
-- **Model**: Claude Sonnet 4 (default)
+- **Model**: Claude Sonnet 4.5 (default)
 - **Features**: Full streaming support, separate system message handling
-- **Max Tokens**: 4096 per response
 
 ### Gemini Provider
 - **Model**: Gemini 2.5 Flash (default)
