@@ -33,6 +33,8 @@ export interface ChatRoom {
 export interface ChatMessage {
   /** Message ID (UUID) */
   id: string;
+  /** User question */
+  question: string;
   /** AI text response */
   text: string;
   /** React code content */

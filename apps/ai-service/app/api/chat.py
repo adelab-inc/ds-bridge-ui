@@ -20,6 +20,7 @@ from app.services.firestore import (
     FirestoreError,
     RoomNotFoundError,
     create_chat_message,
+    get_messages_by_room,
     get_timestamp_ms,
     update_chat_message,
     verify_room_exists,
@@ -59,6 +60,48 @@ async def resolve_system_prompt(schema_key: str | None) -> str:
             status_code=500,
             detail=f"Failed to load schema from storage: {str(e)}"
         ) from e
+
+
+MAX_HISTORY_COUNT = 5  # 최근 N개 대화만 포함
+
+
+async def build_conversation_history(
+    room_id: str, system_prompt: str, current_message: str
+) -> list[Message]:
+    """
+    이전 대화 내역을 포함한 메시지 리스트 생성
+
+    Args:
+        room_id: 채팅방 ID
+        system_prompt: 시스템 프롬프트
+        current_message: 현재 사용자 메시지
+
+    Returns:
+        AI에 전달할 메시지 리스트
+    """
+    messages = [Message(role="system", content=system_prompt)]
+
+    # 이전 메시지 조회 (최근 N개만)
+    previous_messages = await get_messages_by_room(room_id)
+    previous_messages = previous_messages[-MAX_HISTORY_COUNT:]
+
+    for msg in previous_messages:
+        # 사용자 질문
+        if msg.get("question"):
+            messages.append(Message(role="user", content=msg["question"]))
+
+        # AI 응답 (텍스트 + 코드 결합)
+        assistant_content = msg.get("text", "")
+        if msg.get("content") and msg.get("path"):
+            assistant_content += f'\n\n<file path="{msg["path"]}">{msg["content"]}</file>'
+
+        if assistant_content.strip():
+            messages.append(Message(role="assistant", content=assistant_content.strip()))
+
+    # 현재 사용자 메시지 추가
+    messages.append(Message(role="user", content=current_message))
+
+    return messages
 
 
 # ============================================================================
@@ -247,18 +290,22 @@ async def chat(request: ChatRequest):
 
         provider = get_ai_provider()
         system_prompt = await resolve_system_prompt(request.schema_key)
-        messages = [
-            Message(role="system", content=system_prompt),
-            Message(role="user", content=request.message),
-        ]
+
+        # 이전 대화 내역 포함하여 메시지 빌드
+        messages = await build_conversation_history(
+            room_id=request.room_id,
+            system_prompt=system_prompt,
+            current_message=request.message,
+        )
 
         response_message, usage = await provider.chat(messages)
         parsed = parse_ai_response(response_message.content)
 
-        # Firestore에 메시지 저장 (text + code 하나의 문서로)
+        # Firestore에 메시지 저장 (question + text + code 하나의 문서로)
         first_file = parsed.files[0] if parsed.files else None
         await create_chat_message(
             room_id=request.room_id,
+            question=request.message,
             text=parsed.conversation,
             content=first_file.content if first_file else "",
             path=first_file.path if first_file else "",
@@ -344,9 +391,10 @@ async def chat_stream(request: ChatRequest):
 
         question_created_at = get_timestamp_ms()
 
-        # GENERATING 상태로 메시지 먼저 생성
+        # GENERATING 상태로 메시지 먼저 생성 (question 포함)
         message_data = await create_chat_message(
             room_id=request.room_id,
+            question=request.message,
             question_created_at=question_created_at,
             status="GENERATING",
         )
@@ -354,10 +402,13 @@ async def chat_stream(request: ChatRequest):
 
         provider = get_ai_provider()
         system_prompt = await resolve_system_prompt(request.schema_key)
-        messages = [
-            Message(role="system", content=system_prompt),
-            Message(role="user", content=request.message),
-        ]
+
+        # 이전 대화 내역 포함하여 메시지 빌드
+        messages = await build_conversation_history(
+            room_id=request.room_id,
+            system_prompt=system_prompt,
+            current_message=request.message,
+        )
 
         async def generate():
             parser = StreamingParser()

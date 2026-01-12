@@ -157,10 +157,11 @@ async def verify_room_exists(room_id: str) -> bool:
 
 async def create_chat_message(
     room_id: str,
+    question: str = "",
     text: str = "",
     content: str = "",
     path: str = "",
-    question_created_at: str | None = None,
+    question_created_at: int | None = None,
     status: str = "DONE",
 ) -> dict:
     """
@@ -168,6 +169,7 @@ async def create_chat_message(
 
     Args:
         room_id: 채팅방 ID
+        question: 사용자 질문
         text: AI 텍스트 응답
         content: React 코드 내용
         path: 파일 경로
@@ -187,6 +189,7 @@ async def create_chat_message(
 
         message_data = {
             "id": message_id,
+            "question": question,
             "text": text,
             "content": content,
             "path": path,
