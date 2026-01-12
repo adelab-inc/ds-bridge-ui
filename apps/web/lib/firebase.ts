@@ -32,8 +32,8 @@ if (getApps().length === 0) {
 /**
  * Firebase 서비스 인스턴스
  */
-export const auth: Auth = getAuth(app);
-export const db: Firestore = getFirestore(app);
-export const storage: FirebaseStorage = getStorage(app);
+export const firebaseAuth: Auth = getAuth(app);
+export const firebaseFirestore: Firestore = getFirestore(app);
+export const firebaseStorage: FirebaseStorage = getStorage(app);
 
 export default app;

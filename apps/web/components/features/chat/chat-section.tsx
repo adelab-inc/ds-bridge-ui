@@ -1,18 +1,18 @@
-"use client"
+'use client';
 
-import * as React from "react"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { Message01Icon } from "@hugeicons/core-free-icons"
+import * as React from 'react';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { Message01Icon } from '@hugeicons/core-free-icons';
 
-import { cn } from "@/lib/utils"
-import { ChatMessageList } from "./chat-message-list"
-import { ChatInput } from "./chat-input"
-import type { ChatMessageType } from "./chat-message"
+import { cn } from '@/lib/utils';
+import { ChatMessageList } from './chat-message-list';
+import { ChatInput } from './chat-input';
+import type { ChatMessageType } from './chat-message';
 
-interface ChatSectionProps extends React.ComponentProps<"section"> {
-  messages?: ChatMessageType[]
-  onSendMessage?: (message: string) => void
-  isLoading?: boolean
+interface ChatSectionProps extends React.ComponentProps<'section'> {
+  messages?: ChatMessageType[];
+  onSendMessage?: (message: string) => void;
+  isLoading?: boolean;
 }
 
 function ChatSection({
@@ -24,18 +24,18 @@ function ChatSection({
 }: ChatSectionProps) {
   const handleSend = (message: string) => {
     if (onSendMessage) {
-      onSendMessage(message)
+      onSendMessage(message);
     } else {
       // Demo mode - just log
-      console.log("Message sent:", message)
+      console.log('Message sent:', message);
     }
-  }
+  };
 
   return (
     <section
       data-slot="chat-section"
       className={cn(
-        "bg-card border-border flex flex-col overflow-hidden rounded-lg border",
+        'bg-card border-border flex flex-col overflow-hidden rounded-lg border',
         className
       )}
       {...props}
@@ -51,13 +51,13 @@ function ChatSection({
       </div>
 
       {/* Messages */}
-      <ChatMessageList messages={messages} className="min-h-[200px] flex-1" />
+      <ChatMessageList messages={messages} className="min-h-50 flex-1" />
 
       {/* Input */}
       <ChatInput onSend={handleSend} disabled={isLoading} />
     </section>
-  )
+  );
 }
 
-export { ChatSection }
-export type { ChatSectionProps }
+export { ChatSection };
+export type { ChatSectionProps };

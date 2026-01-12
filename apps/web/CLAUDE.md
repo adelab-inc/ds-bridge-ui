@@ -14,6 +14,7 @@
 | shadcn/ui | 3.6.3 | 스타일 프리셋 |
 | Hugeicons | 1.1.4 | 아이콘 라이브러리 |
 | react-resizable-panels | 4.3.0 | 리사이즈 패널 레이아웃 |
+| TanStack Query | 5.90.16 | 서버 상태 관리, 데이터 fetching |
 | Firebase | 12.7.0 | Auth, Firestore, Storage |
 
 ## 중요: 공식 문서 확인 필수
@@ -48,7 +49,15 @@ apps/web/
 │   │   ├── card.tsx
 │   │   ├── input.tsx
 │   │   └── ...             # 총 13개 컴포넌트
-│   └── *.tsx               # 기능 컴포넌트
+│   ├── layout/             # 레이아웃 컴포넌트
+│   └── features/           # 기능별 컴포넌트
+│       └── chat/           # 채팅 기능
+│
+├── hooks/                  # 커스텀 훅
+│   └── firebase/           # Firebase 관련 훅
+│       ├── messageUtils.ts # 메시지 타입 & 유틸
+│       ├── useGetPaginatedFbMessages.ts # 페이지네이션
+│       └── useRealtimeMessages.ts # 실시간 구독
 │
 ├── lib/
 │   ├── utils.ts            # cn() 유틸리티
@@ -193,6 +202,125 @@ NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
 NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
 ```
+
+### Firebase 훅
+
+`hooks/firebase/` 디렉토리에 Firebase 관련 커스텀 훅이 있습니다:
+
+#### useRealtimeMessages
+
+Firestore 메시지를 실시간으로 구독하는 훅입니다. `onSnapshot`을 사용하여 자동으로 동기화됩니다.
+
+```typescript
+import { useRealtimeMessages } from "@/hooks/firebase/useRealtimeMessages";
+
+function ChatComponent({ sessionId }: { sessionId: string }) {
+  const { messages, isLoading, error } = useRealtimeMessages({
+    sessionId,
+    pageSize: 50, // optional
+    callbacks: {
+      onAdded: (msg) => {
+        console.log('새 메시지:', msg);
+        // 알림음 재생 등
+      },
+      onInitial: (msgs) => {
+        console.log('초기 메시지 로드:', msgs.length);
+      }
+    }
+  });
+
+  if (isLoading) return <div>로딩 중...</div>;
+  if (error) return <div>에러: {error}</div>;
+
+  return (
+    <div>
+      {messages.map(msg => (
+        <div key={msg.id}>{msg.content}</div>
+      ))}
+    </div>
+  );
+}
+```
+
+**주요 기능:**
+- Firestore `onSnapshot`을 사용한 실시간 동기화
+- 메시지 추가/수정/삭제 자동 반영
+- `sessionId`로 필터링
+- 타임스탬프 기준 오름차순 정렬
+- 선택적 콜백 지원 (onInitial, onAdded, onModified, onRemoved)
+
+**주의:** 실시간 리스너는 컴포넌트 언마운트 시 자동으로 해제됩니다.
+
+#### useGetPaginatedFbMessages
+
+무한 스크롤 페이지네이션을 지원하는 메시지 fetch 훅입니다. TanStack Query의 `useInfiniteQuery`를 기반으로 합니다.
+
+```typescript
+import { useGetPaginatedFbMessages } from "@/hooks/firebase/useGetPaginatedFbMessages";
+
+function ChatComponent({ sessionId }: { sessionId: string }) {
+  const { 
+    data, 
+    fetchNextPage, 
+    hasNextPage, 
+    isLoading,
+    isFetchingNextPage 
+  } = useGetPaginatedFbMessages({
+    sessionId,
+    pageSize: 20,
+  });
+
+  // data.pages는 ClientMessage[]의 배열
+  const allMessages = data?.pages.flat() ?? [];
+
+  return (
+    <div>
+      {allMessages.map(msg => (
+        <div key={msg.id}>{msg.content}</div>
+      ))}
+      {hasNextPage && (
+        <button onClick={() => fetchNextPage()}>
+          {isFetchingNextPage ? '로딩 중...' : '더보기'}
+        </button>
+      )}
+    </div>
+  );
+}
+```
+
+**주요 기능:**
+- Firestore에서 `sessionId`로 필터링된 메시지 fetch
+- `timestamp` 기준 역순 정렬 (최신 메시지가 먼저)
+- 페이지당 `pageSize`만큼 로드
+- TanStack Query의 캐싱 및 자동 리페치 활용
+
+**타입:**
+- `FirestoreMessage`: Firestore에 저장되는 메시지 타입
+- `ClientMessage`: 클라이언트에서 사용하는 메시지 타입 (ChatMessage 호환)
+
+#### messageUtils
+
+메시지 타입 변환 및 유틸리티 함수:
+
+```typescript
+import { 
+  firestoreToClientMessage,
+  clientToFirestoreMessage,
+  MESSAGES_COLLECTION 
+} from "@/hooks/firebase/messageUtils";
+
+// Firestore 문서 → 클라이언트 메시지
+const clientMsg = firestoreToClientMessage(firestoreDoc);
+
+// 클라이언트 메시지 → Firestore 문서 (저장용)
+const firestoreData = clientToFirestoreMessage(clientMsg, sessionId, userId);
+
+// 컬렉션 이름 사용 (shared-types에서 자동 생성됨)
+import { collection } from 'firebase/firestore';
+const messagesRef = collection(db, MESSAGES_COLLECTION); // 'chat_messages'
+```
+
+**중요:** 컬렉션 이름은 `@packages/shared-types/typescript/firebase/collections.ts`에서 관리되며, `COLLECTIONS.CHAT_MESSAGES`를 통해 타입 안전하게 사용됩니다.
 
 ## Vercel 배포 (모노레포)
 
