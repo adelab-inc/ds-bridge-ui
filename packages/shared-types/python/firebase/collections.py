@@ -11,4 +11,4 @@ class Collections:
     """Firestore collection names"""
 
     CHAT_ROOMS = "chat_rooms"  # Chat room metadata
-    CHAT_MESSAGES = "chat_messages"  # Individual messages within chat sessions
+    CHAT_MESSAGES = "chat_messages"  # Chat messages within sessions

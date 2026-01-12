@@ -4,11 +4,31 @@
   "collections": {
     "chat_rooms": {
       "name": "chat_rooms",
-      "description": "Chat room metadata"
+      "description": "Chat room metadata",
+      "fields": {
+        "id": { "type": "string", "description": "Chat room ID (UUID)" },
+        "storybook_url": { "type": "string", "description": "Storybook URL" },
+        "user_id": { "type": "string", "description": "User ID" },
+        "created_at": { "type": "number", "description": "Created timestamp (ms)" }
+      }
     },
     "chat_messages": {
       "name": "chat_messages",
-      "description": "Individual messages within chat sessions"
+      "description": "Chat messages within sessions",
+      "fields": {
+        "id": { "type": "string", "description": "Message ID (UUID)" },
+        "text": { "type": "string", "description": "AI text response" },
+        "content": { "type": "string", "description": "React code content" },
+        "path": { "type": "string", "description": "File path" },
+        "room_id": { "type": "string", "description": "Chat room ID" },
+        "question_created_at": { "type": "number", "description": "Question timestamp (ms)" },
+        "answer_created_at": { "type": "number", "description": "Answer timestamp (ms)" },
+        "status": {
+          "type": "string",
+          "enum": ["GENERATING", "DONE", "ERROR"],
+          "description": "Response status"
+        }
+      }
     }
   }
 }
