@@ -23,7 +23,8 @@ export async function POST(request: NextRequest) {
 
     // AI 서버 URL 가져오기
     const aiServerUrl = process.env.AI_SERVER_URL;
-    const aiServerApiKey = process.env.AI_SERVER_API_KEY;
+    const xApiKey = process.env.X_API_KEY;
+    console.log(xApiKey);
 
     if (!aiServerUrl) {
       return NextResponse.json(
@@ -40,13 +41,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!aiServerApiKey) {
+    if (!xApiKey) {
       return NextResponse.json(
         {
           detail: [
             {
               loc: ['server'],
-              msg: 'AI_SERVER_API_KEY is not configured',
+              msg: 'X_API_KEY is not configured',
               type: 'configuration_error',
             },
           ],
@@ -56,11 +57,11 @@ export async function POST(request: NextRequest) {
     }
 
     // AI 서버로 요청
-    const aiResponse = await fetch(`${aiServerUrl}/chat/send`, {
+    const aiResponse = await fetch(`${aiServerUrl}/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-API-Key': aiServerApiKey,
+        'X-API-Key': xApiKey,
       },
       body: JSON.stringify(body),
     });

@@ -9,13 +9,13 @@ import type {
   components,
 } from '@ds-hub/shared-types/typescript/api/schema';
 
-// GET /component/schema - 컴포넌트 스키마 조회
+// GET /components - 컴포넌트 스키마 조회
 export type ComponentSchemaResponse =
-  paths['/component/schema']['get']['responses']['200']['content']['application/json'];
+  paths['/components']['get']['responses']['200']['content']['application/json'];
 
-// POST /component/reload - 컴포넌트 스키마 리로드
+// POST /components/reload - 컴포넌트 스키마 리로드
 export type ComponentReloadResponse =
-  paths['/component/reload']['post']['responses']['200']['content']['application/json'];
+  paths['/components/reload']['post']['responses']['200']['content']['application/json'];
 
 // ReloadResponse 스키마
 export type ReloadResponseSchema = components['schemas']['ReloadResponse'];

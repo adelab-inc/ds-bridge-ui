@@ -58,7 +58,7 @@ export async function GET(
     }
 
     // AI 서버로 요청
-    const aiResponse = await fetch(`${aiServerUrl}/room/get/${room_id}`, {
+    const aiResponse = await fetch(`${aiServerUrl}/rooms/${room_id}`, {
       method: 'GET',
       headers: {
         'X-API-Key': aiServerApiKey,

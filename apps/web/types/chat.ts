@@ -12,9 +12,9 @@ import type {
 
 // OpenAPI에서 자동 생성된 타입 re-export
 export type ChatSendRequest =
-  paths['/chat/send']['post']['requestBody']['content']['application/json'];
+  paths['/chat']['post']['requestBody']['content']['application/json'];
 export type ChatSendResponse =
-  paths['/chat/send']['post']['responses']['200']['content']['application/json'];
+  paths['/chat']['post']['responses']['200']['content']['application/json'];
 export type ChatStreamRequest =
   paths['/chat/stream']['post']['requestBody']['content']['application/json'];
 export type ValidationError = components['schemas']['HTTPValidationError'];
@@ -22,10 +22,10 @@ export type Message = components['schemas']['Message'];
 export type RoomResponse = components['schemas']['RoomResponse'];
 
 // SSE 이벤트 타입 (OpenAPI 스펙에 없으므로 수동 정의)
-export type SSEEventType = 'text' | 'code' | 'done' | 'error';
+export type SSEEventType = 'chat' | 'code' | 'done' | 'error';
 
 export interface ChatEvent {
-  type: 'text';
+  type: 'chat';
   text: string;
 }
 

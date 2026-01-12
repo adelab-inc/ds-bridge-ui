@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     }
 
     // AI 서버로 요청
-    const aiResponse = await fetch(`${aiServerUrl}/room/create`, {
+    const aiResponse = await fetch(`${aiServerUrl}/rooms`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

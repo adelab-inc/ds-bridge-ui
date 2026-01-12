@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     // AI 서버로 요청
-    const aiResponse = await fetch(`${aiServerUrl}/component/reload`, {
+    const aiResponse = await fetch(`${aiServerUrl}/components/reload`, {
       method: 'POST',
       headers: {
         'X-API-Key': aiServerApiKey,
