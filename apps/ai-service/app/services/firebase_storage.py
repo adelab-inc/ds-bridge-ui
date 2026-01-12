@@ -1,6 +1,7 @@
 import json
 import logging
 from functools import lru_cache
+from pathlib import Path
 
 import firebase_admin
 from firebase_admin import credentials, storage
@@ -8,6 +9,9 @@ from firebase_admin import credentials, storage
 from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
+
+# 로컬 개발용 서비스 계정 키 경로
+SERVICE_ACCOUNT_KEY_PATH = Path(__file__).parent.parent.parent / "service-account.json"
 
 # ============================================================================
 # Firebase Initialization
@@ -33,18 +37,20 @@ def init_firebase() -> None:
     except ValueError:
         pass
 
-    # Cloud Run에서는 기본 서비스 계정 사용
-    # 로컬에서는 GOOGLE_APPLICATION_CREDENTIALS 환경변수 또는 설정 사용
-    if settings.google_application_credentials:
-        cred = credentials.Certificate(settings.google_application_credentials)
+    # 로컬: 서비스 계정 키 파일 사용 (있으면)
+    # Cloud Run: 기본 서비스 계정 사용
+    if SERVICE_ACCOUNT_KEY_PATH.exists():
+        cred = credentials.Certificate(str(SERVICE_ACCOUNT_KEY_PATH))
         firebase_admin.initialize_app(cred, {
             "storageBucket": settings.firebase_storage_bucket
         })
+        logger.info("Firebase initialized with service account key")
     else:
         # Cloud Run / GCE에서는 기본 자격증명 사용
         firebase_admin.initialize_app(options={
             "storageBucket": settings.firebase_storage_bucket
         })
+        logger.info("Firebase initialized with default credentials")
 
     _firebase_initialized = True
     logger.info("Firebase initialized with bucket: %s", settings.firebase_storage_bucket)
