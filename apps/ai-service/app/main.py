@@ -19,7 +19,7 @@ tags_metadata = [
         "description": "서버 상태 확인 엔드포인트",
     },
     {
-        "name": "room",
+        "name": "rooms",
         "description": "채팅방 관리 API",
     },
     {
@@ -27,7 +27,7 @@ tags_metadata = [
         "description": "AI 채팅 API - 디자인 시스템 컴포넌트 기반 React UI 코드 생성",
     },
     {
-        "name": "component",
+        "name": "components",
         "description": "컴포넌트 스키마 관리 API",
     },
 ]
@@ -94,9 +94,9 @@ app.add_middleware(
 # Routers
 # ============================================================================
 
-app.include_router(rooms_router, prefix="/room", tags=["room"])
+app.include_router(rooms_router, prefix="/rooms", tags=["rooms"])
 app.include_router(chat_router, prefix="/chat", tags=["chat"])
-app.include_router(components_router, prefix="/component", tags=["component"])
+app.include_router(components_router, prefix="/components", tags=["components"])
 
 
 # ============================================================================

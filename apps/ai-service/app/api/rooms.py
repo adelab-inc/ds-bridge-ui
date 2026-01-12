@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 @router.post(
-    "/create",
+    "",
     response_model=RoomResponse,
     status_code=status.HTTP_201_CREATED,
     summary="채팅방 생성",
@@ -64,7 +64,7 @@ async def create_room(request: CreateRoomRequest):
 
 
 @router.get(
-    "/get/{room_id}",
+    "/{room_id}",
     response_model=RoomResponse,
     summary="채팅방 조회",
     description="채팅방 ID로 채팅방 정보를 조회합니다.",

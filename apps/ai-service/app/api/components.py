@@ -304,7 +304,7 @@ def get_schema() -> dict | None:
 
 
 @router.get(
-    "/schema",
+    "",
     summary="컴포넌트 스키마 조회",
     description="현재 로드된 디자인 시스템 컴포넌트 스키마를 반환합니다.",
     response_description="컴포넌트 스키마 JSON",
