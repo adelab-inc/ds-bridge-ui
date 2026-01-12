@@ -103,6 +103,11 @@ class ChatRequest(BaseModel):
         description="사용자 메시지",
         json_schema_extra={"example": "로그인 페이지 만들어줘"},
     )
+    room_id: str = Field(
+        ...,
+        description="채팅방 ID",
+        json_schema_extra={"example": "550e8400-e29b-41d4-a716-446655440000"},
+    )
     stream: bool = Field(
         default=False,
         description="스트리밍 응답 여부 (True면 /stream 엔드포인트 사용 권장)",
@@ -118,9 +123,11 @@ class ChatRequest(BaseModel):
             "examples": [
                 {
                     "message": "로그인 페이지 만들어줘",
+                    "room_id": "550e8400-e29b-41d4-a716-446655440000",
                 },
                 {
                     "message": "대시보드 만들어줘",
+                    "room_id": "550e8400-e29b-41d4-a716-446655440000",
                     "schema_key": "schemas/v1/component-schema.json",
                 },
             ]
@@ -273,3 +280,88 @@ class ReloadResponse(BaseModel):
     )
 
     model_config = {"populate_by_name": True}
+
+
+# ============================================================================
+# Chat Room Schemas
+# ============================================================================
+
+
+class CreateRoomRequest(BaseModel):
+    """채팅방 생성 요청"""
+
+    storybook_url: str = Field(
+        ...,
+        description="Storybook URL",
+        json_schema_extra={"example": "https://storybook.example.com"},
+    )
+    user_id: str = Field(
+        ...,
+        description="사용자 ID",
+        json_schema_extra={"example": "user-123"},
+    )
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "storybook_url": "https://storybook.example.com",
+                    "user_id": "user-123",
+                }
+            ]
+        }
+    }
+
+
+class RoomResponse(BaseModel):
+    """채팅방 응답"""
+
+    id: str = Field(
+        ...,
+        description="채팅방 ID (UUID)",
+        json_schema_extra={"example": "550e8400-e29b-41d4-a716-446655440000"},
+    )
+    storybook_url: str = Field(
+        ...,
+        description="Storybook URL",
+        json_schema_extra={"example": "https://storybook.example.com"},
+    )
+    user_id: str = Field(
+        ...,
+        description="사용자 ID",
+        json_schema_extra={"example": "user-123"},
+    )
+    created_at: str = Field(
+        ...,
+        description="생성 시간 (ISO 8601)",
+        json_schema_extra={"example": "2026-01-12T10:00:00.000Z"},
+    )
+
+
+class MessageDocument(BaseModel):
+    """채팅 메시지 문서"""
+
+    id: str = Field(..., description="메시지 ID (UUID)")
+    type: Literal["text", "code", "done", "error"] = Field(
+        ...,
+        description="메시지 타입",
+    )
+    content: str = Field(
+        default="",
+        description="React 코드 내용",
+    )
+    path: str = Field(
+        default="",
+        description="파일 경로",
+    )
+    text: str = Field(
+        default="",
+        description="메시지 텍스트",
+    )
+    room_id: str = Field(..., description="채팅방 ID")
+    question_created_at: str = Field(..., description="질문 생성 시간")
+    answer_created_at: str = Field(..., description="응답 생성 시간")
+    answer_completed: bool = Field(
+        default=False,
+        description="응답 완료 여부",
+    )

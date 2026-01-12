@@ -97,8 +97,8 @@ async def chat_stream(self, messages: list[Message]) -> AsyncGenerator[str, None
 | Method | Path | 설명 |
 |--------|------|------|
 | GET | `/health` | 헬스 체크 |
-| POST | `/api/chat` | 채팅 (non-streaming) |
-| POST | `/api/chat/stream` | 채팅 (SSE streaming) |
+| POST | `/api/chats` | 채팅 (non-streaming) |
+| POST | `/api/chats/stream` | 채팅 (SSE streaming) |
 | GET | `/api/components` | 컴포넌트 스키마 조회 |
 | POST | `/api/components/reload` | 스키마 리로드 |
 

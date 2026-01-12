@@ -125,3 +125,6 @@ firebase-debug.*.log
 .claude
 
 PROJECT_GUIDE.md
+
+# component-schema.json
+component-schema.json

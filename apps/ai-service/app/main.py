@@ -4,6 +4,7 @@ from fastapi.openapi.utils import get_openapi
 
 from app.api.chat import router as chat_router
 from app.api.components import router as components_router
+from app.api.rooms import router as rooms_router
 from app.core.config import get_settings
 
 settings = get_settings()
@@ -18,7 +19,11 @@ tags_metadata = [
         "description": "서버 상태 확인 엔드포인트",
     },
     {
-        "name": "chat",
+        "name": "rooms",
+        "description": "채팅방 관리 API",
+    },
+    {
+        "name": "chats",
         "description": "AI 채팅 API - 디자인 시스템 컴포넌트 기반 React UI 코드 생성",
     },
     {
@@ -89,7 +94,8 @@ app.add_middleware(
 # Routers
 # ============================================================================
 
-app.include_router(chat_router, prefix="/api/chat", tags=["chat"])
+app.include_router(rooms_router, prefix="/api/rooms", tags=["rooms"])
+app.include_router(chat_router, prefix="/api/chats", tags=["chats"])
 app.include_router(components_router, prefix="/api/components", tags=["components"])
 
 

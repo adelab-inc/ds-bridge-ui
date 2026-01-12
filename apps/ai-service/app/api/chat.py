@@ -1,6 +1,7 @@
 import json
 import logging
 import re
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -16,6 +17,7 @@ from app.schemas.chat import (
 )
 from app.services.ai_provider import get_ai_provider
 from app.services.firebase_storage import fetch_schema_from_storage
+from app.services.firestore import create_chat_message
 
 router = APIRouter(dependencies=[Depends(verify_api_key)])
 logger = logging.getLogger(__name__)
@@ -189,6 +191,7 @@ class StreamingParser:
 ```json
 {
   "message": "로그인 페이지 만들어줘",
+  "room_id": "550e8400-e29b-41d4-a716-446655440000",
   "schema_key": "schemas/component-schema.json"
 }
 ```
@@ -198,6 +201,9 @@ class StreamingParser:
 - `parsed.conversation`: 한국어 설명
 - `parsed.files`: 생성된 코드 파일 목록
 - `usage`: 토큰 사용량
+
+## room_id
+채팅방 ID (필수). 메시지가 해당 채팅방에 저장됩니다.
 
 ## schema_key
 Firebase Storage에서 컴포넌트 스키마를 로드합니다. 생략 시 로컬 스키마 사용.
@@ -227,6 +233,8 @@ async def chat(request: ChatRequest):
                 detail="Use /stream endpoint for streaming responses",
             )
 
+        question_created_at = datetime.now(timezone.utc).isoformat()
+
         provider = get_ai_provider()
         system_prompt = await resolve_system_prompt(request.schema_key)
         messages = [
@@ -236,6 +244,28 @@ async def chat(request: ChatRequest):
 
         response_message, usage = await provider.chat(messages)
         parsed = parse_ai_response(response_message.content)
+
+        # Firestore에 메시지 저장
+        # 1. 텍스트 응답 저장
+        if parsed.conversation:
+            await create_chat_message(
+                room_id=request.room_id,
+                msg_type="text",
+                text=parsed.conversation,
+                question_created_at=question_created_at,
+                answer_completed=True,
+            )
+
+        # 2. 코드 파일들 저장
+        for file in parsed.files:
+            await create_chat_message(
+                room_id=request.room_id,
+                msg_type="code",
+                path=file.path,
+                content=file.content,
+                question_created_at=question_created_at,
+                answer_completed=True,
+            )
 
         return ChatResponse(message=response_message, parsed=parsed, usage=usage)
     except HTTPException:
@@ -254,6 +284,7 @@ SSE(Server-Sent Events)를 통해 실시간 스트리밍 응답을 받습니다.
 ```json
 {
   "message": "로그인 페이지 만들어줘",
+  "room_id": "550e8400-e29b-41d4-a716-446655440000",
   "schema_key": "schemas/component-schema.json"
 }
 ```
@@ -262,7 +293,7 @@ SSE(Server-Sent Events)를 통해 실시간 스트리밍 응답을 받습니다.
 
 | 타입 | 설명 | 필드 |
 |------|------|------|
-| `text` | 대화 텍스트 (실시간) | `text` |
+| `chat` | 대화 텍스트 (실시간) | `text` |
 | `code` | 코드 파일 (완성 후) | `path`, `content` |
 | `done` | 스트리밍 완료 | - |
 | `error` | 오류 발생 | `error` |
@@ -277,6 +308,9 @@ data: {"type": "code", "path": "src/pages/Login.tsx", "content": "import..."}
 
 data: {"type": "done"}
 ```
+
+## room_id
+채팅방 ID (필수). 스트리밍 완료 후 메시지가 해당 채팅방에 저장됩니다.
 """,
     response_description="SSE 스트림",
     responses={
@@ -301,6 +335,8 @@ async def chat_stream(request: ChatRequest):
     schema_key가 제공되면 Firebase Storage에서 스키마를 로드합니다.
     """
     try:
+        question_created_at = datetime.now(timezone.utc).isoformat()
+
         provider = get_ai_provider()
         system_prompt = await resolve_system_prompt(request.schema_key)
         messages = [
@@ -310,16 +346,48 @@ async def chat_stream(request: ChatRequest):
 
         async def generate():
             parser = StreamingParser()
+            collected_text = ""
+            collected_files: list[dict] = []
 
             async for chunk in provider.chat_stream(messages):
                 events = parser.process_chunk(chunk)
                 for event in events:
+                    # 이벤트 수집
+                    if event["type"] == "chat":
+                        collected_text += event.get("text", "")
+                    elif event["type"] == "code":
+                        collected_files.append(event)
+
                     yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
 
             # 남은 버퍼 처리
             final_events = parser.flush()
             for event in final_events:
+                if event["type"] == "chat":
+                    collected_text += event.get("text", "")
                 yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+
+            # Firestore에 메시지 저장
+            # 1. 텍스트 응답 저장
+            if collected_text.strip():
+                await create_chat_message(
+                    room_id=request.room_id,
+                    msg_type="text",
+                    text=collected_text.strip(),
+                    question_created_at=question_created_at,
+                    answer_completed=True,
+                )
+
+            # 2. 코드 파일들 저장
+            for file_event in collected_files:
+                await create_chat_message(
+                    room_id=request.room_id,
+                    msg_type="code",
+                    path=file_event.get("path", ""),
+                    content=file_event.get("content", ""),
+                    question_created_at=question_created_at,
+                    answer_completed=True,
+                )
 
             yield f"data: {json.dumps({'type': 'done'})}\n\n"
 

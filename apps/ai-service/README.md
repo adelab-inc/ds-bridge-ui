@@ -95,8 +95,8 @@ apps/ai-service/
 │   ├── api/
 │   │   ├── __init__.py
 │   │   ├── chat.py              # Chat API routes
-│   │   │                        # - POST /api/chat (non-streaming)
-│   │   │                        # - POST /api/chat/stream (SSE streaming)
+│   │   │                        # - POST /api/chats (non-streaming)
+│   │   │                        # - POST /api/chats/stream (SSE streaming)
 │   │   │
 │   │   └── components.py        # Component schema management
 │   │                            # - GET /api/components
@@ -149,7 +149,7 @@ GET /health
 ### Chat (Non-Streaming)
 
 ```http
-POST /api/chat
+POST /api/chats
 Content-Type: application/json
 ```
 
@@ -191,7 +191,7 @@ Content-Type: application/json
 ### Chat (Streaming)
 
 ```http
-POST /api/chat/stream
+POST /api/chats/stream
 Content-Type: application/json
 ```
 
