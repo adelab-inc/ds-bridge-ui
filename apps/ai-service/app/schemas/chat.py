@@ -342,6 +342,10 @@ class MessageDocument(BaseModel):
     """채팅 메시지 문서"""
 
     id: str = Field(..., description="메시지 ID (UUID)")
+    question: str = Field(
+        default="",
+        description="사용자 질문",
+    )
     text: str = Field(
         default="",
         description="AI 텍스트 응답",

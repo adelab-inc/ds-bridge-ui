@@ -20,6 +20,7 @@
       "description": "Chat messages within sessions",
       "fields": {
         "id": { "type": "string", "description": "Message ID (UUID)" },
+        "question": { "type": "string", "description": "User question" },
         "text": { "type": "string", "description": "AI text response" },
         "content": { "type": "string", "description": "React code content" },
         "path": { "type": "string", "description": "File path" },

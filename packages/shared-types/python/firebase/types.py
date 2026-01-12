@@ -31,6 +31,7 @@ class ChatMessage(TypedDict):
     """
 
     id: str  # Message ID (UUID)
+    question: str  # User question
     text: str  # AI text response
     content: str  # React code content
     path: str  # File path
