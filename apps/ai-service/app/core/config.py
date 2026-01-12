@@ -27,11 +27,6 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     gemini_model: str = "gemini-2.5-flash"
 
-    # Server
-    host: str = "0.0.0.0"
-    port: int = 8000
-    debug: bool = False
-
     # API Authentication
     x_api_key: str = ""  # X-API-Key 헤더로 인증
 
@@ -40,7 +35,6 @@ class Settings(BaseSettings):
 
     # Firebase
     firebase_storage_bucket: str = ""
-    firebase_service_account_key: str = ""  # 서비스 계정 JSON 경로 (로컬용)
 
     @property
     def cors_origins_list(self) -> list[str]:

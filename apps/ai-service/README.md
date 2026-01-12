@@ -94,14 +94,17 @@ apps/ai-service/
 │   │
 │   ├── api/
 │   │   ├── __init__.py
+│   │   ├── rooms.py             # Room API routes
+│   │   │                        # - POST /room/create
+│   │   │                        # - GET /room/get/{room_id}
+│   │   │
 │   │   ├── chat.py              # Chat API routes
-│   │   │                        # - POST /api/chats (non-streaming)
-│   │   │                        # - POST /api/chats/stream (SSE streaming)
+│   │   │                        # - POST /chat/send (non-streaming)
+│   │   │                        # - POST /chat/stream (SSE streaming)
 │   │   │
 │   │   └── components.py        # Component schema management
-│   │                            # - GET /api/components
-│   │                            # - GET /api/components/prompt
-│   │                            # - POST /api/components/reload
+│   │                            # - GET /component/schema
+│   │                            # - POST /component/reload
 │   │
 │   ├── core/
 │   │   ├── __init__.py
@@ -115,7 +118,8 @@ apps/ai-service/
 │   └── services/
 │       ├── __init__.py
 │       ├── ai_provider.py       # AI provider abstraction
-│       └── firebase_storage.py  # Firebase Storage client
+│       ├── firebase_storage.py  # Firebase Storage client
+│       └── firestore.py         # Firestore operations (rooms, messages)
 │
 ├── scripts/
 │   └── deploy.sh                # Cloud Run deployment script
@@ -146,17 +150,66 @@ GET /health
 
 ---
 
+### Create Room
+
+```http
+POST /room/create
+Content-Type: application/json
+X-API-Key: your-api-key
+```
+
+**Request Body:**
+```json
+{
+  "storybook_url": "https://storybook.example.com",
+  "user_id": "user-123"
+}
+```
+
+**Response:**
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "storybook_url": "https://storybook.example.com",
+  "user_id": "user-123",
+  "created_at": "1736654400000"
+}
+```
+
+---
+
+### Get Room
+
+```http
+GET /room/get/{room_id}
+X-API-Key: your-api-key
+```
+
+**Response:**
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "storybook_url": "https://storybook.example.com",
+  "user_id": "user-123",
+  "created_at": "1736654400000"
+}
+```
+
+---
+
 ### Chat (Non-Streaming)
 
 ```http
-POST /api/chats
+POST /chat/send
 Content-Type: application/json
+X-API-Key: your-api-key
 ```
 
 **Request Body:**
 ```json
 {
   "message": "Create a login form",
+  "room_id": "550e8400-e29b-41d4-a716-446655440000",
   "schema_key": "schemas/v1/component-schema.json"
 }
 ```
@@ -191,14 +244,16 @@ Content-Type: application/json
 ### Chat (Streaming)
 
 ```http
-POST /api/chats/stream
+POST /chat/stream
 Content-Type: application/json
+X-API-Key: your-api-key
 ```
 
 **Request Body:**
 ```json
 {
   "message": "Create a dashboard",
+  "room_id": "550e8400-e29b-41d4-a716-446655440000",
   "schema_key": "schemas/v1/component-schema.json"
 }
 ```
@@ -220,7 +275,8 @@ data: {"type": "done"}
 ### Get Component Schema
 
 ```http
-GET /api/components
+GET /component/schema
+X-API-Key: your-api-key
 ```
 
 **Response:**
@@ -248,7 +304,8 @@ GET /api/components
 ### Reload Component Schema
 
 ```http
-POST /api/components/reload
+POST /component/reload
+X-API-Key: your-api-key
 ```
 
 **Response:**
@@ -272,13 +329,9 @@ POST /api/components/reload
 | `ANTHROPIC_MODEL` | `claude-sonnet-4-20250514` | Anthropic model identifier |
 | `GEMINI_API_KEY` | - | Google Gemini API key |
 | `GEMINI_MODEL` | `gemini-2.5-flash` | Gemini model identifier |
-| `HOST` | `0.0.0.0` | Server bind address |
-| `PORT` | `8000` | Server port |
-| `DEBUG` | `false` | Debug mode |
 | `X_API_KEY` | - | API key for authentication (empty = disabled) |
 | `CORS_ORIGINS` | `http://localhost:3000,http://localhost:5173` | Allowed CORS origins |
 | `FIREBASE_STORAGE_BUCKET` | - | Firebase Storage bucket name |
-| `GOOGLE_APPLICATION_CREDENTIALS` | - | Service account JSON path (local only) |
 
 ### Example `.env` File
 
@@ -298,11 +351,6 @@ ANTHROPIC_MODEL=claude-sonnet-4-20250514
 GEMINI_API_KEY=AIzaxxxxx
 GEMINI_MODEL=gemini-2.5-flash
 
-# Server Settings
-HOST=0.0.0.0
-PORT=8000
-DEBUG=false
-
 # API Authentication (leave empty to disable)
 X_API_KEY=sk-your-secret-key
 
@@ -311,7 +359,7 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:5173
 
 # Firebase Settings
 FIREBASE_STORAGE_BUCKET=your-project.appspot.com
-GOOGLE_APPLICATION_CREDENTIALS=./service-account.json
+# 로컬 개발: service-account.json 파일을 apps/ai-service/ 폴더에 위치
 ```
 
 ## AI Providers
