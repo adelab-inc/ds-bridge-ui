@@ -28,25 +28,25 @@ import { firebaseFirestore } from '@/lib/firebase';
 const fetchMessages = async ({
   sessionId,
   pageSize,
-  pageParam = 0,
+  pageParam,
 }: {
   sessionId: string;
   pageSize: number;
-  pageParam?: number;
+  pageParam?: string;
 }): Promise<ClientMessage[]> => {
   const queryConstraints: (
     | QueryFieldFilterConstraint
     | QueryOrderByConstraint
     | QueryLimitConstraint
   )[] = [
-    where('sessionId', '==', sessionId),
-    orderBy('timestamp', 'desc'),
+    where('room_id', '==', sessionId),
+    orderBy('question_created_at', 'desc'),
     limit(pageSize),
   ];
 
   // 페이지네이션: 이전 페이지의 마지막 타임스탬프보다 이전 메시지만 가져오기
-  if (pageParam > 0) {
-    queryConstraints.push(where('timestamp', '<', pageParam));
+  if (pageParam) {
+    queryConstraints.push(where('question_created_at', '<', pageParam));
   }
 
   const q = query(
@@ -63,8 +63,8 @@ const fetchMessages = async ({
       return firestoreToClientMessage({ ...data, id: doc.id });
     })
     .sort((a, b) => {
-      const aTime = a.timestamp?.getTime() || 0;
-      const bTime = b.timestamp?.getTime() || 0;
+      const aTime = new Date(a.question_created_at).getTime();
+      const bTime = new Date(b.question_created_at).getTime();
       return aTime - bTime; // 오래된 메시지부터
     });
 
@@ -93,7 +93,7 @@ export const useGetPaginatedFbMessages = ({
 }: {
   sessionId: string;
   pageSize: number;
-  startAfter?: number;
+  startAfter?: string;
   infiniteQueryOptions?: Partial<
     UndefinedInitialDataInfiniteOptions<
       ClientMessage[],
@@ -108,7 +108,7 @@ export const useGetPaginatedFbMessages = ({
       fetchMessages({
         sessionId,
         pageSize,
-        pageParam: pageParam as number,
+        pageParam: pageParam as string,
       }),
     getNextPageParam: (lastPage) => {
       // 마지막 페이지의 메시지 개수가 pageSize보다 적으면 더 이상 페이지가 없음
@@ -117,9 +117,9 @@ export const useGetPaginatedFbMessages = ({
       }
       // 가장 오래된 메시지의 타임스탬프를 다음 페이지의 시작점으로 사용
       const oldestMessage = lastPage[0];
-      return oldestMessage.timestamp?.getTime() || 0;
+      return oldestMessage.question_created_at;
     },
-    initialPageParam: startAfter || 0,
+    initialPageParam: startAfter,
     staleTime: 5 * 60 * 1000, // 5분
     ...infiniteQueryOptions,
   });

@@ -1,12 +1,12 @@
 # @ds-hub/shared-types
 
-> Firebase 설정 및 타입을 TypeScript와 Python 간 공유하는 패키지
+> Firebase 및 API 타입을 TypeScript와 Python 간 공유하는 패키지
 
 ## 개요
 
-이 패키지는 **Single Source of Truth** 원칙으로 Firebase 관련 설정을 관리합니다.
+이 패키지는 **Single Source of Truth** 원칙으로 타입을 관리합니다.
 
-- ✅ JSON 파일이 유일한 소스
+- ✅ JSON/OpenAPI 파일이 유일한 소스
 - ✅ TypeScript와 Python 코드는 자동 생성
 - ✅ 불일치 방지 및 타입 안전성 보장
 
@@ -14,18 +14,25 @@
 
 ```
 packages/shared-types/
-├── firebase/                    # 📝 Single Source of Truth
-│   ├── collections.json         # Firestore 컬렉션명
+├── firebase/                    # 📝 Firebase 소스
+│   ├── collections.json         # Firestore 컬렉션명 & 스키마
 │   └── storage.json             # Storage 경로
 │
-├── scripts/                     # 🔧 코드 생성 스크립트
-│   ├── generate-typescript.js
-│   └── generate-python.py
+├── api/                         # 📝 API 소스
+│   └── openapi.json             # OpenAPI 3.1 스펙
 │
-├── typescript/firebase/         # 🔷 자동 생성 (TypeScript)
-│   ├── collections.ts
-│   ├── storage.ts
-│   └── index.ts
+├── scripts/                     # 🔧 코드 생성 스크립트
+│   ├── generate-typescript.js   # Firebase 타입 생성
+│   ├── generate-python.py       # Firebase Python 타입 생성
+│   └── generate-api-types.sh    # API 타입 생성 (openapi-typescript)
+│
+├── typescript/                  # 🔷 자동 생성 (TypeScript)
+│   ├── firebase/
+│   │   ├── collections.ts
+│   │   ├── storage.ts
+│   │   └── index.ts
+│   └── api/
+│       └── schema.ts            # OpenAPI → TypeScript 타입
 │
 └── python/firebase/             # 🐍 자동 생성 (Python)
     ├── collections.py
@@ -35,22 +42,57 @@ packages/shared-types/
 
 ## 사용 방법
 
-### 1. 값 추가/수정
+### Firebase 타입
+
+#### 1. 값 추가/수정
 
 **firebase/collections.json 또는 storage.json 편집**
+
+컬렉션 이름만 정의하거나, 선택적으로 `schema` 필드를 추가하여 문서 타입도 함께 정의할 수 있습니다.
 
 ```json
 {
   "collections": {
     "users": {
       "name": "users",
-      "description": "User profiles and authentication data"
+      "description": "User profiles and authentication data",
+      "schema": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "description": "User unique identifier"
+        },
+        "email": {
+          "type": "string",
+          "required": true,
+          "description": "User email address"
+        },
+        "role": {
+          "type": "enum",
+          "values": ["admin", "user", "guest"],
+          "required": true,
+          "description": "User role"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "required": false,
+          "description": "Account creation timestamp"
+        }
+      }
     }
   }
 }
 ```
 
-### 2. 코드 생성
+**지원하는 타입:**
+
+- `string` → TypeScript: `string`, Python: `str`
+- `boolean` → TypeScript: `boolean`, Python: `bool`
+- `number` → TypeScript: `number`, Python: `float`
+- `timestamp` → TypeScript: `Timestamp`, Python: `datetime`
+- `enum` → TypeScript: Union type, Python: `Literal`
+
+#### 2. 코드 생성
 
 ```bash
 # 모노레포 루트에서
@@ -60,20 +102,39 @@ cd packages/shared-types
 pnpm gen:firebase-types
 
 # 또는 개별 생성
-pnpm gen:firebase-types:ts   # TypeScript만
-pnpm gen:firebase-types:py   # Python만
+pnpm gen:firebase:ts   # TypeScript만
+pnpm gen:firebase:py   # Python만
 ```
 
-### 3. TypeScript에서 사용 (apps/web)
+#### 3. TypeScript에서 사용 (apps/web)
 
 ```typescript
-import { COLLECTIONS, STORAGE_PATHS } from '@ds-hub/shared-types/firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import {
+  COLLECTIONS,
+  STORAGE_PATHS,
+  ChatRoomsDocument,
+  ChatMessagesDocument,
+} from '@ds-hub/shared-types/firebase';
+import { collection, addDoc, doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
-// Firestore 사용
-const usersRef = collection(db, COLLECTIONS.USERS);
-await addDoc(usersRef, { name: 'John' });
+// Firestore 사용 - 타입 안전하게
+const chatRoomsRef = collection(db, COLLECTIONS.CHAT_ROOMS);
+
+const newRoom: ChatRoomsDocument = {
+  id: 'room-123',
+  storybook_url: 'https://storybook.example.com',
+  user_id: 'user-456',
+};
+
+await addDoc(chatRoomsRef, newRoom);
+
+// 타입 체크가 작동합니다
+const invalidRoom: ChatRoomsDocument = {
+  id: 'room-123',
+  // ❌ 타입 에러: storybook_url이 없음
+  user_id: 'user-456',
+};
 
 // Storage 사용
 import { ref, uploadBytes } from 'firebase/storage';
@@ -82,7 +143,7 @@ import { storage } from '@/lib/firebase';
 const storageRef = ref(storage, `${STORAGE_PATHS.SCREENSHOTS}/image.png`);
 ```
 
-### 4. Python에서 사용 (apps/ai-service)
+#### 4. Python에서 사용 (apps/ai-service)
 
 **방법 A: PYTHONPATH 설정**
 
@@ -95,16 +156,27 @@ from pathlib import Path
 monorepo_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(monorepo_root / "packages" / "shared-types" / "python"))
 
-# Import
-from firebase.collections import Collections
+# Import - 타입 포함
+from firebase.collections import (
+    Collections,
+    ChatRoomsDocument,
+    ChatMessagesDocument
+)
 from firebase.storage import StoragePaths
 
-# Firestore 사용
+# Firestore 사용 - 타입 안전하게
 from firebase_admin import firestore
 db = firestore.client()
 
-users_ref = db.collection(Collections.USERS)
-users_ref.add({"name": "John"})
+chat_rooms_ref = db.collection(Collections.CHAT_ROOMS)
+
+new_room: ChatRoomsDocument = {
+    "id": "room-123",
+    "storybook_url": "https://storybook.example.com",
+    "user_id": "user-456"
+}
+
+chat_rooms_ref.add(new_room)
 
 # Storage 사용
 from firebase_admin import storage
@@ -131,33 +203,110 @@ from firebase.collections import Collections
 from firebase.storage import StoragePaths
 ```
 
+### API 타입 (openapi-typescript)
+
+백엔드 REST API 타입은 OpenAPI 3.1 스펙에서 자동 생성됩니다.
+
+#### 1. OpenAPI 스펙 업데이트
+
+```bash
+# 백엔드에서 openapi.json 복사
+cp /path/to/backend/openapi.json packages/shared-types/api/
+```
+
+#### 2. 타입 생성
+
+```bash
+# 모노레포 루트에서
+pnpm gen:api-types
+```
+
+#### 3. TypeScript에서 사용
+
+```typescript
+import type { paths, components } from '@ds-hub/shared-types/api';
+
+// 요청/응답 타입 추출
+type ChatRequest =
+  paths['/api/chat']['post']['requestBody']['content']['application/json'];
+type ChatResponse =
+  paths['/api/chat']['post']['responses']['200']['content']['application/json'];
+type ChatStreamRequest =
+  paths['/api/chat/stream']['post']['requestBody']['content']['application/json'];
+
+// 컴포넌트 스키마 타입 추출
+type Message = components['schemas']['Message'];
+type FileContent = components['schemas']['FileContent'];
+
+// API 클라이언트 예시
+async function chat(request: ChatRequest): Promise<ChatResponse> {
+  const response = await fetch('/api/chat', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-API-Key': 'sk-...',
+    },
+    body: JSON.stringify(request),
+  });
+
+  return response.json(); // 타입 안전! ✅
+}
+
+// SSE 스트리밍 예시
+async function* streamChat(request: ChatStreamRequest) {
+  const response = await fetch('/api/chat/stream', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-API-Key': 'sk-...',
+    },
+    body: JSON.stringify(request),
+  });
+
+  const reader = response.body?.getReader();
+  // ... SSE 파싱
+}
+```
+
+#### 통합 타입 생성
+
+```bash
+# Firebase + API 타입 모두 생성
+pnpm gen:types
+```
+
 ## 현재 정의된 값
 
 ### Collections (Firestore)
 
-| 상수 | 값 | 설명 |
-|------|-----|------|
-| `USERS` | `users` | User profiles and authentication data |
-| `PROJECTS` | `projects` | Design system projects |
-| `COMPONENTS` | `components` | Component metadata from Storybook |
-| `CHAT_SESSIONS` | `chat_sessions` | AI chat conversation sessions |
-| `CHAT_MESSAGES` | `chat_messages` | Individual messages within chat sessions |
+| 상수            | 값              | 설명                                     | Document Type             |
+| --------------- | --------------- | ---------------------------------------- | ------------------------- |
+| `CHAT_ROOMS`    | `chat_rooms`    | Chat room metadata                       | `ChatRoomsDocument` ✅    |
+| `CHAT_MESSAGES` | `chat_messages` | Individual messages within chat sessions | `ChatMessagesDocument` ✅ |
+
+✅ = schema가 정의되어 TypeScript/Python 타입이 자동 생성됨
 
 ### Storage Paths
 
-| 상수 | 값 | 설명 |
-|------|-----|------|
-| `SCREENSHOTS` | `screenshots` | Component screenshots from Storybook |
-| `ASSETS` | `assets` | Design system assets (icons, images) |
-| `USER_UPLOADS` | `user_uploads` | User uploaded files |
-| `EXPORTS` | `exports` | Generated export files (code, specs) |
+| 상수           | 값             | 설명                                 |
+| -------------- | -------------- | ------------------------------------ |
+| `SCREENSHOTS`  | `screenshots`  | Component screenshots from Storybook |
+| `ASSETS`       | `assets`       | Design system assets (icons, images) |
+| `USER_UPLOADS` | `user_uploads` | User uploaded files                  |
+| `EXPORTS`      | `exports`      | Generated export files (code, specs) |
 
 ## 개발 워크플로우
 
-### 새 컬렉션 추가 시
+### Firebase 타입 추가/변경 시
 
-1. `firebase/collections.json` 편집
+1. `firebase/collections.json` 또는 `storage.json` 편집
 2. `pnpm gen:firebase-types` 실행
+3. Git에 커밋 (JSON + 생성된 파일 모두)
+
+### API 타입 업데이트 시
+
+1. 백엔드에서 `api/openapi.json` 업데이트
+2. `pnpm gen:api-types` 실행
 3. Git에 커밋 (JSON + 생성된 파일 모두)
 
 ### 생성된 파일은 Git에 포함
@@ -165,12 +314,15 @@ from firebase.storage import StoragePaths
 ```gitignore
 # ❌ .gitignore에 추가하지 마세요
 # typescript/firebase/
+# typescript/api/
 # python/firebase/
 ```
 
 생성된 파일도 Git에 포함시켜야 합니다:
+
 - CI/CD에서 별도 생성 불필요
 - 코드 리뷰 시 변경사항 확인 가능
+- API 스펙 변경 이력 추적
 
 ## 주의사항
 
@@ -180,8 +332,8 @@ from firebase.storage import StoragePaths
 // ❌ 직접 수정 금지
 // typescript/firebase/collections.ts
 export const COLLECTIONS = {
-  USERS: 'users-modified'  // 다음 generate 시 덮어씌워짐
-}
+  USERS: 'users-modified', // 다음 generate 시 덮어씌워짐
+};
 ```
 
 ✅ **JSON 파일만 수정**

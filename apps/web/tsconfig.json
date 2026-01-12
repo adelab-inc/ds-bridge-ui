@@ -20,7 +20,8 @@
     ],
     "paths": {
       "@/*": ["./*"],
-      "@packages/*": ["../../packages/*"]
+      "@packages/*": ["../../packages/*"],
+      "@ds-hub/shared-types/*": ["../../packages/shared-types/*"]
     }
   },
   "include": [

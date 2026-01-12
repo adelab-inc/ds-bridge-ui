@@ -74,7 +74,7 @@ export const useRealtimeMessages = ({
       | QueryFieldFilterConstraint
       | QueryOrderByConstraint
       | QueryLimitConstraint
-    )[] = [where('sessionId', '==', sessionId), orderBy('timestamp', 'desc')];
+    )[] = [where('room_id', '==', sessionId), orderBy('question_created_at', 'desc')];
 
     if (pageSize) {
       queryConstraints.push(limit(pageSize));
@@ -98,8 +98,8 @@ export const useRealtimeMessages = ({
               return firestoreToClientMessage({ ...data, id: doc.id });
             })
             .sort((a, b) => {
-              const aTime = a.timestamp?.getTime() || 0;
-              const bTime = b.timestamp?.getTime() || 0;
+              const aTime = new Date(a.question_created_at).getTime();
+              const bTime = new Date(b.question_created_at).getTime();
               return aTime - bTime; // 오래된 메시지부터
             });
 
@@ -118,8 +118,8 @@ export const useRealtimeMessages = ({
             if (change.type === 'added') {
               setMessages((prev) => {
                 const updated = [...prev, clientMsg].sort((a, b) => {
-                  const aTime = a.timestamp?.getTime() || 0;
-                  const bTime = b.timestamp?.getTime() || 0;
+                  const aTime = new Date(a.question_created_at).getTime();
+                  const bTime = new Date(b.question_created_at).getTime();
                   return aTime - bTime;
                 });
                 return updated;
@@ -132,8 +132,8 @@ export const useRealtimeMessages = ({
                 const updated = prev
                   .map((msg) => (msg.id === clientMsg.id ? clientMsg : msg))
                   .sort((a, b) => {
-                    const aTime = a.timestamp?.getTime() || 0;
-                    const bTime = b.timestamp?.getTime() || 0;
+                    const aTime = new Date(a.question_created_at).getTime();
+                    const bTime = new Date(b.question_created_at).getTime();
                     return aTime - bTime;
                   });
                 return updated;

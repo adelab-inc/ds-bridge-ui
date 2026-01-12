@@ -40,6 +40,7 @@ def generate_collections():
     with open(FIREBASE_DIR / "collections.json") as f:
         data = json.load(f)
 
+    # Generate Collections class
     entries = []
     for key, value in data["collections"].items():
         const_name = key.upper()

@@ -4,13 +4,19 @@
   "description": "Shared types and constants for DS Hub monorepo",
   "private": true,
   "scripts": {
-    "gen:firebase-types": "npm run gen:ts && npm run gen:py",
-    "gen:ts": "node scripts/generate-typescript.js",
-    "gen:py": "python3 scripts/generate-python.py"
+    "gen:firebase-types": "npm run gen:firebase:ts && npm run gen:firebase:py",
+    "gen:firebase:ts": "node scripts/generate-typescript.js",
+    "gen:firebase:py": "python3 scripts/generate-python.py",
+    "gen:api-types": "bash scripts/generate-api-types.sh",
+    "gen:types": "npm run gen:firebase-types && npm run gen:api-types"
   },
   "exports": {
     "./firebase": "./typescript/firebase/index.ts",
     "./firebase/collections": "./typescript/firebase/collections.ts",
-    "./firebase/storage": "./typescript/firebase/storage.ts"
+    "./firebase/storage": "./typescript/firebase/storage.ts",
+    "./api": "./typescript/api/schema.ts"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.10.1"
   }
 }
