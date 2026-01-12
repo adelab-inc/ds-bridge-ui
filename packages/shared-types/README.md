@@ -39,16 +39,48 @@ packages/shared-types/
 
 **firebase/collections.json 또는 storage.json 편집**
 
+컬렉션 이름만 정의하거나, 선택적으로 `schema` 필드를 추가하여 문서 타입도 함께 정의할 수 있습니다.
+
 ```json
 {
   "collections": {
     "users": {
       "name": "users",
-      "description": "User profiles and authentication data"
+      "description": "User profiles and authentication data",
+      "schema": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "description": "User unique identifier"
+        },
+        "email": {
+          "type": "string",
+          "required": true,
+          "description": "User email address"
+        },
+        "role": {
+          "type": "enum",
+          "values": ["admin", "user", "guest"],
+          "required": true,
+          "description": "User role"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "required": false,
+          "description": "Account creation timestamp"
+        }
+      }
     }
   }
 }
 ```
+
+**지원하는 타입:**
+- `string` → TypeScript: `string`, Python: `str`
+- `boolean` → TypeScript: `boolean`, Python: `bool`
+- `number` → TypeScript: `number`, Python: `float`
+- `timestamp` → TypeScript: `Timestamp`, Python: `datetime`
+- `enum` → TypeScript: Union type, Python: `Literal`
 
 ### 2. 코드 생성
 
@@ -67,13 +99,32 @@ pnpm gen:firebase-types:py   # Python만
 ### 3. TypeScript에서 사용 (apps/web)
 
 ```typescript
-import { COLLECTIONS, STORAGE_PATHS } from '@ds-hub/shared-types/firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { 
+  COLLECTIONS, 
+  STORAGE_PATHS,
+  ChatRoomsDocument,
+  ChatMessagesDocument 
+} from '@ds-hub/shared-types/firebase';
+import { collection, addDoc, doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
-// Firestore 사용
-const usersRef = collection(db, COLLECTIONS.USERS);
-await addDoc(usersRef, { name: 'John' });
+// Firestore 사용 - 타입 안전하게
+const chatRoomsRef = collection(db, COLLECTIONS.CHAT_ROOMS);
+
+const newRoom: ChatRoomsDocument = {
+  id: 'room-123',
+  storybook_url: 'https://storybook.example.com',
+  user_id: 'user-456'
+};
+
+await addDoc(chatRoomsRef, newRoom);
+
+// 타입 체크가 작동합니다
+const invalidRoom: ChatRoomsDocument = {
+  id: 'room-123',
+  // ❌ 타입 에러: storybook_url이 없음
+  user_id: 'user-456'
+};
 
 // Storage 사용
 import { ref, uploadBytes } from 'firebase/storage';
@@ -95,16 +146,27 @@ from pathlib import Path
 monorepo_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(monorepo_root / "packages" / "shared-types" / "python"))
 
-# Import
-from firebase.collections import Collections
+# Import - 타입 포함
+from firebase.collections import (
+    Collections,
+    ChatRoomsDocument,
+    ChatMessagesDocument
+)
 from firebase.storage import StoragePaths
 
-# Firestore 사용
+# Firestore 사용 - 타입 안전하게
 from firebase_admin import firestore
 db = firestore.client()
 
-users_ref = db.collection(Collections.USERS)
-users_ref.add({"name": "John"})
+chat_rooms_ref = db.collection(Collections.CHAT_ROOMS)
+
+new_room: ChatRoomsDocument = {
+    "id": "room-123",
+    "storybook_url": "https://storybook.example.com",
+    "user_id": "user-456"
+}
+
+chat_rooms_ref.add(new_room)
 
 # Storage 사용
 from firebase_admin import storage
@@ -135,13 +197,12 @@ from firebase.storage import StoragePaths
 
 ### Collections (Firestore)
 
-| 상수 | 값 | 설명 |
-|------|-----|------|
-| `USERS` | `users` | User profiles and authentication data |
-| `PROJECTS` | `projects` | Design system projects |
-| `COMPONENTS` | `components` | Component metadata from Storybook |
-| `CHAT_SESSIONS` | `chat_sessions` | AI chat conversation sessions |
-| `CHAT_MESSAGES` | `chat_messages` | Individual messages within chat sessions |
+| 상수 | 값 | 설명 | Document Type |
+|------|-----|------|---------------|
+| `CHAT_ROOMS` | `chat_rooms` | Chat room metadata | `ChatRoomsDocument` ✅ |
+| `CHAT_MESSAGES` | `chat_messages` | Individual messages within chat sessions | `ChatMessagesDocument` ✅ |
+
+✅ = schema가 정의되어 TypeScript/Python 타입이 자동 생성됨
 
 ### Storage Paths
 

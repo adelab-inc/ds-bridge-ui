@@ -1,30 +1,30 @@
-import { COLLECTIONS } from '@packages/shared-types/typescript/firebase/collections';
+import { 
+  COLLECTIONS,
+  ChatMessagesDocument 
+} from '@packages/shared-types/typescript/firebase/collections';
 
 /**
  * Firebase 메시지 관련 타입 및 유틸리티
  */
 
 /**
- * Firestore에 저장되는 메시지 타입
- * timestamp는 Firestore Timestamp 또는 number로 저장됨
+ * Firestore에 저장되는 메시지 타입 (ChatMessagesDocument 사용)
  */
-export interface FirestoreMessage {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: number; // Unix timestamp (milliseconds)
-  sessionId: string; // 채팅 세션 ID
-  userId?: string; // 사용자 ID (optional)
-}
+export type FirestoreMessage = ChatMessagesDocument;
 
 /**
- * 클라이언트에서 사용하는 메시지 타입 (ChatMessage와 호환)
+ * 클라이언트에서 사용하는 메시지 타입
  */
 export interface ClientMessage {
   id: string;
-  role: 'user' | 'assistant';
+  status: 'ERROR' | 'DONE' | 'GENERATING';
   content: string;
-  timestamp?: Date;
+  path: string;
+  text: string;
+  room_id: string;
+  question_created_at: string;
+  answer_created_at?: string;
+  answer_completed: boolean;
 }
 
 /**
@@ -40,9 +40,14 @@ export const firestoreToClientMessage = (
 ): ClientMessage => {
   return {
     id: firestoreMsg.id,
-    role: firestoreMsg.role,
+    status: firestoreMsg.status,
     content: firestoreMsg.content,
-    timestamp: new Date(firestoreMsg.timestamp),
+    path: firestoreMsg.path,
+    text: firestoreMsg.text,
+    room_id: firestoreMsg.room_id,
+    question_created_at: firestoreMsg.question_created_at,
+    answer_created_at: firestoreMsg.answer_created_at,
+    answer_completed: firestoreMsg.answer_completed,
   };
 };
 
@@ -50,15 +55,16 @@ export const firestoreToClientMessage = (
  * 클라이언트 메시지를 Firestore 메시지로 변환
  */
 export const clientToFirestoreMessage = (
-  clientMsg: ClientMessage,
-  sessionId: string,
-  userId?: string
+  clientMsg: ClientMessage
 ): Omit<FirestoreMessage, 'id'> => {
   return {
-    role: clientMsg.role,
+    status: clientMsg.status,
     content: clientMsg.content,
-    timestamp: clientMsg.timestamp?.getTime() || Date.now(),
-    sessionId,
-    userId,
+    path: clientMsg.path,
+    text: clientMsg.text,
+    room_id: clientMsg.room_id,
+    question_created_at: clientMsg.question_created_at,
+    answer_created_at: clientMsg.answer_created_at,
+    answer_completed: clientMsg.answer_completed,
   };
 };

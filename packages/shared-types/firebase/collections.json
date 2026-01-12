@@ -1,14 +1,79 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "description": "Firebase Firestore collection names - Single Source of Truth",
+  "description": "Firebase Firestore collection names and schemas - Single Source of Truth",
   "collections": {
     "chat_rooms": {
       "name": "chat_rooms",
-      "description": "Chat room metadata"
+      "description": "Chat room metadata",
+      "schema": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "description": "Unique chat room identifier"
+        },
+        "storybook_url": {
+          "type": "string",
+          "required": true,
+          "description": "URL of the Storybook instance"
+        },
+        "user_id": {
+          "type": "string",
+          "required": true,
+          "description": "User who created the chat room"
+        }
+      }
     },
     "chat_messages": {
       "name": "chat_messages",
-      "description": "Individual messages within chat sessions"
+      "description": "Individual messages within chat sessions",
+      "schema": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "description": "Unique message identifier"
+        },
+        "status": {
+          "type": "enum",
+          "values": ["ERROR", "DONE", "GENERATING"],
+          "required": true,
+          "description": "Message status"
+        },
+        "content": {
+          "type": "string",
+          "required": true,
+          "description": "React code content"
+        },
+        "path": {
+          "type": "string",
+          "required": true,
+          "description": "Component path"
+        },
+        "text": {
+          "type": "string",
+          "required": true,
+          "description": "Message text"
+        },
+        "room_id": {
+          "type": "string",
+          "required": true,
+          "description": "Reference to chat room"
+        },
+        "question_created_at": {
+          "type": "string",
+          "required": true,
+          "description": "Question timestamp"
+        },
+        "answer_created_at": {
+          "type": "string",
+          "required": false,
+          "description": "Answer timestamp"
+        },
+        "answer_completed": {
+          "type": "boolean",
+          "required": true,
+          "description": "Whether answer is completed"
+        }
+      }
     }
   }
 }

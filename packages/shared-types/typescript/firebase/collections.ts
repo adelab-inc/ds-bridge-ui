@@ -1,5 +1,5 @@
 /**
- * Firebase Firestore Collection Names
+ * Firebase Firestore Collection Names and Document Types
  *
  * ⚠️ AUTO-GENERATED - DO NOT EDIT MANUALLY
  * Source: packages/shared-types/firebase/collections.json
@@ -12,3 +12,43 @@ export const COLLECTIONS = {
 } as const;
 
 export type CollectionName = typeof COLLECTIONS[keyof typeof COLLECTIONS];
+
+export interface ChatRoomsDocument {
+  /** Unique chat room identifier */
+  id: string;
+
+  /** URL of the Storybook instance */
+  storybook_url: string;
+
+  /** User who created the chat room */
+  user_id: string;
+}
+
+export interface ChatMessagesDocument {
+  /** Unique message identifier */
+  id: string;
+
+  /** Message status */
+  status: 'ERROR' | 'DONE' | 'GENERATING';
+
+  /** React code content */
+  content: string;
+
+  /** Component path */
+  path: string;
+
+  /** Message text */
+  text: string;
+
+  /** Reference to chat room */
+  room_id: string;
+
+  /** Question timestamp */
+  question_created_at: string;
+
+  /** Answer timestamp */
+  answer_created_at?: string;
+
+  /** Whether answer is completed */
+  answer_completed: boolean;
+}
