@@ -1,14 +1,14 @@
-import { NextRequest } from 'next/server';
-import { ChatStreamRequest } from '@/types/chat';
+import { NextRequest, NextResponse } from 'next/server';
+import { ChatSendRequest, ChatSendResponse } from '@/types/chat';
 
 export async function POST(request: NextRequest) {
   try {
     // 요청 body 파싱
-    const body: ChatStreamRequest = await request.json();
+    const body: ChatSendRequest = await request.json();
 
     if (!body.message) {
-      return new Response(
-        JSON.stringify({
+      return NextResponse.json(
+        {
           detail: [
             {
               loc: ['body', 'message'],
@@ -16,13 +16,8 @@ export async function POST(request: NextRequest) {
               type: 'value_error.missing',
             },
           ],
-        }),
-        {
-          status: 422,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
+        },
+        { status: 422 }
       );
     }
 
@@ -31,8 +26,8 @@ export async function POST(request: NextRequest) {
     const aiServerApiKey = process.env.AI_SERVER_API_KEY;
 
     if (!aiServerUrl) {
-      return new Response(
-        JSON.stringify({
+      return NextResponse.json(
+        {
           detail: [
             {
               loc: ['server'],
@@ -40,19 +35,14 @@ export async function POST(request: NextRequest) {
               type: 'configuration_error',
             },
           ],
-        }),
-        {
-          status: 500,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
+        },
+        { status: 500 }
       );
     }
 
     if (!aiServerApiKey) {
-      return new Response(
-        JSON.stringify({
+      return NextResponse.json(
+        {
           detail: [
             {
               loc: ['server'],
@@ -60,31 +50,25 @@ export async function POST(request: NextRequest) {
               type: 'configuration_error',
             },
           ],
-        }),
-        {
-          status: 500,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
+        },
+        { status: 500 }
       );
     }
 
-    // AI 서버로 SSE 요청
-    const aiResponse = await fetch(`${aiServerUrl}/api/chat/stream`, {
+    // AI 서버로 요청
+    const aiResponse = await fetch(`${aiServerUrl}/chat/send`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Accept: 'text/event-stream',
-        'X-API-Key': aiServerApiKey, // OpenAPI 스펙에 맞춤
+        'X-API-Key': aiServerApiKey,
       },
       body: JSON.stringify(body),
     });
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
-      return new Response(
-        JSON.stringify({
+      return NextResponse.json(
+        {
           detail: [
             {
               loc: ['ai_server'],
@@ -92,27 +76,17 @@ export async function POST(request: NextRequest) {
               type: 'ai_server_error',
             },
           ],
-        }),
-        {
-          status: 500,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
+        },
+        { status: 500 }
       );
     }
 
-    // AI 서버의 SSE 스트림을 클라이언트에게 전달
-    return new Response(aiResponse.body, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        Connection: 'keep-alive',
-      },
-    });
+    // AI 서버 응답을 클라이언트에게 전달
+    const data: ChatSendResponse = await aiResponse.json();
+    return NextResponse.json(data);
   } catch (error) {
-    return new Response(
-      JSON.stringify({
+    return NextResponse.json(
+      {
         detail: [
           {
             loc: ['body'],
@@ -121,13 +95,8 @@ export async function POST(request: NextRequest) {
             type: 'value_error',
           },
         ],
-      }),
-      {
-        status: 422,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
+      },
+      { status: 422 }
     );
   }
 }
