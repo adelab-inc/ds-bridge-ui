@@ -97,12 +97,12 @@ async def chat_stream(self, messages: list[Message]) -> AsyncGenerator[str, None
 | Method | Path | 설명 |
 |--------|------|------|
 | GET | `/health` | 헬스 체크 |
-| POST | `/room/create` | 채팅방 생성 |
-| GET | `/room/get/{room_id}` | 채팅방 조회 |
-| POST | `/chat/send` | 채팅 (non-streaming) |
+| POST | `/rooms` | 채팅방 생성 |
+| GET | `/rooms/{room_id}` | 채팅방 조회 |
+| POST | `/chat` | 채팅 (non-streaming) |
 | POST | `/chat/stream` | 채팅 (SSE streaming) |
-| GET | `/component/schema` | 컴포넌트 스키마 조회 |
-| POST | `/component/reload` | 스키마 리로드 |
+| GET | `/components` | 컴포넌트 스키마 조회 |
+| POST | `/components/reload` | 스키마 리로드 |
 
 **인증**: `X-API-Key` 헤더 필요 (`/health` 제외)
 

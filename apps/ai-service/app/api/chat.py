@@ -230,7 +230,7 @@ class StreamingParser:
 
 
 @router.post(
-    "/send",
+    "",
     response_model=ChatResponse,
     summary="AI 채팅 (Non-streaming)",
     description="""

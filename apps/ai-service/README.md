@@ -95,16 +95,16 @@ apps/ai-service/
 │   ├── api/
 │   │   ├── __init__.py
 │   │   ├── rooms.py             # Room API routes
-│   │   │                        # - POST /room/create
-│   │   │                        # - GET /room/get/{room_id}
+│   │   │                        # - POST /rooms
+│   │   │                        # - GET /rooms/{room_id}
 │   │   │
 │   │   ├── chat.py              # Chat API routes
-│   │   │                        # - POST /chat/send (non-streaming)
+│   │   │                        # - POST /chat (non-streaming)
 │   │   │                        # - POST /chat/stream (SSE streaming)
 │   │   │
 │   │   └── components.py        # Component schema management
-│   │                            # - GET /component/schema
-│   │                            # - POST /component/reload
+│   │                            # - GET /components
+│   │                            # - POST /components/reload
 │   │
 │   ├── core/
 │   │   ├── __init__.py
@@ -153,7 +153,7 @@ GET /health
 ### Create Room
 
 ```http
-POST /room/create
+POST /rooms
 Content-Type: application/json
 X-API-Key: your-api-key
 ```
@@ -181,7 +181,7 @@ X-API-Key: your-api-key
 ### Get Room
 
 ```http
-GET /room/get/{room_id}
+GET /rooms/{room_id}
 X-API-Key: your-api-key
 ```
 
@@ -200,7 +200,7 @@ X-API-Key: your-api-key
 ### Chat (Non-Streaming)
 
 ```http
-POST /chat/send
+POST /chat
 Content-Type: application/json
 X-API-Key: your-api-key
 ```
@@ -275,7 +275,7 @@ data: {"type": "done"}
 ### Get Component Schema
 
 ```http
-GET /component/schema
+GET /components
 X-API-Key: your-api-key
 ```
 
@@ -304,7 +304,7 @@ X-API-Key: your-api-key
 ### Reload Component Schema
 
 ```http
-POST /component/reload
+POST /components/reload
 X-API-Key: your-api-key
 ```
 
@@ -359,7 +359,7 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:5173
 
 # Firebase Settings
 FIREBASE_STORAGE_BUCKET=your-project.appspot.com
-# 로컬 개발: service-account.json 파일을 apps/ai-service/ 폴더에 위치
+# 로컬 개발: service-account-key.json 파일을 apps/ai-service/ 폴더에 위치
 ```
 
 ## AI Providers
