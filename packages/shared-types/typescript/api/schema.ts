@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/room/create": {
+    "/rooms": {
         parameters: {
             query?: never;
             header?: never;
@@ -31,14 +31,14 @@ export interface paths {
          *     - `user_id`: 사용자 ID
          *     - `created_at`: 생성 시간
          */
-        post: operations["create_room_room_create_post"];
+        post: operations["create_room_rooms_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/room/get/{room_id}": {
+    "/rooms/{room_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -49,7 +49,7 @@ export interface paths {
          * 채팅방 조회
          * @description 채팅방 ID로 채팅방 정보를 조회합니다.
          */
-        get: operations["get_room_room_get__room_id__get"];
+        get: operations["get_room_rooms__room_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -58,7 +58,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/chat/send": {
+    "/chat": {
         parameters: {
             query?: never;
             header?: never;
@@ -92,7 +92,7 @@ export interface paths {
          *     ## schema_key
          *     Firebase Storage에서 컴포넌트 스키마를 로드합니다. 생략 시 로컬 스키마 사용.
          */
-        post: operations["chat_chat_send_post"];
+        post: operations["chat_chat_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -151,7 +151,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/component/schema": {
+    "/components": {
         parameters: {
             query?: never;
             header?: never;
@@ -162,7 +162,7 @@ export interface paths {
          * 컴포넌트 스키마 조회
          * @description 현재 로드된 디자인 시스템 컴포넌트 스키마를 반환합니다.
          */
-        get: operations["get_components_component_schema_get"];
+        get: operations["get_components_components_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -171,7 +171,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/component/reload": {
+    "/components/reload": {
         parameters: {
             query?: never;
             header?: never;
@@ -184,7 +184,7 @@ export interface paths {
          * 컴포넌트 스키마 리로드
          * @description component-schema.json 파일을 다시 로드하여 시스템 프롬프트를 갱신합니다.
          */
-        post: operations["reload_components_component_reload_post"];
+        post: operations["reload_components_components_reload_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -454,10 +454,10 @@ export interface components {
             user_id: string;
             /**
              * Created At
-             * @description 생성 시간 (ms timestamp)
-             * @example 1736654400000
+             * @description 생성 시간 (ISO 8601)
+             * @example 2026-01-12T10:00:00.000Z
              */
-            created_at: number;
+            created_at: string;
         };
         /** ValidationError */
         ValidationError: {
@@ -477,7 +477,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    create_room_room_create_post: {
+    create_room_rooms_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -517,7 +517,7 @@ export interface operations {
             };
         };
     };
-    get_room_room_get__room_id__get: {
+    get_room_rooms__room_id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -562,7 +562,7 @@ export interface operations {
             };
         };
     };
-    chat_chat_send_post: {
+    chat_chat_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -669,7 +669,7 @@ export interface operations {
             };
         };
     };
-    get_components_component_schema_get: {
+    get_components_components_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -717,7 +717,7 @@ export interface operations {
             };
         };
     };
-    reload_components_component_reload_post: {
+    reload_components_components_reload_post: {
         parameters: {
             query?: never;
             header?: never;

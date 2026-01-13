@@ -1,20 +1,20 @@
-"use client"
+'use client';
 
-import * as React from "react"
+import * as React from 'react';
 
-import { LAYOUT } from "@/lib/constants"
-import { RightPanel } from "@/components/layout/right-panel"
-import { MobileSheet } from "@/components/layout/mobile-sheet"
+import { LAYOUT } from '@/lib/constants';
+import { RightPanel } from '@/components/layout/right-panel';
+import { MobileSheet } from '@/components/layout/mobile-sheet';
 
 // Feature components
-import { ChatSection } from "@/components/features/chat/chat-section"
-import { ComponentListSection } from "@/components/features/component-list/component-list-section"
-import { ActionsSection } from "@/components/features/actions/actions-section"
-import { PreviewSection } from "@/components/features/preview/preview-section"
+import { ChatSection } from '@/components/features/chat/chat-section';
+import { ComponentListSection } from '@/components/features/component-list/component-list-section';
+import { ActionsSection } from '@/components/features/actions/actions-section';
+import { PreviewSection } from '@/components/features/preview/preview-section';
 
 interface MobileLayoutProps {
-  onURLSubmit?: (url: string) => void
-  onJSONUpload?: (file: File) => void
+  onURLSubmit?: (url: string) => void;
+  onJSONUpload?: (file: File) => void;
 }
 
 function MobileLayout({ onURLSubmit, onJSONUpload }: MobileLayoutProps) {
@@ -32,13 +32,13 @@ function MobileLayout({ onURLSubmit, onJSONUpload }: MobileLayoutProps) {
 
       {/* Mobile Bottom Sheet */}
       <MobileSheet
-        chatContent={<ChatSection />}
+        chatContent={<ChatSection roomId="" />}
         componentsContent={<ComponentListSection />}
         actionsContent={<ActionsSection />}
       />
     </>
-  )
+  );
 }
 
-export { MobileLayout }
-export type { MobileLayoutProps }
+export { MobileLayout };
+export type { MobileLayoutProps };

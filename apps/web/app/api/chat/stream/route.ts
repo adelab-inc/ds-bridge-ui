@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
 
     // AI 서버 URL 가져오기
     const aiServerUrl = process.env.AI_SERVER_URL;
-    const aiServerApiKey = process.env.AI_SERVER_API_KEY;
+    const xApiKey = process.env.X_API_KEY;
 
     if (!aiServerUrl) {
       return new Response(
@@ -50,13 +50,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!aiServerApiKey) {
+    if (!xApiKey) {
       return new Response(
         JSON.stringify({
           detail: [
             {
               loc: ['server'],
-              msg: 'AI_SERVER_API_KEY is not configured',
+              msg: 'X_API_KEY is not configured',
               type: 'configuration_error',
             },
           ],
@@ -71,12 +71,12 @@ export async function POST(request: NextRequest) {
     }
 
     // AI 서버로 SSE 요청
-    const aiResponse = await fetch(`${aiServerUrl}/api/chat/stream`, {
+    const aiResponse = await fetch(`${aiServerUrl}/chat/stream`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Accept: 'text/event-stream',
-        'X-API-Key': aiServerApiKey, // OpenAPI 스펙에 맞춤
+        'X-API-Key': xApiKey, // OpenAPI 스펙에 맞춤
       },
       body: JSON.stringify(body),
     });

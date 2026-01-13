@@ -1,58 +1,36 @@
-import * as React from "react"
+import { cn } from '@/lib/utils';
 
-import { cn } from "@/lib/utils"
-
-interface ChatMessage {
-  id: string
-  role: "user" | "assistant"
-  content: string
-  timestamp?: Date
-}
-
-interface ChatMessageProps extends React.ComponentProps<"div"> {
-  message: ChatMessage
-}
-
-function ChatMessage({ message, className, ...props }: ChatMessageProps) {
-  const isUser = message.role === "user"
+function ChatMessage({
+  text,
+  timestamp,
+  isGenerating,
+  className,
+}: {
+  text: string;
+  timestamp: number;
+  isGenerating?: boolean;
+  className?: string;
+}) {
+  // 텍스트가 없고 생성 중이 아니면 렌더링하지 않음
+  if (!text && !isGenerating) {
+    return null;
+  }
 
   return (
-    <div
-      data-slot="chat-message"
-      data-role={message.role}
-      className={cn(
-        "flex w-full",
-        isUser ? "justify-end" : "justify-start",
-        className
-      )}
-      {...props}
-    >
-      <div
-        className={cn(
-          "max-w-[85%] rounded-lg px-3 py-2 text-sm",
-          isUser
-            ? "bg-primary text-primary-foreground"
-            : "bg-muted text-foreground"
-        )}
-      >
-        <p className="whitespace-pre-wrap">{message.content}</p>
-        {message.timestamp && (
-          <time
-            className={cn(
-              "mt-1 block text-xs opacity-60",
-              isUser ? "text-right" : "text-left"
-            )}
-          >
-            {message.timestamp.toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
+    <div data-slot="chat-message" className={cn('flex w-full', className)}>
+      <div className={cn('max-w-[85%] rounded-lg px-3 py-2 text-sm')}>
+        <p className="whitespace-pre-wrap">{text}</p>
+        {timestamp > 0 && (
+          <time className={cn('mt-1 block text-xs opacity-60')}>
+            {new Date(timestamp).toLocaleString([], {
+              hour: '2-digit',
+              minute: '2-digit',
             })}
           </time>
         )}
       </div>
     </div>
-  )
+  );
 }
 
-export { ChatMessage }
-export type { ChatMessageProps, ChatMessage as ChatMessageType }
+export { ChatMessage };

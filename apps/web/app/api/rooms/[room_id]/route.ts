@@ -25,7 +25,7 @@ export async function GET(
 
     // AI 서버 URL 가져오기
     const aiServerUrl = process.env.AI_SERVER_URL;
-    const aiServerApiKey = process.env.AI_SERVER_API_KEY;
+    const xApiKey = process.env.X_API_KEY;
 
     if (!aiServerUrl) {
       return NextResponse.json(
@@ -42,13 +42,13 @@ export async function GET(
       );
     }
 
-    if (!aiServerApiKey) {
+    if (!xApiKey) {
       return NextResponse.json(
         {
           detail: [
             {
               loc: ['server'],
-              msg: 'AI_SERVER_API_KEY is not configured',
+              msg: 'X_API_KEY is not configured',
               type: 'configuration_error',
             },
           ],
@@ -58,19 +58,16 @@ export async function GET(
     }
 
     // AI 서버로 요청
-    const aiResponse = await fetch(`${aiServerUrl}/room/get/${room_id}`, {
+    const aiResponse = await fetch(`${aiServerUrl}/rooms/${room_id}`, {
       method: 'GET',
       headers: {
-        'X-API-Key': aiServerApiKey,
+        'X-API-Key': xApiKey,
       },
     });
 
     if (!aiResponse.ok) {
       if (aiResponse.status === 404) {
-        return NextResponse.json(
-          { error: 'Room not found' },
-          { status: 404 }
-        );
+        return NextResponse.json({ error: 'Room not found' }, { status: 404 });
       }
 
       const errorText = await aiResponse.text();
@@ -97,7 +94,8 @@ export async function GET(
         detail: [
           {
             loc: ['server'],
-            msg: error instanceof Error ? error.message : 'Internal server error',
+            msg:
+              error instanceof Error ? error.message : 'Internal server error',
             type: 'server_error',
           },
         ],
