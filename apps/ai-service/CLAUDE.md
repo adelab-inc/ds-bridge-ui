@@ -143,6 +143,7 @@ X_API_KEY=sk-your-secret-key
 CORS_ORIGINS=http://localhost:3000,http://localhost:5173
 
 # Firebase
+FIREBASE_PROJECT_ID=your-project-id
 FIREBASE_STORAGE_BUCKET=your-project.appspot.com
 # 로컬 개발: service-account.json 파일을 apps/ai-service/ 폴더에 위치
 ```

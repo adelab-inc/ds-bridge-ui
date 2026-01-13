@@ -1,17 +1,22 @@
 import logging
 import time
 import uuid
+from pathlib import Path
 
-from firebase_admin import firestore
+from google.cloud.firestore import AsyncClient
+from google.oauth2 import service_account
 
-from app.services.firebase_storage import init_firebase
-
-
-def get_timestamp_ms() -> str:
-    """현재 시간을 밀리초 단위 timestamp 문자열로 반환"""
-    return str(int(time.time() * 1000))
+from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
+
+# 로컬 개발용 서비스 계정 키 경로
+SERVICE_ACCOUNT_KEY_PATH = Path(__file__).parent.parent.parent / "service-account-key.json"
+
+
+def get_timestamp_ms() -> int:
+    """현재 시간을 밀리초 단위 timestamp로 반환"""
+    return int(time.time() * 1000)
 
 
 # ============================================================================
@@ -32,21 +37,32 @@ class RoomNotFoundError(Exception):
 
 
 # ============================================================================
-# Firestore Client
+# Async Firestore Client
 # ============================================================================
 
-_firestore_client = None
+_firestore_client: AsyncClient | None = None
 
 
-def get_firestore_client():
-    """Firestore 클라이언트 반환 (싱글톤)"""
+def get_firestore_client() -> AsyncClient:
+    """비동기 Firestore 클라이언트 반환 (싱글톤)"""
     global _firestore_client
 
     if _firestore_client is None:
+        settings = get_settings()
+        project_id = settings.firebase_project_id
+
         try:
-            init_firebase()
-            _firestore_client = firestore.client()
-            logger.info("Firestore client initialized")
+            # 로컬: 서비스 계정 키 파일 사용
+            # Cloud Run: 기본 자격증명 사용
+            if SERVICE_ACCOUNT_KEY_PATH.exists():
+                cred = service_account.Credentials.from_service_account_file(
+                    str(SERVICE_ACCOUNT_KEY_PATH)
+                )
+                _firestore_client = AsyncClient(credentials=cred, project=project_id)
+                logger.info("Firestore AsyncClient initialized with service account key")
+            else:
+                _firestore_client = AsyncClient(project=project_id)
+                logger.info("Firestore AsyncClient initialized with default credentials")
         except Exception as e:
             logger.error("Failed to initialize Firestore client: %s", str(e))
             raise FirestoreError(f"Firestore 초기화 실패: {str(e)}") from e
@@ -92,7 +108,7 @@ async def create_chat_room(storybook_url: str, user_id: str) -> dict:
             "created_at": get_timestamp_ms(),
         }
 
-        db.collection(CHAT_ROOMS_COLLECTION).document(room_id).set(room_data)
+        await db.collection(CHAT_ROOMS_COLLECTION).document(room_id).set(room_data)
         logger.info("Chat room created: %s", room_id)
 
         return room_data
@@ -118,7 +134,7 @@ async def get_chat_room(room_id: str) -> dict | None:
     """
     try:
         db = get_firestore_client()
-        doc = db.collection(CHAT_ROOMS_COLLECTION).document(room_id).get()
+        doc = await db.collection(CHAT_ROOMS_COLLECTION).document(room_id).get()
 
         if doc.exists:
             return doc.to_dict()
@@ -199,7 +215,7 @@ async def create_chat_message(
             "status": status,
         }
 
-        db.collection(CHAT_MESSAGES_COLLECTION).document(message_id).set(message_data)
+        await db.collection(CHAT_MESSAGES_COLLECTION).document(message_id).set(message_data)
         logger.debug("Chat message created: %s", message_id)
 
         return message_data
@@ -226,15 +242,15 @@ async def get_messages_by_room(room_id: str, limit: int = 100) -> list[dict]:
     """
     try:
         db = get_firestore_client()
-        docs = (
+        query = (
             db.collection(CHAT_MESSAGES_COLLECTION)
             .where("room_id", "==", room_id)
             .order_by("answer_created_at")
             .limit(limit)
-            .stream()
         )
 
-        return [doc.to_dict() for doc in docs]
+        docs = query.stream()
+        return [doc.to_dict() async for doc in docs]
     except FirestoreError:
         raise
     except Exception as e:
@@ -275,7 +291,7 @@ async def update_chat_message(
         if status is not None:
             update_data["status"] = status
 
-        db.collection(CHAT_MESSAGES_COLLECTION).document(message_id).update(update_data)
+        await db.collection(CHAT_MESSAGES_COLLECTION).document(message_id).update(update_data)
         logger.debug("Chat message updated: %s", message_id)
     except FirestoreError:
         raise

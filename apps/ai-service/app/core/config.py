@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3000,http://localhost:5173"
 
     # Firebase
+    firebase_project_id: str = ""
     firebase_storage_bucket: str = ""
 
     @property

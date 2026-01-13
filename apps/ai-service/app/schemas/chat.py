@@ -331,10 +331,10 @@ class RoomResponse(BaseModel):
         description="사용자 ID",
         json_schema_extra={"example": "user-123"},
     )
-    created_at: str = Field(
+    created_at: int = Field(
         ...,
-        description="생성 시간 (ISO 8601)",
-        json_schema_extra={"example": "2026-01-12T10:00:00.000Z"},
+        description="생성 시간 (ms timestamp)",
+        json_schema_extra={"example": 1736654400000},
     )
 
 

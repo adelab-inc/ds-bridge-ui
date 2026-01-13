@@ -37,18 +37,19 @@ def init_firebase() -> None:
     except ValueError:
         pass
 
-    # 서비스 계정 키 파일 필수
-    if not SERVICE_ACCOUNT_KEY_PATH.exists():
-        raise FileNotFoundError(
-            f"Service account key not found: {SERVICE_ACCOUNT_KEY_PATH}\n"
-            "Please place your service account key file at apps/ai-service/service-account-key.json"
-        )
-
-    cred = credentials.Certificate(str(SERVICE_ACCOUNT_KEY_PATH))
-    firebase_admin.initialize_app(cred, {
-        "storageBucket": settings.firebase_storage_bucket
-    })
-    logger.info("Firebase initialized with service account key")
+    # 로컬: 서비스 계정 키 파일 사용
+    # Cloud Run: 기본 자격증명 사용 (GCP 서비스 계정)
+    if SERVICE_ACCOUNT_KEY_PATH.exists():
+        cred = credentials.Certificate(str(SERVICE_ACCOUNT_KEY_PATH))
+        firebase_admin.initialize_app(cred, {
+            "storageBucket": settings.firebase_storage_bucket
+        })
+        logger.info("Firebase initialized with service account key")
+    else:
+        firebase_admin.initialize_app(options={
+            "storageBucket": settings.firebase_storage_bucket
+        })
+        logger.info("Firebase initialized with default credentials (Cloud Run)")
 
     _firebase_initialized = True
     logger.info("Firebase initialized with bucket: %s", settings.firebase_storage_bucket)
