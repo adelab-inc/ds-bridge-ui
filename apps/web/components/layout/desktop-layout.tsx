@@ -1,29 +1,33 @@
-"use client"
+'use client';
 
-import * as React from "react"
-
-import { LAYOUT } from "@/lib/constants"
+import { LAYOUT } from '@/lib/constants';
 import {
   ResizablePanelGroup,
   ResizablePanel,
   ResizableHandle,
-} from "@/components/ui/resizable"
-import { ClientOnly } from "@/components/ui/client-only"
-import { LeftPanel } from "@/components/layout/left-panel"
-import { RightPanel } from "@/components/layout/right-panel"
+} from '@/components/ui/resizable';
+import { ClientOnly } from '@/components/ui/client-only';
+import { LeftPanel } from '@/components/layout/left-panel';
+import { RightPanel } from '@/components/layout/right-panel';
+import { useRoom } from '@/hooks/useRoom';
 
 // Feature components
-import { ChatSection } from "@/components/features/chat/chat-section"
-import { ComponentListSection } from "@/components/features/component-list/component-list-section"
-import { ActionsSection } from "@/components/features/actions/actions-section"
-import { PreviewSection } from "@/components/features/preview/preview-section"
+import { ChatSection } from '@/components/features/chat/chat-section';
+import { ComponentListSection } from '@/components/features/component-list/component-list-section';
+import { ActionsSection } from '@/components/features/actions/actions-section';
+import { PreviewSection } from '@/components/features/preview/preview-section';
 
 interface DesktopLayoutProps {
-  onURLSubmit?: (url: string) => void
-  onJSONUpload?: (file: File) => void
+  onURLSubmit?: (url: string) => void;
+  onJSONUpload?: (file: File) => void;
 }
 
 function DesktopLayout({ onURLSubmit, onJSONUpload }: DesktopLayoutProps) {
+  const { roomId, isLoading, error } = useRoom({
+    storybookUrl: 'https://microsoft.github.io/vscode-webview-ui-toolkit',
+    userId: 'anonymous',
+  });
+
   return (
     <ClientOnly
       fallback={
@@ -46,7 +50,19 @@ function DesktopLayout({ onURLSubmit, onJSONUpload }: DesktopLayoutProps) {
           maxSize={`${LAYOUT.LEFT_PANEL_MAX_PX}px`}
         >
           <LeftPanel>
-            <ChatSection />
+            {isLoading ? (
+              <div className="flex h-full items-center justify-center p-4">
+                <p className="text-muted-foreground text-sm">
+                  채팅방 준비 중...
+                </p>
+              </div>
+            ) : error ? (
+              <div className="flex h-full items-center justify-center p-4">
+                <p className="text-destructive text-sm">Error: {error}</p>
+              </div>
+            ) : roomId ? (
+              <ChatSection roomId={roomId} />
+            ) : null}
             <ComponentListSection />
             <ActionsSection />
           </LeftPanel>
@@ -66,8 +82,8 @@ function DesktopLayout({ onURLSubmit, onJSONUpload }: DesktopLayoutProps) {
         </ResizablePanel>
       </ResizablePanelGroup>
     </ClientOnly>
-  )
+  );
 }
 
-export { DesktopLayout }
-export type { DesktopLayoutProps }
+export { DesktopLayout };
+export type { DesktopLayoutProps };

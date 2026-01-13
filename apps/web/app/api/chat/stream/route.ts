@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     }
 
     // AI 서버로 SSE 요청
-    const aiResponse = await fetch(`${aiServerUrl}/api/chat/stream`, {
+    const aiResponse = await fetch(`${aiServerUrl}/chat/stream`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

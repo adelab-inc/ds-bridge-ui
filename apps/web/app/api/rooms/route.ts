@@ -1,20 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GetRoomResponse } from '@/types/room';
+import { CreateRoomRequest, CreateRoomResponse } from '@/types/room';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ room_id: string }> }
-) {
+export async function POST(request: NextRequest) {
   try {
-    const { room_id } = await params;
+    // 요청 body 파싱
+    const body: CreateRoomRequest = await request.json();
 
-    if (!room_id) {
+    if (!body.storybook_url || !body.user_id) {
       return NextResponse.json(
         {
           detail: [
             {
-              loc: ['path', 'room_id'],
-              msg: 'room_id is required',
+              loc: ['body'],
+              msg: 'storybook_url and user_id are required',
               type: 'value_error.missing',
             },
           ],
@@ -25,7 +23,7 @@ export async function GET(
 
     // AI 서버 URL 가져오기
     const aiServerUrl = process.env.AI_SERVER_URL;
-    const aiServerApiKey = process.env.AI_SERVER_API_KEY;
+    const xApiKey = process.env.X_API_KEY;
 
     if (!aiServerUrl) {
       return NextResponse.json(
@@ -42,13 +40,13 @@ export async function GET(
       );
     }
 
-    if (!aiServerApiKey) {
+    if (!xApiKey) {
       return NextResponse.json(
         {
           detail: [
             {
               loc: ['server'],
-              msg: 'AI_SERVER_API_KEY is not configured',
+              msg: 'X_API_KEY is not configured',
               type: 'configuration_error',
             },
           ],
@@ -58,21 +56,16 @@ export async function GET(
     }
 
     // AI 서버로 요청
-    const aiResponse = await fetch(`${aiServerUrl}/rooms/${room_id}`, {
-      method: 'GET',
+    const aiResponse = await fetch(`${aiServerUrl}/rooms`, {
+      method: 'POST',
       headers: {
-        'X-API-Key': aiServerApiKey,
+        'Content-Type': 'application/json',
+        'X-API-Key': xApiKey,
       },
+      body: JSON.stringify(body),
     });
 
     if (!aiResponse.ok) {
-      if (aiResponse.status === 404) {
-        return NextResponse.json(
-          { error: 'Room not found' },
-          { status: 404 }
-        );
-      }
-
       const errorText = await aiResponse.text();
       return NextResponse.json(
         {
@@ -89,20 +82,21 @@ export async function GET(
     }
 
     // AI 서버 응답을 클라이언트에게 전달
-    const data: GetRoomResponse = await aiResponse.json();
-    return NextResponse.json(data);
+    const data: CreateRoomResponse = await aiResponse.json();
+    return NextResponse.json(data, { status: 201 });
   } catch (error) {
     return NextResponse.json(
       {
         detail: [
           {
-            loc: ['server'],
-            msg: error instanceof Error ? error.message : 'Internal server error',
-            type: 'server_error',
+            loc: ['body'],
+            msg:
+              error instanceof Error ? error.message : 'Invalid request body',
+            type: 'value_error',
           },
         ],
       },
-      { status: 500 }
+      { status: 422 }
     );
   }
 }

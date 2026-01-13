@@ -10,19 +10,14 @@ import {
   query,
   where,
 } from 'firebase/firestore';
-import {
-  FirestoreMessage,
-  ClientMessage,
-  MESSAGES_COLLECTION,
-  firestoreToClientMessage,
-} from './messageUtils';
+import { ChatMessage, MESSAGES_COLLECTION } from './messageUtils';
 import { firebaseFirestore } from '@/lib/firebase';
 
 interface RealtimeMessagesCallbacks {
-  onInitial?: (messages: ClientMessage[]) => void;
-  onAdded?: (message: ClientMessage) => void;
-  onModified?: (message: ClientMessage) => void;
-  onRemoved?: (message: ClientMessage) => void;
+  onInitial?: (messages: ChatMessage[]) => void;
+  onAdded?: (message: ChatMessage) => void;
+  onModified?: (message: ChatMessage) => void;
+  onRemoved?: (message: ChatMessage) => void;
 }
 
 interface UseRealtimeMessagesOptions {
@@ -52,7 +47,7 @@ export const useRealtimeMessages = ({
   pageSize,
   callbacks,
 }: UseRealtimeMessagesOptions) => {
-  const [messages, setMessages] = useState<ClientMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(!!sessionId);
   const [error, setError] = useState<string | null>(null);
 
@@ -92,16 +87,12 @@ export const useRealtimeMessages = ({
 
         if (isFirstSnapshot) {
           // 첫 로딩: 모든 기존 메시지 가져오기
-          const initialMessages: ClientMessage[] = snapshot.docs
+          const initialMessages: ChatMessage[] = snapshot.docs
             .map((doc) => {
-              const data = doc.data() as FirestoreMessage;
-              return firestoreToClientMessage({ ...data, id: doc.id });
+              const data = doc.data() as Omit<ChatMessage, 'id'>;
+              return { ...data, id: doc.id } as ChatMessage;
             })
-            .sort((a, b) => {
-              const aTime = new Date(a.question_created_at).getTime();
-              const bTime = new Date(b.question_created_at).getTime();
-              return aTime - bTime; // 오래된 메시지부터
-            });
+            .sort((a, b) => a.question_created_at - b.question_created_at);
 
           setMessages(initialMessages);
           callbacksRef.current?.onInitial?.(initialMessages);
@@ -109,43 +100,32 @@ export const useRealtimeMessages = ({
         } else {
           // 실시간 변경사항 처리
           snapshot.docChanges().forEach((change) => {
-            const docData = change.doc.data() as FirestoreMessage;
-            const clientMsg = firestoreToClientMessage({
-              ...docData,
-              id: change.doc.id,
-            });
+            const data = change.doc.data() as Omit<ChatMessage, 'id'>;
+            const msg: ChatMessage = { ...data, id: change.doc.id };
 
             if (change.type === 'added') {
               setMessages((prev) => {
-                const updated = [...prev, clientMsg].sort((a, b) => {
-                  const aTime = new Date(a.question_created_at).getTime();
-                  const bTime = new Date(b.question_created_at).getTime();
-                  return aTime - bTime;
-                });
+                const updated = [...prev, msg].sort(
+                  (a, b) => a.question_created_at - b.question_created_at
+                );
                 return updated;
               });
-              callbacksRef.current?.onAdded?.(clientMsg);
+              callbacksRef.current?.onAdded?.(msg);
             }
 
             if (change.type === 'modified') {
               setMessages((prev) => {
                 const updated = prev
-                  .map((msg) => (msg.id === clientMsg.id ? clientMsg : msg))
-                  .sort((a, b) => {
-                    const aTime = new Date(a.question_created_at).getTime();
-                    const bTime = new Date(b.question_created_at).getTime();
-                    return aTime - bTime;
-                  });
+                  .map((m) => (m.id === msg.id ? msg : m))
+                  .sort((a, b) => a.question_created_at - b.question_created_at);
                 return updated;
               });
-              callbacksRef.current?.onModified?.(clientMsg);
+              callbacksRef.current?.onModified?.(msg);
             }
 
             if (change.type === 'removed') {
-              setMessages((prev) =>
-                prev.filter((msg) => msg.id !== clientMsg.id)
-              );
-              callbacksRef.current?.onRemoved?.(clientMsg);
+              setMessages((prev) => prev.filter((m) => m.id !== msg.id));
+              callbacksRef.current?.onRemoved?.(msg);
             }
           });
         }

@@ -1,6 +1,7 @@
-import { Header } from "@/components/layout/header"
-import { DesktopLayout } from "@/components/layout/desktop-layout"
-import { MobileLayout } from "@/components/layout/mobile-layout"
+import { Suspense } from 'react';
+import { Header } from '@/components/layout/header';
+import { DesktopLayout } from '@/components/layout/desktop-layout';
+import { MobileLayout } from '@/components/layout/mobile-layout';
 
 /**
  * 홈페이지 (Server Component)
@@ -24,7 +25,9 @@ export default function Page() {
       <main className="relative flex flex-1 overflow-hidden">
         {/* Desktop Layout: Client (ResizablePanels) */}
         <div className="hidden h-full w-full md:block">
-          <DesktopLayout />
+          <Suspense fallback={null}>
+            <DesktopLayout />
+          </Suspense>
         </div>
 
         {/* Mobile Layout: Client (BottomSheet) */}
@@ -33,5 +36,5 @@ export default function Page() {
         </div>
       </main>
     </div>
-  )
+  );
 }

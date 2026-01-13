@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { ChatStreamRequest, SSEEvent, CodeEvent } from '@/types/chat';
 
 interface UseChatStreamOptions {
-  onText?: (text: string) => void;
+  onChat?: (text: string) => void;
   onCode?: (code: CodeEvent) => void;
   onError?: (error: string) => void;
   onDone?: () => void;
@@ -62,9 +62,9 @@ export function useChatStream(options: UseChatStreamOptions = {}) {
                 const event: SSEEvent = JSON.parse(line.slice(6));
 
                 switch (event.type) {
-                  case 'text':
+                  case 'chat':
                     setAccumulatedText((prev) => prev + event.text);
-                    options.onText?.(event.text);
+                    options.onChat?.(event.text);
                     break;
 
                   case 'code':
