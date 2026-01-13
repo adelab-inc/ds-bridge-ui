@@ -100,7 +100,9 @@ class ChatRequest(BaseModel):
 
     message: str = Field(
         ...,
-        description="사용자 메시지",
+        min_length=1,
+        max_length=10000,
+        description="사용자 메시지 (최대 10,000자)",
         json_schema_extra={"example": "로그인 페이지 만들어줘"},
     )
     room_id: str = Field(

@@ -1,7 +1,10 @@
 import logging
 import time
 import uuid
+from collections.abc import Callable, Coroutine
+from functools import wraps
 from pathlib import Path
+from typing import Any, ParamSpec, TypedDict, TypeVar
 
 from google.cloud.firestore import AsyncClient
 from google.oauth2 import service_account
@@ -9,6 +12,34 @@ from google.oauth2 import service_account
 from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
+
+
+# ============================================================================
+# Type Definitions
+# ============================================================================
+
+
+class RoomData(TypedDict):
+    """채팅방 문서 타입"""
+
+    id: str
+    storybook_url: str
+    user_id: str
+    created_at: int
+
+
+class MessageData(TypedDict):
+    """채팅 메시지 문서 타입"""
+
+    id: str
+    question: str
+    text: str
+    content: str
+    path: str
+    room_id: str
+    question_created_at: int
+    answer_created_at: int
+    status: str
 
 # 로컬 개발용 서비스 계정 키 경로
 SERVICE_ACCOUNT_KEY_PATH = Path(__file__).parent.parent.parent / "service-account-key.json"
@@ -34,6 +65,47 @@ class RoomNotFoundError(Exception):
     """채팅방을 찾을 수 없음"""
 
     pass
+
+
+# ============================================================================
+# Error Handling Decorator
+# ============================================================================
+
+P = ParamSpec("P")
+T = TypeVar("T")
+
+
+def handle_firestore_error(
+    error_message: str,
+) -> Callable[[Callable[P, Coroutine[Any, Any, T]]], Callable[P, Coroutine[Any, Any, T]]]:
+    """
+    Firestore 작업의 예외를 일관되게 처리하는 데코레이터
+
+    Args:
+        error_message: 에러 발생 시 사용할 메시지
+
+    Usage:
+        @handle_firestore_error("채팅방 생성 실패")
+        async def create_chat_room(...):
+            ...
+    """
+
+    def decorator(
+        func: Callable[P, Coroutine[Any, Any, T]],
+    ) -> Callable[P, Coroutine[Any, Any, T]]:
+        @wraps(func)
+        async def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
+            try:
+                return await func(*args, **kwargs)
+            except FirestoreError:
+                raise
+            except Exception as e:
+                logger.error("%s: %s", error_message, str(e))
+                raise FirestoreError(f"{error_message}: {str(e)}") from e
+
+        return wrapper
+
+    return decorator
 
 
 # ============================================================================
@@ -70,6 +142,16 @@ def get_firestore_client() -> AsyncClient:
     return _firestore_client
 
 
+async def close_firestore_client() -> None:
+    """Firestore 클라이언트 정리 (서버 종료 시 호출)"""
+    global _firestore_client
+
+    if _firestore_client is not None:
+        _firestore_client.close()
+        _firestore_client = None
+        logger.info("Firestore AsyncClient closed")
+
+
 # ============================================================================
 # Collection Names
 # ============================================================================
@@ -83,7 +165,8 @@ CHAT_MESSAGES_COLLECTION = "chat_messages"
 # ============================================================================
 
 
-async def create_chat_room(storybook_url: str, user_id: str) -> dict:
+@handle_firestore_error("채팅방 생성 실패")
+async def create_chat_room(storybook_url: str, user_id: str) -> RoomData:
     """
     새 채팅방 생성
 
@@ -97,29 +180,24 @@ async def create_chat_room(storybook_url: str, user_id: str) -> dict:
     Raises:
         FirestoreError: Firestore 작업 실패
     """
-    try:
-        db = get_firestore_client()
-        room_id = str(uuid.uuid4())
+    db = get_firestore_client()
+    room_id = str(uuid.uuid4())
 
-        room_data = {
-            "id": room_id,
-            "storybook_url": storybook_url,
-            "user_id": user_id,
-            "created_at": get_timestamp_ms(),
-        }
+    room_data: RoomData = {
+        "id": room_id,
+        "storybook_url": storybook_url,
+        "user_id": user_id,
+        "created_at": get_timestamp_ms(),
+    }
 
-        await db.collection(CHAT_ROOMS_COLLECTION).document(room_id).set(room_data)
-        logger.info("Chat room created: %s", room_id)
+    await db.collection(CHAT_ROOMS_COLLECTION).document(room_id).set(room_data)
+    logger.info("Chat room created: %s", room_id)
 
-        return room_data
-    except FirestoreError:
-        raise
-    except Exception as e:
-        logger.error("Failed to create chat room: %s", str(e))
-        raise FirestoreError(f"채팅방 생성 실패: {str(e)}") from e
+    return room_data
 
 
-async def get_chat_room(room_id: str) -> dict | None:
+@handle_firestore_error("채팅방 조회 실패")
+async def get_chat_room(room_id: str) -> RoomData | None:
     """
     채팅방 조회
 
@@ -132,18 +210,12 @@ async def get_chat_room(room_id: str) -> dict | None:
     Raises:
         FirestoreError: Firestore 작업 실패
     """
-    try:
-        db = get_firestore_client()
-        doc = await db.collection(CHAT_ROOMS_COLLECTION).document(room_id).get()
+    db = get_firestore_client()
+    doc = await db.collection(CHAT_ROOMS_COLLECTION).document(room_id).get()
 
-        if doc.exists:
-            return doc.to_dict()
-        return None
-    except FirestoreError:
-        raise
-    except Exception as e:
-        logger.error("Failed to get chat room %s: %s", room_id, str(e))
-        raise FirestoreError(f"채팅방 조회 실패: {str(e)}") from e
+    if doc.exists:
+        return doc.to_dict()  # type: ignore[return-value]
+    return None
 
 
 async def verify_room_exists(room_id: str) -> bool:
@@ -171,6 +243,7 @@ async def verify_room_exists(room_id: str) -> bool:
 # ============================================================================
 
 
+@handle_firestore_error("메시지 저장 실패")
 async def create_chat_message(
     room_id: str,
     question: str = "",
@@ -179,7 +252,7 @@ async def create_chat_message(
     path: str = "",
     question_created_at: int | None = None,
     status: str = "DONE",
-) -> dict:
+) -> MessageData:
     """
     새 채팅 메시지 생성
 
@@ -198,35 +271,30 @@ async def create_chat_message(
     Raises:
         FirestoreError: Firestore 작업 실패
     """
-    try:
-        db = get_firestore_client()
-        message_id = str(uuid.uuid4())
-        now = get_timestamp_ms()
+    db = get_firestore_client()
+    message_id = str(uuid.uuid4())
+    now = get_timestamp_ms()
 
-        message_data = {
-            "id": message_id,
-            "question": question,
-            "text": text,
-            "content": content,
-            "path": path,
-            "room_id": room_id,
-            "question_created_at": question_created_at or now,
-            "answer_created_at": now,
-            "status": status,
-        }
+    message_data: MessageData = {
+        "id": message_id,
+        "question": question,
+        "text": text,
+        "content": content,
+        "path": path,
+        "room_id": room_id,
+        "question_created_at": question_created_at or now,
+        "answer_created_at": now,
+        "status": status,
+    }
 
-        await db.collection(CHAT_MESSAGES_COLLECTION).document(message_id).set(message_data)
-        logger.debug("Chat message created: %s", message_id)
+    await db.collection(CHAT_MESSAGES_COLLECTION).document(message_id).set(message_data)
+    logger.debug("Chat message created: %s", message_id)
 
-        return message_data
-    except FirestoreError:
-        raise
-    except Exception as e:
-        logger.error("Failed to create chat message: %s", str(e))
-        raise FirestoreError(f"메시지 저장 실패: {str(e)}") from e
+    return message_data
 
 
-async def get_messages_by_room(room_id: str, limit: int = 100) -> list[dict]:
+@handle_firestore_error("메시지 조회 실패")
+async def get_messages_by_room(room_id: str, limit: int = 100) -> list[MessageData]:
     """
     채팅방의 메시지 목록 조회
 
@@ -240,24 +308,19 @@ async def get_messages_by_room(room_id: str, limit: int = 100) -> list[dict]:
     Raises:
         FirestoreError: Firestore 작업 실패
     """
-    try:
-        db = get_firestore_client()
-        query = (
-            db.collection(CHAT_MESSAGES_COLLECTION)
-            .where("room_id", "==", room_id)
-            .order_by("answer_created_at")
-            .limit(limit)
-        )
+    db = get_firestore_client()
+    query = (
+        db.collection(CHAT_MESSAGES_COLLECTION)
+        .where("room_id", "==", room_id)
+        .order_by("answer_created_at")
+        .limit(limit)
+    )
 
-        docs = query.stream()
-        return [doc.to_dict() async for doc in docs]
-    except FirestoreError:
-        raise
-    except Exception as e:
-        logger.error("Failed to get messages for room %s: %s", room_id, str(e))
-        raise FirestoreError(f"메시지 조회 실패: {str(e)}") from e
+    docs = query.stream()
+    return [doc.to_dict() async for doc in docs]  # type: ignore[misc]
 
 
+@handle_firestore_error("메시지 업데이트 실패")
 async def update_chat_message(
     message_id: str,
     text: str | None = None,
@@ -278,23 +341,17 @@ async def update_chat_message(
     Raises:
         FirestoreError: Firestore 작업 실패
     """
-    try:
-        db = get_firestore_client()
+    db = get_firestore_client()
 
-        update_data = {"answer_created_at": get_timestamp_ms()}
-        if text is not None:
-            update_data["text"] = text
-        if content is not None:
-            update_data["content"] = content
-        if path is not None:
-            update_data["path"] = path
-        if status is not None:
-            update_data["status"] = status
+    update_data: dict[str, str | int] = {"answer_created_at": get_timestamp_ms()}
+    if text is not None:
+        update_data["text"] = text
+    if content is not None:
+        update_data["content"] = content
+    if path is not None:
+        update_data["path"] = path
+    if status is not None:
+        update_data["status"] = status
 
-        await db.collection(CHAT_MESSAGES_COLLECTION).document(message_id).update(update_data)
-        logger.debug("Chat message updated: %s", message_id)
-    except FirestoreError:
-        raise
-    except Exception as e:
-        logger.error("Failed to update chat message %s: %s", message_id, str(e))
-        raise FirestoreError(f"메시지 업데이트 실패: {str(e)}") from e
+    await db.collection(CHAT_MESSAGES_COLLECTION).document(message_id).update(update_data)
+    logger.debug("Chat message updated: %s", message_id)

@@ -1,6 +1,7 @@
 import json
 import logging
 import re
+from collections.abc import AsyncGenerator
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -145,8 +146,9 @@ def parse_ai_response(content: str) -> ParsedResponse:
 class StreamingParser:
     """스트리밍 응답에서 실시간으로 텍스트/코드 분리"""
 
-    # <file 태그 감지를 위한 최소 버퍼 크기
-    TAG_BUFFER_SIZE = 30
+    # 정규식 패턴 (클래스 수준에서 미리 컴파일)
+    FILE_START_PATTERN = re.compile(r'<file\s+path="([^"]+)">')
+    FILE_END_PATTERN = re.compile(r"</file>")
 
     def __init__(self):
         self.buffer = ""
@@ -167,7 +169,7 @@ class StreamingParser:
         while True:
             if not self.inside_file:
                 # 파일 태그 시작 감지
-                start_match = re.search(r'<file\s+path="([^"]+)">', self.buffer)
+                start_match = self.FILE_START_PATTERN.search(self.buffer)
                 if start_match:
                     # 태그 이전 텍스트 = 대화
                     before_tag = self.buffer[: start_match.start()]
@@ -192,7 +194,7 @@ class StreamingParser:
                     break
             else:
                 # 파일 태그 종료 감지
-                end_match = re.search(r"</file>", self.buffer)
+                end_match = self.FILE_END_PATTERN.search(self.buffer)
                 if end_match:
                     # 파일 내용 완성
                     self.current_file_content += self.buffer[: end_match.start()]
@@ -265,7 +267,7 @@ Firebase Storage에서 컴포넌트 스키마를 로드합니다. 생략 시 로
         500: {"description": "AI API 호출 실패"},
     },
 )
-async def chat(request: ChatRequest):
+async def chat(request: ChatRequest) -> ChatResponse:
     """
     AI 채팅 API (Non-streaming)
 
@@ -378,7 +380,7 @@ data: {"type": "done"}
         500: {"description": "AI API 호출 실패"},
     },
 )
-async def chat_stream(request: ChatRequest):
+async def chat_stream(request: ChatRequest) -> StreamingResponse:
     """
     AI 채팅 API (Streaming) - 하이브리드 방식
 
@@ -412,7 +414,7 @@ async def chat_stream(request: ChatRequest):
             current_message=request.message,
         )
 
-        async def generate():
+        async def generate() -> AsyncGenerator[str, None]:
             parser = StreamingParser()
             collected_text = ""
             collected_files: list[dict] = []

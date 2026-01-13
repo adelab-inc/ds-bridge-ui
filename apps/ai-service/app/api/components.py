@@ -1,3 +1,4 @@
+import asyncio
 import json
 from pathlib import Path
 
@@ -8,13 +9,16 @@ from app.schemas.chat import ReloadResponse
 
 router = APIRouter(dependencies=[Depends(verify_api_key)])
 
+# 스키마 리로드 시 동시성 보호를 위한 Lock
+_reload_lock = asyncio.Lock()
+
 
 # ============================================================================
 # Schema Loading
 # ============================================================================
 
 
-def load_component_schema():
+def load_component_schema() -> tuple[dict | None, str | None]:
     """컴포넌트 스키마 JSON 로드"""
     schema_path = Path(__file__).parent.parent.parent / "component-schema.json"
     if not schema_path.exists():
@@ -29,7 +33,7 @@ def load_component_schema():
 # ============================================================================
 
 
-def format_prop_type(prop_type, max_values: int = 5) -> str:
+def format_prop_type(prop_type: list | str, max_values: int = 5) -> str:
     """
     prop 타입을 문자열로 포맷
     - list인 경우 enum 값들을 | 로 연결
@@ -359,7 +363,7 @@ async def get_components():
         500: {"description": "스키마 파일 로드 실패"},
     },
 )
-async def reload_components():
+async def reload_components() -> ReloadResponse:
     """
     컴포넌트 스키마 리로드
 
@@ -368,21 +372,22 @@ async def reload_components():
     """
     global _schema, _error, COMPONENT_DOCS, AVAILABLE_COMPONENTS, SYSTEM_PROMPT
 
-    _schema, _error = load_component_schema()
-    if _error:
-        raise HTTPException(status_code=500, detail=_error)
+    async with _reload_lock:
+        _schema, _error = load_component_schema()
+        if _error:
+            raise HTTPException(status_code=500, detail=_error)
 
-    COMPONENT_DOCS = format_component_docs(_schema)
-    AVAILABLE_COMPONENTS = get_available_components_note(_schema)
-    SYSTEM_PROMPT = (
-        SYSTEM_PROMPT_HEADER
-        + AVAILABLE_COMPONENTS
-        + COMPONENT_DOCS
-        + RESPONSE_FORMAT_INSTRUCTIONS
-        + SYSTEM_PROMPT_FOOTER
-    )
+        COMPONENT_DOCS = format_component_docs(_schema)
+        AVAILABLE_COMPONENTS = get_available_components_note(_schema)
+        SYSTEM_PROMPT = (
+            SYSTEM_PROMPT_HEADER
+            + AVAILABLE_COMPONENTS
+            + COMPONENT_DOCS
+            + RESPONSE_FORMAT_INSTRUCTIONS
+            + SYSTEM_PROMPT_FOOTER
+        )
 
-    return ReloadResponse(
-        message="Schema reloaded successfully",
-        component_count=len(_schema.get("components", {})),
-    )
+        return ReloadResponse(
+            message="Schema reloaded successfully",
+            component_count=len(_schema.get("components", {})),
+        )

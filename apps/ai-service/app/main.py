@@ -1,3 +1,7 @@
+import logging
+from contextlib import asynccontextmanager
+from collections.abc import AsyncGenerator
+
 from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
@@ -6,8 +10,29 @@ from app.api.chat import router as chat_router
 from app.api.components import router as components_router
 from app.api.rooms import router as rooms_router
 from app.core.config import get_settings
+from app.services.firebase_storage import cleanup_firebase
+from app.services.firestore import close_firestore_client
 
+logger = logging.getLogger(__name__)
 settings = get_settings()
+
+
+# ============================================================================
+# Lifespan Events
+# ============================================================================
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """애플리케이션 생명주기 관리"""
+    # Startup
+    logger.info("Starting DS Bridge AI Server...")
+    yield
+    # Shutdown
+    logger.info("Shutting down DS Bridge AI Server...")
+    await close_firestore_client()
+    cleanup_firebase()
+    logger.info("Cleanup completed")
 
 # ============================================================================
 # API Tags Metadata
@@ -37,6 +62,7 @@ tags_metadata = [
 # ============================================================================
 
 app = FastAPI(
+    lifespan=lifespan,
     title="DS Bridge AI Server",
     description="""
 ## DS Bridge AI Server
