@@ -34,6 +34,30 @@
 - **Base UI**: `useId()` 사용으로 SSR Hydration 이슈 발생 가능 → `ClientOnly` 래퍼 필요
 - **shadcn/ui**: Base UI 기반이므로 동일한 주의사항 적용
 
+### Base UI Hydration 에러 방지
+
+Base UI v1.0.0은 React 19의 `useId()` 훅을 내부적으로 사용하여 SSR/클라이언트 간 ID 불일치 발생 가능.
+
+**작업 전 필수 확인:**
+1. Context7 MCP로 `/mui/base-ui` 공식 문서에서 SSR 관련 내용 확인
+2. 해당 컴포넌트의 hydration 이슈 여부 파악
+
+**해결 패턴:**
+- Base UI 컴포넌트 사용 영역을 `ClientOnly` 래퍼로 감싸기
+- Skeleton fallback 제공하여 SSR 시 레이아웃 유지
+
+**예시** (header.tsx 참고):
+```tsx
+<header>
+  <HeaderLogo />  {/* SSR 렌더링 */}
+  <ClientOnly fallback={<Skeleton />}>
+    <TooltipProvider>
+      <InputGroup>...</InputGroup>  {/* Base UI 사용 */}
+    </TooltipProvider>
+  </ClientOnly>
+</header>
+```
+
 ## 디렉토리 구조
 
 ```
@@ -66,6 +90,37 @@ apps/web/
 │
 └── package.json            # @ds-hub/web
 ```
+
+## RSC (React Server Components) 설계 가이드라인
+
+Next.js 16 App Router 사용 시 Server/Client 컴포넌트 경계를 명확히 구분해야 함.
+
+### 기본 원칙
+
+| 구분 | Server Component | Client Component |
+|------|-----------------|------------------|
+| 지시어 | 없음 (기본값) | `"use client"` 필수 |
+| 용도 | 정적 마크업, 데이터 fetch | 인터랙션, 상태, 브라우저 API |
+| 예시 | HeaderLogo, RightPanel | Header, DesktopLayout |
+
+### 설계 패턴
+
+**1. 정적/동적 분리** (9a15908 커밋 참고)
+- 정적 마크업(`<div>`, `<main>`)은 Server Component (page.tsx)
+- 인터랙티브 영역만 Client Component로 분리
+
+**2. Base UI 사용 시 ClientOnly 래핑**
+- Base UI 컴포넌트는 `useId()` 사용으로 hydration 이슈 발생
+- `ClientOnly` 래퍼로 감싸고 Skeleton fallback 제공
+
+**3. 컴포넌트 분리 기준**
+- 정적 부분: Server Component로 분리 (예: HeaderLogo)
+- 상태/이벤트 필요: Client Component 유지
+
+### 참고 커밋
+
+- `9a15908`: RSC 최적화를 위한 레이아웃 구조 개선
+- DesktopLayout, MobileLayout 분리 및 ClientOnly 적용 패턴
 
 ## 코드 컨벤션
 
