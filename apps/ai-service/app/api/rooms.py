@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
         500: {"description": "서버 오류"},
     },
 )
-async def create_room(request: CreateRoomRequest):
+async def create_room(request: CreateRoomRequest) -> RoomResponse:
     """
     새 채팅방 생성
 
@@ -50,16 +50,16 @@ async def create_room(request: CreateRoomRequest):
         )
         return RoomResponse(**room_data)
     except FirestoreError as e:
-        logger.error("Failed to create room: %s", str(e))
+        logger.error("Failed to create room: %s", str(e), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e),
+            detail="Database error. Please try again.",
         ) from e
     except Exception as e:
-        logger.error("Failed to create room: %s", str(e))
+        logger.error("Failed to create room: %s", str(e), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create room: {str(e)}",
+            detail="An unexpected error occurred. Please try again.",
         ) from e
 
 
@@ -74,7 +74,7 @@ async def create_room(request: CreateRoomRequest):
         500: {"description": "서버 오류"},
     },
 )
-async def get_room(room_id: str):
+async def get_room(room_id: str) -> RoomResponse:
     """채팅방 조회"""
     try:
         room_data = await get_chat_room(room_id)
@@ -82,21 +82,21 @@ async def get_room(room_id: str):
         if not room_data:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Room not found: {room_id}",
+                detail="Room not found.",
             )
 
         return RoomResponse(**room_data)
     except HTTPException:
         raise
     except FirestoreError as e:
-        logger.error("Failed to get room %s: %s", room_id, str(e))
+        logger.error("Failed to get room %s: %s", room_id, str(e), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e),
+            detail="Database error. Please try again.",
         ) from e
     except Exception as e:
-        logger.error("Failed to get room %s: %s", room_id, str(e))
+        logger.error("Failed to get room %s: %s", room_id, str(e), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get room: {str(e)}",
+            detail="An unexpected error occurred. Please try again.",
         ) from e

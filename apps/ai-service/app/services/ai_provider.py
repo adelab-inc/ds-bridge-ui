@@ -33,7 +33,11 @@ class OpenAIProvider(AIProvider):
             model=self.model,
             messages=[{"role": m.role, "content": m.content} for m in messages],
         )
-        content = response.choices[0].message.content or ""
+        # choices가 비어있을 경우 안전 처리
+        content = ""
+        if response.choices:
+            content = response.choices[0].message.content or ""
+
         usage = None
         if response.usage:
             usage = {
@@ -50,7 +54,8 @@ class OpenAIProvider(AIProvider):
             stream=True,
         )
         async for chunk in stream:
-            if chunk.choices[0].delta.content:
+            # choices가 비어있을 경우 안전 처리
+            if chunk.choices and chunk.choices[0].delta.content:
                 yield chunk.choices[0].delta.content
 
 

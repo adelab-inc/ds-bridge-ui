@@ -331,6 +331,7 @@ X-API-Key: your-api-key
 | `GEMINI_MODEL` | `gemini-2.5-flash` | Gemini model identifier |
 | `X_API_KEY` | - | API key for authentication (empty = disabled) |
 | `CORS_ORIGINS` | `http://localhost:3000,http://localhost:5173` | Allowed CORS origins |
+| `FIREBASE_PROJECT_ID` | - | Firebase project ID |
 | `FIREBASE_STORAGE_BUCKET` | - | Firebase Storage bucket name |
 
 ### Example `.env` File
@@ -358,6 +359,7 @@ X_API_KEY=sk-your-secret-key
 CORS_ORIGINS=http://localhost:3000,http://localhost:5173
 
 # Firebase Settings
+FIREBASE_PROJECT_ID=your-project-id
 FIREBASE_STORAGE_BUCKET=your-project.appspot.com
 # 로컬 개발: service-account-key.json 파일을 apps/ai-service/ 폴더에 위치
 ```

@@ -37,27 +37,29 @@ def init_firebase() -> None:
     except ValueError:
         pass
 
-    # 서비스 계정 키 파일 필수
-    if not SERVICE_ACCOUNT_KEY_PATH.exists():
-        raise FileNotFoundError(
-            f"Service account key not found: {SERVICE_ACCOUNT_KEY_PATH}\n"
-            "Please place your service account key file at apps/ai-service/service-account-key.json"
-        )
-
-    cred = credentials.Certificate(str(SERVICE_ACCOUNT_KEY_PATH))
-    firebase_admin.initialize_app(cred, {
-        "storageBucket": settings.firebase_storage_bucket
-    })
-    logger.info("Firebase initialized with service account key")
+    # 로컬: 서비스 계정 키 파일 사용
+    # Cloud Run: 기본 자격증명 사용 (GCP 서비스 계정)
+    if SERVICE_ACCOUNT_KEY_PATH.exists():
+        cred = credentials.Certificate(str(SERVICE_ACCOUNT_KEY_PATH))
+        firebase_admin.initialize_app(cred, {
+            "storageBucket": settings.firebase_storage_bucket
+        })
+        logger.info("Firebase initialized with service account key")
+    else:
+        firebase_admin.initialize_app(options={
+            "storageBucket": settings.firebase_storage_bucket
+        })
+        logger.info("Firebase initialized with default credentials (Cloud Run)")
 
     _firebase_initialized = True
     logger.info("Firebase initialized with bucket: %s", settings.firebase_storage_bucket)
 
 
 # ============================================================================
-# Schema Cache
+# Schema Cache (LRU with max size)
 # ============================================================================
 
+MAX_CACHE_SIZE = 10  # 최대 캐시 항목 수
 _schema_cache: dict[str, dict] = {}
 
 
@@ -68,9 +70,55 @@ def clear_schema_cache() -> None:
     logger.info("Schema cache cleared")
 
 
+def _evict_oldest_cache() -> None:
+    """캐시가 최대 크기를 초과하면 가장 오래된 항목 제거"""
+    while len(_schema_cache) >= MAX_CACHE_SIZE:
+        oldest_key = next(iter(_schema_cache))
+        del _schema_cache[oldest_key]
+        logger.debug("Cache evicted: %s", oldest_key)
+
+
+def cleanup_firebase() -> None:
+    """Firebase 리소스 정리 (서버 종료 시 호출)"""
+    global _firebase_initialized, _schema_cache
+
+    try:
+        firebase_admin.delete_app(firebase_admin.get_app())
+        logger.info("Firebase app deleted")
+    except ValueError:
+        pass  # 앱이 없으면 무시
+
+    _firebase_initialized = False
+    _schema_cache = {}
+    logger.info("Firebase resources cleaned up")
+
+
 # ============================================================================
 # Storage Operations
 # ============================================================================
+
+
+def _validate_schema_key(schema_key: str) -> None:
+    """
+    schema_key 경로 검증 (경로 순회 공격 방지)
+
+    Raises:
+        ValueError: 유효하지 않은 경로
+    """
+    if not schema_key:
+        raise ValueError("schema_key cannot be empty")
+
+    # 경로 순회 공격 방지
+    if ".." in schema_key:
+        raise ValueError("Invalid schema_key: path traversal not allowed")
+
+    # 절대 경로 차단
+    if schema_key.startswith("/"):
+        raise ValueError("Invalid schema_key: absolute path not allowed")
+
+    # 허용된 확장자만
+    if not schema_key.endswith(".json"):
+        raise ValueError("Invalid schema_key: must be a .json file")
 
 
 async def fetch_schema_from_storage(schema_key: str, use_cache: bool = True) -> dict:
@@ -86,8 +134,11 @@ async def fetch_schema_from_storage(schema_key: str, use_cache: bool = True) -> 
 
     Raises:
         FileNotFoundError: 파일이 존재하지 않는 경우
-        ValueError: JSON 파싱 실패
+        ValueError: JSON 파싱 실패 또는 유효하지 않은 경로
     """
+    # 경로 검증
+    _validate_schema_key(schema_key)
+
     # 캐시 확인
     if use_cache and schema_key in _schema_cache:
         logger.debug("Schema cache hit: %s", schema_key)
@@ -107,10 +158,11 @@ async def fetch_schema_from_storage(schema_key: str, use_cache: bool = True) -> 
         content = blob.download_as_string()
         schema = json.loads(content.decode("utf-8"))
 
-        # 캐시 저장
+        # 캐시 저장 (크기 제한 적용)
         if use_cache:
+            _evict_oldest_cache()
             _schema_cache[schema_key] = schema
-            logger.info("Schema cached: %s", schema_key)
+            logger.info("Schema cached: %s (cache size: %d)", schema_key, len(_schema_cache))
 
         return schema
 

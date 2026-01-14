@@ -100,7 +100,9 @@ class ChatRequest(BaseModel):
 
     message: str = Field(
         ...,
-        description="사용자 메시지",
+        min_length=1,
+        max_length=10000,
+        description="사용자 메시지 (최대 10,000자)",
         json_schema_extra={"example": "로그인 페이지 만들어줘"},
     )
     room_id: str = Field(
@@ -331,10 +333,10 @@ class RoomResponse(BaseModel):
         description="사용자 ID",
         json_schema_extra={"example": "user-123"},
     )
-    created_at: str = Field(
+    created_at: int = Field(
         ...,
-        description="생성 시간 (ISO 8601)",
-        json_schema_extra={"example": "2026-01-12T10:00:00.000Z"},
+        description="생성 시간 (ms timestamp)",
+        json_schema_extra={"example": 1736654400000},
     )
 
 
