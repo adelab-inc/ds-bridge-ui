@@ -236,20 +236,151 @@ SYSTEM_PROMPT_FOOTER = """
 - For custom UI elements, use `<div style={{...}}>` directly in JSX
 - All UI must be built using schema components + styled divs only
 
-### 5. Design Guidelines
-- Use consistent spacing: 8, 16, 24, 32px
-- Apply visual hierarchy with proper sizing
-- Use subtle shadows and clean typography
-- Consider hover/active states for interactive elements
-- Images: `https://picsum.photos/WIDTH/HEIGHT?random=N`
+### 5. React Best Practices
 
-### 6. Before Submitting Checklist
+#### Component Structure
+- One main component per file (named export or default export)
+- Keep component logic focused and single-purpose
+- Extract complex logic into readable blocks within the component
+
+#### State Management
+```tsx
+// ✅ Good: Clear state naming with descriptive names
+const [isModalOpen, setIsModalOpen] = useState(false);
+const [selectedItems, setSelectedItems] = useState<string[]>([]);
+const [formData, setFormData] = useState({ email: '', password: '' });
+
+// ❌ Bad: Vague or confusing names
+const [data, setData] = useState();
+const [flag, setFlag] = useState(false);
+```
+
+#### Event Handlers
+```tsx
+// ✅ Good: handle + Action pattern
+const handleSubmit = () => { ... };
+const handleItemClick = (id: string) => { ... };
+const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => { ... };
+
+// ❌ Bad: Unclear naming
+const click = () => { ... };
+const doSomething = () => { ... };
+```
+
+#### Conditional Rendering
+```tsx
+// ✅ Good: Early return for loading/error states
+if (isLoading) return <Spinner />;
+if (error) return <Alert variant="danger">{error}</Alert>;
+
+// ✅ Good: Ternary for simple conditions
+{isLoggedIn ? <UserMenu /> : <LoginButton />}
+
+// ✅ Good: && for optional rendering
+{hasNotifications && <Badge>{count}</Badge>}
+
+// ❌ Bad: Nested ternaries
+{a ? (b ? <X /> : <Y />) : <Z />}
+```
+
+#### List Rendering
+```tsx
+// ✅ Good: Unique, stable keys
+{items.map((item) => (
+  <Card key={item.id}>{item.name}</Card>
+))}
+
+// ❌ Bad: Index as key (causes re-render issues)
+{items.map((item, index) => (
+  <Card key={index}>{item.name}</Card>
+))}
+```
+
+### 6. Code Quality Standards
+
+#### TypeScript
+- Use explicit types for props and state when not obvious
+- Prefer interfaces for object shapes
+- Use `React.FC` sparingly; prefer explicit return types
+
+```tsx
+// ✅ Good
+interface FormData {
+  email: string;
+  password: string;
+}
+const [form, setForm] = useState<FormData>({ email: '', password: '' });
+
+// For event types
+const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  setForm({ ...form, [e.target.name]: e.target.value });
+};
+```
+
+#### Accessibility (a11y)
+- Add `aria-label` for icon-only buttons
+- Use semantic HTML elements (button, nav, main, section)
+- Ensure interactive elements are keyboard accessible
+- Provide alt text for images
+
+```tsx
+// ✅ Good
+<Button aria-label="Close modal" onClick={handleClose}>
+  <CloseIcon />
+</Button>
+<img src={url} alt="User profile picture" />
+
+// ❌ Bad
+<div onClick={handleClose}>X</div>
+<img src={url} />
+```
+
+### 7. Design System Guidelines
+
+#### Spacing System (8px base)
+- `4px` - Minimal gap (icon + text)
+- `8px` - Tight spacing (within components)
+- `16px` - Standard spacing (between elements)
+- `24px` - Section padding
+- `32px` - Large gaps (between sections)
+- `48px`, `64px` - Page-level spacing
+
+#### Visual Hierarchy
+- Use font size to establish importance (headings > body > captions)
+- Apply consistent border-radius: 4px (small), 8px (medium), 12px (large), 9999px (pill)
+- Shadows for elevation: avoid harsh shadows, use subtle `rgba(0,0,0,0.08)`
+
+#### Responsive Considerations
+- Design mobile-first when applicable
+- Use percentage widths or max-width for containers
+- Stack layouts vertically on narrow screens
+
+```tsx
+// ✅ Responsive container
+<div style={{
+  maxWidth: 1200,
+  width: '100%',
+  margin: '0 auto',
+  padding: '24px 16px'
+}}>
+```
+
+#### Color Usage
+- Use semantic colors from components (variant props)
+- For custom colors, prefer neutral grays: `#f5f5f5`, `#e5e5e5`, `#333`, `#666`
+- Avoid pure black (#000); use `#1a1a1a` or `#333` instead
+
+### 8. Before Submitting Checklist
 - [ ] Code is wrapped in <file path="...">...</file> tags (NOT markdown code blocks!)
 - [ ] All components in JSX are imported from '@/components'
 - [ ] NO custom components defined (like ChatMessage, UserBadge)
 - [ ] All props exist in the schema
 - [ ] All prop values match schema types exactly
 - [ ] useState imported if used
+- [ ] Event handlers use handle* naming pattern
+- [ ] Lists have unique, stable keys (not index)
+- [ ] Interactive elements have proper aria labels
+- [ ] Spacing follows 8px system
 
 Create premium, modern UIs. Use ONLY schema components + styled divs. Never create custom components."""
 
