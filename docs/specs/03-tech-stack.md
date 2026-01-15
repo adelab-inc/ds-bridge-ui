@@ -120,6 +120,50 @@ interface AppStore {
 
 ---
 
+## 실시간 데이터베이스
+
+### Firebase
+
+**정의**: Google의 BaaS(Backend as a Service) 플랫폼
+
+**DS-Runtime Hub에서의 활용**:
+
+| 서비스 | 사용처 | 앱 |
+|--------|--------|-----|
+| Firestore | 채팅방/메시지 저장, 실시간 동기화 | web, ai-service |
+| Storage | 동적 컴포넌트 스키마 로딩 | ai-service |
+
+**버전**:
+
+| 앱 | 패키지 | 버전 |
+|-----|--------|------|
+| apps/web | firebase | 12.7.0 |
+| apps/ai-service | firebase-admin | 6.6.0 |
+
+**초기화 패턴 - 클라이언트 (Next.js)**:
+```typescript
+import { initializeApp, getApps } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore';
+
+const app = getApps().length === 0 ? initializeApp(config) : getApps()[0];
+export const db = getFirestore(app);
+```
+
+**초기화 패턴 - 서버 (FastAPI)**:
+```python
+from google.cloud.firestore import AsyncClient
+
+_client: AsyncClient | None = None
+
+def get_firestore_client() -> AsyncClient:
+    global _client
+    if _client is None:
+        _client = AsyncClient(project=project_id)
+    return _client
+```
+
+---
+
 ## AI 서비스 스택 (Python)
 
 ### FastAPI
@@ -355,7 +399,7 @@ pnpm install
 ## 환경 변수
 
 ```bash
-# .env.local
+# .env.local (apps/web)
 
 # Anthropic API
 ANTHROPIC_API_KEY=sk-ant-...
@@ -363,11 +407,27 @@ ANTHROPIC_API_KEY=sk-ant-...
 # App
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 
-# (선택) 저장된 composition용 Database
-DATABASE_URL=...
+# Firebase (클라이언트)
+NEXT_PUBLIC_FIREBASE_API_KEY=AIza...
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789
+NEXT_PUBLIC_FIREBASE_APP_ID=1:123456789:web:abc123
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-XXXXXXX
 
 # (선택) Analytics
 NEXT_PUBLIC_ANALYTICS_ID=...
+```
+
+```bash
+# .env (apps/ai-service)
+
+# Firebase (서버)
+FIREBASE_PROJECT_ID=your-project-id
+FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+# 로컬: service-account-key.json 파일 필요
+# Cloud Run: 기본 GCP 자격증명 사용
 ```
 
 ---
@@ -418,6 +478,7 @@ CMD ["pnpm", "start"]
 | Tailwind CSS | 3.x | 예 |
 | Zustand | 4.x | 예 |
 | TanStack Query | 5.x | 예 |
+| Firebase SDK | 12.7.0 | 예 |
 
 ### AI 서비스 (apps/ai-service)
 
@@ -428,6 +489,7 @@ CMD ["pnpm", "start"]
 | Pydantic | 2.6+ | 예 |
 | anthropic | 0.18+ | 예 |
 | uvicorn | 0.27+ | 예 |
+| Firebase Admin SDK | 6.6.0 | 예 |
 | Playwright | 1.41+ | 토큰 추출 시 |
 | Poetry/uv | 최신 | 권장 |
 

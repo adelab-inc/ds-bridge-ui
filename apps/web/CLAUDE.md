@@ -225,157 +225,114 @@ pnpm typecheck
 
 사용: `import { Button } from "@/components/ui/button"`
 
-## Firebase 설정
+## Firebase 연동
 
-### 초기화
+### Quick Reference
 
-Firebase는 `lib/firebase.ts`에서 초기화됩니다. 필요한 서비스를 import하여 사용:
+| 항목 | 값 |
+|------|-----|
+| SDK | firebase 12.7.0 |
+| 초기화 | `lib/firebase.ts` |
+| 훅 위치 | `hooks/firebase/` |
+| 타입 소스 | `@packages/shared-types/typescript/firebase/` |
+| 컬렉션 | `chat_messages`, `chat_rooms` |
+
+### 서비스 인스턴스
 
 ```typescript
-import { auth, db, storage } from "@/lib/firebase";
+// lib/firebase.ts에서 export됨
+import { firebaseFirestore } from "@/lib/firebase";
 
-// Authentication
-import { signInWithEmailAndPassword } from "firebase/auth";
-
-// Firestore
-import { collection, addDoc } from "firebase/firestore";
-
-// Storage
-import { ref, uploadBytes } from "firebase/storage";
+// Firestore 사용 (주로 사용)
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 ```
 
-### 환경 변수
+### 컬렉션 & 타입
 
-`.env.local` 파일에 Firebase 설정을 추가하세요:
+```typescript
+// 컬렉션 이름은 반드시 상수 사용
+import { COLLECTIONS } from '@packages/shared-types/typescript/firebase/collections';
+import type { ChatMessage } from '@packages/shared-types/typescript/firebase/types';
 
-```bash
-NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_auth_domain
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_storage_bucket
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
-NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
-NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
+// 또는 훅에서 re-export된 것 사용
+import { MESSAGES_COLLECTION, type ChatMessage } from "@/hooks/firebase/messageUtils";
+
+const messagesRef = collection(db, COLLECTIONS.CHAT_MESSAGES);  // 'chat_messages'
+```
+
+**ChatMessage 타입**:
+```typescript
+interface ChatMessage {
+  id: string;
+  room_id: string;
+  question: string;           // 사용자 질문
+  text: string;               // AI 텍스트 응답
+  content: string;            // React 코드
+  path: string;               // 파일 경로
+  question_created_at: number; // ms timestamp
+  answer_created_at: number;
+  status: 'GENERATING' | 'DONE' | 'ERROR';
+}
 ```
 
 ### Firebase 훅
 
-`hooks/firebase/` 디렉토리에 Firebase 관련 커스텀 훅이 있습니다:
-
-#### useRealtimeMessages
-
-Firestore 메시지를 실시간으로 구독하는 훅입니다. `onSnapshot`을 사용하여 자동으로 동기화됩니다.
+#### useRealtimeMessages - 실시간 구독
 
 ```typescript
 import { useRealtimeMessages } from "@/hooks/firebase/useRealtimeMessages";
 
-function ChatComponent({ sessionId }: { sessionId: string }) {
-  const { messages, isLoading, error } = useRealtimeMessages({
-    sessionId,
-    pageSize: 50, // optional
-    callbacks: {
-      onAdded: (msg) => {
-        console.log('새 메시지:', msg);
-        // 알림음 재생 등
-      },
-      onInitial: (msgs) => {
-        console.log('초기 메시지 로드:', msgs.length);
-      }
-    }
-  });
-
-  if (isLoading) return <div>로딩 중...</div>;
-  if (error) return <div>에러: {error}</div>;
-
-  return (
-    <div>
-      {messages.map(msg => (
-        <div key={msg.id}>{msg.content}</div>
-      ))}
-    </div>
-  );
-}
+const { messages, isLoading, error } = useRealtimeMessages({
+  sessionId: roomId,      // 필수
+  pageSize: 50,           // 선택
+  callbacks: {            // 선택
+    onAdded: (msg) => playSound(),
+    onInitial: (msgs) => console.log('loaded', msgs.length),
+  }
+});
 ```
 
-**주요 기능:**
-- Firestore `onSnapshot`을 사용한 실시간 동기화
-- 메시지 추가/수정/삭제 자동 반영
-- `sessionId`로 필터링
-- 타임스탬프 기준 오름차순 정렬
-- 선택적 콜백 지원 (onInitial, onAdded, onModified, onRemoved)
+- `onSnapshot` 사용 → 자동 실시간 동기화
+- 언마운트 시 자동 구독 해제
+- `question_created_at` 기준 내림차순 정렬
 
-**주의:** 실시간 리스너는 컴포넌트 언마운트 시 자동으로 해제됩니다.
-
-#### useGetPaginatedFbMessages
-
-무한 스크롤 페이지네이션을 지원하는 메시지 fetch 훅입니다. TanStack Query의 `useInfiniteQuery`를 기반으로 합니다.
+#### useGetPaginatedFbMessages - 무한 스크롤
 
 ```typescript
 import { useGetPaginatedFbMessages } from "@/hooks/firebase/useGetPaginatedFbMessages";
 
-function ChatComponent({ sessionId }: { sessionId: string }) {
-  const { 
-    data, 
-    fetchNextPage, 
-    hasNextPage, 
-    isLoading,
-    isFetchingNextPage 
-  } = useGetPaginatedFbMessages({
-    sessionId,
-    pageSize: 20,
-  });
+const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useGetPaginatedFbMessages({
+  roomId,
+  pageSize: 20,
+  infiniteQueryOptions: { enabled: !!roomId }
+});
 
-  // data.pages는 ClientMessage[]의 배열
-  const allMessages = data?.pages.flat() ?? [];
-
-  return (
-    <div>
-      {allMessages.map(msg => (
-        <div key={msg.id}>{msg.content}</div>
-      ))}
-      {hasNextPage && (
-        <button onClick={() => fetchNextPage()}>
-          {isFetchingNextPage ? '로딩 중...' : '더보기'}
-        </button>
-      )}
-    </div>
-  );
-}
+const allMessages = data?.pages.flat() ?? [];
 ```
 
-**주요 기능:**
-- Firestore에서 `sessionId`로 필터링된 메시지 fetch
-- `timestamp` 기준 역순 정렬 (최신 메시지가 먼저)
-- 페이지당 `pageSize`만큼 로드
-- TanStack Query의 캐싱 및 자동 리페치 활용
+- TanStack Query `useInfiniteQuery` 기반
+- timestamp 기준 역순 페이지네이션
+- 5분 staleTime 캐싱
 
-**타입:**
-- `FirestoreMessage`: Firestore에 저장되는 메시지 타입
-- `ClientMessage`: 클라이언트에서 사용하는 메시지 타입 (ChatMessage 호환)
+### 환경 변수
 
-#### messageUtils
-
-메시지 타입 변환 및 유틸리티 함수:
-
-```typescript
-import { 
-  firestoreToClientMessage,
-  clientToFirestoreMessage,
-  MESSAGES_COLLECTION 
-} from "@/hooks/firebase/messageUtils";
-
-// Firestore 문서 → 클라이언트 메시지
-const clientMsg = firestoreToClientMessage(firestoreDoc);
-
-// 클라이언트 메시지 → Firestore 문서 (저장용)
-const firestoreData = clientToFirestoreMessage(clientMsg, sessionId, userId);
-
-// 컬렉션 이름 사용 (shared-types에서 자동 생성됨)
-import { collection } from 'firebase/firestore';
-const messagesRef = collection(db, MESSAGES_COLLECTION); // 'chat_messages'
+```bash
+# .env.local (필수)
+NEXT_PUBLIC_FIREBASE_API_KEY=
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+NEXT_PUBLIC_FIREBASE_APP_ID=
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=
 ```
 
-**중요:** 컬렉션 이름은 `@packages/shared-types/typescript/firebase/collections.ts`에서 관리되며, `COLLECTIONS.CHAT_MESSAGES`를 통해 타입 안전하게 사용됩니다.
+### 규칙
+
+1. **컬렉션 이름**: `COLLECTIONS` 상수 필수 (하드코딩 금지)
+2. **타입**: `@packages/shared-types` 타입 사용
+3. **쿼리**: `room_id` 필터 + `question_created_at` 정렬
+4. **인덱스**: 복합 쿼리 시 Firestore 인덱스 생성 필요
 
 ## Vercel 배포 (모노레포)
 
