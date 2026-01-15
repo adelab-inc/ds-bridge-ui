@@ -8,7 +8,7 @@
     "pnpm": "^10.0.0"
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --port 5555",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
