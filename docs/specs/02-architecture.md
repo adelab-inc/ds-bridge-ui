@@ -266,6 +266,93 @@ interface CompositionNode {
 
 ---
 
+## Firestore 데이터 아키텍처
+
+### 컬렉션 구조
+
+```
+Firestore
+├── chat_rooms/                      # 채팅방 메타데이터
+│   └── {room_id}/
+│       ├── id: string
+│       ├── storybook_url: string
+│       ├── user_id: string
+│       └── created_at: number       # ms timestamp
+│
+└── chat_messages/                   # 채팅 메시지
+    └── {message_id}/
+        ├── id: string
+        ├── room_id: string          # 채팅방 참조
+        ├── question: string         # 사용자 질문
+        ├── text: string             # AI 텍스트 응답
+        ├── content: string          # React 코드
+        ├── path: string             # 파일 경로 (예: src/pages/Login.tsx)
+        ├── question_created_at: number
+        ├── answer_created_at: number
+        └── status: 'GENERATING' | 'DONE' | 'ERROR'
+```
+
+### 데이터 모델
+
+```typescript
+// packages/shared-types/typescript/firebase/types.ts
+interface ChatRoom {
+  id: string;
+  storybook_url: string;
+  user_id: string;
+  created_at: number;
+}
+
+interface ChatMessage {
+  id: string;
+  room_id: string;
+  question: string;
+  text: string;
+  content: string;
+  path: string;
+  question_created_at: number;
+  answer_created_at: number;
+  status: 'GENERATING' | 'DONE' | 'ERROR';
+}
+```
+
+### 실시간 동기화 흐름
+
+```
+┌─────────────────┐      ┌──────────────────┐      ┌─────────────────┐
+│   Next.js       │      │    Firestore     │      │   FastAPI       │
+│   (클라이언트)   │      │    (실시간 DB)    │      │   (AI 서비스)    │
+├─────────────────┤      ├──────────────────┤      ├─────────────────┤
+│                 │      │                  │      │                 │
+│ 1. 메시지 전송   │──────│───────────────────│─────→│ 2. AI 처리 시작  │
+│                 │      │                  │      │                 │
+│                 │      │ 3. 메시지 생성    │←─────│ status:GENERATING│
+│ 4. onSnapshot   │←─────│  (실시간 알림)    │      │                 │
+│    UI 업데이트   │      │                  │      │                 │
+│                 │      │                  │      │ 5. 스트리밍 응답  │
+│                 │      │ 6. 메시지 업데이트 │←─────│ status:DONE     │
+│ 7. onSnapshot   │←─────│  (실시간 알림)    │      │                 │
+│    최종 UI 반영  │      │                  │      │                 │
+└─────────────────┘      └──────────────────┘      └─────────────────┘
+```
+
+### Firebase Storage
+
+```
+Storage Bucket
+└── schemas/
+    └── v1/
+        └── component-schema.json   # 동적 컴포넌트 스키마
+```
+
+**용도**: AI 서비스에서 동적으로 컴포넌트 스키마를 로딩하여 시스템 프롬프트 생성
+
+**캐싱 전략**:
+- LRU 캐시 (최대 10개 항목)
+- 경로 검증으로 보안 강화 (경로 순회 공격 방지)
+
+---
+
 ## 페이지 구조
 
 ### 메인 페이지 레이아웃
