@@ -228,20 +228,47 @@ IDE에서 편집 ⭕ (iframe + UMD)
 
 ## 6. 구현 계획
 
-### Phase 1: UMD 번들 생성
+### Phase 1: UMD 번들 생성 ✅ 완료
 
 **작업 내용:**
 1. `@aplus/ui`에 esbuild 빌드 스크립트 추가
 2. UMD 번들 출력: `dist/ui.umd.js`
 3. CSS 번들 출력: `dist/ui.css`
+4. `@ds-hub/web` prebuild에서 자동 빌드 설정
 
-**수정 파일:**
-- `storybook-standalone/packages/ui/package.json` - build:umd 스크립트 추가
-- `storybook-standalone/packages/ui/esbuild.config.js` - 신규 생성
+**생성/수정 파일:**
+- `storybook-standalone/packages/ui/esbuild.config.mjs` - 신규 생성
+- `storybook-standalone/packages/ui/package.json` - build:umd, build:css 스크립트 추가
+- `apps/web/package.json` - prebuild 스크립트 추가
+
+**빌드 결과물:**
+| 파일 | 크기 | 설명 |
+|------|------|------|
+| `dist/ui.umd.js` | 89KB | UMD 번들 (minified) |
+| `dist/ui.umd.js.map` | 372KB | 소스맵 |
+| `dist/ui.css` | 35KB | Tailwind CSS 번들 |
+
+**팀원 동기화:**
+- `dist/`는 gitignore 처리됨
+- `apps/web`의 `pnpm build` 실행 시 `prebuild`가 자동으로 UMD 번들 생성
+- 모든 팀원이 동일한 빌드 결과물을 얻음
+
+**prebuild 설정:**
+```json
+// apps/web/package.json
+{
+  "scripts": {
+    "prebuild": "cd ../../storybook-standalone/packages/ui && pnpm build:umd",
+    "build": "next build"
+  }
+}
+```
+
+> **Note**: `storybook-standalone`은 pnpm workspace에 포함되어 있지 않아 `--filter` 대신 직접 경로 이동 사용
 
 **esbuild 설정:**
 ```js
-// storybook-standalone/packages/ui/esbuild.config.js
+// storybook-standalone/packages/ui/esbuild.config.mjs
 import * as esbuild from 'esbuild';
 
 await esbuild.build({
@@ -250,10 +277,33 @@ await esbuild.build({
   format: 'iife',
   globalName: 'AplusUI',
   outfile: 'dist/ui.umd.js',
-  external: ['react', 'react-dom'],
+  external: ['react', 'react-dom', 'react/jsx-runtime'],
+  banner: {
+    js: `const React = window.React;\nconst ReactDOM = window.ReactDOM;`,
+  },
   minify: true,
+  sourcemap: true,
+  target: ['es2020'],
+  jsx: 'automatic',
+  plugins: [/* ag-grid, ag-charts, lottie-react stub plugin */],
 });
 ```
+
+**Heavy Dependencies Stub 처리:**
+
+ag-grid, ag-charts, lottie-react는 각각 200KB+ 크기로 UMD 번들에 포함 시 500KB+가 됩니다.
+번들 크기 최적화를 위해 stub(빈 껍데기)으로 대체하여 **해당 컴포넌트는 현재 렌더링되지 않습니다**.
+
+| 컴포넌트 | 의존성 | UMD 번들에서 |
+|---------|--------|-------------|
+| `<DataGrid />` | ag-grid | ❌ 렌더링 안됨 |
+| `<Chart />` | ag-charts | ❌ 렌더링 안됨 |
+| `<LottieAnimation />` | lottie-react | ❌ 렌더링 안됨 |
+| `<Button />`, `<Chip />` 등 | 없음 | ✅ 정상 작동 |
+
+**향후 해결 방안 (필요시):**
+1. **CDN 로드**: iframe 내에서 ag-grid/ag-charts CDN 스크립트를 별도 로드
+2. **조건부 번들링**: Chart/DataGrid 전용 별도 UMD 번들 생성 (`ui.charts.umd.js`)
 
 ### Phase 2: 번들 서빙 API
 

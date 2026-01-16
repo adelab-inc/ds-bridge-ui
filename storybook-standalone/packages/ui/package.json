@@ -22,8 +22,10 @@
     "@types/node": "^24.3.0",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
+    "esbuild": "^0.24.0",
     "jest-axe": "^10.0.0",
     "tailwind-scrollbar": "^4.0.2",
+    "tailwindcss": "^3.4.0",
     "typescript": "^5.0.0",
     "vitest": "3.2.4"
   },
@@ -55,6 +57,8 @@
   },
   "scripts": {
     "build": "tsc",
+    "build:umd": "node esbuild.config.mjs && pnpm build:css",
+    "build:css": "tailwindcss -i ./src/styles/globals.css -o ./dist/ui.css --minify",
     "clean": "rm -rf dist .turbo node_modules/.cache",
     "dev": "pnpm build --watch",
     "lint": "echo 'UI 린트 - ESLint + @aplus/eslint-config 사용'",
