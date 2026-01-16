@@ -305,15 +305,35 @@ ag-grid, ag-charts, lottie-react는 각각 200KB+ 크기로 UMD 번들에 포함
 1. **CDN 로드**: iframe 내에서 ag-grid/ag-charts CDN 스크립트를 별도 로드
 2. **조건부 번들링**: Chart/DataGrid 전용 별도 UMD 번들 생성 (`ui.charts.umd.js`)
 
-### Phase 2: 번들 서빙 API
+### Phase 2: 번들 서빙 API ✅ 완료
 
 **작업 내용:**
-1. Next.js API Route로 UMD 번들 서빙
-2. 정적 파일로 복사 또는 동적 서빙
+1. Next.js API Route로 UMD 번들 동적 서빙
+2. JS 번들과 CSS 번들 각각 별도 엔드포인트 제공
 
-**수정 파일:**
-- `apps/web/app/api/ui-bundle/route.ts` - 신규 생성
-- 또는 `apps/web/public/` 에 정적 파일 배치
+**생성 파일:**
+- `apps/web/app/api/ui-bundle/route.ts` - JS 번들 서빙
+- `apps/web/app/api/ui-bundle/css/route.ts` - CSS 번들 서빙
+
+**API 엔드포인트:**
+
+| 엔드포인트 | Content-Type | 용도 |
+|-----------|--------------|------|
+| `GET /api/ui-bundle` | `application/javascript` | UMD 번들 (window.AplusUI) |
+| `GET /api/ui-bundle/css` | `text/css` | Tailwind CSS 스타일 |
+
+**iframe에서 사용:**
+```html
+<script src="/api/ui-bundle"></script>
+<link href="/api/ui-bundle/css" rel="stylesheet">
+<script>
+  const { Button, Chip } = window.AplusUI;
+</script>
+```
+
+**캐싱 설정:**
+- `Cache-Control: public, max-age=31536000, immutable`
+- 번들이 변경되면 브라우저 캐시 무효화 필요 (버전 쿼리 파라미터 추가 예정)
 
 ### Phase 3: CodePreviewIframe 컴포넌트
 
