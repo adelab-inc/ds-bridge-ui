@@ -335,17 +335,46 @@ ag-grid, ag-charts, lottie-react는 각각 200KB+ 크기로 UMD 번들에 포함
 - `Cache-Control: public, max-age=31536000, immutable`
 - 번들이 변경되면 브라우저 캐시 무효화 필요 (버전 쿼리 파라미터 추가 예정)
 
-### Phase 3: CodePreviewIframe 컴포넌트
+### Phase 3: CodePreviewIframe 컴포넌트 ✅ 완료
 
 **작업 내용:**
-1. Sucrase로 JSX 트랜스파일
-2. import 문 처리 (제거 후 전역 변수 사용)
-3. iframe srcDoc 생성
-4. 에러 처리
+1. Sucrase로 JSX/TypeScript 트랜스파일
+2. import 문 처리 (`@/components` → `window.AplusUI`)
+3. 컴포넌트 이름 자동 추출 (`export default function ComponentName`)
+4. iframe srcDoc 생성 (React 19 UMD + AplusUI UMD)
+5. 에러 처리 (트랜스파일 에러, 렌더링 에러)
 
-**수정 파일:**
-- `apps/web/components/features/preview/code-preview-iframe.tsx` - 신규 생성
-- `apps/web/components/features/preview/index.ts` - export 추가
+**생성 파일:**
+- `apps/web/components/features/preview/code-preview-iframe.tsx`
+
+**의존성 추가:**
+- `sucrase: ^3.35.1` (apps/web)
+
+**컴포넌트 Props:**
+
+| Prop | 타입 | 설명 |
+|------|------|------|
+| `code` | `string` | AI가 생성한 React 컴포넌트 코드 |
+| `filePath` | `string?` | 파일 경로 (상단에 표시) |
+
+**코드 변환 흐름:**
+```
+1. 컴포넌트 이름 추출: export default function BeerLandingPage → "BeerLandingPage"
+2. import 추출: import { Heading, Chip } from '@/components' → ["Heading", "Chip"]
+3. import 문 제거: react, @/components import 모두 제거
+4. Sucrase 트랜스파일: JSX → React.createElement 호출로 변환
+5. srcDoc 생성: React UMD + AplusUI UMD + 트랜스파일된 코드
+```
+
+**SSE 응답 타입 (기존 정의됨):**
+```typescript
+// types/chat.ts
+export interface CodeEvent {
+  type: 'code';
+  path: string;      // "src/pages/BeerLandingPage.tsx"
+  content: string;   // React 컴포넌트 코드
+}
+```
 
 ### Phase 4: PreviewSection 통합
 
