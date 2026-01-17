@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import { LAYOUT } from '@/lib/constants';
 import {
   ResizablePanelGroup,
@@ -16,6 +17,7 @@ import { ChatSection } from '@/components/features/chat/chat-section';
 import { ComponentListSection } from '@/components/features/component-list/component-list-section';
 import { ActionsSection } from '@/components/features/actions/actions-section';
 import { PreviewSection } from '@/components/features/preview/preview-section';
+import type { CodeEvent } from '@/types/chat';
 
 interface DesktopLayoutProps {
   onURLSubmit?: (url: string) => void;
@@ -27,6 +29,13 @@ function DesktopLayout({ onURLSubmit, onJSONUpload }: DesktopLayoutProps) {
     storybookUrl: 'https://microsoft.github.io/vscode-webview-ui-toolkit',
     userId: 'anonymous',
   });
+
+  // AI 생성 코드 상태
+  const [generatedCode, setGeneratedCode] = React.useState<CodeEvent | null>(null);
+
+  const handleCodeGenerated = React.useCallback((code: CodeEvent) => {
+    setGeneratedCode(code);
+  }, []);
 
   return (
     <ClientOnly
@@ -61,7 +70,7 @@ function DesktopLayout({ onURLSubmit, onJSONUpload }: DesktopLayoutProps) {
                 <p className="text-destructive text-sm">Error: {error}</p>
               </div>
             ) : roomId ? (
-              <ChatSection roomId={roomId} />
+              <ChatSection roomId={roomId} onCodeGenerated={handleCodeGenerated} />
             ) : null}
             <ComponentListSection />
             <ActionsSection />
@@ -77,7 +86,10 @@ function DesktopLayout({ onURLSubmit, onJSONUpload }: DesktopLayoutProps) {
           defaultSize={100 - LAYOUT.LEFT_PANEL_DEFAULT}
         >
           <RightPanel>
-            <PreviewSection />
+            <PreviewSection
+              aiCode={generatedCode?.content}
+              aiFilePath={generatedCode?.path}
+            />
           </RightPanel>
         </ResizablePanel>
       </ResizablePanelGroup>

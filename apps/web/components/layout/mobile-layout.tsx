@@ -11,6 +11,7 @@ import { ChatSection } from '@/components/features/chat/chat-section';
 import { ComponentListSection } from '@/components/features/component-list/component-list-section';
 import { ActionsSection } from '@/components/features/actions/actions-section';
 import { PreviewSection } from '@/components/features/preview/preview-section';
+import type { CodeEvent } from '@/types/chat';
 
 interface MobileLayoutProps {
   onURLSubmit?: (url: string) => void;
@@ -18,6 +19,13 @@ interface MobileLayoutProps {
 }
 
 function MobileLayout({ onURLSubmit, onJSONUpload }: MobileLayoutProps) {
+  // AI 생성 코드 상태
+  const [generatedCode, setGeneratedCode] = React.useState<CodeEvent | null>(null);
+
+  const handleCodeGenerated = React.useCallback((code: CodeEvent) => {
+    setGeneratedCode(code);
+  }, []);
+
   return (
     <>
       {/* Preview takes full height minus bottom sheet */}
@@ -26,13 +34,16 @@ function MobileLayout({ onURLSubmit, onJSONUpload }: MobileLayoutProps) {
         style={{ paddingBottom: `${LAYOUT.MOBILE_SHEET_DEFAULT_HEIGHT}vh` }}
       >
         <RightPanel className="h-full">
-          <PreviewSection />
+          <PreviewSection
+            aiCode={generatedCode?.content}
+            aiFilePath={generatedCode?.path}
+          />
         </RightPanel>
       </div>
 
       {/* Mobile Bottom Sheet */}
       <MobileSheet
-        chatContent={<ChatSection roomId="" />}
+        chatContent={<ChatSection roomId="" onCodeGenerated={handleCodeGenerated} />}
         componentsContent={<ComponentListSection />}
         actionsContent={<ActionsSection />}
       />

@@ -27,13 +27,7 @@ function CodePreviewIframe({
 }: CodePreviewIframeProps) {
   const { srcDoc, error } = React.useMemo(() => {
     try {
-      // 1. 컴포넌트 이름 추출 (export default function ComponentName)
-      const componentNameMatch = code.match(
-        /export\s+default\s+function\s+(\w+)/
-      );
-      const componentName = componentNameMatch?.[1] || "App";
-
-      // 2. import 문에서 사용된 컴포넌트 목록 추출
+      // 1. import 문에서 사용된 컴포넌트 목록 추출
       const componentImportMatch = code.match(
         /import\s+\{([^}]+)\}\s+from\s+['"]@\/components['"]/
       );
@@ -44,8 +38,8 @@ function CodePreviewIframe({
             .filter(Boolean)
         : [];
 
-      // 3. import 문 제거 및 export default 제거
-      const codeWithoutImports = code
+      // 2. import 문 제거
+      let processedCode = code
         // @/components import 제거
         .replace(
           /import\s+\{[^}]+\}\s+from\s+['"]@\/components['"];?\n?/g,
@@ -54,9 +48,49 @@ function CodePreviewIframe({
         // react import 제거
         .replace(/import\s+\{[^}]+\}\s+from\s+['"]react['"];?\n?/g, "")
         .replace(/import\s+\*\s+as\s+React\s+from\s+['"]react['"];?\n?/g, "")
-        .replace(/import\s+React\s+from\s+['"]react['"];?\n?/g, "")
-        // export default 제거
-        .replace(/export\s+default\s+/, "");
+        .replace(/import\s+React\s+from\s+['"]react['"];?\n?/g, "");
+
+      // 3. 컴포넌트 이름 추출 및 export 처리 (다양한 패턴 지원)
+      let componentName = "App";
+
+      // Pattern 1: export default function ComponentName() {}
+      const namedFunctionMatch = processedCode.match(
+        /export\s+default\s+function\s+(\w+)/
+      );
+      if (namedFunctionMatch) {
+        componentName = namedFunctionMatch[1];
+        processedCode = processedCode.replace(/export\s+default\s+/, "");
+      }
+      // Pattern 2: export default ComponentName (변수/함수 참조)
+      else {
+        const namedExportMatch = processedCode.match(
+          /export\s+default\s+(\w+)\s*;?\s*$/m
+        );
+        if (namedExportMatch) {
+          componentName = namedExportMatch[1];
+          // export default ComponentName; 제거
+          processedCode = processedCode.replace(
+            /export\s+default\s+\w+\s*;?\s*$/m,
+            ""
+          );
+        }
+        // Pattern 3: export default () => {} 또는 export default function() {}
+        else {
+          const anonymousMatch = processedCode.match(
+            /export\s+default\s+(function\s*\(|\(|\(\s*\))/
+          );
+          if (anonymousMatch) {
+            // 익명 함수를 App 변수로 래핑
+            processedCode = processedCode.replace(
+              /export\s+default\s+/,
+              "const App = "
+            );
+            componentName = "App";
+          }
+        }
+      }
+
+      const codeWithoutImports = processedCode;
 
       // 4. Sucrase로 JSX/TypeScript 트랜스파일
       const { code: transpiledCode } = transform(codeWithoutImports, {
@@ -76,8 +110,8 @@ function CodePreviewIframe({
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script crossorigin src="https://unpkg.com/react@19/umd/react.development.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@19/umd/react-dom.development.js"></script>
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
   <script src="/api/ui-bundle"></script>
   <link href="/api/ui-bundle/css" rel="stylesheet">
   <style>
@@ -99,8 +133,23 @@ function CodePreviewIframe({
         // React hooks
         const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
-        // @aplus/ui 컴포넌트
-        ${componentDestructure}
+        // @aplus/ui 컴포넌트 (없는 컴포넌트는 div로 폴백)
+        const AplusUI = window.AplusUI || {};
+        const missingComponents = [];
+        ${
+          importedComponents.length > 0
+            ? importedComponents
+                .map(
+                  (comp) =>
+                    `const ${comp} = AplusUI.${comp} || (function() { missingComponents.push('${comp}'); return function(props) { return React.createElement('div', { style: { padding: '8px', border: '1px dashed #ccc', borderRadius: '4px', background: '#f9f9f9' }, ...props }, props.children || '[${comp}]'); }; })();`
+                )
+                .join("\n        ")
+            : ""
+        }
+
+        if (missingComponents.length > 0) {
+          console.warn('[Preview] Missing components from @aplus/ui:', missingComponents.join(', '));
+        }
 
         // 트랜스파일된 컴포넌트 코드
         ${transpiledCode}

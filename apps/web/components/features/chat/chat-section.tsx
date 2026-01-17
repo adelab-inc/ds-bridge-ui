@@ -15,11 +15,14 @@ import type { ChatMessage } from '@/hooks/firebase/messageUtils';
 interface ChatSectionProps extends React.ComponentProps<'section'> {
   roomId: string;
   schemaKey?: string;
+  /** AI가 코드를 생성했을 때 호출되는 콜백 */
+  onCodeGenerated?: (code: CodeEvent) => void;
 }
 
 function ChatSection({
   roomId,
   schemaKey,
+  onCodeGenerated,
   className,
   ...props
 }: ChatSectionProps) {
@@ -59,6 +62,8 @@ function ChatSection({
             )
           );
         }
+        // 부모 컴포넌트에 코드 생성 알림
+        onCodeGenerated?.(code);
       },
       onDone: () => {
         // 스트리밍 완료 시 status를 DONE으로 변경
