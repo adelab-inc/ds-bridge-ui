@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "next dev --port 5555",
-    "prebuild": "cd ../../storybook-standalone/packages/ui && pnpm build:umd",
+    "prebuild": "cd ../../storybook-standalone/packages/ui && pnpm install && pnpm build:umd",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
