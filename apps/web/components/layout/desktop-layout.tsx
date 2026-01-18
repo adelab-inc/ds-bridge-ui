@@ -37,6 +37,7 @@ function DesktopLayout({ onURLSubmit, onJSONUpload }: DesktopLayoutProps) {
 
   // 스트리밍 시작 핸들러
   const handleStreamStart = React.useCallback(() => {
+    setGeneratedCode(null); // 이전 코드 초기화하여 로딩 인디케이터 표시
     setIsGeneratingCode(true);
   }, []);
 
