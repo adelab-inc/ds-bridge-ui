@@ -11,13 +11,13 @@ import { ClientOnly } from '@/components/ui/client-only';
 import { LeftPanel } from '@/components/layout/left-panel';
 import { RightPanel } from '@/components/layout/right-panel';
 import { useRoom } from '@/hooks/useRoom';
+import { useCodeGenerationStore } from '@/stores/useCodeGenerationStore';
 
 // Feature components
 import { ChatSection } from '@/components/features/chat/chat-section';
 import { ComponentListSection } from '@/components/features/component-list/component-list-section';
 import { ActionsSection } from '@/components/features/actions/actions-section';
 import { PreviewSection } from '@/components/features/preview/preview-section';
-import type { CodeEvent } from '@/types/chat';
 
 interface DesktopLayoutProps {
   onURLSubmit?: (url: string) => void;
@@ -30,27 +30,14 @@ function DesktopLayout({ onURLSubmit, onJSONUpload }: DesktopLayoutProps) {
     userId: 'anonymous',
   });
 
-  // AI 생성 코드 상태
-  const [generatedCode, setGeneratedCode] = React.useState<CodeEvent | null>(null);
-  // 코드 생성 진행 상태 (로딩 인디케이터용)
-  const [isGeneratingCode, setIsGeneratingCode] = React.useState(false);
-
-  // 스트리밍 시작 핸들러
-  const handleStreamStart = React.useCallback(() => {
-    setGeneratedCode(null); // 이전 코드 초기화하여 로딩 인디케이터 표시
-    setIsGeneratingCode(true);
-  }, []);
-
-  // 스트리밍 종료 핸들러
-  const handleStreamEnd = React.useCallback(() => {
-    setIsGeneratingCode(false);
-  }, []);
-
-  // 코드 생성 완료 핸들러
-  const handleCodeGenerated = React.useCallback((code: CodeEvent) => {
-    setGeneratedCode(code);
-    setIsGeneratingCode(false);
-  }, []);
+  // Zustand 스토어에서 상태 및 핸들러 가져오기
+  const {
+    generatedCode,
+    isGeneratingCode,
+    onStreamStart,
+    onStreamEnd,
+    onCodeGenerated,
+  } = useCodeGenerationStore();
 
   return (
     <ClientOnly
@@ -87,9 +74,9 @@ function DesktopLayout({ onURLSubmit, onJSONUpload }: DesktopLayoutProps) {
             ) : roomId ? (
               <ChatSection
                 roomId={roomId}
-                onCodeGenerated={handleCodeGenerated}
-                onStreamStart={handleStreamStart}
-                onStreamEnd={handleStreamEnd}
+                onCodeGenerated={onCodeGenerated}
+                onStreamStart={onStreamStart}
+                onStreamEnd={onStreamEnd}
               />
             ) : null}
             <ComponentListSection />
