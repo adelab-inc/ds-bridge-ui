@@ -32,7 +32,9 @@ export default function Page() {
 
         {/* Mobile Layout: Client (BottomSheet) */}
         <div className="flex h-full w-full flex-col md:hidden">
-          <MobileLayout />
+          <Suspense fallback={null}>
+            <MobileLayout />
+          </Suspense>
         </div>
       </main>
     </div>

@@ -15,11 +15,20 @@ import type { ChatMessage } from '@/hooks/firebase/messageUtils';
 interface ChatSectionProps extends React.ComponentProps<'section'> {
   roomId: string;
   schemaKey?: string;
+  /** AI가 코드를 생성했을 때 호출되는 콜백 */
+  onCodeGenerated?: (code: CodeEvent) => void;
+  /** 스트리밍이 시작될 때 호출되는 콜백 */
+  onStreamStart?: () => void;
+  /** 스트리밍이 종료될 때 호출되는 콜백 (done/error) */
+  onStreamEnd?: () => void;
 }
 
 function ChatSection({
   roomId,
   schemaKey,
+  onCodeGenerated,
+  onStreamStart,
+  onStreamEnd,
   className,
   ...props
 }: ChatSectionProps) {
@@ -59,6 +68,8 @@ function ChatSection({
             )
           );
         }
+        // 부모 컴포넌트에 코드 생성 알림
+        onCodeGenerated?.(code);
       },
       onDone: () => {
         // 스트리밍 완료 시 status를 DONE으로 변경
@@ -76,6 +87,8 @@ function ChatSection({
           );
           currentMessageIdRef.current = null;
         }
+        // 부모 컴포넌트에 스트리밍 종료 알림
+        onStreamEnd?.();
       },
       onError: (errorMsg) => {
         console.error('Chat stream error:', errorMsg);
@@ -95,6 +108,8 @@ function ChatSection({
           );
           currentMessageIdRef.current = null;
         }
+        // 부모 컴포넌트에 스트리밍 종료 알림
+        onStreamEnd?.();
       },
     });
 
@@ -116,6 +131,9 @@ function ChatSection({
 
     setMessages((prev) => [...prev, newMessage]);
     currentMessageIdRef.current = messageId;
+
+    // 부모 컴포넌트에 스트리밍 시작 알림
+    onStreamStart?.();
 
     // AI에게 메시지 전송
     await sendMessage({
