@@ -249,7 +249,7 @@ function CodePreviewIframe({
   return (
     <div
       data-slot="code-preview-iframe"
-      className={cn("relative flex flex-1 flex-col overflow-hidden", className)}
+      className={cn("relative flex h-full flex-1 flex-col overflow-hidden", className)}
       {...props}
     >
       {/* 파일 경로 표시 (옵션) */}

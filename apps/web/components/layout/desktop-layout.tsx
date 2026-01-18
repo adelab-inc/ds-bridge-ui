@@ -32,9 +32,23 @@ function DesktopLayout({ onURLSubmit, onJSONUpload }: DesktopLayoutProps) {
 
   // AI 생성 코드 상태
   const [generatedCode, setGeneratedCode] = React.useState<CodeEvent | null>(null);
+  // 코드 생성 진행 상태 (로딩 인디케이터용)
+  const [isGeneratingCode, setIsGeneratingCode] = React.useState(false);
 
+  // 스트리밍 시작 핸들러
+  const handleStreamStart = React.useCallback(() => {
+    setIsGeneratingCode(true);
+  }, []);
+
+  // 스트리밍 종료 핸들러
+  const handleStreamEnd = React.useCallback(() => {
+    setIsGeneratingCode(false);
+  }, []);
+
+  // 코드 생성 완료 핸들러
   const handleCodeGenerated = React.useCallback((code: CodeEvent) => {
     setGeneratedCode(code);
+    setIsGeneratingCode(false);
   }, []);
 
   return (
@@ -70,7 +84,12 @@ function DesktopLayout({ onURLSubmit, onJSONUpload }: DesktopLayoutProps) {
                 <p className="text-destructive text-sm">Error: {error}</p>
               </div>
             ) : roomId ? (
-              <ChatSection roomId={roomId} onCodeGenerated={handleCodeGenerated} />
+              <ChatSection
+                roomId={roomId}
+                onCodeGenerated={handleCodeGenerated}
+                onStreamStart={handleStreamStart}
+                onStreamEnd={handleStreamEnd}
+              />
             ) : null}
             <ComponentListSection />
             <ActionsSection />
@@ -89,6 +108,7 @@ function DesktopLayout({ onURLSubmit, onJSONUpload }: DesktopLayoutProps) {
             <PreviewSection
               aiCode={generatedCode?.content}
               aiFilePath={generatedCode?.path}
+              isGeneratingCode={isGeneratingCode}
             />
           </RightPanel>
         </ResizablePanel>

@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { StorybookIframe } from "./storybook-iframe"
 import { CompositionPreview, type CompositionNode } from "./composition-preview"
 import { CodePreviewIframe } from "./code-preview-iframe"
+import { CodePreviewLoading } from "./code-preview-loading"
 
 interface PreviewSectionProps extends React.ComponentProps<"section"> {
   storybookUrl?: string
@@ -18,6 +19,8 @@ interface PreviewSectionProps extends React.ComponentProps<"section"> {
   aiCode?: string
   /** AI 생성 코드의 파일 경로 */
   aiFilePath?: string
+  /** AI 코드 생성 진행 중 여부 */
+  isGeneratingCode?: boolean
   defaultTab?: "storybook" | "composition" | "ai-generated"
 }
 
@@ -27,12 +30,13 @@ function PreviewSection({
   composition = [],
   aiCode,
   aiFilePath,
+  isGeneratingCode = false,
   defaultTab = "storybook",
   className,
   ...props
 }: PreviewSectionProps) {
-  // AI 코드가 있으면 자동으로 ai-generated 탭 선택
-  const effectiveDefaultTab = aiCode ? "ai-generated" : defaultTab
+  // AI 코드가 있거나 생성 중이면 자동으로 ai-generated 탭 선택
+  const effectiveDefaultTab = (aiCode || isGeneratingCode) ? "ai-generated" : defaultTab
 
   return (
     <section
@@ -48,7 +52,7 @@ function PreviewSection({
         {/* Tabs Header */}
         <div className="border-border flex shrink-0 items-center justify-between border-b px-4 py-2">
           <TabsList>
-            {aiCode && (
+            {(aiCode || isGeneratingCode) && (
               <TabsTrigger value="ai-generated" className="gap-1.5">
                 <HugeiconsIcon icon={SparklesIcon} className="size-3.5" strokeWidth={2} />
                 AI Generated
@@ -66,9 +70,14 @@ function PreviewSection({
 
           {/* 상태 표시 */}
           <div className="text-muted-foreground text-xs">
-            {aiCode ? (
+            {isGeneratingCode ? (
               <span className="flex items-center gap-1">
-                <span className="size-2 rounded-full bg-purple-500" />
+                <span className="size-2 animate-pulse rounded-full bg-primary" />
+                생성 중...
+              </span>
+            ) : aiCode ? (
+              <span className="flex items-center gap-1">
+                <span className="size-2 rounded-full bg-primary" />
                 AI 생성
               </span>
             ) : storybookUrl ? (
@@ -86,12 +95,16 @@ function PreviewSection({
         </div>
 
         {/* Tabs Content */}
-        {aiCode && (
+        {(aiCode || isGeneratingCode) && (
           <TabsContent
             value="ai-generated"
             className="mt-0 flex-1 overflow-hidden data-[state=inactive]:hidden"
           >
-            <CodePreviewIframe code={aiCode} filePath={aiFilePath} />
+            {isGeneratingCode && !aiCode ? (
+              <CodePreviewLoading />
+            ) : (
+              <CodePreviewIframe code={aiCode!} filePath={aiFilePath} />
+            )}
           </TabsContent>
         )}
 
