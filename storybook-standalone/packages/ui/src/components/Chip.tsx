@@ -77,9 +77,11 @@ export interface ChipProps
 }
 
 const Chip = React.forwardRef<HTMLDivElement, ChipProps>(
-  ({ className, size, state, selectionStyle, hasIcon, hasCloseButton, icon, children, onClose, ...props }, ref) => {
+  ({ className, size, state, selectionStyle, hasIcon, hasCloseButton, icon, children, value, onClose, ...props }, ref) => {
     const isDisabled = state === "disabled";
-    const numElements = (icon ? 1 : 0) + (children ? 1 : 0) + (hasCloseButton ? 1 : 0);
+    // value prop을 children 대신 사용할 수 있도록 지원 (AI 생성 코드 호환성)
+    const content = children || value;
+    const numElements = (icon ? 1 : 0) + (content ? 1 : 0) + (hasCloseButton ? 1 : 0);
 
     return (
       <div
@@ -92,7 +94,7 @@ const Chip = React.forwardRef<HTMLDivElement, ChipProps>(
         {...props}
       >
         {icon}
-        <span>{children}</span>
+        <span>{content}</span>
         {hasCloseButton && (
           <button
             type="button"
