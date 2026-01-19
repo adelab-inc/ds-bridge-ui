@@ -29,6 +29,9 @@ export * from './ToggleSwitch';
 export * from './Menu';
 export * from './Scrollbar';
 
+// Re-export Menu subcomponents for direct use
+export { Heading } from './Menu/Heading';
+
 // Data (stubbed in UMD build)
 export * from './Chart';
 export * from './DataGrid';
