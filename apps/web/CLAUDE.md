@@ -58,6 +58,47 @@ Base UI v1.0.0은 React 19의 `useId()` 훅을 내부적으로 사용하여 SSR/
 </header>
 ```
 
+## 중요: @aplus/ui 디자인 시스템 사용 규칙
+
+> ⚠️ **절대 금지**: `storybook-standalone/packages/ui/src/` 내부 파일 수정 또는 생성
+
+### 금지 사항
+
+| 금지 | 설명 |
+|------|------|
+| 컴포넌트 내부 수정 ❌ | Badge.tsx, Button.tsx 등 기존 컴포넌트 로직 변경 금지 |
+| 새 컴포넌트 생성 ❌ | src/components/ 폴더에 새 파일 생성 금지 |
+| 스타일 수정 ❌ | variants, CVA 설정 등 스타일 관련 코드 변경 금지 |
+
+### 허용 사항
+
+| 허용 | 설명 |
+|------|------|
+| Read Only ✅ | 컴포넌트 구조, props, 사용법 파악을 위한 읽기 |
+| Export 추가 ✅ | `index.ts`에서 기존 컴포넌트 re-export 추가 |
+| Import & 사용 ✅ | apps/web에서 @aplus/ui 컴포넌트 import하여 사용 |
+
+### 컴포넌트 부족 시 해결 방법
+
+1. **기존 컴포넌트 조합**: 필요한 UI를 기존 컴포넌트 조합으로 구현
+2. **Re-export 추가**: 하위 컴포넌트가 필요하면 `index.ts`에 export 추가
+   ```typescript
+   // storybook-standalone/packages/ui/src/components/index.ts
+   export { Heading } from './Menu/Heading';  // 하위 컴포넌트 re-export
+   ```
+3. **UMD 번들 재빌드**: export 추가 후 반드시 재빌드
+   ```bash
+   cd storybook-standalone/packages/ui && pnpm build:umd
+   ```
+
+### AI 컴포넌트 사용 가이드
+
+AI가 컴포넌트를 올바르게 사용하도록 참고:
+- 가이드: `docs/web/aplus-ui-props-guide.md`
+- Badge: `statusVariant` prop 필수
+- Chip: `children`으로 텍스트 전달
+- Heading: div 기반, 커스텀 스타일 필요
+
 ## 디렉토리 구조
 
 ```
