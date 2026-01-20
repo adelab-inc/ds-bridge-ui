@@ -37,8 +37,9 @@ logger = logging.getLogger(__name__)
 ## 응답
 - `id`: 생성된 채팅방 UUID
 - `storybook_url`: Storybook URL
+- `schema_extracted`: 스키마 추출 성공 여부 (true: 컴포넌트 기반, false: 자유 모드)
 - `user_id`: 사용자 ID
-- `created_at`: 생성 시간
+- `created_at`: 생성 시간 (ms timestamp)
 """,
     responses={
         201: {"description": "채팅방 생성 성공"},

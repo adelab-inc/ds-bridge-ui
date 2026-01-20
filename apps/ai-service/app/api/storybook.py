@@ -4,10 +4,9 @@ Storybook 컴포넌트 스키마 추출 API
 Storybook URL에서 index.json을 fetch하여 컴포넌트 스키마를 추출합니다.
 """
 
-import hashlib
 import re
 from datetime import datetime
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin
 from zoneinfo import ZoneInfo
 
 import httpx
@@ -214,16 +213,19 @@ async def extract_schema(request: ExtractRequest) -> ExtractResponse:
     3. Firebase Storage에 JSON으로 업로드
     4. schema_key 반환 (chat API에서 사용 가능)
 
+    **참고**: 이 API는 내부적으로 `POST /rooms` 생성 시 자동 호출됩니다.
+    직접 호출할 경우 room_id를 지정하여 스키마를 수동으로 추출/갱신할 수 있습니다.
+
     **사용 예시**:
     ```
     POST /storybook/extract
-    {"storybook_url": "https://example.com/storybook"}
+    {"storybook_url": "https://example.com/storybook", "room_id": "abc-123"}
 
-    → {"schema_key": "schemas/storybook/example-com-abc123-20260120.json", ...}
-
-    POST /chat
-    {"message": "로그인 페이지 만들어줘", "schema_key": "schemas/storybook/example-com-abc123-20260120.json"}
+    → {"schema_key": "exports/abc-123/component-schema.json", ...}
     ```
+
+    스키마는 `exports/{room_id}/component-schema.json` 경로에 저장되며,
+    chat API에서 room_id 기반으로 자동 로드됩니다.
     """
     source_url = str(request.storybook_url)
     index_data = await fetch_storybook_index(source_url)
