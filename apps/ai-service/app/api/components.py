@@ -1,15 +1,22 @@
 import asyncio
 import json
+import logging
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, Field
 
 from app.core.auth import verify_api_key
 from app.schemas.chat import ReloadResponse
+from app.services.firebase_storage import (
+    fetch_schema_from_storage,
+    upload_schema_to_storage,
+)
 
 router = APIRouter(dependencies=[Depends(verify_api_key)])
+logger = logging.getLogger(__name__)
 
 # 스키마 리로드 시 동시성 보호를 위한 Lock
 _reload_lock = asyncio.Lock()
@@ -592,3 +599,133 @@ async def reload_components() -> ReloadResponse:
             message="Schema reloaded successfully",
             component_count=len(_schema.get("components", {})),
         )
+
+
+# ============================================================================
+# Schema Upload/Download (Firebase Storage)
+# ============================================================================
+
+
+class UploadSchemaRequest(BaseModel):
+    """스키마 업로드 요청"""
+
+    schema_key: str = Field(
+        ...,
+        description="Storage 경로 (예: schemas/aplus-ui.json)",
+        json_schema_extra={"example": "schemas/aplus-ui.json"},
+    )
+    schema: dict = Field(
+        ...,
+        description="컴포넌트 스키마 JSON",
+    )
+
+
+class UploadSchemaResponse(BaseModel):
+    """스키마 업로드 응답"""
+
+    schema_key: str
+    component_count: int
+    uploaded_at: str
+
+
+class SchemaResponse(BaseModel):
+    """스키마 조회 응답"""
+
+    schema_key: str
+    schema: dict
+
+
+@router.post(
+    "/upload",
+    response_model=UploadSchemaResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="스키마 업로드",
+    description="""
+클라이언트가 추출한 컴포넌트 스키마를 Firebase Storage에 업로드합니다.
+
+## 사용 흐름
+1. 클라이언트에서 react-docgen-typescript로 스키마 추출
+2. 이 API로 스키마 업로드
+3. 반환된 schema_key로 채팅방 생성
+
+## schema_key 규칙
+- `schemas/` 접두사 권장
+- `.json` 확장자 필수
+""",
+    responses={
+        201: {"description": "업로드 성공"},
+        400: {"description": "잘못된 요청"},
+        500: {"description": "서버 오류"},
+    },
+)
+async def upload_schema(request: UploadSchemaRequest) -> UploadSchemaResponse:
+    """컴포넌트 스키마 업로드"""
+    try:
+        if not request.schema.get("components"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Schema must contain 'components' field",
+            )
+
+        await upload_schema_to_storage(request.schema_key, request.schema)
+
+        component_count = len(request.schema.get("components", {}))
+        uploaded_at = datetime.now(ZoneInfo("Asia/Seoul")).isoformat()
+
+        logger.info(
+            "Schema uploaded: %s (%d components)",
+            request.schema_key,
+            component_count,
+        )
+
+        return UploadSchemaResponse(
+            schema_key=request.schema_key,
+            component_count=component_count,
+            uploaded_at=uploaded_at,
+        )
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        ) from e
+    except Exception as e:
+        logger.error("Failed to upload schema: %s", str(e), exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to upload schema. Please try again.",
+        ) from e
+
+
+@router.get(
+    "/storage/{schema_key:path}",
+    response_model=SchemaResponse,
+    summary="Storage 스키마 조회",
+    description="Firebase Storage에서 스키마를 조회합니다.",
+    responses={
+        200: {"description": "조회 성공"},
+        404: {"description": "스키마를 찾을 수 없음"},
+    },
+)
+async def get_storage_schema(schema_key: str) -> SchemaResponse:
+    """Storage 스키마 조회"""
+    try:
+        schema = await fetch_schema_from_storage(schema_key)
+        return SchemaResponse(schema_key=schema_key, schema=schema)
+
+    except FileNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Schema not found: {schema_key}",
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        ) from e
+    except Exception as e:
+        logger.error("Failed to get schema: %s", str(e), exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get schema. Please try again.",
+        ) from e

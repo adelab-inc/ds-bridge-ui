@@ -286,15 +286,20 @@ class ReloadResponse(BaseModel):
 class CreateRoomRequest(BaseModel):
     """채팅방 생성 요청"""
 
-    storybook_url: str = Field(
-        ...,
-        description="Storybook URL",
+    storybook_url: str | None = Field(
+        default=None,
+        description="Storybook URL (참고용)",
         json_schema_extra={"example": "https://storybook.example.com"},
     )
     user_id: str = Field(
         ...,
         description="사용자 ID",
         json_schema_extra={"example": "user-123"},
+    )
+    schema_key: str | None = Field(
+        default=None,
+        description="Firebase Storage 스키마 경로 (예: schemas/aplus-ui.json). 없으면 자유 모드.",
+        json_schema_extra={"example": "schemas/aplus-ui.json"},
     )
 
     model_config = {
@@ -303,6 +308,7 @@ class CreateRoomRequest(BaseModel):
                 {
                     "storybook_url": "https://storybook.example.com",
                     "user_id": "user-123",
+                    "schema_key": "schemas/aplus-ui.json",
                 }
             ]
         }
@@ -314,14 +320,22 @@ class UpdateRoomRequest(BaseModel):
 
     storybook_url: str | None = Field(
         default=None,
-        description="Storybook URL (변경 시 스키마 재추출)",
+        description="Storybook URL (참고용)",
         json_schema_extra={"example": "https://storybook.example.com"},
+    )
+    schema_key: str | None = Field(
+        default=None,
+        description="Firebase Storage 스키마 경로 변경",
+        json_schema_extra={"example": "schemas/aplus-ui.json"},
     )
 
     model_config = {
         "json_schema_extra": {
             "examples": [
-                {"storybook_url": "https://new-storybook.example.com"},
+                {
+                    "storybook_url": "https://new-storybook.example.com",
+                    "schema_key": "schemas/aplus-ui.json",
+                },
             ]
         }
     }
@@ -335,15 +349,15 @@ class RoomResponse(BaseModel):
         description="채팅방 ID (UUID)",
         json_schema_extra={"example": "550e8400-e29b-41d4-a716-446655440000"},
     )
-    storybook_url: str = Field(
-        ...,
-        description="Storybook URL",
+    storybook_url: str | None = Field(
+        default=None,
+        description="Storybook URL (참고용)",
         json_schema_extra={"example": "https://storybook.example.com"},
     )
-    schema_extracted: bool = Field(
-        default=False,
-        description="Storybook에서 스키마 추출 성공 여부 (false면 자유 모드)",
-        json_schema_extra={"example": True},
+    schema_key: str | None = Field(
+        default=None,
+        description="Firebase Storage 스키마 경로. None이면 자유 모드.",
+        json_schema_extra={"example": "schemas/aplus-ui.json"},
     )
     user_id: str = Field(
         ...,

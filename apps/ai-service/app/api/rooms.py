@@ -11,8 +11,6 @@ from app.services.firestore import (
     get_chat_room,
     update_chat_room,
 )
-from app.services.firebase_storage import upload_schema_to_storage
-from app.api.storybook import fetch_storybook_index, parse_storybook_index
 
 router = APIRouter(dependencies=[Depends(verify_api_key)])
 logger = logging.getLogger(__name__)
@@ -29,15 +27,21 @@ logger = logging.getLogger(__name__)
 ## 요청 예시
 ```json
 {
+  "user_id": "user-123",
   "storybook_url": "https://storybook.example.com",
-  "user_id": "user-123"
+  "schema_key": "schemas/aplus-ui.json"
 }
 ```
+
+## 필드 설명
+- `user_id` (필수): 사용자 ID
+- `storybook_url` (선택): Storybook URL (참고용)
+- `schema_key` (선택): Firebase Storage 스키마 경로. 없으면 자유 모드로 동작.
 
 ## 응답
 - `id`: 생성된 채팅방 UUID
 - `storybook_url`: Storybook URL
-- `schema_extracted`: 스키마 추출 성공 여부 (true: 컴포넌트 기반, false: 자유 모드)
+- `schema_key`: 스키마 경로 (null이면 자유 모드)
 - `user_id`: 사용자 ID
 - `created_at`: 생성 시간 (ms timestamp)
 """,
@@ -50,58 +54,15 @@ async def create_room(request: CreateRoomRequest) -> RoomResponse:
     """
     새 채팅방 생성
 
-    채팅방 ID는 서버에서 UUID로 자동 생성됩니다.
-    storybook_url이 있으면 자동으로 컴포넌트 스키마를 추출하여 Storage에 저장합니다.
+    schema_key가 제공되면 해당 스키마로 프롬프트 생성,
+    없으면 자유 모드(Tailwind CSS)로 동작합니다.
     """
     try:
-        schema_extracted = False
-
-        # 1. storybook_url에서 스키마 추출 시도
-        if request.storybook_url:
-            try:
-                index_data = await fetch_storybook_index(request.storybook_url)
-                # 스키마 추출 성공 - room 생성 후 저장
-                schema_extracted = True
-            except HTTPException as e:
-                logger.warning(
-                    "Failed to fetch Storybook index: %s",
-                    e.detail,
-                )
-                index_data = None
-            except Exception as e:
-                logger.warning(
-                    "Failed to fetch Storybook index: %s",
-                    str(e),
-                )
-                index_data = None
-
-        # 2. 채팅방 생성
         room_data = await create_chat_room(
-            storybook_url=request.storybook_url,
             user_id=request.user_id,
-            schema_extracted=schema_extracted,
+            storybook_url=request.storybook_url,
+            schema_key=request.schema_key,
         )
-        room_id = room_data["id"]
-
-        # 3. 스키마 추출 성공 시 Storage에 업로드
-        if schema_extracted and index_data:
-            try:
-                schema = parse_storybook_index(index_data, request.storybook_url)
-                schema_key = f"exports/{room_id}/component-schema.json"
-                await upload_schema_to_storage(schema_key, schema.model_dump())
-                logger.info("Schema uploaded for room %s: %s", room_id, schema_key)
-            except Exception as e:
-                # 업로드 실패 시 schema_extracted를 false로 변경
-                logger.warning(
-                    "Failed to upload schema for room %s: %s",
-                    room_id,
-                    str(e),
-                )
-                schema_extracted = False
-                room_data = await update_chat_room(
-                    room_id=room_id,
-                    schema_extracted=False,
-                )
 
         return RoomResponse(**room_data)
     except FirestoreError as e:
@@ -167,12 +128,14 @@ async def get_room(room_id: str) -> RoomResponse:
 ## 요청 예시
 ```json
 {
-  "storybook_url": "https://new-storybook.example.com"
+  "storybook_url": "https://new-storybook.example.com",
+  "schema_key": "schemas/new-design-system.json"
 }
 ```
 
 ## 업데이트 가능한 필드
-- `storybook_url`: Storybook URL (변경 시 스키마 재추출)
+- `storybook_url`: Storybook URL
+- `schema_key`: Firebase Storage 스키마 경로
 """,
     responses={
         200: {"description": "업데이트 성공"},
@@ -181,30 +144,12 @@ async def get_room(room_id: str) -> RoomResponse:
     },
 )
 async def update_room(room_id: str, request: UpdateRoomRequest) -> RoomResponse:
-    """채팅방 업데이트 (storybook_url 변경 시 스키마 재추출)"""
+    """채팅방 업데이트"""
     try:
-        schema_extracted = False
-
-        # storybook_url 변경 시 스키마 재추출
-        if request.storybook_url:
-            try:
-                index_data = await fetch_storybook_index(request.storybook_url)
-                schema = parse_storybook_index(index_data, request.storybook_url)
-                schema_key = f"exports/{room_id}/component-schema.json"
-                await upload_schema_to_storage(schema_key, schema.model_dump())
-                schema_extracted = True
-                logger.info("Schema re-extracted for room %s: %s", room_id, schema_key)
-            except Exception as e:
-                logger.warning(
-                    "Failed to re-extract schema for room %s: %s",
-                    room_id,
-                    str(e),
-                )
-
         room_data = await update_chat_room(
             room_id=room_id,
             storybook_url=request.storybook_url,
-            schema_extracted=schema_extracted if request.storybook_url else None,
+            schema_key=request.schema_key,
         )
         return RoomResponse(**room_data)
     except RoomNotFoundError:

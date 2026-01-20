@@ -6,7 +6,7 @@ from collections.abc import AsyncGenerator
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
-from app.api.components import generate_system_prompt, get_free_mode_system_prompt, get_system_prompt
+from app.api.components import generate_system_prompt, get_free_mode_system_prompt
 from app.core.auth import verify_api_key
 from app.schemas.chat import (
     ChatRequest,
@@ -36,27 +36,19 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 
 
-def get_schema_key(room_id: str) -> str:
-    """room_id 기반으로 schema_key 생성"""
-    return f"exports/{room_id}/component-schema.json"
-
-
-async def resolve_system_prompt(room_id: str, schema_extracted: bool) -> str:
+async def resolve_system_prompt(schema_key: str | None) -> str:
     """
-    schema_extracted 여부에 따라 시스템 프롬프트 반환
+    schema_key 여부에 따라 시스템 프롬프트 반환
 
     Args:
-        room_id: 채팅방 ID (schema_key 계산에 사용)
-        schema_extracted: Storybook에서 스키마 추출 성공 여부
+        schema_key: Firebase Storage 스키마 경로 (None이면 자유 모드)
 
     Returns:
         시스템 프롬프트 문자열
     """
-    if not schema_extracted:
+    if not schema_key:
         # 스키마 없으면 자유 모드 (React + Tailwind CSS)
         return get_free_mode_system_prompt()
-
-    schema_key = get_schema_key(room_id)
 
     try:
         schema = await fetch_schema_from_storage(schema_key)
@@ -265,8 +257,8 @@ class StreamingParser:
 채팅방 ID (필수). 메시지가 해당 채팅방에 저장됩니다.
 
 ## 스키마 모드
-채팅방의 schema_extracted가 true이면 Firebase Storage에서 컴포넌트 스키마를 로드합니다.
-false이면 자유 모드(React + Tailwind CSS)로 동작합니다.
+채팅방의 schema_key가 설정되어 있으면 Firebase Storage에서 컴포넌트 스키마를 로드합니다.
+없으면 자유 모드(React + Tailwind CSS)로 동작합니다.
 """,
     response_description="AI 응답 및 파싱된 결과",
     responses={
@@ -285,7 +277,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
 
     스트리밍 응답이 필요한 경우 `/stream` 엔드포인트를 사용하세요.
 
-    채팅방의 schema_extracted가 true이면 Firebase Storage에서 스키마를 로드합니다.
+    채팅방의 schema_key가 설정되어 있으면 Firebase Storage에서 스키마를 로드합니다.
     """
     try:
         if request.stream:
@@ -303,8 +295,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
 
         provider = get_ai_provider()
         system_prompt = await resolve_system_prompt(
-            room_id=request.room_id,
-            schema_extracted=room.get("schema_extracted", False),
+            schema_key=room.get("schema_key"),
         )
 
         # 이전 대화 내역 포함하여 메시지 빌드
@@ -400,7 +391,7 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
     - 대화 텍스트는 실시간으로 스트리밍됩니다 (타이핑 효과)
     - 코드 파일은 완성된 후 한 번에 전송됩니다 (파싱 안정성)
 
-    채팅방의 schema_extracted가 true이면 Firebase Storage에서 스키마를 로드합니다.
+    채팅방의 schema_key가 설정되어 있으면 Firebase Storage에서 스키마를 로드합니다.
     """
     try:
         # 1. room 조회 및 검증
@@ -424,8 +415,7 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
 
         # 4. 시스템 프롬프트 생성 (Firebase Storage에서 스키마 로드 포함)
         system_prompt = await resolve_system_prompt(
-            room_id=request.room_id,
-            schema_extracted=room.get("schema_extracted", False),
+            schema_key=room.get("schema_key"),
         )
 
         # 5. 이전 대화 내역 포함하여 메시지 빌드
