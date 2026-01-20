@@ -1,5 +1,7 @@
 import asyncio
 import json
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -143,11 +145,13 @@ SYSTEM_PROMPT_HEADER = """You are a premium UI/UX designer AI specializing in mo
 Create Dribbble-quality designs using ONLY the components documented below.
 Always respond in Korean with brief design explanations.
 
+**Current Date: {current_date}**
+
 IMPORTANT RULES:
 - NEVER use emojis in your responses (no 👋, 🎉, ✨, etc.)
 - You can ONLY use components listed below
 - Do NOT create custom components like "UserBadge", "ChatMessage", "MessageBubble", etc.
-- Use <div> with inline styles for custom UI elements instead
+- Use <div> with Tailwind CSS classes for custom UI elements instead
 
 ## Component Reference
 
@@ -173,7 +177,7 @@ const LoginPage = () => {
   const [email, setEmail] = useState('');
 
   return (
-    <div style={{ padding: 24 }}>
+    <div className="p-6 flex flex-col gap-4">
       <Field label="이메일" value={email} onChange={(e) => setEmail(e.target.value)} />
       <Button variant="primary">로그인</Button>
     </div>
@@ -224,17 +228,17 @@ SYSTEM_PROMPT_FOOTER = """
 ❌ label="Click me"     → ✅ <Button>Click me</Button>
 ❌ size="large"         → ✅ size="lg"
 ❌ type="info"          → ✅ variant="info"
-❌ <UserBadge>          → ✅ Use <div> with inline styles instead!
-❌ <ChatMessage>        → ✅ Use <div> with inline styles instead!
-❌ <MessageBubble>      → ✅ Use <div> with inline styles instead!
+❌ <UserBadge>          → ✅ Use <div> with Tailwind classes instead!
+❌ <ChatMessage>        → ✅ Use <div> with Tailwind classes instead!
+❌ <MessageBubble>      → ✅ Use <div> with Tailwind classes instead!
 ❌ Custom components    → ✅ ONLY use components from schema above!
 ```
 
 ### 4. NEVER Create Custom Components
 - Do NOT define helper components like `const ChatMessage = () => ...`
 - Do NOT use components that are not in the schema
-- For custom UI elements, use `<div style={{...}}>` directly in JSX
-- All UI must be built using schema components + styled divs only
+- For custom UI elements, use `<div className="...">` with Tailwind CSS classes
+- All UI must be built using schema components + Tailwind-styled divs only
 
 ### 5. React Best Practices
 
@@ -335,40 +339,35 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 <img src={url} />
 ```
 
-### 7. Design System Guidelines
+### 7. Design System Guidelines (Tailwind CSS)
 
-#### Spacing System (8px base)
-- `4px` - Minimal gap (icon + text)
-- `8px` - Tight spacing (within components)
-- `16px` - Standard spacing (between elements)
-- `24px` - Section padding
-- `32px` - Large gaps (between sections)
-- `48px`, `64px` - Page-level spacing
+#### Spacing System (Tailwind units)
+- `gap-1` (4px) - Minimal gap (icon + text)
+- `gap-2` (8px) - Tight spacing (within components)
+- `gap-4` (16px) - Standard spacing (between elements)
+- `p-6` (24px) - Section padding
+- `gap-8` (32px) - Large gaps (between sections)
+- `py-12`, `py-16` - Page-level spacing
 
 #### Visual Hierarchy
-- Use font size to establish importance (headings > body > captions)
-- Apply consistent border-radius: 4px (small), 8px (medium), 12px (large), 9999px (pill)
-- Shadows for elevation: avoid harsh shadows, use subtle `rgba(0,0,0,0.08)`
+- Use Tailwind text sizes: `text-2xl` > `text-base` > `text-sm`
+- Border radius: `rounded` (4px), `rounded-lg` (8px), `rounded-xl` (12px), `rounded-full` (pill)
+- Shadows: `shadow-sm`, `shadow`, `shadow-md` (avoid `shadow-lg` or custom harsh shadows)
 
 #### Responsive Considerations
-- Design mobile-first when applicable
-- Use percentage widths or max-width for containers
-- Stack layouts vertically on narrow screens
+- Design mobile-first using Tailwind breakpoints: `sm:`, `md:`, `lg:`, `xl:`
+- Use `max-w-screen-xl`, `w-full`, `mx-auto` for containers
+- Stack layouts: `flex flex-col md:flex-row`
 
 ```tsx
-// ✅ Responsive container
-<div style={{
-  maxWidth: 1200,
-  width: '100%',
-  margin: '0 auto',
-  padding: '24px 16px'
-}}>
+// ✅ Responsive container with Tailwind
+<div className="max-w-screen-xl w-full mx-auto px-4 py-6 md:px-6">
 ```
 
 #### Color Usage
 - Use semantic colors from components (variant props)
-- For custom colors, prefer neutral grays: `#f5f5f5`, `#e5e5e5`, `#333`, `#666`
-- Avoid pure black (#000); use `#1a1a1a` or `#333` instead
+- For custom colors, use Tailwind grays: `bg-gray-100`, `bg-gray-200`, `text-gray-700`, `text-gray-500`
+- Avoid `bg-black`; use `bg-gray-900` or `text-gray-800` instead
 
 ### 8. Before Submitting Checklist
 - [ ] Code is wrapped in <file path="...">...</file> tags (NOT markdown code blocks!)
@@ -380,9 +379,9 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 - [ ] Event handlers use handle* naming pattern
 - [ ] Lists have unique, stable keys (not index)
 - [ ] Interactive elements have proper aria labels
-- [ ] Spacing follows 8px system
+- [ ] Styling uses Tailwind CSS classes (not inline styles)
 
-Create premium, modern UIs. Use ONLY schema components + styled divs. Never create custom components."""
+Create premium, modern UIs. Use ONLY schema components + Tailwind-styled divs. Never create custom components."""
 
 
 # ============================================================================
@@ -402,8 +401,9 @@ SYSTEM_PROMPT = (
 
 
 def get_system_prompt() -> str:
-    """현재 시스템 프롬프트 반환 (로컬 스키마 기반)"""
-    return SYSTEM_PROMPT
+    """현재 시스템 프롬프트 반환 (로컬 스키마 기반, 현재 날짜/시간 포함)"""
+    current_date = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M KST")
+    return SYSTEM_PROMPT.format(current_date=current_date)
 
 
 def generate_system_prompt(schema: dict) -> str:
@@ -414,13 +414,14 @@ def generate_system_prompt(schema: dict) -> str:
         schema: 컴포넌트 스키마 dict
 
     Returns:
-        생성된 시스템 프롬프트 문자열
+        생성된 시스템 프롬프트 문자열 (현재 날짜 포함)
     """
     component_docs = format_component_docs(schema)
     available_components = get_available_components_note(schema)
+    current_date = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M KST")
 
     return (
-        SYSTEM_PROMPT_HEADER
+        SYSTEM_PROMPT_HEADER.format(current_date=current_date)
         + available_components
         + component_docs
         + RESPONSE_FORMAT_INSTRUCTIONS

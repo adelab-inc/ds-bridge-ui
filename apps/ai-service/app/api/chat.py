@@ -21,10 +21,10 @@ from app.services.firestore import (
     FirestoreError,
     RoomNotFoundError,
     create_chat_message,
+    get_chat_room,
     get_messages_by_room,
     get_timestamp_ms,
     update_chat_message,
-    verify_room_exists,
 )
 
 router = APIRouter(dependencies=[Depends(verify_api_key)])
@@ -242,8 +242,7 @@ class StreamingParser:
 ```json
 {
   "message": "로그인 페이지 만들어줘",
-  "room_id": "550e8400-e29b-41d4-a716-446655440000",
-  "schema_key": "schemas/component-schema.json"
+  "room_id": "550e8400-e29b-41d4-a716-446655440000"
 }
 ```
 
@@ -257,7 +256,8 @@ class StreamingParser:
 채팅방 ID (필수). 메시지가 해당 채팅방에 저장됩니다.
 
 ## schema_key
-Firebase Storage에서 컴포넌트 스키마를 로드합니다. 생략 시 로컬 스키마 사용.
+채팅방에 설정된 schema_key로 Firebase Storage에서 컴포넌트 스키마를 로드합니다.
+schema_key가 없으면 로컬 스키마를 사용합니다.
 """,
     response_description="AI 응답 및 파싱된 결과",
     responses={
@@ -276,7 +276,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
 
     스트리밍 응답이 필요한 경우 `/stream` 엔드포인트를 사용하세요.
 
-    schema_key가 제공되면 Firebase Storage에서 스키마를 로드합니다.
+    채팅방의 schema_key가 있으면 Firebase Storage에서 스키마를 로드합니다.
     """
     try:
         if request.stream:
@@ -285,13 +285,15 @@ async def chat(request: ChatRequest) -> ChatResponse:
                 detail="Use /stream endpoint for streaming responses",
             )
 
-        # room_id 검증
-        await verify_room_exists(request.room_id)
+        # room 조회 및 검증
+        room = await get_chat_room(request.room_id)
+        if room is None:
+            raise RoomNotFoundError(f"채팅방을 찾을 수 없습니다: {request.room_id}")
 
         question_created_at = get_timestamp_ms()
 
         provider = get_ai_provider()
-        system_prompt = await resolve_system_prompt(request.schema_key)
+        system_prompt = await resolve_system_prompt(room.get("schema_key"))
 
         # 이전 대화 내역 포함하여 메시지 빌드
         messages = await build_conversation_history(
@@ -338,8 +340,7 @@ SSE(Server-Sent Events)를 통해 실시간 스트리밍 응답을 받습니다.
 ```json
 {
   "message": "로그인 페이지 만들어줘",
-  "room_id": "550e8400-e29b-41d4-a716-446655440000",
-  "schema_key": "schemas/component-schema.json"
+  "room_id": "550e8400-e29b-41d4-a716-446655440000"
 }
 ```
 
@@ -387,11 +388,13 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
     - 대화 텍스트는 실시간으로 스트리밍됩니다 (타이핑 효과)
     - 코드 파일은 완성된 후 한 번에 전송됩니다 (파싱 안정성)
 
-    schema_key가 제공되면 Firebase Storage에서 스키마를 로드합니다.
+    채팅방의 schema_key가 있으면 Firebase Storage에서 스키마를 로드합니다.
     """
     try:
-        # room_id 검증 (스트리밍 시작 전)
-        await verify_room_exists(request.room_id)
+        # room 조회 및 검증 (스트리밍 시작 전)
+        room = await get_chat_room(request.room_id)
+        if room is None:
+            raise RoomNotFoundError(f"채팅방을 찾을 수 없습니다: {request.room_id}")
 
         question_created_at = get_timestamp_ms()
 
@@ -405,7 +408,7 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
         message_id = message_data["id"]
 
         provider = get_ai_provider()
-        system_prompt = await resolve_system_prompt(request.schema_key)
+        system_prompt = await resolve_system_prompt(room.get("schema_key"))
 
         # 이전 대화 내역 포함하여 메시지 빌드
         messages = await build_conversation_history(

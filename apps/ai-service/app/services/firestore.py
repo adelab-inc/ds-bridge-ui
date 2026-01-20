@@ -24,6 +24,7 @@ class RoomData(TypedDict):
 
     id: str
     storybook_url: str
+    schema_key: str | None
     user_id: str
     created_at: int
 
@@ -166,13 +167,16 @@ CHAT_MESSAGES_COLLECTION = "chat_messages"
 
 
 @handle_firestore_error("채팅방 생성 실패")
-async def create_chat_room(storybook_url: str, user_id: str) -> RoomData:
+async def create_chat_room(
+    storybook_url: str, user_id: str, schema_key: str | None = None
+) -> RoomData:
     """
     새 채팅방 생성
 
     Args:
         storybook_url: Storybook URL
         user_id: 사용자 ID
+        schema_key: Firebase Storage 스키마 경로
 
     Returns:
         생성된 채팅방 문서
@@ -186,6 +190,7 @@ async def create_chat_room(storybook_url: str, user_id: str) -> RoomData:
     room_data: RoomData = {
         "id": room_id,
         "storybook_url": storybook_url,
+        "schema_key": schema_key,
         "user_id": user_id,
         "created_at": get_timestamp_ms(),
     }
@@ -236,6 +241,49 @@ async def verify_room_exists(room_id: str) -> bool:
     if room is None:
         raise RoomNotFoundError(f"채팅방을 찾을 수 없습니다: {room_id}")
     return True
+
+
+@handle_firestore_error("채팅방 업데이트 실패")
+async def update_chat_room(
+    room_id: str,
+    storybook_url: str | None = None,
+    schema_key: str | None = None,
+) -> RoomData:
+    """
+    채팅방 업데이트
+
+    Args:
+        room_id: 채팅방 ID
+        storybook_url: Storybook URL (선택)
+        schema_key: Firebase Storage 스키마 경로 (선택)
+
+    Returns:
+        업데이트된 채팅방 문서
+
+    Raises:
+        RoomNotFoundError: 채팅방을 찾을 수 없음
+        FirestoreError: Firestore 작업 실패
+    """
+    # 먼저 존재 여부 확인
+    room = await get_chat_room(room_id)
+    if room is None:
+        raise RoomNotFoundError(f"채팅방을 찾을 수 없습니다: {room_id}")
+
+    db = get_firestore_client()
+
+    update_data: dict[str, str] = {}
+    if storybook_url is not None:
+        update_data["storybook_url"] = storybook_url
+    if schema_key is not None:
+        update_data["schema_key"] = schema_key
+
+    if update_data:
+        await db.collection(CHAT_ROOMS_COLLECTION).document(room_id).update(update_data)
+        logger.info("Chat room updated: %s", room_id)
+
+    # 업데이트된 문서 반환
+    updated_room = await get_chat_room(room_id)
+    return updated_room  # type: ignore[return-value]
 
 
 # ============================================================================
