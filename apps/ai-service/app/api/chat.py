@@ -1,7 +1,6 @@
 import json
 import logging
 import re
-import time
 from collections.abc import AsyncGenerator
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -343,13 +342,6 @@ async def chat(request: ChatRequest) -> ChatResponse:
         raise HTTPException(status_code=500, detail="An unexpected error occurred. Please try again.") from e
 
 
-def log_timing(name: str, start: float) -> float:
-    """타이밍 로그 출력 및 새 시작 시간 반환"""
-    elapsed = time.perf_counter() - start
-    print(f"⏱️  {name}: {elapsed:.3f}s", flush=True)
-    return time.perf_counter()
-
-
 @router.post(
     "/stream",
     summary="AI 채팅 (Streaming)",
@@ -411,13 +403,10 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
     채팅방의 schema_extracted가 true이면 Firebase Storage에서 스키마를 로드합니다.
     """
     try:
-        t_start = time.perf_counter()
-
         # 1. room 조회 및 검증
         room = await get_chat_room(request.room_id)
         if room is None:
             raise RoomNotFoundError(f"채팅방을 찾을 수 없습니다: {request.room_id}")
-        t_start = log_timing("Room lookup", t_start)
 
         question_created_at = get_timestamp_ms()
 
@@ -429,19 +418,15 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
             status="GENERATING",
         )
         message_id = message_data["id"]
-        t_start = log_timing("Create message (GENERATING)", t_start)
 
         # 3. AI Provider 초기화
         provider = get_ai_provider()
-        t_start = log_timing("Get AI provider", t_start)
 
         # 4. 시스템 프롬프트 생성 (Firebase Storage에서 스키마 로드 포함)
         system_prompt = await resolve_system_prompt(
             room_id=request.room_id,
             schema_extracted=room.get("schema_extracted", False),
         )
-        t_start = log_timing("Resolve system prompt (incl. Firebase fetch)", t_start)
-        print(f"   System prompt length: {len(system_prompt)} chars", flush=True)
 
         # 5. 이전 대화 내역 포함하여 메시지 빌드
         messages = await build_conversation_history(
@@ -449,21 +434,14 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
             system_prompt=system_prompt,
             current_message=request.message,
         )
-        t_start = log_timing("Build conversation history", t_start)
-        print(f"   Total messages: {len(messages)}", flush=True)
 
         async def generate() -> AsyncGenerator[str, None]:
-            nonlocal t_start
-            first_chunk = True
             parser = StreamingParser()
             collected_text = ""
             collected_files: list[dict] = []
 
             try:
                 async for chunk in provider.chat_stream(messages):
-                    if first_chunk:
-                        t_start = log_timing("AI First Token (TTFT)", t_start)
-                        first_chunk = False
                     events = parser.process_chunk(chunk)
                     for event in events:
                         # 이벤트 수집
