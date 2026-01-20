@@ -1,12 +1,13 @@
 import json
 import logging
 import re
+import time
 from collections.abc import AsyncGenerator
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
-from app.api.components import generate_system_prompt, get_system_prompt
+from app.api.components import generate_system_prompt, get_free_mode_system_prompt, get_system_prompt
 from app.core.auth import verify_api_key
 from app.schemas.chat import (
     ChatRequest,
@@ -36,25 +37,34 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 
 
-async def resolve_system_prompt(schema_key: str | None) -> str:
+def get_schema_key(room_id: str) -> str:
+    """room_id 기반으로 schema_key 생성"""
+    return f"exports/{room_id}/component-schema.json"
+
+
+async def resolve_system_prompt(room_id: str, schema_extracted: bool) -> str:
     """
-    schema_key 유무에 따라 시스템 프롬프트 반환
+    schema_extracted 여부에 따라 시스템 프롬프트 반환
 
     Args:
-        schema_key: Firebase Storage 경로 (None이면 로컬 스키마 사용)
+        room_id: 채팅방 ID (schema_key 계산에 사용)
+        schema_extracted: Storybook에서 스키마 추출 성공 여부
 
     Returns:
         시스템 프롬프트 문자열
     """
-    if not schema_key:
-        return get_system_prompt()
+    if not schema_extracted:
+        # 스키마 없으면 자유 모드 (React + Tailwind CSS)
+        return get_free_mode_system_prompt()
+
+    schema_key = get_schema_key(room_id)
 
     try:
         schema = await fetch_schema_from_storage(schema_key)
         return generate_system_prompt(schema)
     except FileNotFoundError:
-        logger.warning("Schema not found: %s, using local schema", schema_key)
-        return get_system_prompt()
+        logger.warning("Schema not found: %s, using free mode", schema_key)
+        return get_free_mode_system_prompt()
     except Exception as e:
         logger.error("Failed to fetch schema: %s - %s", schema_key, str(e), exc_info=True)
         raise HTTPException(
@@ -255,9 +265,9 @@ class StreamingParser:
 ## room_id
 채팅방 ID (필수). 메시지가 해당 채팅방에 저장됩니다.
 
-## schema_key
-채팅방에 설정된 schema_key로 Firebase Storage에서 컴포넌트 스키마를 로드합니다.
-schema_key가 없으면 로컬 스키마를 사용합니다.
+## 스키마 모드
+채팅방의 schema_extracted가 true이면 Firebase Storage에서 컴포넌트 스키마를 로드합니다.
+false이면 자유 모드(React + Tailwind CSS)로 동작합니다.
 """,
     response_description="AI 응답 및 파싱된 결과",
     responses={
@@ -276,7 +286,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
 
     스트리밍 응답이 필요한 경우 `/stream` 엔드포인트를 사용하세요.
 
-    채팅방의 schema_key가 있으면 Firebase Storage에서 스키마를 로드합니다.
+    채팅방의 schema_extracted가 true이면 Firebase Storage에서 스키마를 로드합니다.
     """
     try:
         if request.stream:
@@ -293,7 +303,10 @@ async def chat(request: ChatRequest) -> ChatResponse:
         question_created_at = get_timestamp_ms()
 
         provider = get_ai_provider()
-        system_prompt = await resolve_system_prompt(room.get("schema_key"))
+        system_prompt = await resolve_system_prompt(
+            room_id=request.room_id,
+            schema_extracted=room.get("schema_extracted", False),
+        )
 
         # 이전 대화 내역 포함하여 메시지 빌드
         messages = await build_conversation_history(
@@ -328,6 +341,13 @@ async def chat(request: ChatRequest) -> ChatResponse:
     except Exception as e:
         logger.error("Unexpected error in chat: %s", str(e), exc_info=True)
         raise HTTPException(status_code=500, detail="An unexpected error occurred. Please try again.") from e
+
+
+def log_timing(name: str, start: float) -> float:
+    """타이밍 로그 출력 및 새 시작 시간 반환"""
+    elapsed = time.perf_counter() - start
+    print(f"⏱️  {name}: {elapsed:.3f}s", flush=True)
+    return time.perf_counter()
 
 
 @router.post(
@@ -388,17 +408,20 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
     - 대화 텍스트는 실시간으로 스트리밍됩니다 (타이핑 효과)
     - 코드 파일은 완성된 후 한 번에 전송됩니다 (파싱 안정성)
 
-    채팅방의 schema_key가 있으면 Firebase Storage에서 스키마를 로드합니다.
+    채팅방의 schema_extracted가 true이면 Firebase Storage에서 스키마를 로드합니다.
     """
     try:
-        # room 조회 및 검증 (스트리밍 시작 전)
+        t_start = time.perf_counter()
+
+        # 1. room 조회 및 검증
         room = await get_chat_room(request.room_id)
         if room is None:
             raise RoomNotFoundError(f"채팅방을 찾을 수 없습니다: {request.room_id}")
+        t_start = log_timing("Room lookup", t_start)
 
         question_created_at = get_timestamp_ms()
 
-        # GENERATING 상태로 메시지 먼저 생성 (question 포함)
+        # 2. GENERATING 상태로 메시지 먼저 생성
         message_data = await create_chat_message(
             room_id=request.room_id,
             question=request.message,
@@ -406,24 +429,41 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
             status="GENERATING",
         )
         message_id = message_data["id"]
+        t_start = log_timing("Create message (GENERATING)", t_start)
 
+        # 3. AI Provider 초기화
         provider = get_ai_provider()
-        system_prompt = await resolve_system_prompt(room.get("schema_key"))
+        t_start = log_timing("Get AI provider", t_start)
 
-        # 이전 대화 내역 포함하여 메시지 빌드
+        # 4. 시스템 프롬프트 생성 (Firebase Storage에서 스키마 로드 포함)
+        system_prompt = await resolve_system_prompt(
+            room_id=request.room_id,
+            schema_extracted=room.get("schema_extracted", False),
+        )
+        t_start = log_timing("Resolve system prompt (incl. Firebase fetch)", t_start)
+        print(f"   System prompt length: {len(system_prompt)} chars", flush=True)
+
+        # 5. 이전 대화 내역 포함하여 메시지 빌드
         messages = await build_conversation_history(
             room_id=request.room_id,
             system_prompt=system_prompt,
             current_message=request.message,
         )
+        t_start = log_timing("Build conversation history", t_start)
+        print(f"   Total messages: {len(messages)}", flush=True)
 
         async def generate() -> AsyncGenerator[str, None]:
+            nonlocal t_start
+            first_chunk = True
             parser = StreamingParser()
             collected_text = ""
             collected_files: list[dict] = []
 
             try:
                 async for chunk in provider.chat_stream(messages):
+                    if first_chunk:
+                        t_start = log_timing("AI First Token (TTFT)", t_start)
+                        first_chunk = False
                     events = parser.process_chunk(chunk)
                     for event in events:
                         # 이벤트 수집

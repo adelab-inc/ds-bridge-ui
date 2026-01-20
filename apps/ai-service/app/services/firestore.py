@@ -24,7 +24,7 @@ class RoomData(TypedDict):
 
     id: str
     storybook_url: str
-    schema_key: str | None
+    schema_extracted: bool
     user_id: str
     created_at: int
 
@@ -168,7 +168,7 @@ CHAT_MESSAGES_COLLECTION = "chat_messages"
 
 @handle_firestore_error("채팅방 생성 실패")
 async def create_chat_room(
-    storybook_url: str, user_id: str, schema_key: str | None = None
+    storybook_url: str, user_id: str, schema_extracted: bool = False
 ) -> RoomData:
     """
     새 채팅방 생성
@@ -176,7 +176,7 @@ async def create_chat_room(
     Args:
         storybook_url: Storybook URL
         user_id: 사용자 ID
-        schema_key: Firebase Storage 스키마 경로
+        schema_extracted: Storybook에서 스키마 추출 성공 여부
 
     Returns:
         생성된 채팅방 문서
@@ -190,7 +190,7 @@ async def create_chat_room(
     room_data: RoomData = {
         "id": room_id,
         "storybook_url": storybook_url,
-        "schema_key": schema_key,
+        "schema_extracted": schema_extracted,
         "user_id": user_id,
         "created_at": get_timestamp_ms(),
     }
@@ -247,7 +247,7 @@ async def verify_room_exists(room_id: str) -> bool:
 async def update_chat_room(
     room_id: str,
     storybook_url: str | None = None,
-    schema_key: str | None = None,
+    schema_extracted: bool | None = None,
 ) -> RoomData:
     """
     채팅방 업데이트
@@ -255,7 +255,7 @@ async def update_chat_room(
     Args:
         room_id: 채팅방 ID
         storybook_url: Storybook URL (선택)
-        schema_key: Firebase Storage 스키마 경로 (선택)
+        schema_extracted: Storybook에서 스키마 추출 성공 여부 (선택)
 
     Returns:
         업데이트된 채팅방 문서
@@ -271,11 +271,11 @@ async def update_chat_room(
 
     db = get_firestore_client()
 
-    update_data: dict[str, str] = {}
+    update_data: dict[str, str | bool] = {}
     if storybook_url is not None:
         update_data["storybook_url"] = storybook_url
-    if schema_key is not None:
-        update_data["schema_key"] = schema_key
+    if schema_extracted is not None:
+        update_data["schema_extracted"] = schema_extracted
 
     if update_data:
         await db.collection(CHAT_ROOMS_COLLECTION).document(room_id).update(update_data)

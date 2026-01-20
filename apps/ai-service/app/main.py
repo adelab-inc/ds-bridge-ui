@@ -9,6 +9,7 @@ from fastapi.openapi.utils import get_openapi
 from app.api.chat import router as chat_router
 from app.api.components import router as components_router
 from app.api.rooms import router as rooms_router
+from app.api.storybook import router as storybook_router
 from app.core.config import get_settings
 from app.services.firebase_storage import cleanup_firebase
 from app.services.firestore import close_firestore_client
@@ -54,6 +55,10 @@ tags_metadata = [
     {
         "name": "components",
         "description": "컴포넌트 스키마 관리 API",
+    },
+    {
+        "name": "storybook",
+        "description": "Storybook URL에서 컴포넌트 스키마 추출 API",
     },
 ]
 
@@ -123,6 +128,7 @@ app.add_middleware(
 app.include_router(rooms_router, prefix="/rooms", tags=["rooms"])
 app.include_router(chat_router, prefix="/chat", tags=["chat"])
 app.include_router(components_router, prefix="/components", tags=["components"])
+app.include_router(storybook_router, prefix="/storybook", tags=["storybook"])
 
 
 # ============================================================================

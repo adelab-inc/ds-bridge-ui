@@ -291,11 +291,6 @@ class CreateRoomRequest(BaseModel):
         description="Storybook URL",
         json_schema_extra={"example": "https://storybook.example.com"},
     )
-    schema_key: str | None = Field(
-        default=None,
-        description="Firebase Storage 내 컴포넌트 스키마 경로",
-        json_schema_extra={"example": "schemas/room-123.json"},
-    )
     user_id: str = Field(
         ...,
         description="사용자 ID",
@@ -307,7 +302,6 @@ class CreateRoomRequest(BaseModel):
             "examples": [
                 {
                     "storybook_url": "https://storybook.example.com",
-                    "schema_key": "schemas/room-123.json",
                     "user_id": "user-123",
                 }
             ]
@@ -320,19 +314,13 @@ class UpdateRoomRequest(BaseModel):
 
     storybook_url: str | None = Field(
         default=None,
-        description="Storybook URL",
+        description="Storybook URL (변경 시 스키마 재추출)",
         json_schema_extra={"example": "https://storybook.example.com"},
-    )
-    schema_key: str | None = Field(
-        default=None,
-        description="Firebase Storage 내 컴포넌트 스키마 경로",
-        json_schema_extra={"example": "schemas/room-123.json"},
     )
 
     model_config = {
         "json_schema_extra": {
             "examples": [
-                {"schema_key": "schemas/new-schema.json"},
                 {"storybook_url": "https://new-storybook.example.com"},
             ]
         }
@@ -352,10 +340,10 @@ class RoomResponse(BaseModel):
         description="Storybook URL",
         json_schema_extra={"example": "https://storybook.example.com"},
     )
-    schema_key: str | None = Field(
-        default=None,
-        description="Firebase Storage 내 컴포넌트 스키마 경로",
-        json_schema_extra={"example": "schemas/room-123.json"},
+    schema_extracted: bool = Field(
+        default=False,
+        description="Storybook에서 스키마 추출 성공 여부 (false면 자유 모드)",
+        json_schema_extra={"example": True},
     )
     user_id: str = Field(
         ...,
