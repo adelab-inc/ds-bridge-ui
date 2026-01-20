@@ -1,7 +1,8 @@
 """
-Storybook 컴포넌트 스키마 추출 API
+Storybook 컴포넌트 스키마 추출 유틸리티
 
 Storybook URL에서 index.json을 fetch하여 컴포넌트 스키마를 추출합니다.
+rooms.py에서 내부적으로 사용됩니다.
 """
 
 import re
@@ -10,13 +11,8 @@ from urllib.parse import urljoin
 from zoneinfo import ZoneInfo
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field, HttpUrl
-
-from app.core.auth import verify_api_key
-from app.services.firebase_storage import upload_schema_to_storage
-
-router = APIRouter(dependencies=[Depends(verify_api_key)])
+from fastapi import HTTPException
+from pydantic import BaseModel
 
 
 # ============================================================================
@@ -53,39 +49,6 @@ class ExtractedSchema(BaseModel):
     totalStories: int
 
 
-class ExtractResponse(BaseModel):
-    """스키마 추출 및 업로드 응답"""
-
-    success: bool
-    schema_key: str = Field(..., description="Firebase Storage 경로 (chat API의 schema_key로 사용)")
-    source_url: str
-    total_components: int
-    total_stories: int
-    message: str
-
-
-class ExtractRequest(BaseModel):
-    """스키마 추출 요청"""
-
-    storybook_url: HttpUrl = Field(
-        ...,
-        description="Storybook URL (예: https://example.com/storybook)",
-        json_schema_extra={"example": "https://example.com/storybook"},
-    )
-    room_id: str = Field(
-        ...,
-        description="채팅방 ID (스키마 저장 경로에 사용)",
-        json_schema_extra={"example": "abc123xyz"},
-    )
-
-
-class ComponentListResponse(BaseModel):
-    """컴포넌트 목록 응답"""
-
-    components: list[dict]
-    total: int
-
-
 # ============================================================================
 # Utility Functions
 # ============================================================================
@@ -98,11 +61,6 @@ def normalize_storybook_url(url: str) -> str:
     url = re.sub(r"/iframe\.html.*$", "", url)
     url = re.sub(r"\?.*$", "", url)
     return url + "/"
-
-
-def generate_schema_key(room_id: str) -> str:
-    """room_id 기반으로 schema_key 생성"""
-    return f"exports/{room_id}/component-schema.json"
 
 
 def extract_category(title: str) -> str:
@@ -184,114 +142,4 @@ def parse_storybook_index(index_data: dict, source_url: str) -> ExtractedSchema:
         components=component_map,
         totalComponents=len(component_map),
         totalStories=total_stories,
-    )
-
-
-# ============================================================================
-# API Endpoints
-# ============================================================================
-
-
-@router.post(
-    "/extract",
-    summary="Storybook에서 컴포넌트 스키마 추출 및 Storage 업로드",
-    description="Storybook URL에서 스키마를 추출하여 Firebase Storage에 저장하고 경로를 반환합니다.",
-    response_model=ExtractResponse,
-    responses={
-        200: {"description": "스키마 추출 및 업로드 성공"},
-        404: {"description": "Storybook index.json을 찾을 수 없음"},
-        422: {"description": "잘못된 URL 형식"},
-        500: {"description": "Firebase Storage 업로드 실패"},
-    },
-)
-async def extract_schema(request: ExtractRequest) -> ExtractResponse:
-    """
-    Storybook URL에서 컴포넌트 스키마 추출 및 Firebase Storage 업로드
-
-    1. Storybook의 index.json 또는 stories.json을 fetch
-    2. 컴포넌트별로 스토리 정보를 그룹화
-    3. Firebase Storage에 JSON으로 업로드
-    4. schema_key 반환 (chat API에서 사용 가능)
-
-    **참고**: 이 API는 내부적으로 `POST /rooms` 생성 시 자동 호출됩니다.
-    직접 호출할 경우 room_id를 지정하여 스키마를 수동으로 추출/갱신할 수 있습니다.
-
-    **사용 예시**:
-    ```
-    POST /storybook/extract
-    {"storybook_url": "https://example.com/storybook", "room_id": "abc-123"}
-
-    → {"schema_key": "exports/abc-123/component-schema.json", ...}
-    ```
-
-    스키마는 `exports/{room_id}/component-schema.json` 경로에 저장되며,
-    chat API에서 room_id 기반으로 자동 로드됩니다.
-    """
-    source_url = str(request.storybook_url)
-    index_data = await fetch_storybook_index(source_url)
-    schema = parse_storybook_index(index_data, source_url)
-
-    # room_id 기반 schema_key 생성
-    schema_key = generate_schema_key(request.room_id)
-
-    # Firebase Storage에 업로드
-    try:
-        await upload_schema_to_storage(schema_key, schema.model_dump())
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Firebase Storage 업로드 실패: {e}",
-        ) from e
-
-    return ExtractResponse(
-        success=True,
-        schema_key=schema_key,
-        source_url=source_url,
-        total_components=schema.totalComponents,
-        total_stories=schema.totalStories,
-        message=f"스키마가 성공적으로 추출되어 저장되었습니다. chat API에서 schema_key='{schema_key}'로 사용하세요.",
-    )
-
-
-@router.get(
-    "/components",
-    summary="추출된 컴포넌트 목록 조회",
-    description="Storybook URL에서 컴포넌트 목록만 간략히 조회합니다.",
-    response_model=ComponentListResponse,
-    responses={
-        200: {"description": "컴포넌트 목록 조회 성공"},
-        404: {"description": "Storybook을 찾을 수 없음"},
-    },
-)
-async def list_components(
-    storybook_url: HttpUrl,
-    category: str | None = None,
-) -> ComponentListResponse:
-    """
-    Storybook에서 컴포넌트 목록 조회
-
-    - category 파라미터로 필터링 가능
-    - 각 컴포넌트의 variants, sizes, 스토리 수 반환
-    """
-    index_data = await fetch_storybook_index(str(storybook_url))
-    schema = parse_storybook_index(index_data, str(storybook_url))
-
-    components = []
-    for name, comp in schema.components.items():
-        # 카테고리 필터
-        if category and category.lower() not in comp.category.lower():
-            continue
-
-        components.append(
-            {
-                "name": name,
-                "category": comp.category,
-                "storyCount": len(comp.stories),
-                "stories": [s.name for s in comp.stories[:5]],  # 최대 5개만
-            }
-        )
-
-    return ComponentListResponse(
-        components=components,
-        total=len(components),
     )
