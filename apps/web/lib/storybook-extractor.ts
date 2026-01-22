@@ -602,7 +602,7 @@ function extractControlInfo(
 }
 
 /**
- * URL 정규화 (trailing slash 제거)
+ * URL 정규화 (쿼리 파라미터, 해시, trailing slash 제거)
  */
 function normalizeUrl(url: string): string {
   let normalized = url.trim();
@@ -610,6 +610,14 @@ function normalizeUrl(url: string): string {
   // 프로토콜 확인
   if (!normalized.startsWith('http://') && !normalized.startsWith('https://')) {
     normalized = `https://${normalized}`;
+  }
+
+  try {
+    const parsed = new URL(normalized);
+    // origin + pathname만 사용 (쿼리 파라미터, 해시 제거)
+    normalized = `${parsed.origin}${parsed.pathname}`;
+  } catch {
+    // URL 파싱 실패 시 기존 방식 유지
   }
 
   // trailing slash 제거
