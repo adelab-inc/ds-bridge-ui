@@ -42,6 +42,7 @@ class MessageData(TypedDict):
     answer_created_at: int
     status: str
 
+
 # 로컬 개발용 서비스 계정 키 경로
 SERVICE_ACCOUNT_KEY_PATH = Path(__file__).parent.parent.parent / "service-account-key.json"
 

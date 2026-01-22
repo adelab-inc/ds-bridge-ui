@@ -59,8 +59,7 @@ async def resolve_system_prompt(schema_key: str | None) -> str:
     except Exception as e:
         logger.error("Failed to fetch schema: %s - %s", schema_key, str(e), exc_info=True)
         raise HTTPException(
-            status_code=500,
-            detail="Failed to load schema from storage. Please try again."
+            status_code=500, detail="Failed to load schema from storage. Please try again."
         ) from e
 
 
@@ -330,7 +329,9 @@ async def chat(request: ChatRequest) -> ChatResponse:
         raise HTTPException(status_code=500, detail="Database error. Please try again.") from e
     except Exception as e:
         logger.error("Unexpected error in chat: %s", str(e), exc_info=True)
-        raise HTTPException(status_code=500, detail="An unexpected error occurred. Please try again.") from e
+        raise HTTPException(
+            status_code=500, detail="An unexpected error occurred. Please try again."
+        ) from e
 
 
 @router.post(
@@ -465,7 +466,10 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
                 # 에러 시 ERROR로 업데이트
                 logger.error("Streaming error: %s", str(e), exc_info=True)
                 await update_chat_message(message_id=message_id, status="ERROR")
-                error_event = {"type": "error", "error": "An error occurred during streaming. Please try again."}
+                error_event = {
+                    "type": "error",
+                    "error": "An error occurred during streaming. Please try again.",
+                }
                 yield f"data: {json.dumps(error_event, ensure_ascii=False)}\n\n"
 
         return StreamingResponse(
@@ -484,4 +488,6 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
         raise HTTPException(status_code=500, detail="Database error. Please try again.") from e
     except Exception as e:
         logger.error("Unexpected error in chat_stream: %s", str(e), exc_info=True)
-        raise HTTPException(status_code=500, detail="An unexpected error occurred. Please try again.") from e
+        raise HTTPException(
+            status_code=500, detail="An unexpected error occurred. Please try again."
+        ) from e

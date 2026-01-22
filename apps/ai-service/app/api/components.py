@@ -2,8 +2,8 @@ import asyncio
 import json
 import logging
 from datetime import datetime
-from zoneinfo import ZoneInfo
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -716,11 +716,11 @@ async def get_storage_schema(schema_key: str) -> SchemaResponse:
         schema = await fetch_schema_from_storage(schema_key)
         return SchemaResponse(schema_key=schema_key, data=schema)
 
-    except FileNotFoundError:
+    except FileNotFoundError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Schema not found: {schema_key}",
-        )
+        ) from e
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

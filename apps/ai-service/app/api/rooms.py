@@ -152,11 +152,11 @@ async def update_room(room_id: str, request: UpdateRoomRequest) -> RoomResponse:
             schema_key=request.schema_key,
         )
         return RoomResponse(**room_data)
-    except RoomNotFoundError:
+    except RoomNotFoundError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Room not found.",
-        )
+        ) from e
     except FirestoreError as e:
         logger.error("Failed to update room %s: %s", room_id, str(e), exc_info=True)
         raise HTTPException(

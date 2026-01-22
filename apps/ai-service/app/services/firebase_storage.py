@@ -41,14 +41,10 @@ def init_firebase() -> None:
     # Cloud Run: 기본 자격증명 사용 (GCP 서비스 계정)
     if SERVICE_ACCOUNT_KEY_PATH.exists():
         cred = credentials.Certificate(str(SERVICE_ACCOUNT_KEY_PATH))
-        firebase_admin.initialize_app(cred, {
-            "storageBucket": settings.firebase_storage_bucket
-        })
+        firebase_admin.initialize_app(cred, {"storageBucket": settings.firebase_storage_bucket})
         logger.info("Firebase initialized with service account key")
     else:
-        firebase_admin.initialize_app(options={
-            "storageBucket": settings.firebase_storage_bucket
-        })
+        firebase_admin.initialize_app(options={"storageBucket": settings.firebase_storage_bucket})
         logger.info("Firebase initialized with default credentials (Cloud Run)")
 
     _firebase_initialized = True
