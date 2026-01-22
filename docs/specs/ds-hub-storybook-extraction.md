@@ -2,6 +2,42 @@
 
 > 이 문서는 DS-Runtime Hub 4막(사용자 DS 연동) 구현을 위한 기술 참고 문서입니다.
 
+## 구현 상태
+
+> ✅ **MVP 구현 완료** (2026-01-22)
+
+### 구현 파일
+
+| 파일 | 용도 | 라인 수 |
+|------|------|---------|
+| `apps/web/lib/storybook-extractor.ts` | 핵심 추출 로직 | 761줄 |
+| `apps/web/lib/playwright-extractor.ts` | CSR Storybook 대응 | 100줄 |
+| `apps/web/lib/extraction-cache.ts` | 결과 캐싱 | 184줄 |
+| `apps/web/lib/schema-converter.ts` | 포맷 변환 | 229줄 |
+| `apps/web/types/ds-extraction.ts` | 타입 정의 | 220줄 |
+| `apps/web/app/api/ds/extract/route.ts` | API 엔드포인트 | 422줄 |
+
+### 성능 지표
+
+| 시나리오 | 소요 시간 | 비고 |
+|---------|----------|------|
+| 기존 (Playwright 순차) | 18분 | 느림 |
+| 최적화 (Playwright 5회 실패 후 중단) | 30초 | 기본값 |
+| `?playwright=false` | **6.8초** | 권장 (158배 향상) |
+
+### 주요 기능
+
+- ✅ 2단계 처리 패턴 (Cheerio 병렬 → Playwright 재시도)
+- ✅ 병렬 처리 (5개씩 동시 처리)
+- ✅ 캐싱 레이어 (1시간 TTL)
+- ✅ 스트리밍 응답 (NDJSON)
+- ✅ Playwright 비활성화 옵션
+- ✅ 조기 종료 로직 (5회 연속 실패 후 중단)
+- ✅ 8가지 폴백 CSS 선택자
+- ✅ 문서 페이지 자동 필터링
+
+---
+
 ## 개요
 
 ### 목표
@@ -125,22 +161,38 @@ https://example.chromatic.com/iframe.html?id=ui-badge--docs&viewMode=docs
 </table>
 ```
 
-**파싱 대상 선택자**
+**파싱 대상 선택자 (8가지 폴백)**
 
-| 데이터 | 선택자 | 비고 |
-|--------|--------|------|
-| Prop 이름 | `td:first-child span` | `css-in3yi3` 클래스 |
-| 설명 | `td:nth-child(2) > div:first-child` | |
-| 타입 옵션 | `td:nth-child(2) span.css-o1d7ko` | union 타입의 각 값 |
-| 기본값 | `td:nth-child(3) span` | `-`이면 없음 |
-| Control 타입 | `td:nth-child(4) select\|input` | select, number, text 등 |
-| Select 옵션 | `select option` | enum 값 목록 |
+> 실제 구현: `apps/web/lib/storybook-extractor.ts` SELECTORS 상수
+
+**ArgTypes 테이블 선택자** (Storybook 버전별 호환):
+```css
+.docblock-argstable,           /* Storybook 7+ 기본 */
+[class*="argstable"],          /* 클래스명 변형 */
+table[class*="args"],          /* 일반 패턴 */
+.sbdocs-argtable,              /* Storybook 6 레거시 */
+[data-testid="prop-table"],    /* 테스트 ID 기반 */
+table.docblock-table,          /* Docblock 테이블 */
+.css-1x2jtvf,                  /* 해시 클래스 (불안정) */
+table tbody                    /* 최종 폴백 */
+```
+
+**각 필드별 선택자**:
+
+| 데이터 | 선택자 (다중 폴백) |
+|--------|-------------------|
+| Prop 이름 | `td:first-child span`, `td:first-child code`, `td:first-child button span` |
+| 설명 | `td:nth-child(2) > div:first-child` |
+| 타입 옵션 | `td:nth-child(2) span[class*="o1d7ko"]`, `td:nth-child(2) code` |
+| 기본값 | `td:nth-child(3) span`, `td:nth-child(3) code` |
+| Control | `select`, `input[type="text"]`, `input[type="number"]`, `textarea`, `[data-testid]` |
+| Select 옵션 | `select option` |
 
 **주의사항**
 
-- CSR(Client-Side Rendering)인 경우 HTML만 fetch하면 빈 테이블
-- 서버에서 fetch 시 Puppeteer/Playwright 필요할 수 있음
-- CORS 정책에 따라 클라이언트에서 직접 fetch 불가능할 수 있음
+- CSR(Client-Side Rendering)인 경우 HTML만 fetch하면 빈 테이블 → Playwright로 재시도
+- 서버에서 fetch 시 Playwright 필요 (구현 완료)
+- CORS 정책에 따라 클라이언트에서 직접 fetch 불가능 → 서버 API 사용
 
 ---
 
@@ -156,7 +208,7 @@ https://example.chromatic.com/iframe.html?id=ui-badge--docs&viewMode=docs
 
 ## 추출 전략
 
-### Light 모드 (권장 MVP)
+### Light 모드 (구현 완료)
 
 Public URL만으로 추출, Addon 설치 불필요
 
@@ -165,14 +217,37 @@ Public URL만으로 추출, Addon 설치 불필요
 │  1. index.json fetch                                    │
 │     → 컴포넌트 목록, 스토리 구조 추출                      │
 │                                                         │
-│  2. docs 타입 엔트리 필터링                               │
-│     → type === 'docs' && tags.includes('autodocs')     │
+│  2. 문서 페이지 필터링                                    │
+│     → Welcome, Guides 등 props 없는 페이지 제외           │
 │                                                         │
-│  3. 각 docs iframe HTML fetch + 파싱                    │
-│     → ArgTypes 테이블에서 Props 정보 추출                 │
+│  3. Cheerio 병렬 처리 (5개씩)                            │
+│     → docs iframe HTML fetch + ArgTypes 파싱            │
 │                                                         │
-│  4. ds.json 생성                                        │
+│  4. Placeholder 감지 시 Playwright 재시도                │
+│     → CSR Storybook 대응                                │
+│     → 5회 연속 실패 시 조기 종료                          │
+│                                                         │
+│  5. 캐싱 (1시간 TTL)                                    │
+│                                                         │
+│  6. ds.json 생성 및 저장                                 │
+│     → /public/ds-schemas/*.ds.json                      │
 └─────────────────────────────────────────────────────────┘
+```
+
+**API 사용법**:
+```bash
+# 기본 추출 (Playwright 활성화)
+POST /api/ds/extract
+Body: { "url": "https://react.carbondesignsystem.com" }
+
+# 고속 추출 (Playwright 비활성화) - 권장
+POST /api/ds/extract?playwright=false
+
+# 스트리밍 응답 (진행상황 실시간)
+POST /api/ds/extract?stream=true
+
+# 레거시 포맷 출력
+POST /api/ds/extract?format=legacy
 ```
 
 ### Full 모드 (향후 확장)
@@ -525,19 +600,23 @@ import { useStorybookApi } from 'storybook/manager-api';
 
 ---
 
-## 권장 구현 순서
+## 구현 순서 (완료)
 
-1. **MVP (Light 모드)**
+1. ✅ **MVP (Light 모드)** - 완료
    - index.json 파싱으로 컴포넌트 구조 추출
-   - 서버 사이드에서 iframe HTML fetch + 파싱
-   - ds.json 생성 및 저장
+   - 서버 사이드에서 iframe HTML fetch + Cheerio 파싱
+   - ds.json 생성 및 `/public/ds-schemas/` 저장
 
-2. **개선**
-   - Puppeteer 통합으로 CSR 대응
-   - 캐싱 레이어 추가
+2. ✅ **개선** - 완료
+   - Playwright 통합으로 CSR 대응
+   - 캐싱 레이어 추가 (1시간 TTL)
+   - 병렬 처리 (5개씩 동시 처리)
+   - 스트리밍 응답 (NDJSON)
    - 추출 실패 시 graceful degradation
+   - Playwright 비활성화 옵션 추가
+   - 5회 연속 실패 시 조기 종료
 
-3. **Full 모드 (선택적)**
+3. 🔲 **Full 모드 (미구현)**
    - Storybook Addon 개발
    - 버전별 패키지 분리 배포
    - 빌드 타임 추출 지원

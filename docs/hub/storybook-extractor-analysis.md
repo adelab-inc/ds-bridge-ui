@@ -2,7 +2,8 @@
 
 > **분석 일자**: 2026-01-22
 > **대상**: Carbon Design System (`https://react.carbondesignsystem.com`)
-> **추출 소요 시간**: 18분
+> **추출 소요 시간**: 18분 → **6.8초** (개선 후)
+> **구현 커밋**: `bdca21b3`
 
 ---
 
@@ -124,55 +125,73 @@ const iframeUrl = `${source}/iframe.html?id=${storyId}&viewMode=story`;
 
 ---
 
-## 5. 성능 개선 방안
+## 5. 성능 개선 방안 ✅ 구현 완료
 
-### Option A: Playwright 비활성화 (30초)
+> **커밋**: `bdca21b3` - ⚡ Perf: Playwright 비활성화 옵션 및 조기 종료 로직 추가
+
+### Option A: Playwright 비활성화 ✅
 
 ```bash
-curl -X POST "http://localhost:5555/api/ds/extract?playwright=false"
+curl -X POST "http://localhost:5555/api/ds/extract?playwright=false&stream=true" \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://react.carbondesignsystem.com"}'
 ```
 
 - Cheerio만 사용
 - 품질 동일 (어차피 Carbon은 Playwright도 실패)
 
-### Option B: Playwright 병렬 복원 (2-3분)
-
-- 브라우저 **컨텍스트 분리**로 충돌 방지
-- 동시 5개 처리 → `128/5 × 8초 = 3분`
-
-### Option C: 스마트 재시도 (1분)
+### Option C: 스마트 재시도 ✅
 
 - Playwright 실패 **5회 연속** 시 나머지 건너뛰기
-- 대부분의 CSR Storybook은 초반에 패턴 파악 가능
+- 기본값으로 적용됨 (`playwrightMaxFailures: 5`)
 
 ---
 
-## 6. 권장안
+## 6. 실제 테스트 결과
 
-**Option A + C 조합**:
+### 테스트 환경
 
-```typescript
-// 1. Playwright 기본 비활성화 옵션 제공
-// 2. 활성화 시에도 연속 실패 시 조기 종료
+- URL: `https://react.carbondesignsystem.com`
+- 컴포넌트: 128개
 
-interface ExtractOptions {
-  usePlaywright?: boolean;        // 기본 false로 변경
-  playwrightMaxFailures?: number; // 연속 실패 시 중단 (기본 5)
-}
+### 성능 비교
+
+| 설정 | 소요 시간 | 산출물 |
+|------|----------|--------|
+| 개선 전 (Playwright 순차) | **18분** | react.ds.json |
+| `?playwright=false` | **6.8초** | 동일 |
+| 기본 (5회 실패 후 중단) | **30.1초** | 동일 |
+
+### 핵심 결과
+
+- **158배 성능 향상**: 18분 → 6.8초
+- **산출물 동일**: 세 가지 방식 모두 동일한 JSON 산출물 생성
+- **품질 영향 없음**: Carbon은 CSR 기반이라 Playwright로도 props 추출 실패하므로, 비활성화해도 품질 손실 없음
+
+### 사용 가이드
+
+```bash
+# CSR Storybook (Carbon, 대부분의 대형 DS) - 빠른 추출 권장
+curl -X POST "http://localhost:5555/api/ds/extract?playwright=false&stream=true" \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://react.carbondesignsystem.com"}'
+
+# SSR Storybook (Chromatic 등) - 기본 설정 사용
+curl -X POST "http://localhost:5555/api/ds/extract?stream=true" \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://example.chromatic.com"}'
 ```
-
-### 예상 결과
-
-| Storybook 타입 | Playwright | 예상 시간 |
-|---------------|------------|----------|
-| SSR (정상 추출) | true | 2-3분 |
-| CSR (Carbon 같은) | false | **30초** |
 
 ---
 
 ## 7. 향후 개선 방향
 
-### Props 추출 품질 개선
+### ✅ 해결됨: 성능 문제
+
+- 18분 → 6.8초 (158배 향상)
+- `?playwright=false` 옵션 추가
+
+### 미해결: Props 추출 품질 개선
 
 1. **다른 Storybook 테스트**: SSR 기반이거나 ArgTypes가 명확한 Storybook (예: Chromatic 배포본)
 2. **Props 소스 다변화**: TypeScript 타입 정의 파일이나 `*.stories.tsx`에서 직접 추출
@@ -183,3 +202,4 @@ interface ExtractOptions {
 | 판정 | 이유 |
 |------|------|
 | **4막 목적에 부분 적합** | props 없이도 1막(컴포넌트 미리보기) 가능, 2막/3막은 불가 |
+| **성능 문제 해결** | 18분 → 6.8초, 동일 산출물 |
