@@ -614,7 +614,7 @@ class UploadSchemaRequest(BaseModel):
         description="Storage 경로 (예: schemas/aplus-ui.json)",
         json_schema_extra={"example": "schemas/aplus-ui.json"},
     )
-    schema: dict = Field(
+    data: dict = Field(
         ...,
         description="컴포넌트 스키마 JSON",
     )
@@ -632,7 +632,7 @@ class SchemaResponse(BaseModel):
     """스키마 조회 응답"""
 
     schema_key: str
-    schema: dict
+    data: dict
 
 
 @router.post(
@@ -661,15 +661,15 @@ class SchemaResponse(BaseModel):
 async def upload_schema(request: UploadSchemaRequest) -> UploadSchemaResponse:
     """컴포넌트 스키마 업로드"""
     try:
-        if not request.schema.get("components"):
+        if not request.data.get("components"):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Schema must contain 'components' field",
             )
 
-        await upload_schema_to_storage(request.schema_key, request.schema)
+        await upload_schema_to_storage(request.schema_key, request.data)
 
-        component_count = len(request.schema.get("components", {}))
+        component_count = len(request.data.get("components", {}))
         uploaded_at = datetime.now(ZoneInfo("Asia/Seoul")).isoformat()
 
         logger.info(
@@ -711,7 +711,7 @@ async def get_storage_schema(schema_key: str) -> SchemaResponse:
     """Storage 스키마 조회"""
     try:
         schema = await fetch_schema_from_storage(schema_key)
-        return SchemaResponse(schema_key=schema_key, schema=schema)
+        return SchemaResponse(schema_key=schema_key, data=schema)
 
     except FileNotFoundError:
         raise HTTPException(
