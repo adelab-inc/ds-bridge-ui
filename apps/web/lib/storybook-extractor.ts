@@ -40,6 +40,25 @@ const SELECTORS = {
   controlInput: 'td:nth-child(4) input, td:last-child input',
 };
 
+/**
+ * 문서 전용 카테고리/이름 패턴 (props가 없는 문서 페이지)
+ * 이 패턴에 매칭되는 docs-only 엔트리는 추출에서 제외됨
+ */
+const DOC_ONLY_PATTERNS = [
+  'Welcome',
+  'Guides',
+  'Getting Started',
+  'Contributing',
+  'Overview',
+  'Introduction',
+  'Documentation',
+  'Docs',
+  'About',
+  'Changelog',
+  'Migration',
+  'Roadmap',
+];
+
 // =============================================================================
 // Main Export Functions
 // =============================================================================
@@ -112,15 +131,19 @@ export async function extractDSFromUrl(
         const html = await fetchDocsHtml(baseUrl, info.docsId);
         props = parseArgTypesFromHtml(html);
 
-        // Step 2: Placeholder 감지 시 Playwright로 재시도
+        // Step 2: props가 없거나 placeholder 감지 시 Playwright로 재시도
+        // CSR Storybook에서는 props가 0개로 나올 수 있음
+        const shouldRetryWithPlaywright =
+          props.length === 0 || props.some(isPlaceholderProp);
+
         if (
           usePlaywright &&
           playwrightAvailable &&
           fetchDocsHtmlWithPlaywright &&
-          props.length > 0 &&
-          props.some(isPlaceholderProp)
+          shouldRetryWithPlaywright
         ) {
-          console.log(`[Extractor] ${info.name}: Placeholder 감지 → Playwright로 재시도`);
+          const reason = props.length === 0 ? 'props 없음' : 'Placeholder 감지';
+          console.log(`[Extractor] ${info.name}: ${reason} → Playwright로 재시도`);
           try {
             const docsUrl = `${baseUrl}/iframe.html?id=${info.docsId}&viewMode=docs`;
             const playwrightHtml = await fetchDocsHtmlWithPlaywright(docsUrl, playwrightTimeout);
@@ -223,6 +246,7 @@ export async function fetchDocsHtml(baseUrl: string, docsId: string): Promise<st
 
 /**
  * index.json entries에서 컴포넌트 구조 파싱
+ * 문서 전용 페이지(Welcome, Guides 등)는 자동으로 필터링됨
  */
 export function parseComponentsFromIndex(
   entries: Record<string, StoryEntry>
@@ -254,7 +278,26 @@ export function parseComponentsFromIndex(
     }
   }
 
-  return Array.from(componentMap.values());
+  // 문서 전용 페이지 필터링
+  // story가 없는 docs-only 엔트리 중 문서 전용 패턴에 매칭되는 것 제외
+  return Array.from(componentMap.values()).filter((comp) => {
+    // story가 하나라도 있으면 실제 컴포넌트로 간주
+    if (comp.stories.length > 0) return true;
+
+    // docs만 있는 경우, 문서 전용 패턴인지 확인
+    const isDocOnlyPage = DOC_ONLY_PATTERNS.some(
+      (pattern) =>
+        comp.category.toLowerCase().includes(pattern.toLowerCase()) ||
+        comp.name.toLowerCase().includes(pattern.toLowerCase())
+    );
+
+    if (isDocOnlyPage) {
+      console.log(`[Extractor] 문서 페이지 제외: ${comp.category}/${comp.name}`);
+      return false;
+    }
+
+    return true;
+  });
 }
 
 /**
