@@ -609,10 +609,9 @@ async def reload_components() -> ReloadResponse:
 class UploadSchemaRequest(BaseModel):
     """스키마 업로드 요청"""
 
-    schema_key: str = Field(
+    room_id: str = Field(
         ...,
-        description="Storage 경로 (예: schemas/aplus-ui.json)",
-        json_schema_extra={"example": "schemas/aplus-ui.json"},
+        description="채팅방 ID",
     )
     data: dict = Field(
         ...,
@@ -623,9 +622,9 @@ class UploadSchemaRequest(BaseModel):
 class UploadSchemaResponse(BaseModel):
     """스키마 업로드 응답"""
 
-    schema_key: str
-    component_count: int
-    uploaded_at: str
+    schema_key: str = Field(description="Firebase Storage 경로")
+    component_count: int = Field(description="업로드된 컴포넌트 수")
+    uploaded_at: str = Field(description="업로드 시각 (ISO 8601)")
 
 
 class SchemaResponse(BaseModel):
@@ -644,13 +643,12 @@ class SchemaResponse(BaseModel):
 클라이언트가 추출한 컴포넌트 스키마를 Firebase Storage에 업로드합니다.
 
 ## 사용 흐름
-1. 클라이언트에서 react-docgen-typescript로 스키마 추출
-2. 이 API로 스키마 업로드
-3. 반환된 schema_key로 채팅방 생성
+1. `POST /rooms`로 채팅방 생성 → room_id 획득
+2. 클라이언트에서 react-docgen-typescript로 스키마 추출
+3. 이 API로 스키마 업로드 (room_id 필수)
 
-## schema_key 규칙
-- `schemas/` 접두사 권장
-- `.json` 확장자 필수
+## 저장 경로
+`exports/{room_id}/component-schema.json`
 """,
     responses={
         201: {"description": "업로드 성공"},
@@ -667,23 +665,28 @@ async def upload_schema(request: UploadSchemaRequest) -> UploadSchemaResponse:
                 detail="Schema must contain 'components' field",
             )
 
-        await upload_schema_to_storage(request.schema_key, request.data)
+        # room_id 기반 schema_key 생성
+        schema_key = f"exports/{request.room_id}/component-schema.json"
+
+        await upload_schema_to_storage(schema_key, request.data)
 
         component_count = len(request.data.get("components", {}))
         uploaded_at = datetime.now(ZoneInfo("Asia/Seoul")).isoformat()
 
         logger.info(
             "Schema uploaded: %s (%d components)",
-            request.schema_key,
+            schema_key,
             component_count,
         )
 
         return UploadSchemaResponse(
-            schema_key=request.schema_key,
+            schema_key=schema_key,
             component_count=component_count,
             uploaded_at=uploaded_at,
         )
 
+    except HTTPException:
+        raise
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
