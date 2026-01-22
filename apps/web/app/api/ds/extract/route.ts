@@ -21,6 +21,11 @@
  * curl -X POST "http://localhost:3000/api/ds/extract?stream=true" \
  *   -H "Content-Type: application/json" \
  *   -d '{"url": "https://workday.github.io/canvas-kit"}'
+ *
+ * # Playwright 비활성화 (CSR Storybook 빠른 추출 - 18분 → 30초)
+ * curl -X POST "http://localhost:3000/api/ds/extract?playwright=false&stream=true" \
+ *   -H "Content-Type: application/json" \
+ *   -d '{"url": "https://react.carbondesignsystem.com"}'
  * ```
  */
 
@@ -171,11 +176,13 @@ function writeStreamMessage(
  * - format: 'ds' (default) | 'legacy'
  * - stream: 'true' (optional) - NDJSON 스트리밍 응답 활성화
  * - force: 'true' (optional) - 캐시 무시하고 재추출
+ * - playwright: 'false' (optional) - Playwright 비활성화 (CSR Storybook 빠른 추출)
  */
 export async function POST(request: NextRequest): Promise<NextResponse<ExtractResponse> | Response> {
   const useStreaming = request.nextUrl.searchParams.get('stream') === 'true';
   const format = (request.nextUrl.searchParams.get('format') || 'ds') as 'ds' | 'legacy';
   const forceRefresh = request.nextUrl.searchParams.get('force') === 'true';
+  const usePlaywright = request.nextUrl.searchParams.get('playwright') !== 'false';
 
   // 공통 검증 로직
   let body: ExtractRequest;
@@ -215,11 +222,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<ExtractRe
 
   // 스트리밍 모드 (캐시 사용 안 함 - 진행상황 표시 필요)
   if (useStreaming) {
-    return handleStreamingExtract(url, format, forceRefresh, request.signal);
+    return handleStreamingExtract(url, format, forceRefresh, usePlaywright, request.signal);
   }
 
   // 기존 JSON 응답 모드
-  return handleJsonExtract(url, format, forceRefresh, request.signal);
+  return handleJsonExtract(url, format, forceRefresh, usePlaywright, request.signal);
 }
 
 /**
@@ -242,6 +249,7 @@ function handleStreamingExtract(
   url: string,
   format: 'ds' | 'legacy',
   forceRefresh: boolean,
+  usePlaywright: boolean,
   signal?: AbortSignal
 ): Response {
   const encoder = new TextEncoder();
@@ -253,6 +261,7 @@ function handleStreamingExtract(
     try {
       const { ds: dsJson, warnings } = await extractDSFromUrl(url, {
         signal,
+        usePlaywright,
         onProgress: (component, current, total) => {
           const progressMessage: StreamProgressMessage = {
             type: 'progress',
@@ -317,6 +326,7 @@ async function handleJsonExtract(
   url: string,
   format: 'ds' | 'legacy',
   forceRefresh: boolean,
+  usePlaywright: boolean,
   signal?: AbortSignal
 ): Promise<NextResponse<ExtractResponse>> {
   try {
@@ -347,7 +357,7 @@ async function handleJsonExtract(
     }
 
     // 캐시 미스 또는 강제 새로고침 - 새로 추출
-    const { ds: dsJson, warnings } = await extractDSFromUrl(url, { signal });
+    const { ds: dsJson, warnings } = await extractDSFromUrl(url, { signal, usePlaywright });
 
     // 캐시에 저장
     setCachedDS(url, dsJson, warnings);

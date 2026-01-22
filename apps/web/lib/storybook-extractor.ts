@@ -152,6 +152,8 @@ export interface ExtractOptions {
   usePlaywright?: boolean;
   /** Playwright 타임아웃 (ms) - 기본: 15000 */
   playwrightTimeout?: number;
+  /** Playwright 연속 실패 허용 횟수 - 초과시 재시도 중단 - 기본: 5 */
+  playwrightMaxFailures?: number;
   /** 병렬 처리 동시 실행 수 - 기본: 5 */
   concurrency?: number;
   /** 진행상황 콜백 (스트리밍 응답용) */
@@ -186,6 +188,7 @@ export async function extractDSFromUrl(
   const {
     usePlaywright = true,
     playwrightTimeout = 15000,
+    playwrightMaxFailures = 5,
     concurrency = CONCURRENCY_LIMIT,
     onProgress,
     signal,
@@ -275,13 +278,23 @@ export async function extractDSFromUrl(
     componentsNeedingPlaywright.length > 0
   ) {
     console.log(
-      `[Extractor] ${componentsNeedingPlaywright.length}개 컴포넌트 Playwright 재시도 (순차 처리)`
+      `[Extractor] ${componentsNeedingPlaywright.length}개 컴포넌트 Playwright 재시도 (순차 처리, 최대 실패: ${playwrightMaxFailures}회)`
     );
+
+    let consecutiveFailures = 0;
 
     for (const result of componentsNeedingPlaywright) {
       // 취소 확인
       if (signal?.aborted) {
         console.log('[Extractor] 작업이 취소되었습니다.');
+        break;
+      }
+
+      // 연속 실패 체크
+      if (consecutiveFailures >= playwrightMaxFailures) {
+        console.log(
+          `[Extractor] Playwright 연속 ${playwrightMaxFailures}회 실패. 나머지 ${componentsNeedingPlaywright.length - componentsNeedingPlaywright.indexOf(result)}개 컴포넌트 재시도 건너뜀.`
+        );
         break;
       }
 
@@ -297,9 +310,19 @@ export async function extractDSFromUrl(
         if (playwrightProps.length > 0 && !playwrightProps.every(isPlaceholderProp)) {
           result.props = playwrightProps;
           console.log(`[Extractor] ${info.name}: Playwright 성공 (${playwrightProps.length} props)`);
+          consecutiveFailures = 0; // 성공 시 리셋
+        } else {
+          consecutiveFailures++;
+          console.warn(
+            `[Extractor] ${info.name}: Playwright 추출 실패 - props 품질 부적합 (연속 실패: ${consecutiveFailures}/${playwrightMaxFailures})`
+          );
         }
       } catch (playwrightError) {
-        console.warn(`[Extractor] ${info.name}: Playwright 실패:`, playwrightError);
+        consecutiveFailures++;
+        console.warn(
+          `[Extractor] ${info.name}: Playwright 오류 (연속 실패: ${consecutiveFailures}/${playwrightMaxFailures}):`,
+          playwrightError
+        );
       }
     }
   }
