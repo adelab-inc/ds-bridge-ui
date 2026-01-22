@@ -215,11 +215,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<ExtractRe
 
   // 스트리밍 모드 (캐시 사용 안 함 - 진행상황 표시 필요)
   if (useStreaming) {
-    return handleStreamingExtract(url, format, forceRefresh);
+    return handleStreamingExtract(url, format, forceRefresh, request.signal);
   }
 
   // 기존 JSON 응답 모드
-  return handleJsonExtract(url, format, forceRefresh);
+  return handleJsonExtract(url, format, forceRefresh, request.signal);
 }
 
 /**
@@ -241,7 +241,8 @@ function createStreamErrorResponse(message: string, code: ExtractErrorCode): Res
 function handleStreamingExtract(
   url: string,
   format: 'ds' | 'legacy',
-  forceRefresh: boolean
+  forceRefresh: boolean,
+  signal?: AbortSignal
 ): Response {
   const encoder = new TextEncoder();
   const stream = new TransformStream<Uint8Array, Uint8Array>();
@@ -251,6 +252,7 @@ function handleStreamingExtract(
   (async () => {
     try {
       const { ds: dsJson, warnings } = await extractDSFromUrl(url, {
+        signal,
         onProgress: (component, current, total) => {
           const progressMessage: StreamProgressMessage = {
             type: 'progress',
@@ -314,7 +316,8 @@ function handleStreamingExtract(
 async function handleJsonExtract(
   url: string,
   format: 'ds' | 'legacy',
-  forceRefresh: boolean
+  forceRefresh: boolean,
+  signal?: AbortSignal
 ): Promise<NextResponse<ExtractResponse>> {
   try {
     // 캐시 확인 (force가 아닌 경우)
@@ -344,7 +347,7 @@ async function handleJsonExtract(
     }
 
     // 캐시 미스 또는 강제 새로고침 - 새로 추출
-    const { ds: dsJson, warnings } = await extractDSFromUrl(url);
+    const { ds: dsJson, warnings } = await extractDSFromUrl(url, { signal });
 
     // 캐시에 저장
     setCachedDS(url, dsJson, warnings);

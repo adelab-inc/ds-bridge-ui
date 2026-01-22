@@ -128,6 +128,10 @@ const DOC_ONLY_PATTERNS = [
   'Changelog',
   'Migration',
   'Roadmap',
+  'Feature Flag',
+  'Feature Flags',
+  'Experimental',
+  'Deprecated',
 ];
 
 /**
@@ -152,6 +156,8 @@ export interface ExtractOptions {
   concurrency?: number;
   /** 진행상황 콜백 (스트리밍 응답용) */
   onProgress?: (component: string, current: number, total: number) => void;
+  /** 취소 시그널 (AbortController) */
+  signal?: AbortSignal;
 }
 
 /**
@@ -164,6 +170,10 @@ export interface ExtractResult {
 
 /**
  * Storybook URL에서 DS 메타데이터 추출
+ *
+ * 2단계 처리 패턴:
+ * 1단계: Cheerio로 모든 컴포넌트 병렬 처리 (빠름)
+ * 2단계: Playwright 필요한 컴포넌트만 순차 재시도 (브라우저 충돌 방지)
  *
  * @param storybookUrl - Storybook URL
  * @param options - 추출 옵션
@@ -178,6 +188,7 @@ export async function extractDSFromUrl(
     playwrightTimeout = 15000,
     concurrency = CONCURRENCY_LIMIT,
     onProgress,
+    signal,
   } = options;
 
   // URL 정규화
@@ -195,6 +206,7 @@ export async function extractDSFromUrl(
   // Playwright 사용 가능 여부 확인
   let playwrightAvailable = false;
   let fetchDocsHtmlWithPlaywright: ((url: string, timeout?: number) => Promise<string>) | null = null;
+  let closeBrowserFn: (() => Promise<void>) | null = null;
 
   if (usePlaywright) {
     try {
@@ -202,82 +214,114 @@ export async function extractDSFromUrl(
       playwrightAvailable = await playwrightModule.isPlaywrightAvailable();
       if (playwrightAvailable) {
         fetchDocsHtmlWithPlaywright = playwrightModule.fetchDocsHtmlWithPlaywright;
+        closeBrowserFn = playwrightModule.closeBrowser;
       }
     } catch {
       console.warn('[Extractor] Playwright를 로드할 수 없습니다. Cheerio만 사용합니다.');
     }
   }
 
-  // 3. 각 컴포넌트의 props 추출 (병렬 처리)
+  // ==========================================================================
+  // 1단계: Cheerio로 모든 컴포넌트 병렬 처리
+  // ==========================================================================
   let processedCount = 0;
 
-  const processComponent = async (info: ComponentInfo): Promise<DSComponent> => {
+  interface CheerioResult {
+    info: ComponentInfo;
+    props: PropInfo[];
+    needsPlaywright: boolean;
+  }
+
+  const processWithCheerio = async (info: ComponentInfo): Promise<CheerioResult> => {
+    // 취소 확인
+    if (signal?.aborted) {
+      return { info, props: [], needsPlaywright: false };
+    }
+
     let props: PropInfo[] = [];
+    let needsPlaywright = false;
 
     if (info.docsId) {
       try {
-        // Step 1: Cheerio로 먼저 시도 (빠름)
         const html = await fetchDocsHtml(baseUrl, info.docsId);
         props = parseArgTypesFromHtml(html);
 
-        // Step 2: props가 없거나 placeholder 감지 시 Playwright로 재시도
-        const shouldRetryWithPlaywright =
-          props.length === 0 || props.some(isPlaceholderProp);
-
-        if (
-          usePlaywright &&
-          playwrightAvailable &&
-          fetchDocsHtmlWithPlaywright &&
-          shouldRetryWithPlaywright
-        ) {
-          const reason = props.length === 0 ? 'props 없음' : 'Placeholder 감지';
-          console.log(`[Extractor] ${info.name}: ${reason} → Playwright로 재시도`);
-          try {
-            const docsUrl = `${baseUrl}/iframe.html?id=${info.docsId}&viewMode=docs`;
-            const playwrightHtml = await fetchDocsHtmlWithPlaywright(docsUrl, playwrightTimeout);
-            const playwrightProps = parseArgTypesFromHtml(playwrightHtml);
-
-            if (
-              playwrightProps.length > 0 &&
-              !playwrightProps.every(isPlaceholderProp)
-            ) {
-              props = playwrightProps;
-              console.log(`[Extractor] ${info.name}: Playwright 성공 (${props.length} props)`);
-            }
-          } catch (playwrightError) {
-            console.warn(`[Extractor] ${info.name}: Playwright 실패:`, playwrightError);
-          }
-        }
+        // Playwright 재시도 필요 여부 판단
+        needsPlaywright = props.length === 0 || props.some(isPlaceholderProp);
       } catch (error) {
         console.warn(`Failed to extract props for ${info.name}:`, error);
+        needsPlaywright = true;
       }
     }
 
-    // 진행상황 콜백 호출
+    // 진행상황 콜백 (Cheerio 단계)
     processedCount++;
     onProgress?.(info.name, processedCount, totalComponents);
 
-    return {
-      name: info.name,
-      category: info.category,
-      stories: info.stories,
-      props,
-    };
+    return { info, props, needsPlaywright };
   };
 
-  // 배치 병렬 처리
-  const components = await processInBatches(componentInfos, processComponent, concurrency);
-  console.log(`[Extractor] ${components.length}개 컴포넌트 추출 완료`);
+  const cheerioResults = await processInBatches(componentInfos, processWithCheerio, concurrency);
 
-  // Browser 정리 (Playwright 사용 시)
-  if (playwrightAvailable) {
+  // ==========================================================================
+  // 2단계: Playwright 필요한 컴포넌트만 순차적으로 재시도
+  // ==========================================================================
+  const componentsNeedingPlaywright = cheerioResults.filter((r) => r.needsPlaywright && r.info.docsId);
+
+  if (
+    usePlaywright &&
+    playwrightAvailable &&
+    fetchDocsHtmlWithPlaywright &&
+    componentsNeedingPlaywright.length > 0
+  ) {
+    console.log(
+      `[Extractor] ${componentsNeedingPlaywright.length}개 컴포넌트 Playwright 재시도 (순차 처리)`
+    );
+
+    for (const result of componentsNeedingPlaywright) {
+      // 취소 확인
+      if (signal?.aborted) {
+        console.log('[Extractor] 작업이 취소되었습니다.');
+        break;
+      }
+
+      const { info } = result;
+      const reason = result.props.length === 0 ? 'props 없음' : 'Placeholder 감지';
+      console.log(`[Extractor] ${info.name}: ${reason} → Playwright로 재시도`);
+
+      try {
+        const docsUrl = `${baseUrl}/iframe.html?id=${info.docsId}&viewMode=docs`;
+        const playwrightHtml = await fetchDocsHtmlWithPlaywright(docsUrl, playwrightTimeout);
+        const playwrightProps = parseArgTypesFromHtml(playwrightHtml);
+
+        if (playwrightProps.length > 0 && !playwrightProps.every(isPlaceholderProp)) {
+          result.props = playwrightProps;
+          console.log(`[Extractor] ${info.name}: Playwright 성공 (${playwrightProps.length} props)`);
+        }
+      } catch (playwrightError) {
+        console.warn(`[Extractor] ${info.name}: Playwright 실패:`, playwrightError);
+      }
+    }
+  }
+
+  // Browser 정리
+  if (closeBrowserFn) {
     try {
-      const playwrightModule = await import('./playwright-extractor');
-      await playwrightModule.closeBrowser();
+      await closeBrowserFn();
     } catch {
       // 무시
     }
   }
+
+  console.log(`[Extractor] ${cheerioResults.length}개 컴포넌트 추출 완료`);
+
+  // 3. 결과 변환
+  const components: DSComponent[] = cheerioResults.map((r) => ({
+    name: r.info.name,
+    category: r.info.category,
+    stories: r.info.stories,
+    props: r.props,
+  }));
 
   // 4. ds.json 생성
   const ds: DSJson = {
