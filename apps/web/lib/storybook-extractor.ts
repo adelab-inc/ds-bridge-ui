@@ -59,6 +59,12 @@ const DOC_ONLY_PATTERNS = [
   'Roadmap',
 ];
 
+/**
+ * 병렬 처리 동시 실행 수 제한
+ * 너무 높으면 서버에 부하, 너무 낮으면 속도 저하
+ */
+const CONCURRENCY_LIMIT = 5;
+
 // =============================================================================
 // Main Export Functions
 // =============================================================================
@@ -71,6 +77,10 @@ export interface ExtractOptions {
   usePlaywright?: boolean;
   /** Playwright 타임아웃 (ms) - 기본: 15000 */
   playwrightTimeout?: number;
+  /** 병렬 처리 동시 실행 수 - 기본: 5 */
+  concurrency?: number;
+  /** 진행상황 콜백 (스트리밍 응답용) */
+  onProgress?: (component: string, current: number, total: number) => void;
 }
 
 /**
@@ -92,7 +102,12 @@ export async function extractDSFromUrl(
   storybookUrl: string,
   options: ExtractOptions = {}
 ): Promise<ExtractResult> {
-  const { usePlaywright = true, playwrightTimeout = 15000 } = options;
+  const {
+    usePlaywright = true,
+    playwrightTimeout = 15000,
+    concurrency = CONCURRENCY_LIMIT,
+    onProgress,
+  } = options;
 
   // URL 정규화
   const baseUrl = normalizeUrl(storybookUrl);
@@ -102,9 +117,9 @@ export async function extractDSFromUrl(
 
   // 2. 컴포넌트 구조 파싱
   const componentInfos = parseComponentsFromIndex(index.entries);
+  const totalComponents = componentInfos.length;
 
-  // 3. 각 컴포넌트의 props 추출
-  const components: DSComponent[] = [];
+  console.log(`[Extractor] ${totalComponents}개 컴포넌트 추출 시작 (동시 처리: ${concurrency}개)`);
 
   // Playwright 사용 가능 여부 확인
   let playwrightAvailable = false;
@@ -122,7 +137,10 @@ export async function extractDSFromUrl(
     }
   }
 
-  for (const info of componentInfos) {
+  // 3. 각 컴포넌트의 props 추출 (병렬 처리)
+  let processedCount = 0;
+
+  const processComponent = async (info: ComponentInfo): Promise<DSComponent> => {
     let props: PropInfo[] = [];
 
     if (info.docsId) {
@@ -132,7 +150,6 @@ export async function extractDSFromUrl(
         props = parseArgTypesFromHtml(html);
 
         // Step 2: props가 없거나 placeholder 감지 시 Playwright로 재시도
-        // CSR Storybook에서는 props가 0개로 나올 수 있음
         const shouldRetryWithPlaywright =
           props.length === 0 || props.some(isPlaceholderProp);
 
@@ -149,7 +166,6 @@ export async function extractDSFromUrl(
             const playwrightHtml = await fetchDocsHtmlWithPlaywright(docsUrl, playwrightTimeout);
             const playwrightProps = parseArgTypesFromHtml(playwrightHtml);
 
-            // Playwright 결과가 더 좋은 경우만 사용
             if (
               playwrightProps.length > 0 &&
               !playwrightProps.every(isPlaceholderProp)
@@ -166,13 +182,21 @@ export async function extractDSFromUrl(
       }
     }
 
-    components.push({
+    // 진행상황 콜백 호출
+    processedCount++;
+    onProgress?.(info.name, processedCount, totalComponents);
+
+    return {
       name: info.name,
       category: info.category,
       stories: info.stories,
       props,
-    });
-  }
+    };
+  };
+
+  // 배치 병렬 처리
+  const components = await processInBatches(componentInfos, processComponent, concurrency);
+  console.log(`[Extractor] ${components.length}개 컴포넌트 추출 완료`);
 
   // Browser 정리 (Playwright 사용 시)
   if (playwrightAvailable) {
@@ -366,6 +390,31 @@ export function parseArgTypesFromHtml(html: string): PropInfo[] {
 // =============================================================================
 // Helper Functions
 // =============================================================================
+
+/**
+ * 배치 병렬 처리 유틸리티
+ * 주어진 concurrency 수만큼 동시에 처리하고 결과를 순서대로 반환
+ *
+ * @param items - 처리할 항목 배열
+ * @param processor - 각 항목을 처리하는 비동기 함수
+ * @param concurrency - 동시 처리 수
+ * @returns 처리 결과 배열 (입력 순서 유지)
+ */
+async function processInBatches<T, R>(
+  items: T[],
+  processor: (item: T) => Promise<R>,
+  concurrency: number
+): Promise<R[]> {
+  const results: R[] = [];
+
+  for (let i = 0; i < items.length; i += concurrency) {
+    const batch = items.slice(i, i + concurrency);
+    const batchResults = await Promise.all(batch.map(processor));
+    results.push(...batchResults);
+  }
+
+  return results;
+}
 
 /**
  * Control 정보 추출 (select, input 등)
