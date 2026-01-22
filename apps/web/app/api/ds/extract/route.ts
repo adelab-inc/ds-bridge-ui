@@ -36,6 +36,7 @@ import { existsSync } from 'fs';
 import path from 'path';
 import { extractDSFromUrl, validateStorybookUrl } from '@/lib/storybook-extractor';
 import { convertDSToLegacy } from '@/lib/schema-converter';
+import { getCachedDS, setCachedDS } from '@/lib/extraction-cache';
 import type {
   ExtractRequest,
   ExtractResponse,
@@ -169,10 +170,12 @@ function writeStreamMessage(
  * Query Parameters:
  * - format: 'ds' (default) | 'legacy'
  * - stream: 'true' (optional) - NDJSON 스트리밍 응답 활성화
+ * - force: 'true' (optional) - 캐시 무시하고 재추출
  */
 export async function POST(request: NextRequest): Promise<NextResponse<ExtractResponse> | Response> {
   const useStreaming = request.nextUrl.searchParams.get('stream') === 'true';
   const format = (request.nextUrl.searchParams.get('format') || 'ds') as 'ds' | 'legacy';
+  const forceRefresh = request.nextUrl.searchParams.get('force') === 'true';
 
   // 공통 검증 로직
   let body: ExtractRequest;
@@ -210,13 +213,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<ExtractRe
     return errorResponse(errorMsg, 'INDEX_NOT_FOUND');
   }
 
-  // 스트리밍 모드
+  // 스트리밍 모드 (캐시 사용 안 함 - 진행상황 표시 필요)
   if (useStreaming) {
-    return handleStreamingExtract(url, format);
+    return handleStreamingExtract(url, format, forceRefresh);
   }
 
   // 기존 JSON 응답 모드
-  return handleJsonExtract(url, format);
+  return handleJsonExtract(url, format, forceRefresh);
 }
 
 /**
@@ -233,8 +236,13 @@ function createStreamErrorResponse(message: string, code: ExtractErrorCode): Res
 
 /**
  * 스트리밍 추출 핸들러
+ * 스트리밍 모드에서는 캐시를 사용하지 않음 (진행상황 표시 필요)
  */
-function handleStreamingExtract(url: string, format: 'ds' | 'legacy'): Response {
+function handleStreamingExtract(
+  url: string,
+  format: 'ds' | 'legacy',
+  forceRefresh: boolean
+): Response {
   const encoder = new TextEncoder();
   const stream = new TransformStream<Uint8Array, Uint8Array>();
   const writer = stream.writable.getWriter();
@@ -253,6 +261,9 @@ function handleStreamingExtract(url: string, format: 'ds' | 'legacy'): Response 
           writeStreamMessage(writer, encoder, progressMessage);
         },
       });
+
+      // 캐시에 저장 (스트리밍 모드에서도 결과는 캐싱)
+      setCachedDS(url, dsJson, warnings);
 
       // 형식 변환
       let outputData: DSJson | ComponentSchemaJson;
@@ -302,10 +313,41 @@ function handleStreamingExtract(url: string, format: 'ds' | 'legacy'): Response 
  */
 async function handleJsonExtract(
   url: string,
-  format: 'ds' | 'legacy'
+  format: 'ds' | 'legacy',
+  forceRefresh: boolean
 ): Promise<NextResponse<ExtractResponse>> {
   try {
+    // 캐시 확인 (force가 아닌 경우)
+    if (!forceRefresh) {
+      const cached = getCachedDS(url);
+      if (cached) {
+        console.log(`[DS Extract] Using cached result for: ${url}`);
+
+        let outputData: DSJson | ComponentSchemaJson;
+        if (format === 'legacy') {
+          outputData = convertDSToLegacy(cached.ds);
+        } else {
+          outputData = cached.ds;
+        }
+
+        const savedPath = await saveSchemaToFile(outputData, cached.ds.name, format);
+
+        return NextResponse.json({
+          success: true,
+          data: outputData,
+          format,
+          savedPath,
+          warnings: cached.warnings.length > 0 ? cached.warnings : undefined,
+          cached: true, // 캐시 히트 표시
+        } as ExtractResponse & { cached?: boolean });
+      }
+    }
+
+    // 캐시 미스 또는 강제 새로고침 - 새로 추출
     const { ds: dsJson, warnings } = await extractDSFromUrl(url);
+
+    // 캐시에 저장
+    setCachedDS(url, dsJson, warnings);
 
     let outputData: DSJson | ComponentSchemaJson;
     if (format === 'legacy') {
