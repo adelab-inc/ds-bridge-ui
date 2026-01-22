@@ -22,22 +22,93 @@ import type {
 
 /**
  * HTML 파싱을 위한 CSS 선택자 (Storybook 버전별 fallback 포함)
+ *
+ * Storybook 6/7/8 버전 및 다양한 테마/설정 대응
+ * @see https://storybook.js.org/docs/api/doc-block-argtypes
  */
 const SELECTORS = {
-  // ArgTypes 테이블
-  table: '.docblock-argstable, [class*="argstable"], table[class*="args"]',
-  // Prop 이름
-  propName: 'td:first-child span, td:first-child code, td:first-child',
+  // ArgTypes 테이블 (Storybook 버전별 fallback)
+  table: [
+    '.docblock-argstable',           // Storybook 7+ 기본
+    '[class*="argstable"]',          // 클래스명 변형
+    'table[class*="args"]',          // 일반 패턴
+    '.sbdocs-argtable',              // Storybook 6 레거시
+    '.sbdocs-table',                 // Storybook 6 docs
+    '[data-testid="prop-table"]',    // 테스트 ID 기반
+    'table.props-table',             // 일부 커스텀 테마
+    '.sb-arg-table',                 // Storybook 8 일부 버전
+  ].join(', '),
+
+  // Prop 이름 (다양한 마크업 구조 대응)
+  propName: [
+    'td:first-child span',
+    'td:first-child code',
+    'td:first-child button span',    // 확장 가능한 row (Storybook 7+)
+    'td:first-child > strong',       // 일부 테마
+    '[data-testid="prop-name"]',     // 테스트 ID 기반
+    'td:first-child',                // fallback
+  ].join(', '),
+
   // 설명
-  description: 'td:nth-child(2) > div:first-child, td:nth-child(2) > span:first-child',
+  description: [
+    'td:nth-child(2) > div:first-child',
+    'td:nth-child(2) > span:first-child',
+    'td:nth-child(2) > p:first-child',  // 일부 테마
+    'td:nth-child(2) .description',     // 클래스 기반
+    '[data-testid="prop-description"]',
+  ].join(', '),
+
   // 타입 옵션 (union/enum 값들)
-  typeOptions:
-    'td:nth-child(2) span.css-o1d7ko, td:nth-child(2) span[class*="o1d7ko"], td:nth-child(2) code',
+  typeOptions: [
+    'td:nth-child(2) span.css-o1d7ko',           // Storybook 7 해시 클래스
+    'td:nth-child(2) span[class*="o1d7ko"]',     // 해시 클래스 변형
+    'td:nth-child(2) code',                      // 코드 블록
+    'td:nth-child(2) .type-content span',        // Storybook 8
+    'td:nth-child(2) [class*="type"] span',      // 타입 관련 클래스
+    '[data-testid="prop-type"]',                 // 테스트 ID 기반
+  ].join(', '),
+
   // 기본값
-  defaultValue: 'td:nth-child(3) span, td:nth-child(3) code',
-  // Control (select, input 등)
-  controlSelect: 'td:nth-child(4) select, td:last-child select',
-  controlInput: 'td:nth-child(4) input, td:last-child input',
+  defaultValue: [
+    'td:nth-child(3) span',
+    'td:nth-child(3) code',
+    'td:nth-child(3) .default-value',    // 클래스 기반
+    'td:nth-child(3) [class*="default"]',
+    '[data-testid="prop-default"]',
+  ].join(', '),
+
+  // Control - Select (드롭다운)
+  controlSelect: [
+    'td:nth-child(4) select',
+    'td:last-child select',
+    '[data-testid="prop-control"] select',
+    '.sb-control select',
+  ].join(', '),
+
+  // Control - Input (텍스트, 숫자, 체크박스 등)
+  controlInput: [
+    'td:nth-child(4) input',
+    'td:last-child input',
+    '[data-testid="prop-control"] input',
+    '.sb-control input',
+  ].join(', '),
+
+  // Control - Textarea
+  controlTextarea: [
+    'td:nth-child(4) textarea',
+    'td:last-child textarea',
+    '[data-testid="prop-control"] textarea',
+    '.sb-control textarea',
+  ].join(', '),
+
+  // Control - Object/JSON 에디터
+  controlObject: [
+    'td:nth-child(4) [class*="object"]',
+    'td:nth-child(4) [class*="json"]',
+    'td:last-child [class*="object"]',
+    'td:last-child [class*="json"]',
+    '[data-testid="prop-control-object"]',
+  ].join(', '),
 };
 
 /**
@@ -346,18 +417,18 @@ export function parseArgTypesFromHtml(html: string): PropInfo[] {
 
     if (cells.length < 3) return;
 
-    // Prop 이름
-    const nameEl = cells.eq(0).find('span, code').first();
+    // Prop 이름 (SELECTORS 사용)
+    const nameEl = cells.eq(0).find(SELECTORS.propName).first();
     const name = nameEl.text().trim() || cells.eq(0).text().trim();
 
     if (!name) return;
 
-    // 설명
-    const descEl = cells.eq(1).find('> div:first-child, > span:first-child').first();
+    // 설명 (SELECTORS 사용)
+    const descEl = cells.eq(1).find(SELECTORS.description).first();
     const description = descEl.text().trim() || null;
 
-    // 타입 (union 값들)
-    const typeSpans = cells.eq(1).find('span.css-o1d7ko, span[class*="o1d7ko"], code');
+    // 타입 (union 값들) (SELECTORS 사용)
+    const typeSpans = cells.eq(1).find(SELECTORS.typeOptions);
     const type: string[] = [];
     typeSpans.each((_, span) => {
       const text = $(span).text().replace(/"/g, '').trim();
@@ -366,8 +437,8 @@ export function parseArgTypesFromHtml(html: string): PropInfo[] {
       }
     });
 
-    // 기본값
-    const defaultEl = cells.eq(2).find('span, code').first();
+    // 기본값 (SELECTORS 사용)
+    const defaultEl = cells.eq(2).find(SELECTORS.defaultValue).first();
     const defaultText = defaultEl.text().trim();
     const defaultValue = defaultText === '-' || defaultText === '' ? null : defaultText;
 
@@ -418,6 +489,7 @@ async function processInBatches<T, R>(
 
 /**
  * Control 정보 추출 (select, input 등)
+ * SELECTORS 상수를 사용하여 다양한 Storybook 버전 지원
  */
 function extractControlInfo(
   $: cheerio.CheerioAPI,
@@ -429,13 +501,16 @@ function extractControlInfo(
   // 마지막 또는 4번째 셀에서 control 찾기
   const controlCell = cells.length >= 4 ? cells.eq(3) : cells.last();
 
-  // Select 체크
-  const select = controlCell.find('select');
+  // Select 체크 (SELECTORS 사용)
+  const select = controlCell.find(SELECTORS.controlSelect.split(', ').map(s => {
+    // 셀 내부 셀렉터로 변환 (td:nth-child(4) select -> select)
+    return s.split(' ').pop() || s;
+  }).join(', '));
   if (select.length) {
     const options: string[] = [];
     select.find('option').each((_, opt) => {
       const value = $(opt).attr('value') || $(opt).text().trim();
-      if (value && value !== 'Choose option...' && value !== '') {
+      if (value && value !== 'Choose option...' && value !== '' && value !== 'Select...') {
         options.push(value);
       }
     });
@@ -445,8 +520,10 @@ function extractControlInfo(
     };
   }
 
-  // Input 체크
-  const input = controlCell.find('input');
+  // Input 체크 (SELECTORS 사용)
+  const input = controlCell.find(SELECTORS.controlInput.split(', ').map(s => {
+    return s.split(' ').pop() || s;
+  }).join(', '));
   if (input.length) {
     const inputType = input.attr('type');
     if (inputType === 'number') {
@@ -455,16 +532,25 @@ function extractControlInfo(
     if (inputType === 'checkbox') {
       return { control: 'boolean', options: null };
     }
+    if (inputType === 'color') {
+      return { control: 'text', options: null }; // color picker도 text로 처리
+    }
     return { control: 'text', options: null };
   }
 
-  // Textarea 체크
-  if (controlCell.find('textarea').length) {
+  // Textarea 체크 (SELECTORS 사용)
+  const textarea = controlCell.find(SELECTORS.controlTextarea.split(', ').map(s => {
+    return s.split(' ').pop() || s;
+  }).join(', '));
+  if (textarea.length) {
     return { control: 'text', options: null };
   }
 
-  // Object editor 체크
-  if (controlCell.find('[class*="object"], [class*="json"]').length) {
+  // Object editor 체크 (SELECTORS 사용)
+  const objectEditor = controlCell.find(SELECTORS.controlObject.split(', ').map(s => {
+    return s.split(' ').pop() || s;
+  }).join(', '));
+  if (objectEditor.length) {
     return { control: 'object', options: null };
   }
 
