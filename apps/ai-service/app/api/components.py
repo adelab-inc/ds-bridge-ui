@@ -14,7 +14,7 @@ from app.services.firebase_storage import (
     fetch_schema_from_storage,
     upload_schema_to_storage,
 )
-from app.services.firestore import update_chat_room
+from app.services.firestore import RoomNotFoundError, get_chat_room, update_chat_room
 
 router = APIRouter(dependencies=[Depends(verify_api_key)])
 logger = logging.getLogger(__name__)
@@ -666,9 +666,15 @@ async def upload_schema(request: UploadSchemaRequest) -> UploadSchemaResponse:
                 detail="Schema must contain 'components' field",
             )
 
+        # Room 존재 여부 먼저 확인
+        room = await get_chat_room(request.room_id)
+        if room is None:
+            raise RoomNotFoundError(f"Room not found: {request.room_id}")
+
         # room_id 기반 schema_key 생성
         schema_key = f"exports/{request.room_id}/component-schema.json"
 
+        # Storage에 업로드
         await upload_schema_to_storage(schema_key, request.data)
 
         # Room의 schema_key 자동 업데이트
@@ -691,6 +697,11 @@ async def upload_schema(request: UploadSchemaRequest) -> UploadSchemaResponse:
 
     except HTTPException:
         raise
+    except RoomNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Room not found: {request.room_id}",
+        ) from e
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
