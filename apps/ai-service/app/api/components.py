@@ -1,16 +1,95 @@
 import asyncio
 import json
+import logging
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, Field
 
 from app.core.auth import verify_api_key
 from app.schemas.chat import ReloadResponse
+from app.services.firebase_storage import (
+    fetch_schema_from_storage,
+    upload_schema_to_storage,
+)
+from app.services.firestore import RoomNotFoundError, get_chat_room, update_chat_room
 
 router = APIRouter(dependencies=[Depends(verify_api_key)])
+logger = logging.getLogger(__name__)
 
 # 스키마 리로드 시 동시성 보호를 위한 Lock
 _reload_lock = asyncio.Lock()
+
+
+# ============================================================================
+# Free Mode System Prompt (No Schema Constraints)
+# ============================================================================
+
+FREE_MODE_SYSTEM_PROMPT = """You are a premium UI/UX designer AI specializing in modern web interfaces.
+Create Dribbble-quality designs using React and Tailwind CSS.
+Always respond in Korean with brief design explanations.
+
+**Current Date: {current_date}**
+
+IMPORTANT RULES:
+- NEVER use emojis in your responses (no 👋, 🎉, ✨, etc.)
+- Use React functional components with TypeScript
+- Use Tailwind CSS for styling (not inline styles)
+- Create clean, modern, and responsive designs
+
+## Response Format
+
+Your response MUST follow this structure:
+
+1. **Design explanation** (in Korean, 1-2 sentences)
+2. **Code** wrapped in `<file path="...">...</file>` tags
+
+### Code Format Rules
+- Use `<file path="src/...">` tags (NOT markdown code blocks!)
+- Path should be like: `src/pages/PageName.tsx` or `src/components/ComponentName.tsx`
+- Export component as default
+
+### Example Response:
+
+모던하고 깔끔한 로그인 페이지입니다. 그라데이션 배경과 카드 레이아웃으로 세련된 느낌을 주었습니다.
+
+<file path="src/pages/LoginPage.tsx">
+import { useState } from 'react';
+
+const LoginPage = () => {
+  const [email, setEmail] = useState('');
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600">
+      <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+        <h1 className="text-2xl font-bold text-gray-800 mb-6">로그인</h1>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="이메일"
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        />
+        <button className="w-full mt-4 py-3 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 transition-colors">
+          로그인
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default LoginPage;
+</file>
+
+Create premium, modern UIs with React and Tailwind CSS."""
+
+
+def get_free_mode_system_prompt() -> str:
+    """스키마 제약 없는 자유로운 시스템 프롬프트 반환"""
+    current_date = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M KST")
+    return FREE_MODE_SYSTEM_PROMPT.replace("{current_date}", current_date)
 
 
 # ============================================================================
@@ -143,11 +222,13 @@ SYSTEM_PROMPT_HEADER = """You are a premium UI/UX designer AI specializing in mo
 Create Dribbble-quality designs using ONLY the components documented below.
 Always respond in Korean with brief design explanations.
 
+**Current Date: {current_date}**
+
 IMPORTANT RULES:
 - NEVER use emojis in your responses (no 👋, 🎉, ✨, etc.)
 - You can ONLY use components listed below
 - Do NOT create custom components like "UserBadge", "ChatMessage", "MessageBubble", etc.
-- Use <div> with inline styles for custom UI elements instead
+- Use <div> with Tailwind CSS classes for custom UI elements instead
 
 ## Component Reference
 
@@ -173,7 +254,7 @@ const LoginPage = () => {
   const [email, setEmail] = useState('');
 
   return (
-    <div style={{ padding: 24 }}>
+    <div className="p-6 flex flex-col gap-4">
       <Field label="이메일" value={email} onChange={(e) => setEmail(e.target.value)} />
       <Button variant="primary">로그인</Button>
     </div>
@@ -224,17 +305,17 @@ SYSTEM_PROMPT_FOOTER = """
 ❌ label="Click me"     → ✅ <Button>Click me</Button>
 ❌ size="large"         → ✅ size="lg"
 ❌ type="info"          → ✅ variant="info"
-❌ <UserBadge>          → ✅ Use <div> with inline styles instead!
-❌ <ChatMessage>        → ✅ Use <div> with inline styles instead!
-❌ <MessageBubble>      → ✅ Use <div> with inline styles instead!
+❌ <UserBadge>          → ✅ Use <div> with Tailwind classes instead!
+❌ <ChatMessage>        → ✅ Use <div> with Tailwind classes instead!
+❌ <MessageBubble>      → ✅ Use <div> with Tailwind classes instead!
 ❌ Custom components    → ✅ ONLY use components from schema above!
 ```
 
 ### 4. NEVER Create Custom Components
 - Do NOT define helper components like `const ChatMessage = () => ...`
 - Do NOT use components that are not in the schema
-- For custom UI elements, use `<div style={{...}}>` directly in JSX
-- All UI must be built using schema components + styled divs only
+- For custom UI elements, use `<div className="...">` with Tailwind CSS classes
+- All UI must be built using schema components + Tailwind-styled divs only
 
 ### 5. React Best Practices
 
@@ -335,40 +416,35 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 <img src={url} />
 ```
 
-### 7. Design System Guidelines
+### 7. Design System Guidelines (Tailwind CSS)
 
-#### Spacing System (8px base)
-- `4px` - Minimal gap (icon + text)
-- `8px` - Tight spacing (within components)
-- `16px` - Standard spacing (between elements)
-- `24px` - Section padding
-- `32px` - Large gaps (between sections)
-- `48px`, `64px` - Page-level spacing
+#### Spacing System (Tailwind units)
+- `gap-1` (4px) - Minimal gap (icon + text)
+- `gap-2` (8px) - Tight spacing (within components)
+- `gap-4` (16px) - Standard spacing (between elements)
+- `p-6` (24px) - Section padding
+- `gap-8` (32px) - Large gaps (between sections)
+- `py-12`, `py-16` - Page-level spacing
 
 #### Visual Hierarchy
-- Use font size to establish importance (headings > body > captions)
-- Apply consistent border-radius: 4px (small), 8px (medium), 12px (large), 9999px (pill)
-- Shadows for elevation: avoid harsh shadows, use subtle `rgba(0,0,0,0.08)`
+- Use Tailwind text sizes: `text-2xl` > `text-base` > `text-sm`
+- Border radius: `rounded` (4px), `rounded-lg` (8px), `rounded-xl` (12px), `rounded-full` (pill)
+- Shadows: `shadow-sm`, `shadow`, `shadow-md` (avoid `shadow-lg` or custom harsh shadows)
 
 #### Responsive Considerations
-- Design mobile-first when applicable
-- Use percentage widths or max-width for containers
-- Stack layouts vertically on narrow screens
+- Design mobile-first using Tailwind breakpoints: `sm:`, `md:`, `lg:`, `xl:`
+- Use `max-w-screen-xl`, `w-full`, `mx-auto` for containers
+- Stack layouts: `flex flex-col md:flex-row`
 
 ```tsx
-// ✅ Responsive container
-<div style={{
-  maxWidth: 1200,
-  width: '100%',
-  margin: '0 auto',
-  padding: '24px 16px'
-}}>
+// ✅ Responsive container with Tailwind
+<div className="max-w-screen-xl w-full mx-auto px-4 py-6 md:px-6">
 ```
 
 #### Color Usage
 - Use semantic colors from components (variant props)
-- For custom colors, prefer neutral grays: `#f5f5f5`, `#e5e5e5`, `#333`, `#666`
-- Avoid pure black (#000); use `#1a1a1a` or `#333` instead
+- For custom colors, use Tailwind grays: `bg-gray-100`, `bg-gray-200`, `text-gray-700`, `text-gray-500`
+- Avoid `bg-black`; use `bg-gray-900` or `text-gray-800` instead
 
 ### 8. Before Submitting Checklist
 - [ ] Code is wrapped in <file path="...">...</file> tags (NOT markdown code blocks!)
@@ -380,9 +456,9 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 - [ ] Event handlers use handle* naming pattern
 - [ ] Lists have unique, stable keys (not index)
 - [ ] Interactive elements have proper aria labels
-- [ ] Spacing follows 8px system
+- [ ] Styling uses Tailwind CSS classes (not inline styles)
 
-Create premium, modern UIs. Use ONLY schema components + styled divs. Never create custom components."""
+Create premium, modern UIs. Use ONLY schema components + Tailwind-styled divs. Never create custom components."""
 
 
 # ============================================================================
@@ -402,8 +478,9 @@ SYSTEM_PROMPT = (
 
 
 def get_system_prompt() -> str:
-    """현재 시스템 프롬프트 반환 (로컬 스키마 기반)"""
-    return SYSTEM_PROMPT
+    """현재 시스템 프롬프트 반환 (로컬 스키마 기반, 현재 날짜/시간 포함)"""
+    current_date = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M KST")
+    return SYSTEM_PROMPT.replace("{current_date}", current_date)
 
 
 def generate_system_prompt(schema: dict) -> str:
@@ -414,13 +491,14 @@ def generate_system_prompt(schema: dict) -> str:
         schema: 컴포넌트 스키마 dict
 
     Returns:
-        생성된 시스템 프롬프트 문자열
+        생성된 시스템 프롬프트 문자열 (현재 날짜 포함)
     """
     component_docs = format_component_docs(schema)
     available_components = get_available_components_note(schema)
+    current_date = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M KST")
 
     return (
-        SYSTEM_PROMPT_HEADER
+        SYSTEM_PROMPT_HEADER.replace("{current_date}", current_date)
         + available_components
         + component_docs
         + RESPONSE_FORMAT_INSTRUCTIONS
@@ -522,3 +600,150 @@ async def reload_components() -> ReloadResponse:
             message="Schema reloaded successfully",
             component_count=len(_schema.get("components", {})),
         )
+
+
+# ============================================================================
+# Schema Upload/Download (Firebase Storage)
+# ============================================================================
+
+
+class UploadSchemaRequest(BaseModel):
+    """스키마 업로드 요청"""
+
+    room_id: str = Field(
+        ...,
+        description="채팅방 ID",
+    )
+    data: dict = Field(
+        ...,
+        description="컴포넌트 스키마 JSON",
+    )
+
+
+class UploadSchemaResponse(BaseModel):
+    """스키마 업로드 응답"""
+
+    schema_key: str = Field(description="Firebase Storage 경로")
+    component_count: int = Field(description="업로드된 컴포넌트 수")
+    uploaded_at: str = Field(description="업로드 시각 (ISO 8601)")
+
+
+class SchemaResponse(BaseModel):
+    """스키마 조회 응답"""
+
+    schema_key: str
+    data: dict
+
+
+@router.post(
+    "/upload",
+    response_model=UploadSchemaResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="스키마 업로드",
+    description="""
+클라이언트가 추출한 컴포넌트 스키마를 Firebase Storage에 업로드합니다.
+
+## 사용 흐름
+1. `POST /rooms`로 채팅방 생성 → room_id 획득
+2. 클라이언트에서 react-docgen-typescript로 스키마 추출
+3. 이 API로 스키마 업로드 (room_id 필수)
+
+## 저장 경로
+`exports/{room_id}/component-schema.json`
+""",
+    responses={
+        201: {"description": "업로드 성공"},
+        400: {"description": "잘못된 요청"},
+        500: {"description": "서버 오류"},
+    },
+)
+async def upload_schema(request: UploadSchemaRequest) -> UploadSchemaResponse:
+    """컴포넌트 스키마 업로드"""
+    try:
+        if not request.data.get("components"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Schema must contain 'components' field",
+            )
+
+        # Room 존재 여부 먼저 확인 (Storage 업로드 전에 검증)
+        room = await get_chat_room(request.room_id)
+        if room is None:
+            raise RoomNotFoundError(f"채팅방을 찾을 수 없습니다: {request.room_id}")
+
+        # room_id 기반 schema_key 생성
+        schema_key = f"exports/{request.room_id}/component-schema.json"
+
+        # Storage에 업로드
+        await upload_schema_to_storage(schema_key, request.data)
+
+        # Room의 schema_key 자동 업데이트 (내부에서 room 존재 여부 검증)
+        await update_chat_room(room_id=request.room_id, schema_key=schema_key)
+
+        component_count = len(request.data.get("components", {}))
+        uploaded_at = datetime.now(ZoneInfo("Asia/Seoul")).isoformat()
+
+        logger.info(
+            "Schema uploaded and room updated: %s (%d components)",
+            schema_key,
+            component_count,
+        )
+
+        return UploadSchemaResponse(
+            schema_key=schema_key,
+            component_count=component_count,
+            uploaded_at=uploaded_at,
+        )
+
+    except HTTPException:
+        raise
+    except RoomNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Room not found: {request.room_id}",
+        ) from e
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        ) from e
+    except Exception as e:
+        logger.error("Failed to upload schema: %s", str(e), exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to upload schema. Please try again.",
+        ) from e
+
+
+@router.get(
+    "/storage/{schema_key:path}",
+    response_model=SchemaResponse,
+    summary="Storage 스키마 조회",
+    description="Firebase Storage에서 스키마를 조회합니다.",
+    responses={
+        200: {"description": "조회 성공"},
+        404: {"description": "스키마를 찾을 수 없음"},
+    },
+)
+async def get_storage_schema(schema_key: str) -> SchemaResponse:
+    """Storage 스키마 조회"""
+    try:
+        schema = await fetch_schema_from_storage(schema_key)
+        return SchemaResponse(schema_key=schema_key, data=schema)
+
+    except FileNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Schema not found: {schema_key}",
+        ) from e
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        ) from e
+    except Exception as e:
+        logger.error("Failed to get schema: %s", str(e), exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get schema. Please try again.",
+        ) from e

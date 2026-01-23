@@ -114,11 +114,6 @@ class ChatRequest(BaseModel):
         default=False,
         description="스트리밍 응답 여부 (True면 /stream 엔드포인트 사용 권장)",
     )
-    schema_key: str | None = Field(
-        default=None,
-        description="Firebase Storage 내 컴포넌트 스키마 경로 (예: schemas/v1/component-schema.json)",
-        json_schema_extra={"example": "schemas/v1/component-schema.json"},
-    )
 
     model_config = {
         "json_schema_extra": {
@@ -130,7 +125,6 @@ class ChatRequest(BaseModel):
                 {
                     "message": "대시보드 만들어줘",
                     "room_id": "550e8400-e29b-41d4-a716-446655440000",
-                    "schema_key": "schemas/v1/component-schema.json",
                 },
             ]
         }
@@ -292,24 +286,50 @@ class ReloadResponse(BaseModel):
 class CreateRoomRequest(BaseModel):
     """채팅방 생성 요청"""
 
-    storybook_url: str = Field(
-        ...,
-        description="Storybook URL",
-        json_schema_extra={"example": "https://storybook.example.com"},
-    )
     user_id: str = Field(
         ...,
         description="사용자 ID",
         json_schema_extra={"example": "user-123"},
+    )
+    storybook_url: str | None = Field(
+        default=None,
+        description="Storybook URL (참고용)",
+        json_schema_extra={"example": "https://storybook.example.com"},
     )
 
     model_config = {
         "json_schema_extra": {
             "examples": [
                 {
-                    "storybook_url": "https://storybook.example.com",
                     "user_id": "user-123",
+                    "storybook_url": "https://storybook.example.com",
                 }
+            ]
+        }
+    }
+
+
+class UpdateRoomRequest(BaseModel):
+    """채팅방 업데이트 요청"""
+
+    storybook_url: str | None = Field(
+        default=None,
+        description="Storybook URL (참고용)",
+        json_schema_extra={"example": "https://storybook.example.com"},
+    )
+    schema_key: str | None = Field(
+        default=None,
+        description="Firebase Storage 스키마 경로 변경",
+        json_schema_extra={"example": "schemas/aplus-ui.json"},
+    )
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "storybook_url": "https://new-storybook.example.com",
+                    "schema_key": "schemas/aplus-ui.json",
+                },
             ]
         }
     }
@@ -323,10 +343,15 @@ class RoomResponse(BaseModel):
         description="채팅방 ID (UUID)",
         json_schema_extra={"example": "550e8400-e29b-41d4-a716-446655440000"},
     )
-    storybook_url: str = Field(
-        ...,
-        description="Storybook URL",
+    storybook_url: str | None = Field(
+        default=None,
+        description="Storybook URL (참고용)",
         json_schema_extra={"example": "https://storybook.example.com"},
+    )
+    schema_key: str | None = Field(
+        default=None,
+        description="Firebase Storage 스키마 경로. None이면 자유 모드.",
+        json_schema_extra={"example": "schemas/aplus-ui.json"},
     )
     user_id: str = Field(
         ...,

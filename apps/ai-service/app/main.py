@@ -1,6 +1,6 @@
 import logging
-from contextlib import asynccontextmanager
 from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -33,6 +33,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     await close_firestore_client()
     cleanup_firebase()
     logger.info("Cleanup completed")
+
 
 # ============================================================================
 # API Tags Metadata

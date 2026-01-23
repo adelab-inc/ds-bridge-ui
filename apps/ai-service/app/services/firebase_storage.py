@@ -41,14 +41,10 @@ def init_firebase() -> None:
     # Cloud Run: 기본 자격증명 사용 (GCP 서비스 계정)
     if SERVICE_ACCOUNT_KEY_PATH.exists():
         cred = credentials.Certificate(str(SERVICE_ACCOUNT_KEY_PATH))
-        firebase_admin.initialize_app(cred, {
-            "storageBucket": settings.firebase_storage_bucket
-        })
+        firebase_admin.initialize_app(cred, {"storageBucket": settings.firebase_storage_bucket})
         logger.info("Firebase initialized with service account key")
     else:
-        firebase_admin.initialize_app(options={
-            "storageBucket": settings.firebase_storage_bucket
-        })
+        firebase_admin.initialize_app(options={"storageBucket": settings.firebase_storage_bucket})
         logger.info("Firebase initialized with default credentials (Cloud Run)")
 
     _firebase_initialized = True
@@ -170,6 +166,47 @@ async def fetch_schema_from_storage(schema_key: str, use_cache: bool = True) -> 
         raise ValueError(f"Invalid JSON in schema: {schema_key}") from e
     except Exception as e:
         logger.error("Failed to fetch schema from storage: %s - %s", schema_key, str(e))
+        raise
+
+
+async def upload_schema_to_storage(schema_key: str, schema_data: dict) -> str:
+    """
+    Firebase Storage에 스키마 업로드
+
+    Args:
+        schema_key: Storage 내 파일 경로 (예: "schemas/storybook/my-schema.json")
+        schema_data: 업로드할 스키마 dict
+
+    Returns:
+        업로드된 파일의 public URL 또는 gs:// 경로
+
+    Raises:
+        ValueError: 유효하지 않은 경로
+    """
+    # 경로 검증
+    _validate_schema_key(schema_key)
+
+    # Firebase 초기화
+    init_firebase()
+
+    try:
+        bucket = storage.bucket()
+        blob = bucket.blob(schema_key)
+
+        # JSON으로 직렬화하여 업로드
+        content = json.dumps(schema_data, ensure_ascii=False, indent=2)
+        blob.upload_from_string(content, content_type="application/json")
+
+        logger.info("Schema uploaded: %s", schema_key)
+
+        # 캐시 업데이트
+        _evict_oldest_cache()
+        _schema_cache[schema_key] = schema_data
+
+        return schema_key
+
+    except Exception as e:
+        logger.error("Failed to upload schema to storage: %s - %s", schema_key, str(e))
         raise
 
 
