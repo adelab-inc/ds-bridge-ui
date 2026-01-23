@@ -52,8 +52,8 @@ function ChatSection({
             prev.map((msg) =>
               msg.id === currentMessageIdRef.current
                 ? { ...msg, text: msg.text + text, status: 'GENERATING' }
-                : msg
-            )
+                : msg,
+            ),
           );
         }
       },
@@ -64,8 +64,8 @@ function ChatSection({
             prev.map((msg) =>
               msg.id === currentMessageIdRef.current
                 ? { ...msg, content: code.content, path: code.path }
-                : msg
-            )
+                : msg,
+            ),
           );
         }
         // 부모 컴포넌트에 코드 생성 알림
@@ -82,8 +82,8 @@ function ChatSection({
                     status: 'DONE' as const,
                     answer_created_at: Date.now(),
                   }
-                : msg
-            )
+                : msg,
+            ),
           );
           currentMessageIdRef.current = null;
         }
@@ -103,8 +103,8 @@ function ChatSection({
                     status: 'ERROR' as const,
                     answer_created_at: Date.now(),
                   }
-                : msg
-            )
+                : msg,
+            ),
           );
           currentMessageIdRef.current = null;
         }
@@ -140,7 +140,6 @@ function ChatSection({
       message,
       room_id: roomId,
       stream: true,
-      schema_key: schemaKey,
     });
   };
 
@@ -160,7 +159,7 @@ function ChatSection({
       data-slot="chat-section"
       className={cn(
         'bg-card border-border flex flex-col overflow-hidden rounded-lg border',
-        className
+        className,
       )}
       {...props}
     >

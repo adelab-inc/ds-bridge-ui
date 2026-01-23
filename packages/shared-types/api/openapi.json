@@ -13,7 +13,7 @@
       "post": {
         "tags": ["rooms"],
         "summary": "채팅방 생성",
-        "description": "새로운 채팅방을 생성합니다.\n\n## 요청 예시\n```json\n{\n  \"storybook_url\": \"https://storybook.example.com\",\n  \"user_id\": \"user-123\"\n}\n```\n\n## 응답\n- `id`: 생성된 채팅방 UUID\n- `storybook_url`: Storybook URL\n- `user_id`: 사용자 ID\n- `created_at`: 생성 시간",
+        "description": "새로운 채팅방을 생성합니다.\n\n## 요청 예시\n```json\n{\n  \"user_id\": \"user-123\",\n  \"storybook_url\": \"https://storybook.example.com\"\n}\n```\n\n## 필드 설명\n- `user_id` (필수): 사용자 ID\n- `storybook_url` (선택): Storybook URL (참고용)\n\n## 응답\n- `id`: 생성된 채팅방 UUID\n- `storybook_url`: Storybook URL\n- `schema_key`: 스키마 경로 (초기값: null, POST /components/upload로 설정 가능)\n- `user_id`: 사용자 ID\n- `created_at`: 생성 시간 (ms timestamp)\n\n## 스키마 설정 방법\n채팅방 생성 후 `POST /components/upload`로 스키마를 업로드하면 자동으로 `schema_key`가 설정됩니다.",
         "operationId": "create_room_rooms_post",
         "requestBody": {
           "content": {
@@ -107,13 +107,73 @@
             }
           }
         }
+      },
+      "patch": {
+        "tags": ["rooms"],
+        "summary": "채팅방 업데이트",
+        "description": "채팅방 정보를 업데이트합니다.\n\n## 요청 예시\n```json\n{\n  \"storybook_url\": \"https://new-storybook.example.com\",\n  \"schema_key\": \"schemas/new-design-system.json\"\n}\n```\n\n## 업데이트 가능한 필드\n- `storybook_url`: Storybook URL\n- `schema_key`: Firebase Storage 스키마 경로",
+        "operationId": "update_room_rooms__room_id__patch",
+        "security": [
+          {
+            "X-API-Key": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "room_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Room Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRoomRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "업데이트 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoomResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "채팅방을 찾을 수 없음"
+          },
+          "500": {
+            "description": "서버 오류"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/chat": {
       "post": {
         "tags": ["chat"],
         "summary": "AI 채팅 (Non-streaming)",
-        "description": "자연어로 UI를 설명하면 React TSX 코드를 생성합니다.\n\n## 요청 예시\n```json\n{\n  \"message\": \"로그인 페이지 만들어줘\",\n  \"room_id\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"schema_key\": \"schemas/component-schema.json\"\n}\n```\n\n## 응답 구조\n- `message`: AI 원본 응답\n- `parsed.conversation`: 한국어 설명\n- `parsed.files`: 생성된 코드 파일 목록\n- `usage`: 토큰 사용량\n\n## room_id\n채팅방 ID (필수). 메시지가 해당 채팅방에 저장됩니다.\n\n## schema_key\nFirebase Storage에서 컴포넌트 스키마를 로드합니다. 생략 시 로컬 스키마 사용.",
+        "description": "자연어로 UI를 설명하면 React TSX 코드를 생성합니다.\n\n## 요청 예시\n```json\n{\n  \"message\": \"로그인 페이지 만들어줘\",\n  \"room_id\": \"550e8400-e29b-41d4-a716-446655440000\"\n}\n```\n\n## 응답 구조\n- `message`: AI 원본 응답\n- `parsed.conversation`: 한국어 설명\n- `parsed.files`: 생성된 코드 파일 목록\n- `usage`: 토큰 사용량\n\n## room_id\n채팅방 ID (필수). 메시지가 해당 채팅방에 저장됩니다.\n\n## 스키마 모드\n채팅방의 schema_key가 설정되어 있으면 Firebase Storage에서 컴포넌트 스키마를 로드합니다.\n없으면 자유 모드(React + Tailwind CSS)로 동작합니다.",
         "operationId": "chat_chat_post",
         "requestBody": {
           "content": {
@@ -167,7 +227,7 @@
       "post": {
         "tags": ["chat"],
         "summary": "AI 채팅 (Streaming)",
-        "description": "SSE(Server-Sent Events)를 통해 실시간 스트리밍 응답을 받습니다.\n\n## 요청 예시\n```json\n{\n  \"message\": \"로그인 페이지 만들어줘\",\n  \"room_id\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"schema_key\": \"schemas/component-schema.json\"\n}\n```\n\n## 이벤트 타입\n\n| 타입 | 설명 | 필드 |\n|------|------|------|\n| `chat` | 대화 텍스트 (실시간) | `text` |\n| `code` | 코드 파일 (완성 후) | `path`, `content` |\n| `done` | 스트리밍 완료 | - |\n| `error` | 오류 발생 | `error` |\n\n## SSE 응답 예시\n```\ndata: {\"type\": \"chat\", \"text\": \"모던한 \"}\n\ndata: {\"type\": \"chat\", \"text\": \"로그인 페이지입니다.\"}\n\ndata: {\"type\": \"code\", \"path\": \"src/pages/Login.tsx\", \"content\": \"import...\"}\n\ndata: {\"type\": \"done\"}\n```\n\n## room_id\n채팅방 ID (필수). 스트리밍 완료 후 메시지가 해당 채팅방에 저장됩니다.",
+        "description": "SSE(Server-Sent Events)를 통해 실시간 스트리밍 응답을 받습니다.\n\n## 요청 예시\n```json\n{\n  \"message\": \"로그인 페이지 만들어줘\",\n  \"room_id\": \"550e8400-e29b-41d4-a716-446655440000\"\n}\n```\n\n## 이벤트 타입\n\n| 타입 | 설명 | 필드 |\n|------|------|------|\n| `chat` | 대화 텍스트 (실시간) | `text` |\n| `code` | 코드 파일 (완성 후) | `path`, `content` |\n| `done` | 스트리밍 완료 | - |\n| `error` | 오류 발생 | `error` |\n\n## SSE 응답 예시\n```\ndata: {\"type\": \"chat\", \"text\": \"모던한 \"}\n\ndata: {\"type\": \"chat\", \"text\": \"로그인 페이지입니다.\"}\n\ndata: {\"type\": \"code\", \"path\": \"src/pages/Login.tsx\", \"content\": \"import...\"}\n\ndata: {\"type\": \"done\"}\n```\n\n## room_id\n채팅방 ID (필수). 스트리밍 완료 후 메시지가 해당 채팅방에 저장됩니다.",
         "operationId": "chat_stream_chat_stream_post",
         "requestBody": {
           "content": {
@@ -285,6 +345,106 @@
         ]
       }
     },
+    "/components/upload": {
+      "post": {
+        "tags": ["components"],
+        "summary": "스키마 업로드",
+        "description": "클라이언트가 추출한 컴포넌트 스키마를 Firebase Storage에 업로드합니다.\n\n## 사용 흐름\n1. `POST /rooms`로 채팅방 생성 → room_id 획득\n2. 클라이언트에서 react-docgen-typescript로 스키마 추출\n3. 이 API로 스키마 업로드 (room_id 필수)\n\n## 저장 경로\n`exports/{room_id}/component-schema.json`",
+        "operationId": "upload_schema_components_upload_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadSchemaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "업로드 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadSchemaResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청"
+          },
+          "500": {
+            "description": "서버 오류"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "X-API-Key": []
+          }
+        ]
+      }
+    },
+    "/components/storage/{schema_key}": {
+      "get": {
+        "tags": ["components"],
+        "summary": "Storage 스키마 조회",
+        "description": "Firebase Storage에서 스키마를 조회합니다.",
+        "operationId": "get_storage_schema_components_storage__schema_key__get",
+        "security": [
+          {
+            "X-API-Key": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "schema_key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Schema Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "스키마를 찾을 수 없음"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": ["health"],
@@ -313,8 +473,10 @@
         "properties": {
           "message": {
             "type": "string",
+            "maxLength": 10000,
+            "minLength": 1,
             "title": "Message",
-            "description": "사용자 메시지",
+            "description": "사용자 메시지 (최대 10,000자)",
             "example": "로그인 페이지 만들어줘"
           },
           "room_id": {
@@ -328,19 +490,6 @@
             "title": "Stream",
             "description": "스트리밍 응답 여부 (True면 /stream 엔드포인트 사용 권장)",
             "default": false
-          },
-          "schema_key": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Schema Key",
-            "description": "Firebase Storage 내 컴포넌트 스키마 경로 (예: schemas/v1/component-schema.json)",
-            "example": "schemas/v1/component-schema.json"
           }
         },
         "type": "object",
@@ -354,8 +503,7 @@
           },
           {
             "message": "대시보드 만들어줘",
-            "room_id": "550e8400-e29b-41d4-a716-446655440000",
-            "schema_key": "schemas/v1/component-schema.json"
+            "room_id": "550e8400-e29b-41d4-a716-446655440000"
           }
         ]
       },
@@ -425,21 +573,28 @@
       },
       "CreateRoomRequest": {
         "properties": {
-          "storybook_url": {
-            "type": "string",
-            "title": "Storybook Url",
-            "description": "Storybook URL",
-            "example": "https://storybook.example.com"
-          },
           "user_id": {
             "type": "string",
             "title": "User Id",
             "description": "사용자 ID",
             "example": "user-123"
+          },
+          "storybook_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Storybook Url",
+            "description": "Storybook URL (참고용)",
+            "example": "https://storybook.example.com"
           }
         },
         "type": "object",
-        "required": ["storybook_url", "user_id"],
+        "required": ["user_id"],
         "title": "CreateRoomRequest",
         "description": "채팅방 생성 요청",
         "examples": [
@@ -587,10 +742,30 @@
             "example": "550e8400-e29b-41d4-a716-446655440000"
           },
           "storybook_url": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Storybook Url",
-            "description": "Storybook URL",
+            "description": "Storybook URL (참고용)",
             "example": "https://storybook.example.com"
+          },
+          "schema_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schema Key",
+            "description": "Firebase Storage 스키마 경로. None이면 자유 모드.",
+            "example": "schemas/aplus-ui.json"
           },
           "user_id": {
             "type": "string",
@@ -599,16 +774,114 @@
             "example": "user-123"
           },
           "created_at": {
-            "type": "string",
+            "type": "integer",
             "title": "Created At",
-            "description": "생성 시간 (ISO 8601)",
-            "example": "2026-01-12T10:00:00.000Z"
+            "description": "생성 시간 (ms timestamp)",
+            "example": 1736654400000
           }
         },
         "type": "object",
-        "required": ["id", "storybook_url", "user_id", "created_at"],
+        "required": ["id", "user_id", "created_at"],
         "title": "RoomResponse",
         "description": "채팅방 응답"
+      },
+      "SchemaResponse": {
+        "properties": {
+          "schema_key": {
+            "type": "string",
+            "title": "Schema Key"
+          },
+          "data": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": ["schema_key", "data"],
+        "title": "SchemaResponse",
+        "description": "스키마 조회 응답"
+      },
+      "UpdateRoomRequest": {
+        "properties": {
+          "storybook_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Storybook Url",
+            "description": "Storybook URL (참고용)",
+            "example": "https://storybook.example.com"
+          },
+          "schema_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schema Key",
+            "description": "Firebase Storage 스키마 경로 변경",
+            "example": "schemas/aplus-ui.json"
+          }
+        },
+        "type": "object",
+        "title": "UpdateRoomRequest",
+        "description": "채팅방 업데이트 요청",
+        "examples": [
+          {
+            "schema_key": "schemas/aplus-ui.json",
+            "storybook_url": "https://new-storybook.example.com"
+          }
+        ]
+      },
+      "UploadSchemaRequest": {
+        "properties": {
+          "room_id": {
+            "type": "string",
+            "title": "Room Id",
+            "description": "채팅방 ID"
+          },
+          "data": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Data",
+            "description": "컴포넌트 스키마 JSON"
+          }
+        },
+        "type": "object",
+        "required": ["room_id", "data"],
+        "title": "UploadSchemaRequest",
+        "description": "스키마 업로드 요청"
+      },
+      "UploadSchemaResponse": {
+        "properties": {
+          "schema_key": {
+            "type": "string",
+            "title": "Schema Key",
+            "description": "Firebase Storage 경로"
+          },
+          "component_count": {
+            "type": "integer",
+            "title": "Component Count",
+            "description": "업로드된 컴포넌트 수"
+          },
+          "uploaded_at": {
+            "type": "string",
+            "title": "Uploaded At",
+            "description": "업로드 시각 (ISO 8601)"
+          }
+        },
+        "type": "object",
+        "required": ["schema_key", "component_count", "uploaded_at"],
+        "title": "UploadSchemaResponse",
+        "description": "스키마 업로드 응답"
       },
       "ValidationError": {
         "properties": {

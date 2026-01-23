@@ -20,16 +20,24 @@ export interface paths {
          *     ## 요청 예시
          *     ```json
          *     {
-         *       "storybook_url": "https://storybook.example.com",
-         *       "user_id": "user-123"
+         *       "user_id": "user-123",
+         *       "storybook_url": "https://storybook.example.com"
          *     }
          *     ```
+         *
+         *     ## 필드 설명
+         *     - `user_id` (필수): 사용자 ID
+         *     - `storybook_url` (선택): Storybook URL (참고용)
          *
          *     ## 응답
          *     - `id`: 생성된 채팅방 UUID
          *     - `storybook_url`: Storybook URL
+         *     - `schema_key`: 스키마 경로 (초기값: null, POST /components/upload로 설정 가능)
          *     - `user_id`: 사용자 ID
-         *     - `created_at`: 생성 시간
+         *     - `created_at`: 생성 시간 (ms timestamp)
+         *
+         *     ## 스키마 설정 방법
+         *     채팅방 생성 후 `POST /components/upload`로 스키마를 업로드하면 자동으로 `schema_key`가 설정됩니다.
          */
         post: operations["create_room_rooms_post"];
         delete?: never;
@@ -55,7 +63,23 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * 채팅방 업데이트
+         * @description 채팅방 정보를 업데이트합니다.
+         *
+         *     ## 요청 예시
+         *     ```json
+         *     {
+         *       "storybook_url": "https://new-storybook.example.com",
+         *       "schema_key": "schemas/new-design-system.json"
+         *     }
+         *     ```
+         *
+         *     ## 업데이트 가능한 필드
+         *     - `storybook_url`: Storybook URL
+         *     - `schema_key`: Firebase Storage 스키마 경로
+         */
+        patch: operations["update_room_rooms__room_id__patch"];
         trace?: never;
     };
     "/chat": {
@@ -75,8 +99,7 @@ export interface paths {
          *     ```json
          *     {
          *       "message": "로그인 페이지 만들어줘",
-         *       "room_id": "550e8400-e29b-41d4-a716-446655440000",
-         *       "schema_key": "schemas/component-schema.json"
+         *       "room_id": "550e8400-e29b-41d4-a716-446655440000"
          *     }
          *     ```
          *
@@ -89,8 +112,9 @@ export interface paths {
          *     ## room_id
          *     채팅방 ID (필수). 메시지가 해당 채팅방에 저장됩니다.
          *
-         *     ## schema_key
-         *     Firebase Storage에서 컴포넌트 스키마를 로드합니다. 생략 시 로컬 스키마 사용.
+         *     ## 스키마 모드
+         *     채팅방의 schema_key가 설정되어 있으면 Firebase Storage에서 컴포넌트 스키마를 로드합니다.
+         *     없으면 자유 모드(React + Tailwind CSS)로 동작합니다.
          */
         post: operations["chat_chat_post"];
         delete?: never;
@@ -116,8 +140,7 @@ export interface paths {
          *     ```json
          *     {
          *       "message": "로그인 페이지 만들어줘",
-         *       "room_id": "550e8400-e29b-41d4-a716-446655440000",
-         *       "schema_key": "schemas/component-schema.json"
+         *       "room_id": "550e8400-e29b-41d4-a716-446655440000"
          *     }
          *     ```
          *
@@ -191,6 +214,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/components/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 스키마 업로드
+         * @description 클라이언트가 추출한 컴포넌트 스키마를 Firebase Storage에 업로드합니다.
+         *
+         *     ## 사용 흐름
+         *     1. `POST /rooms`로 채팅방 생성 → room_id 획득
+         *     2. 클라이언트에서 react-docgen-typescript로 스키마 추출
+         *     3. 이 API로 스키마 업로드 (room_id 필수)
+         *
+         *     ## 저장 경로
+         *     `exports/{room_id}/component-schema.json`
+         */
+        post: operations["upload_schema_components_upload_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/components/storage/{schema_key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Storage 스키마 조회
+         * @description Firebase Storage에서 스키마를 조회합니다.
+         */
+        get: operations["get_storage_schema_components_storage__schema_key__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -224,14 +295,13 @@ export interface components {
          *     }
          * @example {
          *       "message": "대시보드 만들어줘",
-         *       "room_id": "550e8400-e29b-41d4-a716-446655440000",
-         *       "schema_key": "schemas/v1/component-schema.json"
+         *       "room_id": "550e8400-e29b-41d4-a716-446655440000"
          *     }
          */
         ChatRequest: {
             /**
              * Message
-             * @description 사용자 메시지
+             * @description 사용자 메시지 (최대 10,000자)
              * @example 로그인 페이지 만들어줘
              */
             message: string;
@@ -247,12 +317,6 @@ export interface components {
              * @default false
              */
             stream: boolean;
-            /**
-             * Schema Key
-             * @description Firebase Storage 내 컴포넌트 스키마 경로 (예: schemas/v1/component-schema.json)
-             * @example schemas/v1/component-schema.json
-             */
-            schema_key?: string | null;
         };
         /**
          * ChatResponse
@@ -307,17 +371,17 @@ export interface components {
          */
         CreateRoomRequest: {
             /**
-             * Storybook Url
-             * @description Storybook URL
-             * @example https://storybook.example.com
-             */
-            storybook_url: string;
-            /**
              * User Id
              * @description 사용자 ID
              * @example user-123
              */
             user_id: string;
+            /**
+             * Storybook Url
+             * @description Storybook URL (참고용)
+             * @example https://storybook.example.com
+             */
+            storybook_url?: string | null;
         };
         /**
          * FileContent
@@ -442,10 +506,16 @@ export interface components {
             id: string;
             /**
              * Storybook Url
-             * @description Storybook URL
+             * @description Storybook URL (참고용)
              * @example https://storybook.example.com
              */
-            storybook_url: string;
+            storybook_url?: string | null;
+            /**
+             * Schema Key
+             * @description Firebase Storage 스키마 경로. None이면 자유 모드.
+             * @example schemas/aplus-ui.json
+             */
+            schema_key?: string | null;
             /**
              * User Id
              * @description 사용자 ID
@@ -454,10 +524,83 @@ export interface components {
             user_id: string;
             /**
              * Created At
-             * @description 생성 시간 (ISO 8601)
-             * @example 2026-01-12T10:00:00.000Z
+             * @description 생성 시간 (ms timestamp)
+             * @example 1736654400000
              */
-            created_at: string;
+            created_at: number;
+        };
+        /**
+         * SchemaResponse
+         * @description 스키마 조회 응답
+         */
+        SchemaResponse: {
+            /** Schema Key */
+            schema_key: string;
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * UpdateRoomRequest
+         * @description 채팅방 업데이트 요청
+         * @example {
+         *       "schema_key": "schemas/aplus-ui.json",
+         *       "storybook_url": "https://new-storybook.example.com"
+         *     }
+         */
+        UpdateRoomRequest: {
+            /**
+             * Storybook Url
+             * @description Storybook URL (참고용)
+             * @example https://storybook.example.com
+             */
+            storybook_url?: string | null;
+            /**
+             * Schema Key
+             * @description Firebase Storage 스키마 경로 변경
+             * @example schemas/aplus-ui.json
+             */
+            schema_key?: string | null;
+        };
+        /**
+         * UploadSchemaRequest
+         * @description 스키마 업로드 요청
+         */
+        UploadSchemaRequest: {
+            /**
+             * Room Id
+             * @description 채팅방 ID
+             */
+            room_id: string;
+            /**
+             * Data
+             * @description 컴포넌트 스키마 JSON
+             */
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * UploadSchemaResponse
+         * @description 스키마 업로드 응답
+         */
+        UploadSchemaResponse: {
+            /**
+             * Schema Key
+             * @description Firebase Storage 경로
+             */
+            schema_key: string;
+            /**
+             * Component Count
+             * @description 업로드된 컴포넌트 수
+             */
+            component_count: number;
+            /**
+             * Uploaded At
+             * @description 업로드 시각 (ISO 8601)
+             */
+            uploaded_at: string;
         };
         /** ValidationError */
         ValidationError: {
@@ -529,6 +672,55 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description 조회 성공 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoomResponse"];
+                };
+            };
+            /** @description 채팅방을 찾을 수 없음 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description 서버 오류 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_room_rooms__room_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                room_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateRoomRequest"];
+            };
+        };
+        responses: {
+            /** @description 업데이트 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -741,6 +933,91 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    upload_schema_components_upload_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UploadSchemaRequest"];
+            };
+        };
+        responses: {
+            /** @description 업로드 성공 */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadSchemaResponse"];
+                };
+            };
+            /** @description 잘못된 요청 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description 서버 오류 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_storage_schema_components_storage__schema_key__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                schema_key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 조회 성공 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchemaResponse"];
+                };
+            };
+            /** @description 스키마를 찾을 수 없음 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };
