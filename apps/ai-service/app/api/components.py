@@ -14,6 +14,7 @@ from app.services.firebase_storage import (
     fetch_schema_from_storage,
     upload_schema_to_storage,
 )
+from app.services.firestore import update_chat_room
 
 router = APIRouter(dependencies=[Depends(verify_api_key)])
 logger = logging.getLogger(__name__)
@@ -671,8 +672,6 @@ async def upload_schema(request: UploadSchemaRequest) -> UploadSchemaResponse:
         await upload_schema_to_storage(schema_key, request.data)
 
         # Room의 schema_key 자동 업데이트
-        from app.services.firestore import update_chat_room
-
         await update_chat_room(room_id=request.room_id, schema_key=schema_key)
 
         component_count = len(request.data.get("components", {}))
