@@ -171,7 +171,6 @@ CHAT_MESSAGES_COLLECTION = "chat_messages"
 async def create_chat_room(
     user_id: str,
     storybook_url: str | None = None,
-    schema_key: str | None = None,
 ) -> RoomData:
     """
     새 채팅방 생성
@@ -179,10 +178,9 @@ async def create_chat_room(
     Args:
         user_id: 사용자 ID
         storybook_url: Storybook URL (참고용, 선택)
-        schema_key: Firebase Storage 스키마 경로 (선택, 없으면 자유 모드)
 
     Returns:
-        생성된 채팅방 문서
+        생성된 채팅방 문서 (schema_key는 null로 생성됨)
 
     Raises:
         FirestoreError: Firestore 작업 실패
@@ -193,7 +191,7 @@ async def create_chat_room(
     room_data: RoomData = {
         "id": room_id,
         "storybook_url": storybook_url,
-        "schema_key": schema_key,
+        "schema_key": None,
         "user_id": user_id,
         "created_at": get_timestamp_ms(),
     }
