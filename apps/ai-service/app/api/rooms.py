@@ -28,22 +28,23 @@ logger = logging.getLogger(__name__)
 ```json
 {
   "user_id": "user-123",
-  "storybook_url": "https://storybook.example.com",
-  "schema_key": "schemas/aplus-ui.json"
+  "storybook_url": "https://storybook.example.com"
 }
 ```
 
 ## 필드 설명
 - `user_id` (필수): 사용자 ID
 - `storybook_url` (선택): Storybook URL (참고용)
-- `schema_key` (선택): Firebase Storage 스키마 경로. 없으면 자유 모드로 동작.
 
 ## 응답
 - `id`: 생성된 채팅방 UUID
 - `storybook_url`: Storybook URL
-- `schema_key`: 스키마 경로 (null이면 자유 모드)
+- `schema_key`: 스키마 경로 (초기값: null, POST /components/upload로 설정 가능)
 - `user_id`: 사용자 ID
 - `created_at`: 생성 시간 (ms timestamp)
+
+## 스키마 설정 방법
+채팅방 생성 후 `POST /components/upload`로 스키마를 업로드하면 자동으로 `schema_key`가 설정됩니다.
 """,
     responses={
         201: {"description": "채팅방 생성 성공"},
@@ -54,14 +55,13 @@ async def create_room(request: CreateRoomRequest) -> RoomResponse:
     """
     새 채팅방 생성
 
-    schema_key가 제공되면 해당 스키마로 프롬프트 생성,
-    없으면 자유 모드(Tailwind CSS)로 동작합니다.
+    생성 시 schema_key는 null이며, POST /components/upload로 스키마를 업로드하면
+    자동으로 schema_key가 설정됩니다.
     """
     try:
         room_data = await create_chat_room(
             user_id=request.user_id,
             storybook_url=request.storybook_url,
-            schema_key=request.schema_key,
         )
 
         return RoomResponse(**room_data)

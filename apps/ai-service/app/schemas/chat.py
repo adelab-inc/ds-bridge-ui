@@ -286,29 +286,23 @@ class ReloadResponse(BaseModel):
 class CreateRoomRequest(BaseModel):
     """채팅방 생성 요청"""
 
-    storybook_url: str | None = Field(
-        default=None,
-        description="Storybook URL (참고용)",
-        json_schema_extra={"example": "https://storybook.example.com"},
-    )
     user_id: str = Field(
         ...,
         description="사용자 ID",
         json_schema_extra={"example": "user-123"},
     )
-    schema_key: str | None = Field(
+    storybook_url: str | None = Field(
         default=None,
-        description="Firebase Storage 스키마 경로 (예: schemas/aplus-ui.json). 없으면 자유 모드.",
-        json_schema_extra={"example": "schemas/aplus-ui.json"},
+        description="Storybook URL (참고용)",
+        json_schema_extra={"example": "https://storybook.example.com"},
     )
 
     model_config = {
         "json_schema_extra": {
             "examples": [
                 {
-                    "storybook_url": "https://storybook.example.com",
                     "user_id": "user-123",
-                    "schema_key": "schemas/aplus-ui.json",
+                    "storybook_url": "https://storybook.example.com",
                 }
             ]
         }
