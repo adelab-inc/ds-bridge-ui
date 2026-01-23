@@ -95,6 +95,35 @@ class ParsedResponse(BaseModel):
     }
 
 
+class ComponentInstance(BaseModel):
+    """컴포넌트 인스턴스 정보"""
+
+    id: str = Field(
+        ...,
+        description="인스턴스 ID (예: button-1, card-2)",
+        json_schema_extra={"example": "button-1"},
+    )
+    component: str = Field(
+        ...,
+        description="컴포넌트 이름",
+        json_schema_extra={"example": "Button"},
+    )
+    props: dict = Field(
+        default_factory=dict,
+        description="현재 props 값들",
+        json_schema_extra={"example": {"variant": "primary", "children": "로그인"}},
+    )
+
+
+class CurrentComposition(BaseModel):
+    """현재 렌더링된 컴포넌트 구조"""
+
+    instances: list[ComponentInstance] = Field(
+        default_factory=list,
+        description="렌더링된 컴포넌트 인스턴스 목록",
+    )
+
+
 class ChatRequest(BaseModel):
     """채팅 요청"""
 
@@ -114,6 +143,15 @@ class ChatRequest(BaseModel):
         default=False,
         description="스트리밍 응답 여부 (True면 /stream 엔드포인트 사용 권장)",
     )
+    current_composition: CurrentComposition | None = Field(
+        default=None,
+        description="현재 렌더링된 컴포넌트 구조 (인스턴스 편집 모드용)",
+    )
+    selected_instance_id: str | None = Field(
+        default=None,
+        description="사용자가 선택한 컴포넌트 인스턴스 ID (예: button-1)",
+        json_schema_extra={"example": "button-1"},
+    )
 
     model_config = {
         "json_schema_extra": {
@@ -125,6 +163,16 @@ class ChatRequest(BaseModel):
                 {
                     "message": "대시보드 만들어줘",
                     "room_id": "550e8400-e29b-41d4-a716-446655440000",
+                },
+                {
+                    "message": "배경색을 파란색으로 바꿔줘",
+                    "room_id": "550e8400-e29b-41d4-a716-446655440000",
+                    "current_composition": {
+                        "instances": [
+                            {"id": "button-1", "component": "Button", "props": {"variant": "primary"}}
+                        ]
+                    },
+                    "selected_instance_id": "button-1",
                 },
             ]
         }

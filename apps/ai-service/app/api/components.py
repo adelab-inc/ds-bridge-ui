@@ -255,8 +255,8 @@ const LoginPage = () => {
 
   return (
     <div className="p-6 flex flex-col gap-4">
-      <Field label="이메일" value={email} onChange={(e) => setEmail(e.target.value)} />
-      <Button variant="primary">로그인</Button>
+      <Field data-instance-id="field-1" label="이메일" value={email} onChange={(e) => setEmail(e.target.value)} />
+      <Button data-instance-id="button-1" variant="primary">로그인</Button>
     </div>
   );
 };
@@ -446,7 +446,25 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 - For custom colors, use Tailwind grays: `bg-gray-100`, `bg-gray-200`, `text-gray-700`, `text-gray-500`
 - Avoid `bg-black`; use `bg-gray-900` or `text-gray-800` instead
 
-### 8. Before Submitting Checklist
+### 8. Instance ID Rules (CRITICAL for Instance Editing)
+- EVERY component from the schema MUST have a `data-instance-id` attribute
+- Format: `{component-name-lowercase}-{sequential-number}` (e.g., button-1, card-2, field-1)
+- Numbers are sequential per component type (button-1, button-2, card-1, field-1, field-2)
+- This enables users to select and edit specific instances later
+
+```tsx
+// ✅ Good: Every schema component has data-instance-id
+<Button data-instance-id="button-1" variant="primary">Submit</Button>
+<Button data-instance-id="button-2" variant="secondary">Cancel</Button>
+<Card data-instance-id="card-1" title="Profile">...</Card>
+<Field data-instance-id="field-1" label="Email" />
+
+// ❌ Bad: Missing data-instance-id
+<Button variant="primary">Submit</Button>
+<Card title="Profile">...</Card>
+```
+
+### 9. Before Submitting Checklist
 - [ ] Code is wrapped in <file path="...">...</file> tags (NOT markdown code blocks!)
 - [ ] All components in JSX are imported from '@/components'
 - [ ] NO custom components defined (like ChatMessage, UserBadge)
@@ -457,6 +475,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 - [ ] Lists have unique, stable keys (not index)
 - [ ] Interactive elements have proper aria labels
 - [ ] Styling uses Tailwind CSS classes (not inline styles)
+- [ ] ALL schema components have data-instance-id attribute
 
 Create premium, modern UIs. Use ONLY schema components + Tailwind-styled divs. Never create custom components."""
 
