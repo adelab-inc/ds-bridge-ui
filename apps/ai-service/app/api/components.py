@@ -670,11 +670,16 @@ async def upload_schema(request: UploadSchemaRequest) -> UploadSchemaResponse:
 
         await upload_schema_to_storage(schema_key, request.data)
 
+        # Room의 schema_key 자동 업데이트
+        from app.services.firestore import update_chat_room
+
+        await update_chat_room(room_id=request.room_id, schema_key=schema_key)
+
         component_count = len(request.data.get("components", {}))
         uploaded_at = datetime.now(ZoneInfo("Asia/Seoul")).isoformat()
 
         logger.info(
-            "Schema uploaded: %s (%d components)",
+            "Schema uploaded and room updated: %s (%d components)",
             schema_key,
             component_count,
         )
