@@ -8,6 +8,7 @@ import type {
   DSJson,
   DSComponent,
   PropInfo,
+  StoryInfo,
   ComponentSchemaJson,
   LegacyComponentSchema,
   LegacyPropSchema,
@@ -45,9 +46,9 @@ function convertComponent(comp: DSComponent): LegacyComponentSchema {
     props[prop.name] = convertProp(prop);
   }
 
-  const stories: LegacyStorySchema[] = comp.stories.map((storyName) => ({
-    id: generateStoryId(comp.name, storyName),
-    name: storyName,
+  const stories: LegacyStorySchema[] = comp.stories.map((story) => ({
+    id: story.id,
+    name: story.name,
   }));
 
   return {
@@ -65,7 +66,7 @@ function convertComponent(comp: DSComponent): LegacyComponentSchema {
 function convertProp(prop: PropInfo): LegacyPropSchema {
   return {
     type: prop.type.length === 1 ? prop.type[0] : prop.type,
-    required: false, // ds.json에는 required 정보 없음
+    required: prop.required,
     defaultValue: prop.defaultValue ?? undefined,
     description: prop.description ?? undefined,
   };
@@ -120,7 +121,7 @@ function convertLegacyComponent(
     props.push(convertLegacyProp(propName, propSchema));
   }
 
-  const stories = comp.stories.map((s) => s.name);
+  const stories = comp.stories.map((s) => ({ id: s.id, name: s.name }));
 
   return {
     name: componentName,
@@ -148,6 +149,7 @@ function convertLegacyProp(propName: string, prop: LegacyPropSchema): PropInfo {
     description: prop.description ?? null,
     type,
     defaultValue: stringifyDefaultValue(prop.defaultValue),
+    required: prop.required,
     control,
     options,
   };

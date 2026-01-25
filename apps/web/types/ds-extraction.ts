@@ -10,6 +10,16 @@
 // =============================================================================
 
 /**
+ * Story 정보 (iframe preview 생성에 필요)
+ */
+export interface StoryInfo {
+  /** 스토리 고유 ID (예: "button--primary") */
+  id: string;
+  /** 스토리 표시 이름 (예: "Primary") */
+  name: string;
+}
+
+/**
  * Props 정보 (HTML ArgTypes 테이블에서 추출)
  */
 export interface PropInfo {
@@ -21,6 +31,8 @@ export interface PropInfo {
   type: string[];
   /** 기본값 */
   defaultValue: string | null;
+  /** 필수 여부 (HTML 테이블에서 추출 불가한 경우 false) */
+  required: boolean;
   /** Control 타입 */
   control: 'select' | 'number' | 'text' | 'boolean' | 'object' | null;
   /** select의 경우 옵션 목록 */
@@ -35,8 +47,8 @@ export interface DSComponent {
   name: string;
   /** 카테고리 (UI, Form, Layout 등) */
   category: string;
-  /** 스토리 이름 목록 */
-  stories: string[];
+  /** 스토리 정보 목록 (ID + 이름) */
+  stories: StoryInfo[];
   /** Props 정보 */
   props: PropInfo[];
 }
@@ -103,8 +115,8 @@ export interface ComponentInfo {
   category: string;
   /** 컴포넌트 이름 */
   name: string;
-  /** 스토리 이름 목록 */
-  stories: string[];
+  /** 스토리 정보 목록 (ID + 이름) */
+  stories: StoryInfo[];
   /** docs 타입 스토리 ID (ArgTypes 추출용) */
   docsId: string | null;
 }

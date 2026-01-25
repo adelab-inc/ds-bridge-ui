@@ -12,6 +12,7 @@ import type {
   PropInfo,
   StorybookIndex,
   StoryEntry,
+  StoryInfo,
   ComponentInfo,
   ExtractWarning,
 } from '@/types/ds-extraction';
@@ -436,7 +437,7 @@ export function parseComponentsFromIndex(
     if (entry.type === 'docs') {
       component.docsId = entry.id;
     } else if (entry.type === 'story') {
-      component.stories.push(entry.name);
+      component.stories.push({ id: entry.id, name: entry.name });
     }
   }
 
@@ -517,6 +518,7 @@ export function parseArgTypesFromHtml(html: string): PropInfo[] {
       description,
       type: type.length > 0 ? type : ['unknown'],
       defaultValue,
+      required: false, // HTML 테이블에서는 required 정보를 추출할 수 없음
       control,
       options,
     });
