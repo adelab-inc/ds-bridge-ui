@@ -127,6 +127,7 @@ function convertLegacyComponent(
     name: componentName,
     category: comp.category,
     filePath: comp.filePath || null,
+    tags: [], // Legacy 스키마에는 tags가 없음
     stories,
     props,
   };

@@ -49,6 +49,8 @@ export interface DSComponent {
   category: string;
   /** 원본 파일 경로 (Storybook importPath) */
   filePath: string | null;
+  /** 태그 목록 (autodocs, deprecated 등) */
+  tags: string[];
   /** 스토리 정보 목록 (ID + 이름) */
   stories: StoryInfo[];
   /** Props 정보 */
@@ -136,6 +138,8 @@ export interface ComponentInfo {
   name: string;
   /** 원본 파일 경로 (Storybook importPath) */
   filePath: string | null;
+  /** 태그 목록 (autodocs, deprecated 등) */
+  tags: string[];
   /** 스토리 정보 목록 (ID + 이름) */
   stories: StoryInfo[];
   /** docs 타입 스토리 ID (ArgTypes 추출용) */

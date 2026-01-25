@@ -382,6 +382,7 @@ export async function extractDSFromUrl(
     name: r.info.name,
     category: r.info.category,
     filePath: r.info.filePath,
+    tags: r.info.tags,
     stories: r.info.stories,
     props: r.props,
   }));
@@ -478,6 +479,7 @@ export function parseComponentsFromIndex(
         category,
         name: componentName,
         filePath: entry.importPath || null,
+        tags: [],
         stories: [],
         docsId: null,
       });
@@ -488,6 +490,15 @@ export function parseComponentsFromIndex(
     // filePath가 없으면 첫 번째로 발견된 importPath 사용
     if (!component.filePath && entry.importPath) {
       component.filePath = entry.importPath;
+    }
+
+    // tags 병합 (중복 제거)
+    if (entry.tags && entry.tags.length > 0) {
+      for (const tag of entry.tags) {
+        if (!component.tags.includes(tag)) {
+          component.tags.push(tag);
+        }
+      }
     }
 
     if (entry.type === 'docs') {
