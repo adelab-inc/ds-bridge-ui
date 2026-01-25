@@ -67,7 +67,11 @@ const SELECTORS = {
     'td:nth-child(2) .type-content span',        // Storybook 8
     'td:nth-child(2) [class*="type"] span',      // 타입 관련 클래스
     '[data-testid="prop-type"]',                 // 테스트 ID 기반
+    'td:nth-child(2) [role="generic"]',          // Carbon DS role 기반 타입
   ].join(', '),
+
+  // Carbon DS 전용 타입 추출 (role="generic" 요소)
+  carbonTypeRole: 'td:nth-child(2) [role="generic"]',
 
   // 기본값
   defaultValue: [
@@ -515,6 +519,15 @@ export function parseArgTypesFromHtml(html: string): PropInfo[] {
       }
     });
 
+    // Carbon DS role 기반 타입 추출 (fallback)
+    if (type.length === 0 || (type.length === 1 && type[0] === 'unknown')) {
+      const carbonTypes = extractCarbonDSTypes($, cells.eq(1));
+      if (carbonTypes.length > 0) {
+        type.length = 0; // 기존 unknown 제거
+        type.push(...carbonTypes);
+      }
+    }
+
     // 기본값 (SELECTORS 사용)
     const defaultEl = cells.eq(2).find(SELECTORS.defaultValue).first();
     const defaultText = defaultEl.text().trim();
@@ -564,6 +577,58 @@ async function processInBatches<T, R>(
   }
 
   return results;
+}
+
+/**
+ * Carbon DS role="generic" 기반 타입 추출
+ * Carbon Design System은 타입 정보를 role="generic" 요소에 표시
+ */
+function extractCarbonDSTypes(
+  $: cheerio.CheerioAPI,
+  cell: ReturnType<cheerio.CheerioAPI>
+): string[] {
+  const types: string[] = [];
+  const knownTypes = [
+    'boolean', 'string', 'number', 'object', 'function', 'array',
+    'node', 'element', 'symbol', 'any', 'enum', 'union',
+    'true', 'false', 'null', 'undefined',
+  ];
+
+  // role="generic" 요소에서 타입 텍스트 찾기
+  cell.find('[role="generic"]').each((_, el) => {
+    const text = $(el).text().trim().toLowerCase();
+
+    // 알려진 타입 패턴 매칭
+    if (knownTypes.includes(text)) {
+      if (!types.includes(text)) {
+        types.push(text);
+      }
+    }
+
+    // union 타입 (| 구분자) 처리
+    if (text.includes('|')) {
+      const unionTypes = text.split('|').map(t => t.trim().replace(/['"`]/g, ''));
+      for (const ut of unionTypes) {
+        if (ut && !types.includes(ut)) {
+          types.push(ut);
+        }
+      }
+    }
+  });
+
+  // 타입 정보가 없으면 셀 전체 텍스트에서 추출 시도
+  if (types.length === 0) {
+    const cellText = cell.text().trim().toLowerCase();
+
+    // 셀 텍스트에서 타입 키워드 찾기
+    for (const knownType of knownTypes) {
+      if (cellText.includes(knownType) && !types.includes(knownType)) {
+        types.push(knownType);
+      }
+    }
+  }
+
+  return types;
 }
 
 /**
