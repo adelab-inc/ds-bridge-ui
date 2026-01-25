@@ -209,7 +209,7 @@ export async function extractDSFromUrl(
 
   // Playwright 사용 가능 여부 확인
   let playwrightAvailable = false;
-  let fetchDocsHtmlWithPlaywright: ((url: string, timeout?: number) => Promise<string>) | null = null;
+  let fetchDocsWithAPIFallback: ((url: string, timeout?: number) => Promise<{ html: string; apiProps: PropInfo[] | null }>) | null = null;
   let closeBrowserFn: (() => Promise<void>) | null = null;
 
   if (usePlaywright) {
@@ -217,7 +217,7 @@ export async function extractDSFromUrl(
       const playwrightModule = await import('./playwright-extractor');
       playwrightAvailable = await playwrightModule.isPlaywrightAvailable();
       if (playwrightAvailable) {
-        fetchDocsHtmlWithPlaywright = playwrightModule.fetchDocsHtmlWithPlaywright;
+        fetchDocsWithAPIFallback = playwrightModule.fetchDocsWithAPIFallback;
         closeBrowserFn = playwrightModule.closeBrowser;
       }
     } catch {
@@ -275,7 +275,7 @@ export async function extractDSFromUrl(
   if (
     usePlaywright &&
     playwrightAvailable &&
-    fetchDocsHtmlWithPlaywright &&
+    fetchDocsWithAPIFallback &&
     componentsNeedingPlaywright.length > 0
   ) {
     console.log(
@@ -305,13 +305,23 @@ export async function extractDSFromUrl(
 
       try {
         const docsUrl = `${baseUrl}/iframe.html?id=${info.docsId}&viewMode=docs`;
-        const playwrightHtml = await fetchDocsHtmlWithPlaywright(docsUrl, playwrightTimeout);
+        const { html: playwrightHtml, apiProps } = await fetchDocsWithAPIFallback(docsUrl, playwrightTimeout);
+
+        // 1순위: Storybook API에서 추출한 props 사용
+        if (apiProps && apiProps.length > 0 && !apiProps.every(isPlaceholderProp)) {
+          result.props = apiProps;
+          console.log(`[Extractor] ${info.name}: Storybook API 성공 (${apiProps.length} props)`);
+          consecutiveFailures = 0;
+          continue;
+        }
+
+        // 2순위: HTML 파싱으로 fallback
         const playwrightProps = parseArgTypesFromHtml(playwrightHtml);
 
         if (playwrightProps.length > 0 && !playwrightProps.every(isPlaceholderProp)) {
           result.props = playwrightProps;
-          console.log(`[Extractor] ${info.name}: Playwright 성공 (${playwrightProps.length} props)`);
-          consecutiveFailures = 0; // 성공 시 리셋
+          console.log(`[Extractor] ${info.name}: HTML 파싱 성공 (${playwrightProps.length} props)`);
+          consecutiveFailures = 0;
         } else {
           consecutiveFailures++;
           console.warn(
