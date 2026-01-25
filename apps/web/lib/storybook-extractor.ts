@@ -8,6 +8,7 @@
 import * as cheerio from 'cheerio';
 import type {
   DSJson,
+  DSJsonWithObjectComponents,
   DSComponent,
   PropInfo,
   StorybookIndex,
@@ -165,13 +166,23 @@ export interface ExtractOptions {
   onProgress?: (component: string, current: number, total: number) => void;
   /** 취소 시그널 (AbortController) */
   signal?: AbortSignal;
+  /** components를 Object 형식으로 출력 (O(1) lookup 지원) - 기본: false */
+  componentsAsObject?: boolean;
 }
 
 /**
- * 추출 결과
+ * 추출 결과 (배열 형식)
  */
 export interface ExtractResult {
   ds: DSJson;
+  warnings: ExtractWarning[];
+}
+
+/**
+ * 추출 결과 (Object 형식)
+ */
+export interface ExtractResultWithObject {
+  ds: DSJsonWithObjectComponents;
   warnings: ExtractWarning[];
 }
 
@@ -188,8 +199,20 @@ export interface ExtractResult {
  */
 export async function extractDSFromUrl(
   storybookUrl: string,
+  options: ExtractOptions & { componentsAsObject: true }
+): Promise<ExtractResultWithObject>;
+export async function extractDSFromUrl(
+  storybookUrl: string,
+  options?: ExtractOptions & { componentsAsObject?: false }
+): Promise<ExtractResult>;
+export async function extractDSFromUrl(
+  storybookUrl: string,
+  options?: ExtractOptions
+): Promise<ExtractResult | ExtractResultWithObject>;
+export async function extractDSFromUrl(
+  storybookUrl: string,
   options: ExtractOptions = {}
-): Promise<ExtractResult> {
+): Promise<ExtractResult | ExtractResultWithObject> {
   const {
     usePlaywright = true,
     playwrightTimeout = 15000,
@@ -197,6 +220,7 @@ export async function extractDSFromUrl(
     concurrency = CONCURRENCY_LIMIT,
     onProgress,
     signal,
+    componentsAsObject = false,
   } = options;
 
   // URL 정규화
@@ -361,7 +385,21 @@ export async function extractDSFromUrl(
     props: r.props,
   }));
 
-  // 4. ds.json 생성
+  // 4. 경고 생성
+  const warnings = generateWarnings(components);
+
+  // 5. ds.json 생성 (옵션에 따라 배열 또는 Object 형식)
+  if (componentsAsObject) {
+    const dsWithObject: DSJsonWithObjectComponents = {
+      name: extractDSName(baseUrl),
+      source: baseUrl,
+      version: '1.0.0',
+      extractedAt: new Date().toISOString(),
+      components: convertComponentsToObject(components),
+    };
+    return { ds: dsWithObject, warnings } as ExtractResultWithObject;
+  }
+
   const ds: DSJson = {
     name: extractDSName(baseUrl),
     source: baseUrl,
@@ -369,9 +407,6 @@ export async function extractDSFromUrl(
     extractedAt: new Date().toISOString(),
     components,
   };
-
-  // 5. 경고 생성
-  const warnings = generateWarnings(components);
 
   return { ds, warnings };
 }
@@ -699,6 +734,23 @@ function extractControlInfo(
   }
 
   return { control: null, options: null };
+}
+
+/**
+ * 컴포넌트 배열을 Object 형식으로 변환
+ * O(1) 컴포넌트 lookup을 위해 컴포넌트 이름을 key로 사용
+ */
+function convertComponentsToObject(
+  components: DSComponent[]
+): Record<string, Omit<DSComponent, 'name'>> {
+  const result: Record<string, Omit<DSComponent, 'name'>> = {};
+
+  for (const comp of components) {
+    const { name, ...rest } = comp;
+    result[name] = rest;
+  }
+
+  return result;
 }
 
 /**

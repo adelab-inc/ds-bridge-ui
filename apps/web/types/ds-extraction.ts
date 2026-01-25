@@ -54,7 +54,7 @@ export interface DSComponent {
 }
 
 /**
- * ds.json 스키마 (Public URL 추출용)
+ * ds.json 스키마 (Public URL 추출용) - 배열 형식
  */
 export interface DSJson {
   /** 디자인 시스템 이름 */
@@ -65,8 +65,25 @@ export interface DSJson {
   version: string;
   /** 추출 일시 (ISO 8601) */
   extractedAt: string;
-  /** 컴포넌트 목록 */
+  /** 컴포넌트 목록 (배열) */
   components: DSComponent[];
+}
+
+/**
+ * ds.json 스키마 (Object 형식) - O(1) 컴포넌트 조회용
+ * AI 분석 시 빠른 컴포넌트 lookup을 위해 사용
+ */
+export interface DSJsonWithObjectComponents {
+  /** 디자인 시스템 이름 */
+  name: string;
+  /** 원본 Storybook URL */
+  source: string;
+  /** 스키마 버전 */
+  version: string;
+  /** 추출 일시 (ISO 8601) */
+  extractedAt: string;
+  /** 컴포넌트 맵 (컴포넌트 이름 → 컴포넌트 정보) */
+  components: Record<string, Omit<DSComponent, 'name'>>;
 }
 
 // =============================================================================
