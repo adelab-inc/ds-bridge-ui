@@ -47,6 +47,8 @@ export interface DSComponent {
   name: string;
   /** 카테고리 (UI, Form, Layout 등) */
   category: string;
+  /** 원본 파일 경로 (Storybook importPath) */
+  filePath: string | null;
   /** 스토리 정보 목록 (ID + 이름) */
   stories: StoryInfo[];
   /** Props 정보 */
@@ -132,6 +134,8 @@ export interface ComponentInfo {
   category: string;
   /** 컴포넌트 이름 */
   name: string;
+  /** 원본 파일 경로 (Storybook importPath) */
+  filePath: string | null;
   /** 스토리 정보 목록 (ID + 이름) */
   stories: StoryInfo[];
   /** docs 타입 스토리 ID (ArgTypes 추출용) */

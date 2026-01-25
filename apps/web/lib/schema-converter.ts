@@ -126,6 +126,7 @@ function convertLegacyComponent(
   return {
     name: componentName,
     category: comp.category,
+    filePath: comp.filePath || null,
     stories,
     props,
   };

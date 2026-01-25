@@ -381,6 +381,7 @@ export async function extractDSFromUrl(
   const components: DSComponent[] = cheerioResults.map((r) => ({
     name: r.info.name,
     category: r.info.category,
+    filePath: r.info.filePath,
     stories: r.info.stories,
     props: r.props,
   }));
@@ -476,12 +477,18 @@ export function parseComponentsFromIndex(
       componentMap.set(key, {
         category,
         name: componentName,
+        filePath: entry.importPath || null,
         stories: [],
         docsId: null,
       });
     }
 
     const component = componentMap.get(key)!;
+
+    // filePath가 없으면 첫 번째로 발견된 importPath 사용
+    if (!component.filePath && entry.importPath) {
+      component.filePath = entry.importPath;
+    }
 
     if (entry.type === 'docs') {
       component.docsId = entry.id;
