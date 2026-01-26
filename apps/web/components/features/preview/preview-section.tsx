@@ -2,10 +2,23 @@
 
 import * as React from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { PlayIcon, LayoutIcon, SparklesIcon } from "@hugeicons/core-free-icons"
+import {
+  PlayIcon,
+  LayoutIcon,
+  SparklesIcon,
+  Copy01Icon,
+  Tick02Icon,
+} from "@hugeicons/core-free-icons"
 
 import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { StorybookIframe } from "./storybook-iframe"
 import { CompositionPreview, type CompositionNode } from "./composition-preview"
 import { CodePreviewIframe } from "./code-preview-iframe"
@@ -36,7 +49,30 @@ function PreviewSection({
   ...props
 }: PreviewSectionProps) {
   // AI 코드가 있거나 생성 중이면 자동으로 ai-generated 탭 선택
-  const effectiveDefaultTab = (aiCode || isGeneratingCode) ? "ai-generated" : defaultTab
+  const effectiveDefaultTab =
+    aiCode || isGeneratingCode ? "ai-generated" : defaultTab
+
+  // Controlled tabs state
+  const [activeTab, setActiveTab] = React.useState<string>(effectiveDefaultTab)
+  const [copied, setCopied] = React.useState(false)
+
+  // aiCode 변경 시 탭 자동 전환
+  React.useEffect(() => {
+    if (aiCode || isGeneratingCode) {
+      setActiveTab("ai-generated")
+    }
+  }, [aiCode, isGeneratingCode])
+
+  // 현재 URL 복사 핸들러
+  const handleCopy = React.useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      console.error("Failed to copy:", err)
+    }
+  }, [])
 
   return (
     <section
@@ -45,8 +81,8 @@ function PreviewSection({
       {...props}
     >
       <Tabs
-        defaultValue={effectiveDefaultTab}
-        key={effectiveDefaultTab}
+        value={activeTab}
+        onValueChange={setActiveTab}
         className="flex h-full flex-col overflow-hidden"
       >
         {/* Tabs Header */}
@@ -94,33 +130,64 @@ function PreviewSection({
           </div>
         </div>
 
-        {/* Tabs Content */}
-        {(aiCode || isGeneratingCode) && (
+        {/* Tabs Content with Copy Button */}
+        <div className="relative flex-1 overflow-hidden">
+          {/* Copy button - 10시 방향 (좌상단) */}
+          <div className="absolute left-3 top-10 z-10">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon-lg"
+                    onClick={handleCopy}
+                    className={cn(
+                      "bg-background/80 backdrop-blur-sm hover:bg-background",
+                      copied && "border-green-600 text-green-600"
+                    )}
+                  >
+                    <HugeiconsIcon
+                      icon={copied ? Tick02Icon : Copy01Icon}
+                      className="size-3.5"
+                      strokeWidth={2}
+                    />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>{copied ? "복사됨!" : "URL 복사"}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+
+          {/* Tab Contents */}
+          {(aiCode || isGeneratingCode) && (
+            <TabsContent
+              value="ai-generated"
+              className="mt-0 h-full overflow-hidden data-[state=inactive]:hidden"
+            >
+              {isGeneratingCode && !aiCode ? (
+                <CodePreviewLoading />
+              ) : (
+                <CodePreviewIframe code={aiCode!} filePath={aiFilePath} />
+              )}
+            </TabsContent>
+          )}
+
           <TabsContent
-            value="ai-generated"
-            className="mt-0 flex-1 overflow-hidden data-[state=inactive]:hidden"
+            value="storybook"
+            className="mt-0 h-full overflow-hidden data-[state=inactive]:hidden"
           >
-            {isGeneratingCode && !aiCode ? (
-              <CodePreviewLoading />
-            ) : (
-              <CodePreviewIframe code={aiCode!} filePath={aiFilePath} />
-            )}
+            <StorybookIframe url={storybookUrl} storyId={storyId} />
           </TabsContent>
-        )}
 
-        <TabsContent
-          value="storybook"
-          className="mt-0 flex-1 overflow-hidden data-[state=inactive]:hidden"
-        >
-          <StorybookIframe url={storybookUrl} storyId={storyId} />
-        </TabsContent>
-
-        <TabsContent
-          value="composition"
-          className="mt-0 flex-1 overflow-hidden data-[state=inactive]:hidden"
-        >
-          <CompositionPreview composition={composition} />
-        </TabsContent>
+          <TabsContent
+            value="composition"
+            className="mt-0 h-full overflow-hidden data-[state=inactive]:hidden"
+          >
+            <CompositionPreview composition={composition} />
+          </TabsContent>
+        </div>
       </Tabs>
     </section>
   )
