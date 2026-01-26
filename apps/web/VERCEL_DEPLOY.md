@@ -16,13 +16,13 @@
 
 **Configure Project** 화면에서:
 
-| 설정 | 값 | 설명 |
-|------|-----|------|
-| Framework Preset | Next.js | 자동 감지됨 |
-| Root Directory | `apps/web` | **필수 설정** |
-| Build Command | (자동) | vercel.json에서 오버라이드 |
-| Output Directory | `.next` | 기본값 사용 |
-| Install Command | `pnpm install` | vercel.json에서 설정 |
+| 설정             | 값             | 설명                       |
+| ---------------- | -------------- | -------------------------- |
+| Framework Preset | Next.js        | 자동 감지됨                |
+| Root Directory   | `apps/web`     | **필수 설정**              |
+| Build Command    | (자동)         | vercel.json에서 오버라이드 |
+| Output Directory | `.next`        | 기본값 사용                |
+| Install Command  | `pnpm install` | vercel.json에서 설정       |
 
 > **중요**: Root Directory를 `apps/web`으로 반드시 설정해야 합니다!
 
@@ -95,12 +95,12 @@ vercel --prod
 
 ### 설정 의미
 
-| 필드 | 설명 |
-|------|------|
-| `buildCommand` | 모노레포 루트로 이동 후 pnpm workspace 필터로 빌드 |
-| `installCommand` | pnpm 사용 명시 |
-| `framework` | Next.js 프레임워크 지정 |
-| `outputDirectory` | Next.js 빌드 결과물 위치 |
+| 필드              | 설명                                               |
+| ----------------- | -------------------------------------------------- |
+| `buildCommand`    | 모노레포 루트로 이동 후 pnpm workspace 필터로 빌드 |
+| `installCommand`  | pnpm 사용 명시                                     |
+| `framework`       | Next.js 프레임워크 지정                            |
+| `outputDirectory` | Next.js 빌드 결과물 위치                           |
 
 ## 5. 도메인 설정
 
@@ -127,11 +127,11 @@ vercel --prod
 
 ### 자주 발생하는 이슈
 
-| 에러 | 원인 | 해결 |
-|------|------|------|
-| `Module not found` | 의존성 누락 | `pnpm install` 확인 |
-| `Build failed` | TypeScript 에러 | 로컬에서 `pnpm build` 테스트 |
-| `Root Directory not found` | 잘못된 Root Directory | `apps/web`로 수정 |
+| 에러                       | 원인                  | 해결                         |
+| -------------------------- | --------------------- | ---------------------------- |
+| `Module not found`         | 의존성 누락           | `pnpm install` 확인          |
+| `Build failed`             | TypeScript 에러       | 로컬에서 `pnpm build` 테스트 |
+| `Root Directory not found` | 잘못된 Root Directory | `apps/web`로 수정            |
 
 ## 7. CI/CD 파이프라인
 
@@ -152,6 +152,7 @@ Vercel 자동 감지
 ### 8.1 Analytics
 
 Vercel 대시보드 → Analytics에서:
+
 - Page Views
 - Unique Visitors
 - Top Pages
@@ -159,6 +160,7 @@ Vercel 대시보드 → Analytics에서:
 ### 8.2 Logs
 
 Runtime Logs에서 실시간 로그 확인:
+
 - Function 로그
 - Edge Network 로그
 - 에러 추적

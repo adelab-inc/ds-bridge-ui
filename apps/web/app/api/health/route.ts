@@ -51,7 +51,8 @@ export async function GET(request: NextRequest) {
         detail: [
           {
             loc: ['server'],
-            msg: error instanceof Error ? error.message : 'Internal server error',
+            msg:
+              error instanceof Error ? error.message : 'Internal server error',
             type: 'server_error',
           },
         ],

@@ -1,18 +1,18 @@
-"use client"
+'use client';
 
-import * as React from "react"
-import Lottie from "lottie-react"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { SparklesIcon } from "@hugeicons/core-free-icons"
+import * as React from 'react';
+import Lottie from 'lottie-react';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { SparklesIcon } from '@hugeicons/core-free-icons';
 
-import { cn } from "@/lib/utils"
-import spinnerAnimation from "@/assets/lottie/spinner.json"
+import { cn } from '@/lib/utils';
+import spinnerAnimation from '@/assets/lottie/spinner.json';
 
-interface CodePreviewLoadingProps extends React.ComponentProps<"div"> {
+interface CodePreviewLoadingProps extends React.ComponentProps<'div'> {
   /** 로딩 메시지 */
-  message?: string
+  message?: string;
   /** 서브 메시지 */
-  subMessage?: string
+  subMessage?: string;
 }
 
 /**
@@ -20,8 +20,8 @@ interface CodePreviewLoadingProps extends React.ComponentProps<"div"> {
  * Lottie 애니메이션 기반의 모던한 로딩 UI
  */
 function CodePreviewLoading({
-  message = "AI가 코드를 생성하고 있습니다",
-  subMessage = "잠시만 기다려주세요...",
+  message = 'AI가 코드를 생성하고 있습니다',
+  subMessage = '잠시만 기다려주세요...',
   className,
   ...props
 }: CodePreviewLoadingProps) {
@@ -29,7 +29,7 @@ function CodePreviewLoading({
     <div
       data-slot="code-preview-loading"
       className={cn(
-        "flex h-full flex-1 flex-col items-center justify-center gap-6 bg-gradient-to-b from-muted/50 to-background p-8",
+        'flex h-full flex-1 flex-col items-center justify-center gap-6 bg-gradient-to-b from-muted/50 to-background p-8',
         className
       )}
       {...props}
@@ -69,8 +69,8 @@ function CodePreviewLoading({
         ))}
       </div>
     </div>
-  )
+  );
 }
 
-export { CodePreviewLoading }
-export type { CodePreviewLoadingProps }
+export { CodePreviewLoading };
+export type { CodePreviewLoadingProps };

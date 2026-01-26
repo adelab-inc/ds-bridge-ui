@@ -14,7 +14,7 @@ function HeaderLogo() {
         Runtime Hub
       </span>
     </div>
-  )
+  );
 }
 
-export { HeaderLogo }
+export { HeaderLogo };

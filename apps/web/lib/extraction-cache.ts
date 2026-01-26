@@ -57,7 +57,10 @@ function normalizeUrlForCache(url: string): string {
   try {
     const parsed = new URL(url);
     // 프로토콜, 호스트, 경로만 사용 (쿼리 파라미터 제외)
-    return `${parsed.protocol}//${parsed.host}${parsed.pathname}`.replace(/\/+$/, '');
+    return `${parsed.protocol}//${parsed.host}${parsed.pathname}`.replace(
+      /\/+$/,
+      ''
+    );
   } catch {
     return url.trim().replace(/\/+$/, '');
   }

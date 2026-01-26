@@ -31,7 +31,8 @@ export function useSendMessage() {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(
-          errorData.detail?.[0]?.msg || `Failed to send message: ${response.statusText}`
+          errorData.detail?.[0]?.msg ||
+            `Failed to send message: ${response.statusText}`
         );
       }
 

@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
-import { readFile } from "fs/promises";
-import { join } from "path";
+import { NextResponse } from 'next/server';
+import { readFile } from 'fs/promises';
+import { join } from 'path';
 
 /**
  * @aplus/ui UMD 번들 서빙 API
@@ -18,30 +18,30 @@ export async function GET() {
     // storybook-standalone/packages/ui/dist/ui.umd.js 경로
     const bundlePath = join(
       process.cwd(),
-      "..",
-      "..",
-      "storybook-standalone",
-      "packages",
-      "ui",
-      "dist",
-      "ui.umd.js"
+      '..',
+      '..',
+      'storybook-standalone',
+      'packages',
+      'ui',
+      'dist',
+      'ui.umd.js'
     );
 
-    const bundle = await readFile(bundlePath, "utf-8");
+    const bundle = await readFile(bundlePath, 'utf-8');
 
     return new NextResponse(bundle, {
       status: 200,
       headers: {
-        "Content-Type": "application/javascript; charset=utf-8",
-        "Cache-Control": "public, max-age=31536000, immutable",
+        'Content-Type': 'application/javascript; charset=utf-8',
+        'Cache-Control': 'public, max-age=31536000, immutable',
       },
     });
   } catch (error) {
-    console.error("Failed to load UMD bundle:", error);
+    console.error('Failed to load UMD bundle:', error);
 
     return NextResponse.json(
       {
-        error: "UMD bundle not found",
+        error: 'UMD bundle not found',
         message:
           "Run 'pnpm build:umd' in storybook-standalone/packages/ui first",
       },

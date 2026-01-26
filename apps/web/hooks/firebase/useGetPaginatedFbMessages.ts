@@ -30,33 +30,33 @@ const fetchMessages = async ({
   pageParam?: number;
 }): Promise<ChatMessage[]> => {
   const queryConstraints: (
-      | QueryFieldFilterConstraint
-      | QueryOrderByConstraint
-      | QueryLimitConstraint
-    )[] = [
-      where('room_id', '==', roomId),
-      orderBy('question_created_at', 'desc'),
-      limit(pageSize),
-    ];
+    | QueryFieldFilterConstraint
+    | QueryOrderByConstraint
+    | QueryLimitConstraint
+  )[] = [
+    where('room_id', '==', roomId),
+    orderBy('question_created_at', 'desc'),
+    limit(pageSize),
+  ];
 
-    // 페이지네이션: 이전 페이지의 마지막 타임스탬프보다 이전 메시지만 가져오기
-    if (pageParam) {
-      queryConstraints.push(where('question_created_at', '<', pageParam));
-    }
+  // 페이지네이션: 이전 페이지의 마지막 타임스탬프보다 이전 메시지만 가져오기
+  if (pageParam) {
+    queryConstraints.push(where('question_created_at', '<', pageParam));
+  }
 
-    const q = query(
-      collection(firebaseFirestore, MESSAGES_COLLECTION),
-      ...queryConstraints
-    );
+  const q = query(
+    collection(firebaseFirestore, MESSAGES_COLLECTION),
+    ...queryConstraints
+  );
 
-    const querySnapshot = await getDocs(q);
-    // Firestore 메시지를 시간순으로 정렬
-    const messages: ChatMessage[] = querySnapshot.docs
-      .map((doc) => {
-        const data = doc.data() as Omit<ChatMessage, 'id'>;
-        return { ...data, id: doc.id } as ChatMessage;
-      })
-      .sort((a, b) => a.question_created_at - b.question_created_at);
+  const querySnapshot = await getDocs(q);
+  // Firestore 메시지를 시간순으로 정렬
+  const messages: ChatMessage[] = querySnapshot.docs
+    .map((doc) => {
+      const data = doc.data() as Omit<ChatMessage, 'id'>;
+      return { ...data, id: doc.id } as ChatMessage;
+    })
+    .sort((a, b) => a.question_created_at - b.question_created_at);
 
   return messages;
 };

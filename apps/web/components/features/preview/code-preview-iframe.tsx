@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { transform } from "sucrase";
+import * as React from 'react';
+import { transform } from 'sucrase';
 
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils';
 
-interface CodePreviewIframeProps extends React.ComponentProps<"div"> {
+interface CodePreviewIframeProps extends React.ComponentProps<'div'> {
   /** AI가 생성한 React 컴포넌트 코드 */
   code: string;
   /** 파일 경로 (표시용) */
@@ -33,7 +33,7 @@ function CodePreviewIframe({
       );
       const importedComponents = componentImportMatch
         ? componentImportMatch[1]
-            .split(",")
+            .split(',')
             .map((s) => s.trim())
             .filter(Boolean)
         : [];
@@ -41,17 +41,14 @@ function CodePreviewIframe({
       // 2. import 문 제거
       let processedCode = code
         // @/components import 제거
-        .replace(
-          /import\s+\{[^}]+\}\s+from\s+['"]@\/components['"];?\n?/g,
-          ""
-        )
+        .replace(/import\s+\{[^}]+\}\s+from\s+['"]@\/components['"];?\n?/g, '')
         // react import 제거
-        .replace(/import\s+\{[^}]+\}\s+from\s+['"]react['"];?\n?/g, "")
-        .replace(/import\s+\*\s+as\s+React\s+from\s+['"]react['"];?\n?/g, "")
-        .replace(/import\s+React\s+from\s+['"]react['"];?\n?/g, "");
+        .replace(/import\s+\{[^}]+\}\s+from\s+['"]react['"];?\n?/g, '')
+        .replace(/import\s+\*\s+as\s+React\s+from\s+['"]react['"];?\n?/g, '')
+        .replace(/import\s+React\s+from\s+['"]react['"];?\n?/g, '');
 
       // 3. 컴포넌트 이름 추출 및 export 처리 (다양한 패턴 지원)
-      let componentName = "App";
+      let componentName = 'App';
 
       // Pattern 1: export default function ComponentName() {}
       const namedFunctionMatch = processedCode.match(
@@ -59,7 +56,7 @@ function CodePreviewIframe({
       );
       if (namedFunctionMatch) {
         componentName = namedFunctionMatch[1];
-        processedCode = processedCode.replace(/export\s+default\s+/, "");
+        processedCode = processedCode.replace(/export\s+default\s+/, '');
       }
       // Pattern 2: export default ComponentName (변수/함수 참조)
       else {
@@ -71,7 +68,7 @@ function CodePreviewIframe({
           // export default ComponentName; 제거
           processedCode = processedCode.replace(
             /export\s+default\s+\w+\s*;?\s*$/m,
-            ""
+            ''
           );
         }
         // Pattern 3: export default () => {} 또는 export default function() {}
@@ -83,9 +80,9 @@ function CodePreviewIframe({
             // 익명 함수를 App 변수로 래핑
             processedCode = processedCode.replace(
               /export\s+default\s+/,
-              "const App = "
+              'const App = '
             );
-            componentName = "App";
+            componentName = 'App';
           }
         }
       }
@@ -94,15 +91,15 @@ function CodePreviewIframe({
 
       // 4. Sucrase로 JSX/TypeScript 트랜스파일
       const { code: transpiledCode } = transform(codeWithoutImports, {
-        transforms: ["jsx", "typescript"],
-        jsxRuntime: "classic",
+        transforms: ['jsx', 'typescript'],
+        jsxRuntime: 'classic',
       });
 
       // 5. 사용된 컴포넌트들을 window.AplusUI에서 가져오는 코드 생성
       const componentDestructure =
         importedComponents.length > 0
-          ? `const { ${importedComponents.join(", ")} } = window.AplusUI;`
-          : "";
+          ? `const { ${importedComponents.join(', ')} } = window.AplusUI;`
+          : '';
 
       // 6. HTML 생성
       const html = `<!DOCTYPE html>
@@ -143,8 +140,8 @@ function CodePreviewIframe({
                   (comp) =>
                     `const ${comp} = AplusUI.${comp} || (function() { missingComponents.push('${comp}'); return function(props) { return React.createElement('div', { style: { padding: '8px', border: '1px dashed #ccc', borderRadius: '4px', background: '#f9f9f9' }, ...props }, props.children || '[${comp}]'); }; })();`
                 )
-                .join("\n        ")
-            : ""
+                .join('\n        ')
+            : ''
         }
 
         if (missingComponents.length > 0) {
@@ -173,7 +170,7 @@ function CodePreviewIframe({
     } catch (err) {
       return {
         srcDoc: null,
-        error: err instanceof Error ? err.message : "트랜스파일 에러",
+        error: err instanceof Error ? err.message : '트랜스파일 에러',
       };
     }
   }, [code]);
@@ -184,7 +181,7 @@ function CodePreviewIframe({
       <div
         data-slot="code-preview-iframe"
         className={cn(
-          "flex flex-1 flex-col items-center justify-center gap-4 bg-red-50 p-8 text-center",
+          'flex flex-1 flex-col items-center justify-center gap-4 bg-red-50 p-8 text-center',
           className
         )}
         {...props}
@@ -218,7 +215,7 @@ function CodePreviewIframe({
       <div
         data-slot="code-preview-iframe"
         className={cn(
-          "flex flex-1 flex-col items-center justify-center gap-4 bg-muted/50 p-8 text-center text-muted-foreground",
+          'flex flex-1 flex-col items-center justify-center gap-4 bg-muted/50 p-8 text-center text-muted-foreground',
           className
         )}
         {...props}
@@ -249,7 +246,10 @@ function CodePreviewIframe({
   return (
     <div
       data-slot="code-preview-iframe"
-      className={cn("relative flex h-full flex-1 flex-col overflow-hidden", className)}
+      className={cn(
+        'relative flex h-full flex-1 flex-col overflow-hidden',
+        className
+      )}
       {...props}
     >
       {/* 파일 경로 표시 (옵션) */}

@@ -4,18 +4,18 @@
 
 ## 기술 스택
 
-| 기술 | 버전 | 용도 |
-|------|------|------|
-| Next.js | 16.1.1 | App Router, SSR |
-| React | 19.2.3 | UI 컴포넌트 |
-| TypeScript | 5.x | strict 모드 |
-| Tailwind CSS | 4.x | 유틸리티 스타일링 |
-| Base UI | 1.0.0 | Headless 컴포넌트 |
-| shadcn/ui | 3.6.3 | 스타일 프리셋 |
-| Hugeicons | 1.1.4 | 아이콘 라이브러리 |
-| react-resizable-panels | 4.3.0 | 리사이즈 패널 레이아웃 |
-| TanStack Query | 5.90.16 | 서버 상태 관리, 데이터 fetching |
-| Firebase | 12.7.0 | Auth, Firestore, Storage |
+| 기술                   | 버전    | 용도                            |
+| ---------------------- | ------- | ------------------------------- |
+| Next.js                | 16.1.1  | App Router, SSR                 |
+| React                  | 19.2.3  | UI 컴포넌트                     |
+| TypeScript             | 5.x     | strict 모드                     |
+| Tailwind CSS           | 4.x     | 유틸리티 스타일링               |
+| Base UI                | 1.0.0   | Headless 컴포넌트               |
+| shadcn/ui              | 3.6.3   | 스타일 프리셋                   |
+| Hugeicons              | 1.1.4   | 아이콘 라이브러리               |
+| react-resizable-panels | 4.3.0   | 리사이즈 패널 레이아웃          |
+| TanStack Query         | 5.90.16 | 서버 상태 관리, 데이터 fetching |
+| Firebase               | 12.7.0  | Auth, Firestore, Storage        |
 
 ## 중요: 공식 문서 확인 필수
 
@@ -23,10 +23,10 @@
 
 아래 라이브러리 작업 시 API가 자주 변경되므로 Context7로 최신 문서 확인 필수:
 
-| 라이브러리 | Context7 Library ID | 확인 사항 |
-|-----------|---------------------|----------|
-| Base UI | `/mui/base-ui` | SSR/Hydration, 컴포넌트 API |
-| react-resizable-panels | `/bvaughn/react-resizable-panels` | Panel props, CSS 단위 지원 |
+| 라이브러리             | Context7 Library ID               | 확인 사항                   |
+| ---------------------- | --------------------------------- | --------------------------- |
+| Base UI                | `/mui/base-ui`                    | SSR/Hydration, 컴포넌트 API |
+| react-resizable-panels | `/bvaughn/react-resizable-panels` | Panel props, CSS 단위 지원  |
 
 ### 주의사항
 
@@ -39,20 +39,23 @@
 Base UI v1.0.0은 React 19의 `useId()` 훅을 내부적으로 사용하여 SSR/클라이언트 간 ID 불일치 발생 가능.
 
 **작업 전 필수 확인:**
+
 1. Context7 MCP로 `/mui/base-ui` 공식 문서에서 SSR 관련 내용 확인
 2. 해당 컴포넌트의 hydration 이슈 여부 파악
 
 **해결 패턴:**
+
 - Base UI 컴포넌트 사용 영역을 `ClientOnly` 래퍼로 감싸기
 - Skeleton fallback 제공하여 SSR 시 레이아웃 유지
 
 **예시** (header.tsx 참고):
+
 ```tsx
 <header>
-  <HeaderLogo />  {/* SSR 렌더링 */}
+  <HeaderLogo /> {/* SSR 렌더링 */}
   <ClientOnly fallback={<Skeleton />}>
     <TooltipProvider>
-      <InputGroup>...</InputGroup>  {/* Base UI 사용 */}
+      <InputGroup>...</InputGroup> {/* Base UI 사용 */}
     </TooltipProvider>
   </ClientOnly>
 </header>
@@ -64,18 +67,18 @@ Base UI v1.0.0은 React 19의 `useId()` 훅을 내부적으로 사용하여 SSR/
 
 ### 금지 사항
 
-| 금지 | 설명 |
-|------|------|
+| 금지                  | 설명                                                  |
+| --------------------- | ----------------------------------------------------- |
 | 컴포넌트 내부 수정 ❌ | Badge.tsx, Button.tsx 등 기존 컴포넌트 로직 변경 금지 |
-| 새 컴포넌트 생성 ❌ | src/components/ 폴더에 새 파일 생성 금지 |
-| 스타일 수정 ❌ | variants, CVA 설정 등 스타일 관련 코드 변경 금지 |
+| 새 컴포넌트 생성 ❌   | src/components/ 폴더에 새 파일 생성 금지              |
+| 스타일 수정 ❌        | variants, CVA 설정 등 스타일 관련 코드 변경 금지      |
 
 ### 허용 사항
 
-| 허용 | 설명 |
-|------|------|
-| Read Only ✅ | 컴포넌트 구조, props, 사용법 파악을 위한 읽기 |
-| Export 추가 ✅ | `index.ts`에서 기존 컴포넌트 re-export 추가 |
+| 허용             | 설명                                            |
+| ---------------- | ----------------------------------------------- |
+| Read Only ✅     | 컴포넌트 구조, props, 사용법 파악을 위한 읽기   |
+| Export 추가 ✅   | `index.ts`에서 기존 컴포넌트 re-export 추가     |
 | Import & 사용 ✅ | apps/web에서 @aplus/ui 컴포넌트 import하여 사용 |
 
 ### 컴포넌트 부족 시 해결 방법
@@ -84,7 +87,7 @@ Base UI v1.0.0은 React 19의 `useId()` 훅을 내부적으로 사용하여 SSR/
 2. **Re-export 추가**: 하위 컴포넌트가 필요하면 `index.ts`에 export 추가
    ```typescript
    // storybook-standalone/packages/ui/src/components/index.ts
-   export { Heading } from './Menu/Heading';  // 하위 컴포넌트 re-export
+   export { Heading } from './Menu/Heading'; // 하위 컴포넌트 re-export
    ```
 3. **UMD 번들 재빌드**: export 추가 후 반드시 재빌드
    ```bash
@@ -94,6 +97,7 @@ Base UI v1.0.0은 React 19의 `useId()` 훅을 내부적으로 사용하여 SSR/
 ### AI 컴포넌트 사용 가이드
 
 AI가 컴포넌트를 올바르게 사용하도록 참고:
+
 - 가이드: `docs/web/aplus-ui-props-guide.md`
 - Badge: `statusVariant` prop 필수
 - Chip: `children`으로 텍스트 전달
@@ -138,23 +142,26 @@ Next.js 16 App Router 사용 시 Server/Client 컴포넌트 경계를 명확히 
 
 ### 기본 원칙
 
-| 구분 | Server Component | Client Component |
-|------|-----------------|------------------|
-| 지시어 | 없음 (기본값) | `"use client"` 필수 |
-| 용도 | 정적 마크업, 데이터 fetch | 인터랙션, 상태, 브라우저 API |
-| 예시 | HeaderLogo, RightPanel | Header, DesktopLayout |
+| 구분   | Server Component          | Client Component             |
+| ------ | ------------------------- | ---------------------------- |
+| 지시어 | 없음 (기본값)             | `"use client"` 필수          |
+| 용도   | 정적 마크업, 데이터 fetch | 인터랙션, 상태, 브라우저 API |
+| 예시   | HeaderLogo, RightPanel    | Header, DesktopLayout        |
 
 ### 설계 패턴
 
 **1. 정적/동적 분리** (9a15908 커밋 참고)
+
 - 정적 마크업(`<div>`, `<main>`)은 Server Component (page.tsx)
 - 인터랙티브 영역만 Client Component로 분리
 
 **2. Base UI 사용 시 ClientOnly 래핑**
+
 - Base UI 컴포넌트는 `useId()` 사용으로 hydration 이슈 발생
 - `ClientOnly` 래퍼로 감싸고 Skeleton fallback 제공
 
 **3. 컴포넌트 분리 기준**
+
 - 정적 부분: Server Component로 분리 (예: HeaderLogo)
 - 상태/이벤트 필요: Client Component 유지
 
@@ -167,12 +174,12 @@ Next.js 16 App Router 사용 시 Server/Client 컴포넌트 경계를 명확히 
 
 ### 파일 명명
 
-| 타입 | 규칙 | 예시 |
-|------|------|------|
-| 컴포넌트 | PascalCase | `ChatPanel.tsx` |
-| 훅 | use + camelCase | `useChat.ts` |
-| 유틸 | camelCase | `parser.ts` |
-| 스토어 | camelCase + Store | `chatStore.ts` |
+| 타입     | 규칙              | 예시            |
+| -------- | ----------------- | --------------- |
+| 컴포넌트 | PascalCase        | `ChatPanel.tsx` |
+| 훅       | use + camelCase   | `useChat.ts`    |
+| 유틸     | camelCase         | `parser.ts`     |
+| 스토어   | camelCase + Store | `chatStore.ts`  |
 
 ### TypeScript
 
@@ -270,22 +277,22 @@ pnpm typecheck
 
 ### Quick Reference
 
-| 항목 | 값 |
-|------|-----|
-| SDK | firebase 12.7.0 |
-| 초기화 | `lib/firebase.ts` |
-| 훅 위치 | `hooks/firebase/` |
+| 항목      | 값                                            |
+| --------- | --------------------------------------------- |
+| SDK       | firebase 12.7.0                               |
+| 초기화    | `lib/firebase.ts`                             |
+| 훅 위치   | `hooks/firebase/`                             |
 | 타입 소스 | `@packages/shared-types/typescript/firebase/` |
-| 컬렉션 | `chat_messages`, `chat_rooms` |
+| 컬렉션    | `chat_messages`, `chat_rooms`                 |
 
 ### 서비스 인스턴스
 
 ```typescript
 // lib/firebase.ts에서 export됨
-import { firebaseFirestore } from "@/lib/firebase";
+import { firebaseFirestore } from '@/lib/firebase';
 
 // Firestore 사용 (주로 사용)
-import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 ```
 
 ### 컬렉션 & 타입
@@ -296,20 +303,24 @@ import { COLLECTIONS } from '@packages/shared-types/typescript/firebase/collecti
 import type { ChatMessage } from '@packages/shared-types/typescript/firebase/types';
 
 // 또는 훅에서 re-export된 것 사용
-import { MESSAGES_COLLECTION, type ChatMessage } from "@/hooks/firebase/messageUtils";
+import {
+  MESSAGES_COLLECTION,
+  type ChatMessage,
+} from '@/hooks/firebase/messageUtils';
 
-const messagesRef = collection(db, COLLECTIONS.CHAT_MESSAGES);  // 'chat_messages'
+const messagesRef = collection(db, COLLECTIONS.CHAT_MESSAGES); // 'chat_messages'
 ```
 
 **ChatMessage 타입**:
+
 ```typescript
 interface ChatMessage {
   id: string;
   room_id: string;
-  question: string;           // 사용자 질문
-  text: string;               // AI 텍스트 응답
-  content: string;            // React 코드
-  path: string;               // 파일 경로
+  question: string; // 사용자 질문
+  text: string; // AI 텍스트 응답
+  content: string; // React 코드
+  path: string; // 파일 경로
   question_created_at: number; // ms timestamp
   answer_created_at: number;
   status: 'GENERATING' | 'DONE' | 'ERROR';
@@ -321,15 +332,16 @@ interface ChatMessage {
 #### useRealtimeMessages - 실시간 구독
 
 ```typescript
-import { useRealtimeMessages } from "@/hooks/firebase/useRealtimeMessages";
+import { useRealtimeMessages } from '@/hooks/firebase/useRealtimeMessages';
 
 const { messages, isLoading, error } = useRealtimeMessages({
-  sessionId: roomId,      // 필수
-  pageSize: 50,           // 선택
-  callbacks: {            // 선택
+  sessionId: roomId, // 필수
+  pageSize: 50, // 선택
+  callbacks: {
+    // 선택
     onAdded: (msg) => playSound(),
     onInitial: (msgs) => console.log('loaded', msgs.length),
-  }
+  },
 });
 ```
 
@@ -340,13 +352,14 @@ const { messages, isLoading, error } = useRealtimeMessages({
 #### useGetPaginatedFbMessages - 무한 스크롤
 
 ```typescript
-import { useGetPaginatedFbMessages } from "@/hooks/firebase/useGetPaginatedFbMessages";
+import { useGetPaginatedFbMessages } from '@/hooks/firebase/useGetPaginatedFbMessages';
 
-const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useGetPaginatedFbMessages({
-  roomId,
-  pageSize: 20,
-  infiniteQueryOptions: { enabled: !!roomId }
-});
+const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
+  useGetPaginatedFbMessages({
+    roomId,
+    pageSize: 20,
+    infiniteQueryOptions: { enabled: !!roomId },
+  });
 
 const allMessages = data?.pages.flat() ?? [];
 ```
@@ -420,11 +433,11 @@ NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=
 
 ## 참조 문서
 
-| 문서 | 내용 |
-|------|------|
-| [03-tech-stack.md](/docs/specs/03-tech-stack.md) | 기술 스택 상세 |
-| [06-directory-structure.md](/docs/specs/06-directory-structure.md) | 디렉토리 구조 |
-| [04-api-contract.md](/docs/specs/04-api-contract.md) | API 스펙 |
+| 문서                                                               | 내용           |
+| ------------------------------------------------------------------ | -------------- |
+| [03-tech-stack.md](/docs/specs/03-tech-stack.md)                   | 기술 스택 상세 |
+| [06-directory-structure.md](/docs/specs/06-directory-structure.md) | 디렉토리 구조  |
+| [04-api-contract.md](/docs/specs/04-api-contract.md)               | API 스펙       |
 
 ## 현재 상태
 

@@ -44,7 +44,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 | **Init**     | 🎉 `:tada:`             | 개발 환경 초기 세팅                                   |
 | **Feat**     | ✨ `:sparkles:`         | 새로운 기능 추가                                      |
 | **Fix**      | 🐛 `:bug:`              | 버그 수정                                             |
-| **HotFix**   | 🚑️ `:ambulance:`       | 급하게 치명적인 버그를 고치는 경우                    |
+| **HotFix**   | 🚑️ `:ambulance:`        | 급하게 치명적인 버그를 고치는 경우                    |
 | **Design**   | 💄 `:lipstick:`         | CSS 수정                                              |
 | **Update**   | 🔧 `:wrench:`           | 기능 보완 (원래 정상적으로 동작했지만 보완의 개념)    |
 | **Remove**   | ➖ `:heavy_minus_sign:` | 파일이나 코드를 삭제하는 경우                         |
@@ -55,7 +55,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 | **Test**     | 🧪 `:test_tube:`        | 테스트 코드 추가 및 수정                              |
 | **Style**    | 🎨 `:art:`              | 코드 스타일, 포매팅 수정                              |
 | **Comment**  | 💡 `:bulb:`             | 필요한 주석 추가 및 변경                              |
-| **Chore**    | 📦️ `:package:`         | 패키지 매니저 수정, 그 외 기타 수정 (ex. .gitignore)  |
+| **Chore**    | 📦️ `:package:`          | 패키지 매니저 수정, 그 외 기타 수정 (ex. .gitignore)  |
 | **Modify**   | 🔨 `:hammer:`           | 단순한 코드 수정 (ex. 오타, 문자열 변경 등)           |
 | **WIP**      | 🚧 `:construction:`     | 작업 중                                               |
 | **CI**       | 🚀 `:rocket:`           | 지속적 통합(CI) 관련 설정 변경                        |

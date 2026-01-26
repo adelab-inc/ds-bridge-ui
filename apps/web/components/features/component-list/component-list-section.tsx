@@ -44,7 +44,7 @@ function ComponentListSection({
       data-slot="component-list-section"
       className={cn(
         'bg-card border-border overflow-hidden rounded-lg border',
-        className,
+        className
       )}
       {...props}
     >
