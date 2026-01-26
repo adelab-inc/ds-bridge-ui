@@ -19,8 +19,10 @@ function LeftPanel({ className, children, ...props }: LeftPanelProps) {
       )}
       {...props}
     >
-      <ScrollArea className="flex-1">
-        <div className="flex flex-col gap-4 p-4 h-full">{children}</div>
+      <ScrollArea className="flex-1 overflow-y-hidden">
+        <div className="flex flex-col gap-4 p-4 h-full overflow-hidden">
+          {children}
+        </div>
       </ScrollArea>
     </aside>
   );

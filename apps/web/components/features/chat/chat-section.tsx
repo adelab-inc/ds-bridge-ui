@@ -72,15 +72,17 @@ function ChatSection({
         onCodeGenerated?.(code);
       },
       onDone: () => {
+        const messageId = currentMessageIdRef.current;
         // 스트리밍 완료 시 status를 DONE으로 변경
-        if (currentMessageIdRef.current) {
+        if (messageId) {
+          const now = Date.now();
           setMessages((prev) =>
             prev.map((msg) =>
-              msg.id === currentMessageIdRef.current
+              msg.id === messageId
                 ? {
                     ...msg,
                     status: 'DONE' as const,
-                    answer_created_at: Date.now(),
+                    answer_created_at: now,
                   }
                 : msg,
             ),
@@ -91,17 +93,18 @@ function ChatSection({
         onStreamEnd?.();
       },
       onError: (errorMsg) => {
-        console.error('Chat stream error:', errorMsg);
+        const messageId = currentMessageIdRef.current;
         // 에러 발생 시 status를 ERROR로 변경
-        if (currentMessageIdRef.current) {
+        if (messageId) {
+          const now = Date.now();
           setMessages((prev) =>
             prev.map((msg) =>
-              msg.id === currentMessageIdRef.current
+              msg.id === messageId
                 ? {
                     ...msg,
                     text: `Error: ${errorMsg}`,
                     status: 'ERROR' as const,
-                    answer_created_at: Date.now(),
+                    answer_created_at: now,
                   }
                 : msg,
             ),
@@ -153,6 +156,23 @@ function ChatSection({
   const displayMessages = React.useMemo(() => {
     return [...firebaseMessages, ...messages];
   }, [firebaseMessages, messages]);
+
+  // Firebase 메시지 로드 시 마지막 메시지의 코드를 Preview에 표시
+  const initialCodeSetRef = React.useRef(false);
+  React.useEffect(() => {
+    // 초기 로드 시 한 번만 실행 (스트리밍 중이 아닐 때)
+    if (!initialCodeSetRef.current && !isLoading && firebaseMessages.length > 0) {
+      const lastMessage = firebaseMessages[firebaseMessages.length - 1];
+      if (lastMessage.content) {
+        onCodeGenerated?.({
+          type: 'code',
+          content: lastMessage.content,
+          path: lastMessage.path,
+        });
+        initialCodeSetRef.current = true;
+      }
+    }
+  }, [firebaseMessages, isLoading, onCodeGenerated]);
 
   return (
     <section
