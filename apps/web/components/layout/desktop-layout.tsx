@@ -24,22 +24,7 @@ interface DesktopLayoutProps {
   onJSONUpload?: (file: File) => void;
 }
 
-// Skeleton for SSR fallback
-function DesktopLayoutSkeleton() {
-  return (
-    <div className="flex h-full w-full">
-      <div
-        className="bg-card h-full"
-        style={{ width: `${LAYOUT.LEFT_PANEL_DEFAULT}%` }}
-      />
-      <div className="bg-border w-px" />
-      <div className="bg-background h-full flex-1" />
-    </div>
-  );
-}
-
-// Content component - hooks are called here (client only)
-function DesktopLayoutContent({ onURLSubmit, onJSONUpload }: DesktopLayoutProps) {
+function DesktopLayout({ onURLSubmit, onJSONUpload }: DesktopLayoutProps) {
   const { roomId, isLoading, error } = useRoom({
     storybookUrl: 'https://microsoft.github.io/vscode-webview-ui-toolkit',
     userId: 'anonymous',
@@ -55,63 +40,67 @@ function DesktopLayoutContent({ onURLSubmit, onJSONUpload }: DesktopLayoutProps)
   } = useCodeGenerationStore();
 
   return (
-    <ResizablePanelGroup orientation="horizontal" id="main-layout">
-      {/* Left Panel */}
-      <ResizablePanel
-        id="left-panel"
-        defaultSize={LAYOUT.LEFT_PANEL_DEFAULT}
-        minSize={`${LAYOUT.LEFT_PANEL_MIN_PX}px`}
-        maxSize={`${LAYOUT.LEFT_PANEL_MAX_PX}px`}
-      >
-        <LeftPanel>
-          {isLoading ? (
-            <div className="flex h-full items-center justify-center p-4">
-              <p className="text-muted-foreground text-sm">
-                채팅방 준비 중...
-              </p>
-            </div>
-          ) : error ? (
-            <div className="flex h-full items-center justify-center p-4">
-              <p className="text-destructive text-sm">Error: {error}</p>
-            </div>
-          ) : roomId ? (
-            <ChatSection
-              roomId={roomId}
-              onCodeGenerated={onCodeGenerated}
-              onStreamStart={onStreamStart}
-              onStreamEnd={onStreamEnd}
-            />
-          ) : null}
-          <ComponentListSection />
-          <ActionsSection />
-        </LeftPanel>
-      </ResizablePanel>
-
-      {/* Resize Handle */}
-      <ResizableHandle withHandle />
-
-      {/* Right Panel */}
-      <ResizablePanel
-        id="right-panel"
-        defaultSize={100 - LAYOUT.LEFT_PANEL_DEFAULT}
-      >
-        <RightPanel>
-          <PreviewSection
-            aiCode={generatedCode?.content}
-            aiFilePath={generatedCode?.path}
-            isGeneratingCode={isGeneratingCode}
+    <ClientOnly
+      fallback={
+        <div className="flex h-full w-full">
+          <div
+            className="bg-card h-full"
+            style={{ width: `${LAYOUT.LEFT_PANEL_DEFAULT}%` }}
           />
-        </RightPanel>
-      </ResizablePanel>
-    </ResizablePanelGroup>
-  );
-}
+          <div className="bg-border w-px" />
+          <div className="bg-background h-full flex-1" />
+        </div>
+      }
+    >
+      <ResizablePanelGroup orientation="horizontal" id="main-layout">
+        {/* Left Panel */}
+        <ResizablePanel
+          id="left-panel"
+          defaultSize={LAYOUT.LEFT_PANEL_DEFAULT}
+          minSize={`${LAYOUT.LEFT_PANEL_MIN_PX}px`}
+          maxSize={`${LAYOUT.LEFT_PANEL_MAX_PX}px`}
+        >
+          <LeftPanel>
+            {isLoading ? (
+              <div className="flex h-full items-center justify-center p-4">
+                <p className="text-muted-foreground text-sm">
+                  채팅방 준비 중...
+                </p>
+              </div>
+            ) : error ? (
+              <div className="flex h-full items-center justify-center p-4">
+                <p className="text-destructive text-sm">Error: {error}</p>
+              </div>
+            ) : roomId ? (
+              <ChatSection
+                roomId={roomId}
+                onCodeGenerated={onCodeGenerated}
+                onStreamStart={onStreamStart}
+                onStreamEnd={onStreamEnd}
+              />
+            ) : null}
+            {/* <ComponentListSection />
+            <ActionsSection /> */}
+          </LeftPanel>
+        </ResizablePanel>
 
-// Main component - wraps content with ClientOnly
-function DesktopLayout(props: DesktopLayoutProps) {
-  return (
-    <ClientOnly fallback={<DesktopLayoutSkeleton />}>
-      <DesktopLayoutContent {...props} />
+        {/* Resize Handle */}
+        <ResizableHandle withHandle />
+
+        {/* Right Panel */}
+        <ResizablePanel
+          id="right-panel"
+          defaultSize={100 - LAYOUT.LEFT_PANEL_DEFAULT}
+        >
+          <RightPanel>
+            <PreviewSection
+              aiCode={generatedCode?.content}
+              aiFilePath={generatedCode?.path}
+              isGeneratingCode={isGeneratingCode}
+            />
+          </RightPanel>
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </ClientOnly>
   );
 }

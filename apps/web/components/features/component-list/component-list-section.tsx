@@ -1,25 +1,32 @@
-"use client"
+'use client';
 
-import * as React from "react"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { Layers02Icon, ArrowDown01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons"
+import * as React from 'react';
+import { HugeiconsIcon } from '@hugeicons/react';
+import {
+  Layers02Icon,
+  ArrowDown01Icon,
+  ArrowRight01Icon,
+} from '@hugeicons/core-free-icons';
 
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible"
-import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { ComponentTree } from "./component-tree"
-import type { ComponentItemData } from "./component-item"
+} from '@/components/ui/collapsible';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { ComponentTree } from './component-tree';
+import type { ComponentItemData } from './component-item';
 
-interface ComponentListSectionProps extends Omit<React.ComponentProps<"section">, 'onSelect'> {
-  components?: ComponentItemData[]
-  selectedId?: string
-  onSelectItem?: (id: string) => void
-  defaultOpen?: boolean
+interface ComponentListSectionProps extends Omit<
+  React.ComponentProps<'section'>,
+  'onSelect'
+> {
+  components?: ComponentItemData[];
+  selectedId?: string;
+  onSelectItem?: (id: string) => void;
+  defaultOpen?: boolean;
 }
 
 function ComponentListSection({
@@ -30,14 +37,14 @@ function ComponentListSection({
   className,
   ...props
 }: ComponentListSectionProps) {
-  const [isOpen, setIsOpen] = React.useState(defaultOpen)
+  const [isOpen, setIsOpen] = React.useState(defaultOpen);
 
   return (
     <section
       data-slot="component-list-section"
       className={cn(
-        "bg-card border-border overflow-hidden rounded-lg border",
-        className
+        'bg-card border-border overflow-hidden rounded-lg border',
+        className,
       )}
       {...props}
     >
@@ -68,10 +75,8 @@ function ComponentListSection({
             />
           </Button>
         </CollapsibleTrigger>
-
-        {/* Content */}
         <CollapsibleContent>
-          <ScrollArea className="max-h-[300px]">
+          <ScrollArea className="max-h-75">
             <div className="p-2">
               <ComponentTree
                 components={components}
@@ -83,8 +88,8 @@ function ComponentListSection({
         </CollapsibleContent>
       </Collapsible>
     </section>
-  )
+  );
 }
 
-export { ComponentListSection }
-export type { ComponentListSectionProps }
+export { ComponentListSection };
+export type { ComponentListSectionProps };
