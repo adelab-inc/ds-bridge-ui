@@ -132,9 +132,10 @@ function PreviewSection({
 
         {/* Tabs Content with Copy Button */}
         <div className="relative flex-1 overflow-hidden">
-          {/* Copy button - 10시 방향 (좌상단) */}
-          <div className="absolute left-3 top-10 z-10">
-            <TooltipProvider>
+          {/* Copy button - AI Generated 탭 활성화 시에만 표시 */}
+          {aiCode && activeTab === "ai-generated" && (
+            <div className="absolute left-3 top-10 z-10">
+              <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -156,9 +157,10 @@ function PreviewSection({
                 <TooltipContent side="right">
                   <p>{copied ? "복사됨!" : "URL 복사"}</p>
                 </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          )}
 
           {/* Tab Contents */}
           {(aiCode || isGeneratingCode) && (
