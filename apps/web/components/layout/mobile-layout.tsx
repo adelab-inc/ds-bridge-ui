@@ -3,6 +3,7 @@
 import * as React from 'react';
 
 import { LAYOUT } from '@/lib/constants';
+import { ClientOnly } from '@/components/ui/client-only';
 import { RightPanel } from '@/components/layout/right-panel';
 import { MobileSheet } from '@/components/layout/mobile-sheet';
 import { useRoom } from '@/hooks/useRoom';
@@ -19,7 +20,20 @@ interface MobileLayoutProps {
   onJSONUpload?: (file: File) => void;
 }
 
-function MobileLayout({ onURLSubmit, onJSONUpload }: MobileLayoutProps) {
+// Skeleton for SSR fallback
+function MobileLayoutSkeleton() {
+  return (
+    <div className="h-full w-full">
+      <div
+        className="bg-background h-full"
+        style={{ paddingBottom: `${LAYOUT.MOBILE_SHEET_DEFAULT_HEIGHT}vh` }}
+      />
+    </div>
+  );
+}
+
+// Content component - hooks are called here (client only)
+function MobileLayoutContent({ onURLSubmit, onJSONUpload }: MobileLayoutProps) {
   const { roomId, isLoading, error } = useRoom({
     storybookUrl: 'https://microsoft.github.io/vscode-webview-ui-toolkit',
     userId: 'anonymous',
@@ -86,6 +100,15 @@ function MobileLayout({ onURLSubmit, onJSONUpload }: MobileLayoutProps) {
         actionsContent={<ActionsSection />}
       />
     </>
+  );
+}
+
+// Main component - wraps content with ClientOnly
+function MobileLayout(props: MobileLayoutProps) {
+  return (
+    <ClientOnly fallback={<MobileLayoutSkeleton />}>
+      <MobileLayoutContent {...props} />
+    </ClientOnly>
   );
 }
 

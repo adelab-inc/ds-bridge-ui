@@ -152,6 +152,24 @@ function ChatSection({
     return data.pages.flat();
   }, [data]);
 
+  // Firebase 메시지 로드 시 가장 최근 content가 있는 메시지를 PreviewSection에 전달
+  React.useEffect(() => {
+    if (!firebaseMessages.length) return;
+
+    // content가 있는 가장 최근 메시지 찾기 (역순으로 탐색)
+    const latestWithContent = [...firebaseMessages]
+      .reverse()
+      .find((msg) => msg.content && msg.content.trim());
+
+    if (latestWithContent) {
+      onCodeGenerated?.({
+        type: 'code',
+        content: latestWithContent.content,
+        path: latestWithContent.path,
+      });
+    }
+  }, [firebaseMessages, onCodeGenerated]);
+
   // 표시할 메시지 목록 (Firebase 메시지 + 로컬 메시지)
   const displayMessages = React.useMemo(() => {
     return [...firebaseMessages, ...messages];
