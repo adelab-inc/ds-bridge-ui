@@ -2,34 +2,16 @@
   "name": "react",
   "source": "https://react.carbondesignsystem.com",
   "version": "1.0.0",
-  "extractedAt": "2026-01-25T23:46:18.035Z",
+  "extractedAt": "2026-01-22T02:24:49.978Z",
   "components": [
     {
       "name": "Accordion",
       "category": "Components",
-      "filePath": "./src/components/Accordion/Accordion.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-accordion--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-accordion--controlled",
-          "name": "Controlled"
-        },
-        {
-          "id": "components-accordion--skeleton",
-          "name": "Skeleton"
-        },
-        {
-          "id": "components-accordion--with-layer",
-          "name": "With Layer"
-        }
+        "Default",
+        "Controlled",
+        "Skeleton",
+        "With Layer"
       ],
       "props": [
         {
@@ -39,7 +21,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -50,7 +31,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -61,7 +41,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -70,21 +49,9 @@
     {
       "name": "AILabel",
       "category": "Components",
-      "filePath": "./src/components/AILabel/AILabel.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-ailabel--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-ailabel--explainability-popover",
-          "name": "Explainability Popover"
-        }
+        "Default",
+        "Explainability Popover"
       ],
       "props": [
         {
@@ -94,7 +61,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -105,7 +71,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -116,7 +81,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -125,17 +89,8 @@
     {
       "name": "AspectRatio",
       "category": "Components",
-      "filePath": "./src/components/AspectRatio/AspectRatio.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-aspectratio--default",
-          "name": "Default"
-        }
+        "Default"
       ],
       "props": [
         {
@@ -145,7 +100,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -156,7 +110,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -167,7 +120,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -176,34 +128,12 @@
     {
       "name": "Breadcrumb",
       "category": "Components",
-      "filePath": "./src/components/Breadcrumb/Breadcrumb.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs",
-        "play-fn"
-      ],
       "stories": [
-        {
-          "id": "components-breadcrumb--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-breadcrumb--breadcrumb-with-overflow-menu",
-          "name": "Breadcrumb With Overflow Menu"
-        },
-        {
-          "id": "components-breadcrumb--breadcrumb-with-overflow-menu-size-small",
-          "name": "Breadcrumb With Overflow Menu Size Small"
-        },
-        {
-          "id": "components-breadcrumb--breadcrumb-with-overflow-visual-snapshots",
-          "name": "Breadcrumb With Overflow Visual Snapshots"
-        },
-        {
-          "id": "components-breadcrumb--skeleton",
-          "name": "Skeleton"
-        }
+        "Default",
+        "Breadcrumb With Overflow Menu",
+        "Breadcrumb With Overflow Menu Size Small",
+        "Breadcrumb With Overflow Visual Snapshots",
+        "Skeleton"
       ],
       "props": [
         {
@@ -213,7 +143,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -224,7 +153,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -235,7 +163,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -244,45 +171,15 @@
     {
       "name": "Button",
       "category": "Components",
-      "filePath": "./src/components/Button/Button.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-button--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-button--danger",
-          "name": "Danger"
-        },
-        {
-          "id": "components-button--ghost",
-          "name": "Ghost"
-        },
-        {
-          "id": "components-button--icon-button",
-          "name": "Icon Button"
-        },
-        {
-          "id": "components-button--icon-button-with-badge",
-          "name": "Icon Button With Badge"
-        },
-        {
-          "id": "components-button--secondary",
-          "name": "Secondary"
-        },
-        {
-          "id": "components-button--skeleton",
-          "name": "Skeleton"
-        },
-        {
-          "id": "components-button--tertiary",
-          "name": "Tertiary"
-        }
+        "Default",
+        "Danger",
+        "Ghost",
+        "Icon Button",
+        "Icon Button With Badge",
+        "Secondary",
+        "Skeleton",
+        "Tertiary"
       ],
       "props": [
         {
@@ -292,7 +189,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -303,7 +199,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -314,7 +209,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -323,21 +217,9 @@
     {
       "name": "Set Of Buttons",
       "category": "Components/Button",
-      "filePath": "./src/components/ButtonSet/ButtonSet.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-button-set-of-buttons--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-button-set-of-buttons--fluid",
-          "name": "Fluid"
-        }
+        "Default",
+        "Fluid"
       ],
       "props": [
         {
@@ -347,7 +229,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -358,7 +239,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -369,7 +249,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -378,33 +257,12 @@
     {
       "name": "Checkbox",
       "category": "Components",
-      "filePath": "./src/components/Checkbox/Checkbox.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-checkbox--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-checkbox--horizontal",
-          "name": "Horizontal"
-        },
-        {
-          "id": "components-checkbox--single",
-          "name": "Single"
-        },
-        {
-          "id": "components-checkbox--skeleton",
-          "name": "Skeleton"
-        },
-        {
-          "id": "components-checkbox--with-ai-label",
-          "name": "With AI Label"
-        }
+        "Default",
+        "Horizontal",
+        "Single",
+        "Skeleton",
+        "With AI Label"
       ],
       "props": [
         {
@@ -414,7 +272,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -425,7 +282,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -436,7 +292,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -445,17 +300,8 @@
     {
       "name": "ClassPrefix",
       "category": "Components",
-      "filePath": "./src/components/ClassPrefix/ClassPrefix.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-classprefix--default",
-          "name": "Default"
-        }
+        "Default"
       ],
       "props": [
         {
@@ -465,7 +311,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -476,7 +321,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -487,7 +331,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -496,41 +339,14 @@
     {
       "name": "CodeSnippet",
       "category": "Components",
-      "filePath": "./src/components/CodeSnippet/CodeSnippet.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-codesnippet--inline",
-          "name": "Inline"
-        },
-        {
-          "id": "components-codesnippet--inline-with-layer",
-          "name": "Inline With Layer"
-        },
-        {
-          "id": "components-codesnippet--multiline",
-          "name": "Multiline"
-        },
-        {
-          "id": "components-codesnippet--multiline-with-layer",
-          "name": "Multiline With Layer"
-        },
-        {
-          "id": "components-codesnippet--singleline",
-          "name": "Singleline"
-        },
-        {
-          "id": "components-codesnippet--singleline-with-layer",
-          "name": "Singleline With Layer"
-        },
-        {
-          "id": "components-codesnippet--skeleton",
-          "name": "Skeleton"
-        }
+        "Inline",
+        "Inline With Layer",
+        "Multiline",
+        "Multiline With Layer",
+        "Singleline",
+        "Singleline With Layer",
+        "Skeleton"
       ],
       "props": [
         {
@@ -540,7 +356,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -551,7 +366,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -562,7 +376,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -571,41 +384,14 @@
     {
       "name": "ComboBox",
       "category": "Components",
-      "filePath": "./src/components/ComboBox/ComboBox.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-combobox--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-combobox--allow-custom-value",
-          "name": "Allow Custom Value"
-        },
-        {
-          "id": "components-combobox--autocomplete-with-typeahead",
-          "name": "Autocomplete With Typeahead"
-        },
-        {
-          "id": "components-combobox--experimental-auto-align",
-          "name": "Experimental Auto Align"
-        },
-        {
-          "id": "components-combobox--fully-controlled",
-          "name": "Fully Controlled"
-        },
-        {
-          "id": "components-combobox--with-ai-label",
-          "name": "With AI Label"
-        },
-        {
-          "id": "components-combobox--with-layer",
-          "name": "With Layer"
-        }
+        "Default",
+        "Allow Custom Value",
+        "Autocomplete With Typeahead",
+        "Experimental Auto Align",
+        "Fully Controlled",
+        "With AI Label",
+        "With Layer"
       ],
       "props": [
         {
@@ -615,7 +401,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -626,7 +411,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -637,7 +421,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -646,33 +429,12 @@
     {
       "name": "ComboButton",
       "category": "Components",
-      "filePath": "./src/components/ComboButton/ComboButton.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-combobutton--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-combobutton--experimental-auto-align",
-          "name": "Experimental Auto Align"
-        },
-        {
-          "id": "components-combobutton--with-danger",
-          "name": "With Danger"
-        },
-        {
-          "id": "components-combobutton--with-icons",
-          "name": "With Icons"
-        },
-        {
-          "id": "components-combobutton--with-menu-alignment",
-          "name": "With Menu Alignment"
-        }
+        "Default",
+        "Experimental Auto Align",
+        "With Danger",
+        "With Icons",
+        "With Menu Alignment"
       ],
       "props": [
         {
@@ -682,7 +444,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -693,7 +454,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -704,7 +464,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -713,41 +472,14 @@
     {
       "name": "ComposedModal",
       "category": "Components",
-      "filePath": "./src/components/ComposedModal/ComposedModal.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-composedmodal--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-composedmodal--full-width",
-          "name": "Full Width"
-        },
-        {
-          "id": "components-composedmodal--passive-modal",
-          "name": "Passive Modal"
-        },
-        {
-          "id": "components-composedmodal--with-ai-label",
-          "name": "With AI Label"
-        },
-        {
-          "id": "components-composedmodal--with-inline-loading",
-          "name": "With Inline Loading"
-        },
-        {
-          "id": "components-composedmodal--with-scrolling-content",
-          "name": "With Scrolling Content"
-        },
-        {
-          "id": "components-composedmodal--with-state-manager",
-          "name": "With State Manager"
-        }
+        "Default",
+        "Full Width",
+        "Passive Modal",
+        "With AI Label",
+        "With Inline Loading",
+        "With Scrolling Content",
+        "With State Manager"
       ],
       "props": [
         {
@@ -757,7 +489,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -768,7 +499,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -779,7 +509,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -788,57 +517,18 @@
     {
       "name": "ContainedList",
       "category": "Components",
-      "filePath": "./src/components/ContainedList/ContainedList.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-containedlist--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-containedlist--usage-examples",
-          "name": "Usage Examples"
-        },
-        {
-          "id": "components-containedlist--disclosed",
-          "name": "Disclosed"
-        },
-        {
-          "id": "components-containedlist--with-actions",
-          "name": "With Actions"
-        },
-        {
-          "id": "components-containedlist--with-expandable-search",
-          "name": "With Expandable Search"
-        },
-        {
-          "id": "components-containedlist--with-icons",
-          "name": "With Icons"
-        },
-        {
-          "id": "components-containedlist--with-interactive-items",
-          "name": "With Interactive Items"
-        },
-        {
-          "id": "components-containedlist--with-interactive-items-and-actions",
-          "name": "With Interactive Items And Actions"
-        },
-        {
-          "id": "components-containedlist--with-layer",
-          "name": "With Layer"
-        },
-        {
-          "id": "components-containedlist--with-list-title-decorators",
-          "name": "With List Title Decorators"
-        },
-        {
-          "id": "components-containedlist--with-persistent-search",
-          "name": "With Persistent Search"
-        }
+        "Default",
+        "Usage Examples",
+        "Disclosed",
+        "With Actions",
+        "With Expandable Search",
+        "With Icons",
+        "With Interactive Items",
+        "With Interactive Items And Actions",
+        "With Layer",
+        "With List Title Decorators",
+        "With Persistent Search"
       ],
       "props": [
         {
@@ -848,7 +538,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -859,7 +548,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -870,7 +558,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -879,37 +566,13 @@
     {
       "name": "ContentSwitcher",
       "category": "Components",
-      "filePath": "./src/components/ContentSwitcher/ContentSwitcher.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-contentswitcher--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-contentswitcher--icon-only",
-          "name": "Icon Only"
-        },
-        {
-          "id": "components-contentswitcher--icon-only-with-layer",
-          "name": "Icon Only With Layer"
-        },
-        {
-          "id": "components-contentswitcher--low-contrast",
-          "name": "Low Contrast"
-        },
-        {
-          "id": "components-contentswitcher--low-contrast-icon-only",
-          "name": "Low Contrast Icon Only"
-        },
-        {
-          "id": "components-contentswitcher--with-layer",
-          "name": "With Layer"
-        }
+        "Default",
+        "Icon Only",
+        "Icon Only With Layer",
+        "Low Contrast",
+        "Low Contrast Icon Only",
+        "With Layer"
       ],
       "props": [
         {
@@ -919,7 +582,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -930,7 +592,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -941,7 +602,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -950,17 +610,8 @@
     {
       "name": "CopyButton",
       "category": "Components",
-      "filePath": "./src/components/CopyButton/CopyButton.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-copybutton--default",
-          "name": "Default"
-        }
+        "Default"
       ],
       "props": [
         {
@@ -970,7 +621,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -981,7 +631,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -992,7 +641,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -1001,21 +649,9 @@
     {
       "name": "Basic",
       "category": "Components/DataTable",
-      "filePath": "./src/components/DataTable/stories/DataTable-basic.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-datatable-basic--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-datatable-basic--xl-with-two-lines",
-          "name": "XL With Two Lines"
-        }
+        "Default",
+        "XL With Two Lines"
       ],
       "props": [
         {
@@ -1025,7 +661,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -1036,7 +671,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -1047,7 +681,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -1056,17 +689,8 @@
     {
       "name": "Batch Actions",
       "category": "Components/DataTable",
-      "filePath": "./src/components/DataTable/stories/DataTable-batch-actions.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-datatable-batch-actions--default",
-          "name": "Default"
-        }
+        "Default"
       ],
       "props": [
         {
@@ -1076,7 +700,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -1087,7 +710,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -1098,7 +720,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -1107,17 +728,8 @@
     {
       "name": "Dynamic",
       "category": "Components/DataTable",
-      "filePath": "./src/components/DataTable/stories/dynamic-content/DataTable-dynamic-content.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-datatable-dynamic--default",
-          "name": "Default"
-        }
+        "Default"
       ],
       "props": [
         {
@@ -1127,7 +739,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -1138,7 +749,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -1149,7 +759,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -1158,25 +767,10 @@
     {
       "name": "Expansion",
       "category": "Components/DataTable",
-      "filePath": "./src/components/DataTable/stories/expansion/DataTable-expansion.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-datatable-expansion--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-datatable-expansion--batch-expansion",
-          "name": "Batch Expansion"
-        },
-        {
-          "id": "components-datatable-expansion--batch-expansion-multiple-tables",
-          "name": "Batch Expansion Multiple Tables"
-        }
+        "Default",
+        "Batch Expansion",
+        "Batch Expansion Multiple Tables"
       ],
       "props": [
         {
@@ -1186,7 +780,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -1197,7 +790,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -1208,7 +800,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -1217,17 +808,8 @@
     {
       "name": "Filtering",
       "category": "Components/DataTable",
-      "filePath": "./src/components/DataTable/stories/DataTable-filtering.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-datatable-filtering--default",
-          "name": "Default"
-        }
+        "Default"
       ],
       "props": [
         {
@@ -1237,7 +819,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -1248,7 +829,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -1259,7 +839,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -1268,25 +847,10 @@
     {
       "name": "Selection",
       "category": "Components/DataTable",
-      "filePath": "./src/components/DataTable/stories/DataTable-selection.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-datatable-selection--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-datatable-selection--with-radio-selection",
-          "name": "With Radio Selection"
-        },
-        {
-          "id": "components-datatable-selection--with-selection-and-sorting",
-          "name": "With Selection And Sorting"
-        }
+        "Default",
+        "With Radio Selection",
+        "With Selection And Sorting"
       ],
       "props": [
         {
@@ -1296,7 +860,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -1307,7 +870,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -1318,7 +880,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -1327,17 +888,8 @@
     {
       "name": "Skeleton",
       "category": "Components/DataTable",
-      "filePath": "./src/components/DataTableSkeleton/DataTableSkeleton.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-datatable-skeleton--skeleton",
-          "name": "Skeleton"
-        }
+        "Skeleton"
       ],
       "props": [
         {
@@ -1347,7 +899,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -1358,7 +909,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -1369,7 +919,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -1378,17 +927,8 @@
     {
       "name": "Sorting",
       "category": "Components/DataTable",
-      "filePath": "./src/components/DataTable/stories/DataTable-sorting.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-datatable-sorting--default",
-          "name": "Default"
-        }
+        "Default"
       ],
       "props": [
         {
@@ -1398,7 +938,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -1409,7 +948,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -1420,7 +958,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -1429,29 +966,11 @@
     {
       "name": "Toolbar",
       "category": "Components/DataTable",
-      "filePath": "./src/components/DataTable/stories/DataTable-toolbar.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-datatable-toolbar--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-datatable-toolbar--persistent-toolbar",
-          "name": "Persistent Toolbar"
-        },
-        {
-          "id": "components-datatable-toolbar--small-persistent-toolbar",
-          "name": "Small Persistent Toolbar"
-        },
-        {
-          "id": "components-datatable-toolbar--with-overflow-menu",
-          "name": "With Overflow Menu"
-        }
+        "Default",
+        "Persistent Toolbar",
+        "Small Persistent Toolbar",
+        "With Overflow Menu"
       ],
       "props": [
         {
@@ -1461,7 +980,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -1472,7 +990,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -1483,7 +1000,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -1492,41 +1008,14 @@
     {
       "name": "WithAILabel",
       "category": "Components/DataTable",
-      "filePath": "./src/components/DataTable/stories/DataTable-ai-label.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-datatable-withailabel--ai-label-with-expansion",
-          "name": "AI Label With Expansion"
-        },
-        {
-          "id": "components-datatable-withailabel--ai-label-with-radio-selection",
-          "name": "AI Label With Radio Selection"
-        },
-        {
-          "id": "components-datatable-withailabel--ai-label-with-selection",
-          "name": "AI Label With Selection"
-        },
-        {
-          "id": "components-datatable-withailabel--ai-label-with-selection-and-expansion",
-          "name": "AI Label With Selection And Expansion"
-        },
-        {
-          "id": "components-datatable-withailabel--column-ai-label-sort",
-          "name": "Column AI Label Sort"
-        },
-        {
-          "id": "components-datatable-withailabel--column-ai-label-with-selection-and-expansion",
-          "name": "Column AI Label With Selection And Expansion"
-        },
-        {
-          "id": "components-datatable-withailabel--full-table-ai",
-          "name": "Full Table AI"
-        }
+        "AI Label With Expansion",
+        "AI Label With Radio Selection",
+        "AI Label With Selection",
+        "AI Label With Selection And Expansion",
+        "Column AI Label Sort",
+        "Column AI Label With Selection And Expansion",
+        "Full Table AI"
       ],
       "props": [
         {
@@ -1536,7 +1025,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -1547,7 +1035,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -1558,7 +1045,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -1567,49 +1053,16 @@
     {
       "name": "DatePicker",
       "category": "Components",
-      "filePath": "./src/components/DatePicker/DatePicker.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-datepicker--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-datepicker--range-with-calendar",
-          "name": "Range With Calendar"
-        },
-        {
-          "id": "components-datepicker--range-with-calendar-with-layer",
-          "name": "Range With Calendar With Layer"
-        },
-        {
-          "id": "components-datepicker--simple",
-          "name": "Simple"
-        },
-        {
-          "id": "components-datepicker--simple-with-layer",
-          "name": "Simple With Layer"
-        },
-        {
-          "id": "components-datepicker--single-with-calendar",
-          "name": "Single With Calendar"
-        },
-        {
-          "id": "components-datepicker--single-with-calendar-with-layer",
-          "name": "Single With Calendar With Layer"
-        },
-        {
-          "id": "components-datepicker--skeleton",
-          "name": "Skeleton"
-        },
-        {
-          "id": "components-datepicker--with-ai-label",
-          "name": "With AI Label"
-        }
+        "Default",
+        "Range With Calendar",
+        "Range With Calendar With Layer",
+        "Simple",
+        "Simple With Layer",
+        "Single With Calendar",
+        "Single With Calendar With Layer",
+        "Skeleton",
+        "With AI Label"
       ],
       "props": [
         {
@@ -1619,7 +1072,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -1630,7 +1082,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -1641,7 +1092,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -1650,21 +1100,9 @@
     {
       "name": "DefinitionTooltip",
       "category": "Components",
-      "filePath": "./src/components/Tooltip/DefinitionTooltip.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-definitiontooltip--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-definitiontooltip--with-large-text",
-          "name": "With Large Text"
-        }
+        "Default",
+        "With Large Text"
       ],
       "props": [
         {
@@ -1674,7 +1112,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -1685,7 +1122,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -1696,7 +1132,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -1705,49 +1140,16 @@
     {
       "name": "Dropdown",
       "category": "Components",
-      "filePath": "./src/components/Dropdown/Dropdown.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-dropdown--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-dropdown--experimental-auto-align",
-          "name": "Experimental Auto Align"
-        },
-        {
-          "id": "components-dropdown--inline",
-          "name": "Inline"
-        },
-        {
-          "id": "components-dropdown--inline-with-layer",
-          "name": "Inline With Layer"
-        },
-        {
-          "id": "components-dropdown--skeleton",
-          "name": "Skeleton"
-        },
-        {
-          "id": "components-dropdown--test-invalid-text-no-overlap",
-          "name": "Test Invalid Text No Overlap"
-        },
-        {
-          "id": "components-dropdown--with-ai-label",
-          "name": "With AI Label"
-        },
-        {
-          "id": "components-dropdown--with-layer",
-          "name": "With Layer"
-        },
-        {
-          "id": "components-dropdown--with-toggletip-label",
-          "name": "With Toggletip Label"
-        }
+        "Default",
+        "Experimental Auto Align",
+        "Inline",
+        "Inline With Layer",
+        "Skeleton",
+        "Test Invalid Text No Overlap",
+        "With AI Label",
+        "With Layer",
+        "With Toggletip Label"
       ],
       "props": [
         {
@@ -1757,7 +1159,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -1768,7 +1169,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -1779,7 +1179,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -1788,21 +1187,9 @@
     {
       "name": "ErrorBoundary",
       "category": "Components",
-      "filePath": "./src/components/ErrorBoundary/ErrorBoundary.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-errorboundary--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-errorboundary--with-custom-context",
-          "name": "with custom context"
-        }
+        "Default",
+        "with custom context"
       ],
       "props": [
         {
@@ -1812,7 +1199,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -1823,7 +1209,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -1834,7 +1219,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -1843,37 +1227,13 @@
     {
       "name": "FileUploader",
       "category": "Components",
-      "filePath": "./src/components/FileUploader/FileUploader.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-fileuploader--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-fileuploader--drag-and-drop-upload-container-example-application",
-          "name": "Drag And Drop Upload Container Example Application"
-        },
-        {
-          "id": "components-fileuploader--drag-and-drop-upload-single-container-example-application",
-          "name": "Drag And Drop Upload Single Container Example Application"
-        },
-        {
-          "id": "components-fileuploader--file-uploader-drop-container",
-          "name": "File Uploader Drop Container"
-        },
-        {
-          "id": "components-fileuploader--file-uploader-item",
-          "name": "File Uploader Item"
-        },
-        {
-          "id": "components-fileuploader--skeleton",
-          "name": "Skeleton"
-        }
+        "Default",
+        "Drag And Drop Upload Container Example Application",
+        "Drag And Drop Upload Single Container Example Application",
+        "File Uploader Drop Container",
+        "File Uploader Item",
+        "Skeleton"
       ],
       "props": [
         {
@@ -1883,7 +1243,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -1894,7 +1253,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -1905,7 +1263,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -1914,29 +1271,11 @@
     {
       "name": "FluidComboBox",
       "category": "Components/Fluid Components",
-      "filePath": "./src/components/FluidComboBox/FluidComboBox.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-fluid-components-fluidcombobox--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-fluid-components-fluidcombobox--condensed",
-          "name": "Condensed"
-        },
-        {
-          "id": "components-fluid-components-fluidcombobox--skeleton",
-          "name": "Skeleton"
-        },
-        {
-          "id": "components-fluid-components-fluidcombobox--with-ai-label",
-          "name": "With AI Label"
-        }
+        "Default",
+        "Condensed",
+        "Skeleton",
+        "With AI Label"
       ],
       "props": [
         {
@@ -1946,7 +1285,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -1957,7 +1295,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -1968,7 +1305,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -1977,29 +1313,11 @@
     {
       "name": "FluidDatePicker",
       "category": "Components/Fluid Components",
-      "filePath": "./src/components/FluidDatePicker/FluidDatePicker.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-fluid-components-fluiddatepicker--range-with-calendar",
-          "name": "Range With Calendar"
-        },
-        {
-          "id": "components-fluid-components-fluiddatepicker--simple",
-          "name": "Simple"
-        },
-        {
-          "id": "components-fluid-components-fluiddatepicker--single",
-          "name": "Single"
-        },
-        {
-          "id": "components-fluid-components-fluiddatepicker--skeleton",
-          "name": "Skeleton"
-        }
+        "Range With Calendar",
+        "Simple",
+        "Single",
+        "Skeleton"
       ],
       "props": [
         {
@@ -2009,7 +1327,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2020,7 +1337,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2031,7 +1347,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -2040,29 +1355,11 @@
     {
       "name": "FluidDropdown",
       "category": "Components/Fluid Components",
-      "filePath": "./src/components/FluidDropdown/FluidDropdown.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-fluid-components-fluiddropdown--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-fluid-components-fluiddropdown--condensed",
-          "name": "Condensed"
-        },
-        {
-          "id": "components-fluid-components-fluiddropdown--skeleton",
-          "name": "Skeleton"
-        },
-        {
-          "id": "components-fluid-components-fluiddropdown--with-ai-label",
-          "name": "With AI Label"
-        }
+        "Default",
+        "Condensed",
+        "Skeleton",
+        "With AI Label"
       ],
       "props": [
         {
@@ -2072,7 +1369,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2083,7 +1379,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2094,7 +1389,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -2103,17 +1397,8 @@
     {
       "name": "FluidForm",
       "category": "Components/Fluid Components",
-      "filePath": "./src/components/FluidForm/FluidForm.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-fluid-components-fluidform--default",
-          "name": "Default"
-        }
+        "Default"
       ],
       "props": [
         {
@@ -2123,7 +1408,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2134,7 +1418,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2145,7 +1428,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -2154,37 +1436,13 @@
     {
       "name": "FluidMultiSelect",
       "category": "Components/Fluid Components",
-      "filePath": "./src/components/FluidMultiSelect/FluidMultiSelect.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-fluid-components-fluidmultiselect--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-fluid-components-fluidmultiselect--condensed",
-          "name": "Condensed"
-        },
-        {
-          "id": "components-fluid-components-fluidmultiselect--filterable",
-          "name": "Filterable"
-        },
-        {
-          "id": "components-fluid-components-fluidmultiselect--filterable-with-layer",
-          "name": "Filterable With Layer"
-        },
-        {
-          "id": "components-fluid-components-fluidmultiselect--skeleton",
-          "name": "Skeleton"
-        },
-        {
-          "id": "components-fluid-components-fluidmultiselect--with-ai-label",
-          "name": "With AI Label"
-        }
+        "Default",
+        "Condensed",
+        "Filterable",
+        "Filterable With Layer",
+        "Skeleton",
+        "With AI Label"
       ],
       "props": [
         {
@@ -2194,7 +1452,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2205,7 +1462,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2216,7 +1472,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -2225,21 +1480,9 @@
     {
       "name": "FluidNumberInput",
       "category": "Components/Fluid Components",
-      "filePath": "./src/components/FluidNumberInput/FluidNumberInput.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-fluid-components-fluidnumberinput--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-fluid-components-fluidnumberinput--skeleton",
-          "name": "Skeleton"
-        }
+        "Default",
+        "Skeleton"
       ],
       "props": [
         {
@@ -2249,7 +1492,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2260,7 +1502,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2271,7 +1512,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -2280,17 +1520,8 @@
     {
       "name": "FluidPasswordInput",
       "category": "Components/Fluid Components",
-      "filePath": "./src/components/FluidTextInput/FluidPasswordInput.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-fluid-components-fluidpasswordinput--default",
-          "name": "Default"
-        }
+        "Default"
       ],
       "props": [
         {
@@ -2300,7 +1531,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2311,7 +1541,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2322,7 +1551,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -2331,21 +1559,9 @@
     {
       "name": "FluidSearch",
       "category": "Components/Fluid Components",
-      "filePath": "./src/components/FluidSearch/FluidSearch.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-fluid-components-fluidsearch--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-fluid-components-fluidsearch--skeleton",
-          "name": "Skeleton"
-        }
+        "Default",
+        "Skeleton"
       ],
       "props": [
         {
@@ -2355,7 +1571,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2366,7 +1581,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2377,7 +1591,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -2386,25 +1599,10 @@
     {
       "name": "FluidSelect",
       "category": "Components/Fluid Components",
-      "filePath": "./src/components/FluidSelect/FluidSelect.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-fluid-components-fluidselect--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-fluid-components-fluidselect--skeleton",
-          "name": "Skeleton"
-        },
-        {
-          "id": "components-fluid-components-fluidselect--with-ai-label",
-          "name": "With AI Label"
-        }
+        "Default",
+        "Skeleton",
+        "With AI Label"
       ],
       "props": [
         {
@@ -2414,7 +1612,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2425,7 +1622,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2436,7 +1632,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -2445,29 +1640,11 @@
     {
       "name": "FluidTextArea",
       "category": "Components/Fluid Components",
-      "filePath": "./src/components/FluidTextArea/FluidTextArea.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-fluid-components-fluidtextarea--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-fluid-components-fluidtextarea--default-with-layers",
-          "name": "Default With Layers"
-        },
-        {
-          "id": "components-fluid-components-fluidtextarea--default-with-toggletip",
-          "name": "Default With Toggletip"
-        },
-        {
-          "id": "components-fluid-components-fluidtextarea--skeleton",
-          "name": "Skeleton"
-        }
+        "Default",
+        "Default With Layers",
+        "Default With Toggletip",
+        "Skeleton"
       ],
       "props": [
         {
@@ -2477,7 +1654,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2488,7 +1664,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2499,7 +1674,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -2508,25 +1682,10 @@
     {
       "name": "FluidTextInput",
       "category": "Components/Fluid Components",
-      "filePath": "./src/components/FluidTextInput/FluidTextInput.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-fluid-components-fluidtextinput--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-fluid-components-fluidtextinput--default-with-toggletip",
-          "name": "Default With Toggletip"
-        },
-        {
-          "id": "components-fluid-components-fluidtextinput--skeleton",
-          "name": "Skeleton"
-        }
+        "Default",
+        "Default With Toggletip",
+        "Skeleton"
       ],
       "props": [
         {
@@ -2536,7 +1695,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2547,7 +1705,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2558,7 +1715,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -2567,21 +1723,9 @@
     {
       "name": "FluidTimePicker",
       "category": "Components/Fluid Components",
-      "filePath": "./src/components/FluidTimePicker/FluidTimePicker.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-fluid-components-fluidtimepicker--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-fluid-components-fluidtimepicker--skeleton",
-          "name": "Skeleton"
-        }
+        "Default",
+        "Skeleton"
       ],
       "props": [
         {
@@ -2591,7 +1735,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2602,7 +1745,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2613,7 +1755,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -2622,21 +1763,9 @@
     {
       "name": "Form",
       "category": "Components",
-      "filePath": "./src/components/Form/Form.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-form--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-form--with-ai-label",
-          "name": "With AI Label"
-        }
+        "Default",
+        "With AI Label"
       ],
       "props": [
         {
@@ -2646,7 +1775,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2657,7 +1785,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2668,7 +1795,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -2677,17 +1803,8 @@
     {
       "name": "FormGroup",
       "category": "Components",
-      "filePath": "./src/components/FormGroup/FormGroup.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-formgroup--default",
-          "name": "Default"
-        }
+        "Default"
       ],
       "props": [
         {
@@ -2697,7 +1814,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2708,7 +1824,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2719,7 +1834,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -2728,21 +1842,9 @@
     {
       "name": "FormLabel",
       "category": "Components",
-      "filePath": "./src/components/FormLabel/FormLabel.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-formlabel--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-formlabel--with-toggletip",
-          "name": "With Toggletip"
-        }
+        "Default",
+        "With Toggletip"
       ],
       "props": [
         {
@@ -2752,7 +1854,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2763,7 +1864,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2774,7 +1874,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -2783,21 +1882,9 @@
     {
       "name": "Heading",
       "category": "Components",
-      "filePath": "./src/components/Heading/Heading.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-heading--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-heading--custom-level",
-          "name": "Custom Level"
-        }
+        "Default",
+        "Custom Level"
       ],
       "props": [
         {
@@ -2807,7 +1894,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2818,7 +1904,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2829,7 +1914,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -2838,21 +1922,9 @@
     {
       "name": "IconButton",
       "category": "Components",
-      "filePath": "./src/components/IconButton/IconButton.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-iconbutton--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-iconbutton--with-badge-indicator",
-          "name": "With Badge Indicator"
-        }
+        "Default",
+        "With Badge Indicator"
       ],
       "props": [
         {
@@ -2862,7 +1934,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2873,7 +1944,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2884,7 +1954,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -2893,17 +1962,8 @@
     {
       "name": "IdPrefix",
       "category": "Components",
-      "filePath": "./src/components/IdPrefix/IdPrefix.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-idprefix--default",
-          "name": "Default"
-        }
+        "Default"
       ],
       "props": [
         {
@@ -2913,7 +1973,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2924,7 +1983,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2935,7 +1993,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -2944,21 +2001,9 @@
     {
       "name": "InlineLoading",
       "category": "Components",
-      "filePath": "./src/components/InlineLoading/InlineLoading.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-inlineloading--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-inlineloading--ux-example",
-          "name": "Ux Example"
-        }
+        "Default",
+        "Ux Example"
       ],
       "props": [
         {
@@ -2968,7 +2013,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2979,7 +2023,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -2990,7 +2033,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -2999,29 +2041,11 @@
     {
       "name": "Layer",
       "category": "Components",
-      "filePath": "./src/components/Layer/Layer.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-layer--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-layer--custom-level",
-          "name": "Custom Level"
-        },
-        {
-          "id": "components-layer--use-layer",
-          "name": "Use Layer"
-        },
-        {
-          "id": "components-layer--with-background",
-          "name": "With Background"
-        }
+        "Default",
+        "Custom Level",
+        "Use Layer",
+        "With Background"
       ],
       "props": [
         {
@@ -3031,7 +2055,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -3042,7 +2065,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -3053,7 +2075,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -3062,25 +2083,10 @@
     {
       "name": "Link",
       "category": "Components",
-      "filePath": "./src/components/Link/Link.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-link--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-link--inline",
-          "name": "Inline"
-        },
-        {
-          "id": "components-link--paired-with-icon",
-          "name": "Paired With Icon"
-        }
+        "Default",
+        "Inline",
+        "Paired With Icon"
       ],
       "props": [
         {
@@ -3090,7 +2096,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -3101,7 +2106,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -3112,7 +2116,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -3121,17 +2124,8 @@
     {
       "name": "Loading",
       "category": "Components",
-      "filePath": "./src/components/Loading/Loading.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-loading--default",
-          "name": "Default"
-        }
+        "Default"
       ],
       "props": [
         {
@@ -3141,7 +2135,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -3152,7 +2145,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -3163,7 +2155,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -3172,17 +2163,8 @@
     {
       "name": "Menu",
       "category": "Components",
-      "filePath": "./src/components/Menu/Menu.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-menu--default",
-          "name": "Default"
-        }
+        "Default"
       ],
       "props": [
         {
@@ -3192,7 +2174,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -3203,7 +2184,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -3214,7 +2194,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -3223,41 +2202,14 @@
     {
       "name": "MenuButton",
       "category": "Components",
-      "filePath": "./src/components/MenuButton/MenuButton.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-menubutton--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-menubutton--experimental-auto-align",
-          "name": "Experimental Auto Align"
-        },
-        {
-          "id": "components-menubutton--with-danger",
-          "name": "With Danger"
-        },
-        {
-          "id": "components-menubutton--with-dividers",
-          "name": "With Dividers"
-        },
-        {
-          "id": "components-menubutton--with-icons",
-          "name": "With Icons"
-        },
-        {
-          "id": "components-menubutton--with-menu-alignment",
-          "name": "With Menu Alignment"
-        },
-        {
-          "id": "components-menubutton--with-nested-menu",
-          "name": "With Nested Menu"
-        }
+        "Default",
+        "Experimental Auto Align",
+        "With Danger",
+        "With Dividers",
+        "With Icons",
+        "With Menu Alignment",
+        "With Nested Menu"
       ],
       "props": [
         {
@@ -3267,7 +2219,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -3278,7 +2229,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -3289,7 +2239,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -3298,45 +2247,15 @@
     {
       "name": "Modal",
       "category": "Components",
-      "filePath": "./src/components/Modal/Modal.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-modal--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-modal--danger-modal",
-          "name": "Danger Modal"
-        },
-        {
-          "id": "components-modal--full-width",
-          "name": "Full Width"
-        },
-        {
-          "id": "components-modal--passive-modal",
-          "name": "Passive Modal"
-        },
-        {
-          "id": "components-modal--with-ai-label",
-          "name": "With AI Label"
-        },
-        {
-          "id": "components-modal--with-inline-loading",
-          "name": "With Inline Loading"
-        },
-        {
-          "id": "components-modal--with-scrolling-content",
-          "name": "With Scrolling Content"
-        },
-        {
-          "id": "components-modal--with-state-manager",
-          "name": "With State Manager"
-        }
+        "Default",
+        "Danger Modal",
+        "Full Width",
+        "Passive Modal",
+        "With AI Label",
+        "With Inline Loading",
+        "With Scrolling Content",
+        "With State Manager"
       ],
       "props": [
         {
@@ -3346,7 +2265,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -3357,7 +2275,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -3368,7 +2285,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -3377,65 +2293,20 @@
     {
       "name": "MultiSelect",
       "category": "Components",
-      "filePath": "./src/components/MultiSelect/MultiSelect.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-multiselect--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-multiselect--controlled",
-          "name": "Controlled"
-        },
-        {
-          "id": "components-multiselect--experimental-auto-align",
-          "name": "Experimental Auto Align"
-        },
-        {
-          "id": "components-multiselect--filterable",
-          "name": "Filterable"
-        },
-        {
-          "id": "components-multiselect--filterable-with-ai-label",
-          "name": "Filterable With AI Label"
-        },
-        {
-          "id": "components-multiselect--filterable-with-layer",
-          "name": "Filterable With Layer"
-        },
-        {
-          "id": "components-multiselect--filterable-with-select-all",
-          "name": "Filterable With Select All"
-        },
-        {
-          "id": "components-multiselect--select-all",
-          "name": "Select All"
-        },
-        {
-          "id": "components-multiselect--select-all-with-dynamic-items",
-          "name": "Select All With Dynamic Items"
-        },
-        {
-          "id": "components-multiselect--with-ai-label",
-          "name": "With AI Label"
-        },
-        {
-          "id": "components-multiselect--with-initial-selected-items",
-          "name": "With Initial Selected Items"
-        },
-        {
-          "id": "components-multiselect--with-layer-multi-select",
-          "name": "With Layer Multi Select"
-        },
-        {
-          "id": "components-multiselect--with-toggletip-label",
-          "name": "With Toggletip Label"
-        }
+        "Default",
+        "Controlled",
+        "Experimental Auto Align",
+        "Filterable",
+        "Filterable With AI Label",
+        "Filterable With Layer",
+        "Filterable With Select All",
+        "Select All",
+        "Select All With Dynamic Items",
+        "With AI Label",
+        "With Initial Selected Items",
+        "With Layer Multi Select",
+        "With Toggletip Label"
       ],
       "props": [
         {
@@ -3445,7 +2316,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -3456,7 +2326,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -3467,7 +2336,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -3476,17 +2344,8 @@
     {
       "name": "Actionable",
       "category": "Components/Notifications",
-      "filePath": "./src/components/Notification/stories/ActionableNotification.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-notifications-actionable--default",
-          "name": "Default"
-        }
+        "Default"
       ],
       "props": [
         {
@@ -3496,7 +2355,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -3507,7 +2365,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -3518,7 +2375,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -3527,21 +2383,9 @@
     {
       "name": "Callout",
       "category": "Components/Notifications",
-      "filePath": "./src/components/Notification/stories/Callout.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-notifications-callout--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-notifications-callout--with-interactive-elements",
-          "name": "With Interactive Elements"
-        }
+        "Default",
+        "With Interactive Elements"
       ],
       "props": [
         {
@@ -3551,7 +2395,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -3562,7 +2405,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -3573,7 +2415,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -3582,17 +2423,8 @@
     {
       "name": "Inline",
       "category": "Components/Notifications",
-      "filePath": "./src/components/Notification/stories/InlineNotification.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-notifications-inline--default",
-          "name": "Default"
-        }
+        "Default"
       ],
       "props": [
         {
@@ -3602,7 +2434,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -3613,7 +2444,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -3624,7 +2454,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -3633,17 +2462,8 @@
     {
       "name": "Toast",
       "category": "Components/Notifications",
-      "filePath": "./src/components/Notification/stories/ToastNotification.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-notifications-toast--default",
-          "name": "Default"
-        }
+        "Default"
       ],
       "props": [
         {
@@ -3653,7 +2473,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -3664,7 +2483,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -3675,7 +2493,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -3684,37 +2501,13 @@
     {
       "name": "NumberInput",
       "category": "Components",
-      "filePath": "./src/components/NumberInput/NumberInput.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-numberinput--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-numberinput--skeleton",
-          "name": "Skeleton"
-        },
-        {
-          "id": "components-numberinput--with-ai-label",
-          "name": "With AI Label"
-        },
-        {
-          "id": "components-numberinput--with-type-of-custom-validation",
-          "name": "With Type Of Custom Validation"
-        },
-        {
-          "id": "components-numberinput--with-type-of-text",
-          "name": "With Type Of Text"
-        },
-        {
-          "id": "components-numberinput--with-type-of-text-controlled",
-          "name": "With Type Of Text Controlled"
-        }
+        "Default",
+        "Skeleton",
+        "With AI Label",
+        "With Type Of Custom Validation",
+        "With Type Of Text",
+        "With Type Of Text Controlled"
       ],
       "props": [
         {
@@ -3724,7 +2517,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -3735,7 +2527,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -3746,7 +2537,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -3755,25 +2545,10 @@
     {
       "name": "OrderedList",
       "category": "Components",
-      "filePath": "./src/components/OrderedList/OrderedList.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-orderedlist--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-orderedlist--native-list-styles",
-          "name": "Native List Styles"
-        },
-        {
-          "id": "components-orderedlist--nested",
-          "name": "Nested"
-        }
+        "Default",
+        "Native List Styles",
+        "Nested"
       ],
       "props": [
         {
@@ -3783,7 +2558,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -3794,7 +2568,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -3805,7 +2578,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -3814,21 +2586,9 @@
     {
       "name": "OverflowMenu",
       "category": "Components",
-      "filePath": "./src/components/OverflowMenu/OverflowMenu.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-overflowmenu--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-overflowmenu--render-custom-icon",
-          "name": "Render Custom Icon"
-        }
+        "Default",
+        "Render Custom Icon"
       ],
       "props": [
         {
@@ -3838,7 +2598,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -3849,7 +2608,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -3860,7 +2618,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -3869,29 +2626,11 @@
     {
       "name": "Pagination",
       "category": "Components",
-      "filePath": "./src/components/Pagination/Pagination.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-pagination--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-pagination--multiple-pagination-components",
-          "name": "Multiple Pagination components"
-        },
-        {
-          "id": "components-pagination--pagination-unknown-pages",
-          "name": "Unknown pages and items"
-        },
-        {
-          "id": "components-pagination--pagination-with-custom-page-sizes-label",
-          "name": "Pagination with custom page sizes label"
-        }
+        "Default",
+        "Multiple Pagination components",
+        "Unknown pages and items",
+        "Pagination with custom page sizes label"
       ],
       "props": [
         {
@@ -3901,7 +2640,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -3912,7 +2650,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -3923,7 +2660,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -3932,17 +2668,8 @@
     {
       "name": "PaginationNav",
       "category": "Components",
-      "filePath": "./src/components/PaginationNav/PaginationNav.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-paginationnav--default",
-          "name": "Default"
-        }
+        "Default"
       ],
       "props": [
         {
@@ -3952,7 +2679,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -3963,7 +2689,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -3974,7 +2699,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -3983,17 +2707,8 @@
     {
       "name": "PasswordInput",
       "category": "Components",
-      "filePath": "./src/components/TextInput/PasswordInput.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-passwordinput--default",
-          "name": "Default"
-        }
+        "Default"
       ],
       "props": [
         {
@@ -4003,7 +2718,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -4014,7 +2728,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -4025,7 +2738,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -4034,33 +2746,12 @@
     {
       "name": "Popover",
       "category": "Components",
-      "filePath": "./src/components/Popover/Popover.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-popover--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-popover--experimental-auto-align",
-          "name": "Experimental Auto Align"
-        },
-        {
-          "id": "components-popover--experimental-auto-align-boundary",
-          "name": "Experimental Auto Align Boundary"
-        },
-        {
-          "id": "components-popover--tab-tip",
-          "name": "Tab Tip"
-        },
-        {
-          "id": "components-popover--tab-tip-experimental-auto-align",
-          "name": "Tab Tip Experimental Auto Align"
-        }
+        "Default",
+        "Experimental Auto Align",
+        "Experimental Auto Align Boundary",
+        "Tab Tip",
+        "Tab Tip Experimental Auto Align"
       ],
       "props": [
         {
@@ -4070,7 +2761,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -4081,7 +2771,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -4092,7 +2781,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -4101,29 +2789,11 @@
     {
       "name": "ProgressBar",
       "category": "Components",
-      "filePath": "./src/components/ProgressBar/ProgressBar.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-progressbar--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-progressbar--determinate",
-          "name": "Determinate"
-        },
-        {
-          "id": "components-progressbar--indeterminate",
-          "name": "Indeterminate"
-        },
-        {
-          "id": "components-progressbar--with-layer",
-          "name": "With Layer"
-        }
+        "Default",
+        "Determinate",
+        "Indeterminate",
+        "With Layer"
       ],
       "props": [
         {
@@ -4133,7 +2803,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -4144,7 +2813,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -4155,7 +2823,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -4164,25 +2831,10 @@
     {
       "name": "ProgressIndicator",
       "category": "Components",
-      "filePath": "./src/components/ProgressIndicator/ProgressIndicator.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-progressindicator--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-progressindicator--interactive",
-          "name": "Interactive"
-        },
-        {
-          "id": "components-progressindicator--skeleton",
-          "name": "Skeleton"
-        }
+        "Default",
+        "Interactive",
+        "Skeleton"
       ],
       "props": [
         {
@@ -4192,7 +2844,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -4203,7 +2854,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -4214,7 +2864,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -4223,29 +2872,11 @@
     {
       "name": "RadioButton",
       "category": "Components",
-      "filePath": "./src/components/RadioButton/RadioButton.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-radiobutton--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-radiobutton--skeleton",
-          "name": "Skeleton"
-        },
-        {
-          "id": "components-radiobutton--vertical",
-          "name": "Vertical"
-        },
-        {
-          "id": "components-radiobutton--with-ai-label",
-          "name": "With AI Label"
-        }
+        "Default",
+        "Skeleton",
+        "Vertical",
+        "With AI Label"
       ],
       "props": [
         {
@@ -4255,7 +2886,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -4266,7 +2896,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -4277,7 +2906,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -4286,33 +2914,12 @@
     {
       "name": "Search",
       "category": "Components",
-      "filePath": "./src/components/Search/Search.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-search--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-search--disabled",
-          "name": "Disabled"
-        },
-        {
-          "id": "components-search--expandable",
-          "name": "Expandable"
-        },
-        {
-          "id": "components-search--expandable-with-layer",
-          "name": "Expandable With Layer"
-        },
-        {
-          "id": "components-search--with-layer",
-          "name": "With Layer"
-        }
+        "Default",
+        "Disabled",
+        "Expandable",
+        "Expandable With Layer",
+        "With Layer"
       ],
       "props": [
         {
@@ -4322,7 +2929,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -4333,7 +2939,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -4344,7 +2949,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -4353,33 +2957,12 @@
     {
       "name": "Select",
       "category": "Components",
-      "filePath": "./src/components/Select/Select.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-select--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-select--inline",
-          "name": "Inline"
-        },
-        {
-          "id": "components-select--skeleton",
-          "name": "Skeleton"
-        },
-        {
-          "id": "components-select--with-ai-label",
-          "name": "With AI Label"
-        },
-        {
-          "id": "components-select--with-layer",
-          "name": "With Layer"
-        }
+        "Default",
+        "Inline",
+        "Skeleton",
+        "With AI Label",
+        "With Layer"
       ],
       "props": [
         {
@@ -4389,7 +2972,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -4400,7 +2982,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -4411,7 +2992,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -4420,25 +3000,10 @@
     {
       "name": "AISkeleton",
       "category": "Components/Skeleton",
-      "filePath": "./src/components/AISkeleton/AISkeletonIcon.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-skeleton-aiskeleton--ai-skeleton-icon",
-          "name": "AI Skeleton Icon"
-        },
-        {
-          "id": "components-skeleton-aiskeleton--ai-skeleton-placeholder",
-          "name": "AI Skeleton Placeholder"
-        },
-        {
-          "id": "components-skeleton-aiskeleton--ai-skeleton-text",
-          "name": "AI Skeleton Text"
-        }
+        "AI Skeleton Icon",
+        "AI Skeleton Placeholder",
+        "AI Skeleton Text"
       ],
       "props": [
         {
@@ -4448,7 +3013,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -4459,7 +3023,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -4470,7 +3033,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -4479,17 +3041,8 @@
     {
       "name": "SkeletonIcon",
       "category": "Components/Skeleton",
-      "filePath": "./src/components/SkeletonIcon/SkeletonIcon.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-skeleton-skeletonicon--default",
-          "name": "Default"
-        }
+        "Default"
       ],
       "props": [
         {
@@ -4499,7 +3052,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -4510,7 +3062,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -4521,7 +3072,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -4530,17 +3080,8 @@
     {
       "name": "SkeletonPlaceholder",
       "category": "Components/Skeleton",
-      "filePath": "./src/components/SkeletonPlaceholder/SkeletonPlaceholder.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-skeleton-skeletonplaceholder--default",
-          "name": "Default"
-        }
+        "Default"
       ],
       "props": [
         {
@@ -4550,7 +3091,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -4561,7 +3101,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -4572,7 +3111,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -4581,17 +3119,8 @@
     {
       "name": "SkeletonText",
       "category": "Components/Skeleton",
-      "filePath": "./src/components/SkeletonText/SkeletonText.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-skeleton-skeletontext--default",
-          "name": "Default"
-        }
+        "Default"
       ],
       "props": [
         {
@@ -4601,7 +3130,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -4612,7 +3140,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -4623,7 +3150,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -4632,53 +3158,17 @@
     {
       "name": "Slider",
       "category": "Components",
-      "filePath": "./src/components/Slider/Slider.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-slider--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-slider--controlled-slider",
-          "name": "Controlled Slider"
-        },
-        {
-          "id": "components-slider--controlled-slider-with-layer",
-          "name": "Controlled Slider With Layer"
-        },
-        {
-          "id": "components-slider--skeleton",
-          "name": "Skeleton"
-        },
-        {
-          "id": "components-slider--slider-with-custom-value-label",
-          "name": "Slider With Custom Value Label"
-        },
-        {
-          "id": "components-slider--slider-with-hidden-inputs",
-          "name": "Slider With Hidden Inputs"
-        },
-        {
-          "id": "components-slider--two-handle-skeleton",
-          "name": "Two Handle Skeleton"
-        },
-        {
-          "id": "components-slider--two-handle-slider",
-          "name": "Two Handle Slider"
-        },
-        {
-          "id": "components-slider--two-handle-slider-with-hidden-inputs",
-          "name": "Two Handle Slider With Hidden Inputs"
-        },
-        {
-          "id": "components-slider--with-layer",
-          "name": "With Layer"
-        }
+        "Default",
+        "Controlled Slider",
+        "Controlled Slider With Layer",
+        "Skeleton",
+        "Slider With Custom Value Label",
+        "Slider With Hidden Inputs",
+        "Two Handle Skeleton",
+        "Two Handle Slider",
+        "Two Handle Slider With Hidden Inputs",
+        "With Layer"
       ],
       "props": [
         {
@@ -4688,7 +3178,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -4699,7 +3188,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -4710,7 +3198,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -4719,33 +3206,12 @@
     {
       "name": "StructuredList",
       "category": "Components",
-      "filePath": "./src/components/StructuredList/StructuredList.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-structuredlist--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-structuredlist--initial-selection",
-          "name": "Initial Selection"
-        },
-        {
-          "id": "components-structuredlist--selection",
-          "name": "Selection"
-        },
-        {
-          "id": "components-structuredlist--skeleton",
-          "name": "Skeleton"
-        },
-        {
-          "id": "components-structuredlist--with-background-layer",
-          "name": "With Background Layer"
-        }
+        "Default",
+        "Initial Selection",
+        "Selection",
+        "Skeleton",
+        "With Background Layer"
       ],
       "props": [
         {
@@ -4755,7 +3221,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -4766,7 +3231,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -4777,7 +3241,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -4786,82 +3249,24 @@
     {
       "name": "Tabs",
       "category": "Components",
-      "filePath": "./src/components/Tabs/Tabs.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs",
-        "play-fn"
-      ],
       "stories": [
-        {
-          "id": "components-tabs--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-tabs--contained",
-          "name": "Contained"
-        },
-        {
-          "id": "components-tabs--contained-full-width",
-          "name": "Contained Full Width"
-        },
-        {
-          "id": "components-tabs--contained-with-icons",
-          "name": "Contained With Icons"
-        },
-        {
-          "id": "components-tabs--contained-with-secondary-labels",
-          "name": "Contained With Secondary Labels"
-        },
-        {
-          "id": "components-tabs--contained-with-secondary-labels-and-icons",
-          "name": "Contained With Secondary Labels And Icons"
-        },
-        {
-          "id": "components-tabs--dismissable",
-          "name": "Dismissable"
-        },
-        {
-          "id": "components-tabs--dismissable-contained",
-          "name": "Dismissable Contained"
-        },
-        {
-          "id": "components-tabs--dismissable-with-icons",
-          "name": "Dismissable With Icons"
-        },
-        {
-          "id": "components-tabs--icon-20-only",
-          "name": "Icon 20 Only"
-        },
-        {
-          "id": "components-tabs--icon-20-only-visual-snapshots",
-          "name": "Icon 20 Only Visual Snapshots"
-        },
-        {
-          "id": "components-tabs--icon-only",
-          "name": "Icon Only"
-        },
-        {
-          "id": "components-tabs--icon-only-visual-snapshots",
-          "name": "Icon Only Visual Snapshots"
-        },
-        {
-          "id": "components-tabs--manual",
-          "name": "Manual"
-        },
-        {
-          "id": "components-tabs--skeleton",
-          "name": "Skeleton"
-        },
-        {
-          "id": "components-tabs--vertical",
-          "name": "Vertical"
-        },
-        {
-          "id": "components-tabs--with-icons",
-          "name": "With Icons"
-        }
+        "Default",
+        "Contained",
+        "Contained Full Width",
+        "Contained With Icons",
+        "Contained With Secondary Labels",
+        "Contained With Secondary Labels And Icons",
+        "Dismissable",
+        "Dismissable Contained",
+        "Dismissable With Icons",
+        "Icon 20 Only",
+        "Icon 20 Only Visual Snapshots",
+        "Icon Only",
+        "Icon Only Visual Snapshots",
+        "Manual",
+        "Skeleton",
+        "Vertical",
+        "With Icons"
       ],
       "props": [
         {
@@ -4871,7 +3276,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -4882,7 +3286,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -4893,7 +3296,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -4902,37 +3304,13 @@
     {
       "name": "Tag",
       "category": "Components",
-      "filePath": "./src/components/Tag/InteractiveTag.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-tag--dismissible",
-          "name": "Dismissible"
-        },
-        {
-          "id": "components-tag--operational",
-          "name": "Operational"
-        },
-        {
-          "id": "components-tag--read-only",
-          "name": "Read Only"
-        },
-        {
-          "id": "components-tag--selectable",
-          "name": "Selectable"
-        },
-        {
-          "id": "components-tag--skeleton",
-          "name": "Skeleton"
-        },
-        {
-          "id": "components-tag--with-ai-label",
-          "name": "With AI Label"
-        }
+        "Dismissible",
+        "Operational",
+        "Read Only",
+        "Selectable",
+        "Skeleton",
+        "With AI Label"
       ],
       "props": [
         {
@@ -4942,7 +3320,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -4953,7 +3330,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -4964,7 +3340,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -4973,29 +3348,11 @@
     {
       "name": "TextArea",
       "category": "Components",
-      "filePath": "./src/components/TextArea/TextArea.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-textarea--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-textarea--skeleton",
-          "name": "Skeleton"
-        },
-        {
-          "id": "components-textarea--with-ai-label",
-          "name": "With AI Label"
-        },
-        {
-          "id": "components-textarea--with-layer",
-          "name": "With Layer"
-        }
+        "Default",
+        "Skeleton",
+        "With AI Label",
+        "With Layer"
       ],
       "props": [
         {
@@ -5005,7 +3362,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -5016,7 +3372,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -5027,7 +3382,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -5036,41 +3390,14 @@
     {
       "name": "TextInput",
       "category": "Components",
-      "filePath": "./src/components/TextInput/TextInput.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-textinput--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-textinput--fluid",
-          "name": "Fluid"
-        },
-        {
-          "id": "components-textinput--read-only",
-          "name": "Read Only"
-        },
-        {
-          "id": "components-textinput--skeleton",
-          "name": "Skeleton"
-        },
-        {
-          "id": "components-textinput--test-invalid-text-no-overlap",
-          "name": "Test Invalid Text No Overlap"
-        },
-        {
-          "id": "components-textinput--with-ai-label",
-          "name": "With AI Label"
-        },
-        {
-          "id": "components-textinput--with-layer",
-          "name": "With Layer"
-        }
+        "Default",
+        "Fluid",
+        "Read Only",
+        "Skeleton",
+        "Test Invalid Text No Overlap",
+        "With AI Label",
+        "With Layer"
       ],
       "props": [
         {
@@ -5080,7 +3407,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -5091,7 +3417,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -5102,7 +3427,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -5111,29 +3435,11 @@
     {
       "name": "Theme",
       "category": "Components",
-      "filePath": "./src/components/Theme/Theme.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-theme--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-theme--use-prefers-dark-scheme",
-          "name": "usePrefersDarkScheme"
-        },
-        {
-          "id": "components-theme--use-theme",
-          "name": "useTheme"
-        },
-        {
-          "id": "components-theme--with-layer",
-          "name": "With Layer"
-        }
+        "Default",
+        "usePrefersDarkScheme",
+        "useTheme",
+        "With Layer"
       ],
       "props": [
         {
@@ -5143,7 +3449,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -5154,7 +3459,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -5165,7 +3469,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -5174,65 +3477,20 @@
     {
       "name": "Tile",
       "category": "Components",
-      "filePath": "./src/components/Tile/Tile.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-tile--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-tile--default-with-layer",
-          "name": "Default With Layer"
-        },
-        {
-          "id": "components-tile--clickable",
-          "name": "Clickable"
-        },
-        {
-          "id": "components-tile--clickable-with-custom-icon",
-          "name": "Clickable With Custom Icon"
-        },
-        {
-          "id": "components-tile--clickable-with-layer",
-          "name": "Clickable With Layer"
-        },
-        {
-          "id": "components-tile--expandable",
-          "name": "Expandable"
-        },
-        {
-          "id": "components-tile--expandable-with-interactive",
-          "name": "Expandable With Interactive"
-        },
-        {
-          "id": "components-tile--expandable-with-layer",
-          "name": "Expandable With Layer"
-        },
-        {
-          "id": "components-tile--multi-select",
-          "name": "Multi Select"
-        },
-        {
-          "id": "components-tile--radio",
-          "name": "Radio"
-        },
-        {
-          "id": "components-tile--radio-with-layer",
-          "name": "Radio With Layer"
-        },
-        {
-          "id": "components-tile--selectable",
-          "name": "Selectable"
-        },
-        {
-          "id": "components-tile--with-ai-label",
-          "name": "With AI Label"
-        }
+        "Default",
+        "Default With Layer",
+        "Clickable",
+        "Clickable With Custom Icon",
+        "Clickable With Layer",
+        "Expandable",
+        "Expandable With Interactive",
+        "Expandable With Layer",
+        "Multi Select",
+        "Radio",
+        "Radio With Layer",
+        "Selectable",
+        "With AI Label"
       ],
       "props": [
         {
@@ -5242,7 +3500,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -5253,7 +3510,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -5264,7 +3520,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -5273,21 +3528,9 @@
     {
       "name": "TimePicker",
       "category": "Components",
-      "filePath": "./src/components/TimePicker/TimePicker.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-timepicker--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-timepicker--with-layer",
-          "name": "With Layer"
-        }
+        "Default",
+        "With Layer"
       ],
       "props": [
         {
@@ -5297,7 +3540,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -5308,7 +3550,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -5319,7 +3560,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -5328,29 +3568,11 @@
     {
       "name": "Toggle",
       "category": "Components",
-      "filePath": "./src/components/Toggle/Toggle.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-toggle--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-toggle--skeleton",
-          "name": "Skeleton"
-        },
-        {
-          "id": "components-toggle--small-toggle",
-          "name": "Small Toggle"
-        },
-        {
-          "id": "components-toggle--with-accessible-labels",
-          "name": "With Accessible Labels"
-        }
+        "Default",
+        "Skeleton",
+        "Small Toggle",
+        "With Accessible Labels"
       ],
       "props": [
         {
@@ -5360,7 +3582,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -5371,7 +3592,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -5382,7 +3602,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -5391,21 +3610,9 @@
     {
       "name": "Toggletip",
       "category": "Components",
-      "filePath": "./src/components/Toggletip/Toggletip.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-toggletip--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-toggletip--experimental-auto-align",
-          "name": "Experimental Auto Align"
-        }
+        "Default",
+        "Experimental Auto Align"
       ],
       "props": [
         {
@@ -5415,7 +3622,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -5426,7 +3632,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -5437,7 +3642,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -5446,29 +3650,11 @@
     {
       "name": "Tooltip",
       "category": "Components",
-      "filePath": "./src/components/Tooltip/Tooltip.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-tooltip--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-tooltip--alignment",
-          "name": "Alignment"
-        },
-        {
-          "id": "components-tooltip--duration",
-          "name": "Duration"
-        },
-        {
-          "id": "components-tooltip--experimental-auto-align",
-          "name": "Experimental Auto Align"
-        }
+        "Default",
+        "Alignment",
+        "Duration",
+        "Experimental Auto Align"
       ],
       "props": [
         {
@@ -5478,7 +3664,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -5489,7 +3674,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -5500,7 +3684,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -5509,33 +3692,12 @@
     {
       "name": "TreeView",
       "category": "components",
-      "filePath": "./src/components/TreeView/Treeview.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-treeview--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-treeview--with-complex-nesting",
-          "name": "With Complex Nesting"
-        },
-        {
-          "id": "components-treeview--with-controlled-expansion",
-          "name": "With Controlled Expansion"
-        },
-        {
-          "id": "components-treeview--with-icons",
-          "name": "With Icons"
-        },
-        {
-          "id": "components-treeview--with-links",
-          "name": "With Links"
-        }
+        "Default",
+        "With Complex Nesting",
+        "With Controlled Expansion",
+        "With Icons",
+        "With Links"
       ],
       "props": [
         {
@@ -5545,7 +3707,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -5556,7 +3717,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -5567,7 +3727,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -5576,37 +3735,13 @@
     {
       "name": "Header",
       "category": "Components/UI Shell",
-      "filePath": "./src/components/UIShell/UIShell.HeaderBase.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-ui-shell-header--header-w-actions-and-right-panel",
-          "name": "Header w/ Actions and Right Panel"
-        },
-        {
-          "id": "components-ui-shell-header--header-w-actions-and-switcher",
-          "name": "Header w/ Actions and Switcher"
-        },
-        {
-          "id": "components-ui-shell-header--header-w-navigation",
-          "name": "Header w/ Navigation"
-        },
-        {
-          "id": "components-ui-shell-header--header-w-navigation-actions-and-side-nav",
-          "name": "Header w/ Navigation, Actions and SideNav"
-        },
-        {
-          "id": "components-ui-shell-header--header-w-navigation-and-actions",
-          "name": "Header w/ Navigation and Actions"
-        },
-        {
-          "id": "components-ui-shell-header--header-w-side-nav",
-          "name": "Header w/ SideNav"
-        }
+        "Header w/ Actions and Right Panel",
+        "Header w/ Actions and Switcher",
+        "Header w/ Navigation",
+        "Header w/ Navigation, Actions and SideNav",
+        "Header w/ Navigation and Actions",
+        "Header w/ SideNav"
       ],
       "props": [
         {
@@ -5616,7 +3751,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -5627,7 +3761,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -5638,7 +3771,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -5647,33 +3779,12 @@
     {
       "name": "SideNav",
       "category": "Components/UI Shell",
-      "filePath": "./src/components/UIShell/UIShell.SideNav.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-ui-shell-sidenav--fixed-side-nav",
-          "name": "Fixed SideNav"
-        },
-        {
-          "id": "components-ui-shell-sidenav--fixed-side-nav-w-divider",
-          "name": "Fixed SideNav w/ Divider"
-        },
-        {
-          "id": "components-ui-shell-sidenav--fixed-side-nav-w-icons",
-          "name": "Fixed SideNav w/ Icons"
-        },
-        {
-          "id": "components-ui-shell-sidenav--side-nav-rail-w-header",
-          "name": "SideNav Rail w/Header"
-        },
-        {
-          "id": "components-ui-shell-sidenav--side-nav-w-large-side-nav-items",
-          "name": "SideNav w/ large side nav items"
-        }
+        "Fixed SideNav",
+        "Fixed SideNav w/ Divider",
+        "Fixed SideNav w/ Icons",
+        "SideNav Rail w/Header",
+        "SideNav w/ large side nav items"
       ],
       "props": [
         {
@@ -5683,7 +3794,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -5694,7 +3804,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -5705,7 +3814,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -5714,21 +3822,9 @@
     {
       "name": "UnorderedList",
       "category": "Components",
-      "filePath": "./src/components/UnorderedList/UnorderedList.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "components-unorderedlist--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-unorderedlist--nested",
-          "name": "nested"
-        }
+        "Default",
+        "nested"
       ],
       "props": [
         {
@@ -5738,7 +3834,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -5749,7 +3844,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -5760,7 +3854,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -5769,17 +3862,8 @@
     {
       "name": "ModalWrapper",
       "category": "Deprecated",
-      "filePath": "./src/components/ModalWrapper/ ModalWrapper.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "deprecated-modalwrapper--default",
-          "name": "Default"
-        }
+        "Default"
       ],
       "props": [
         {
@@ -5789,7 +3873,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -5800,7 +3883,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -5811,7 +3893,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -5820,17 +3901,8 @@
     {
       "name": "preview__StaticNotification",
       "category": "Deprecated",
-      "filePath": "./src/components/Notification/stories/StaticNotification.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "deprecated-preview-staticnotification--default",
-          "name": "Default"
-        }
+        "Default"
       ],
       "props": [
         {
@@ -5840,7 +3912,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -5851,7 +3922,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -5862,7 +3932,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -5871,53 +3940,17 @@
     {
       "name": "FlexGrid",
       "category": "Elements",
-      "filePath": "./src/components/Grid/FlexGrid.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "elements-flexgrid--default",
-          "name": "Default"
-        },
-        {
-          "id": "elements-flexgrid--auto-columns",
-          "name": "Auto Columns"
-        },
-        {
-          "id": "elements-flexgrid--condensed",
-          "name": "Condensed"
-        },
-        {
-          "id": "elements-flexgrid--condensed-columns",
-          "name": "Condensed Columns"
-        },
-        {
-          "id": "elements-flexgrid--full-width",
-          "name": "Full Width"
-        },
-        {
-          "id": "elements-flexgrid--mixed-gutter-modes",
-          "name": "Mixed Gutter Modes"
-        },
-        {
-          "id": "elements-flexgrid--narrow",
-          "name": "Narrow"
-        },
-        {
-          "id": "elements-flexgrid--narrow-columns",
-          "name": "Narrow Columns"
-        },
-        {
-          "id": "elements-flexgrid--offset",
-          "name": "Offset"
-        },
-        {
-          "id": "elements-flexgrid--responsive-grid",
-          "name": "Responsive Grid"
-        }
+        "Default",
+        "Auto Columns",
+        "Condensed",
+        "Condensed Columns",
+        "Full Width",
+        "Mixed Gutter Modes",
+        "Narrow",
+        "Narrow Columns",
+        "Offset",
+        "Responsive Grid"
       ],
       "props": [
         {
@@ -5927,7 +3960,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -5938,7 +3970,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -5949,7 +3980,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -5958,49 +3988,16 @@
     {
       "name": "Grid",
       "category": "Elements",
-      "filePath": "./src/components/Grid/Grid.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "elements-grid--default",
-          "name": "Default"
-        },
-        {
-          "id": "elements-grid--condensed",
-          "name": "Condensed"
-        },
-        {
-          "id": "elements-grid--full-width",
-          "name": "Full Width"
-        },
-        {
-          "id": "elements-grid--grid-start-end",
-          "name": "Grid Start End"
-        },
-        {
-          "id": "elements-grid--mixed-gutter-modes",
-          "name": "Mixed Gutter Modes"
-        },
-        {
-          "id": "elements-grid--narrow",
-          "name": "Narrow"
-        },
-        {
-          "id": "elements-grid--offset",
-          "name": "Offset"
-        },
-        {
-          "id": "elements-grid--responsive",
-          "name": "Responsive"
-        },
-        {
-          "id": "elements-grid--subgrid",
-          "name": "Subgrid"
-        }
+        "Default",
+        "Condensed",
+        "Full Width",
+        "Grid Start End",
+        "Mixed Gutter Modes",
+        "Narrow",
+        "Offset",
+        "Responsive",
+        "Subgrid"
       ],
       "props": [
         {
@@ -6010,7 +4007,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -6021,7 +4017,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -6032,7 +4027,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -6041,45 +4035,15 @@
     {
       "name": "IBM Plex",
       "category": "Elements",
-      "filePath": "./src/components/Plex/Plex.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "elements-ibm-plex--ibm-plex-mono",
-          "name": "IBM Plex Mono"
-        },
-        {
-          "id": "elements-ibm-plex--ibm-plex-sans",
-          "name": "IBM Plex Sans"
-        },
-        {
-          "id": "elements-ibm-plex--ibm-plex-sans-arabic",
-          "name": "IBM Plex Sans Arabic"
-        },
-        {
-          "id": "elements-ibm-plex--ibm-plex-sans-devanagari",
-          "name": "IBM Plex Sans Devanagari"
-        },
-        {
-          "id": "elements-ibm-plex--ibm-plex-sans-hebrew",
-          "name": "IBM Plex Sans Hebrew"
-        },
-        {
-          "id": "elements-ibm-plex--ibm-plex-sans-thai",
-          "name": "IBM Plex Sans Thai"
-        },
-        {
-          "id": "elements-ibm-plex--ibm-plex-sans-thai-looped",
-          "name": "IBM Plex Sans Thai Looped"
-        },
-        {
-          "id": "elements-ibm-plex--ibm-plex-serif",
-          "name": "IBM Plex Serif"
-        }
+        "IBM Plex Mono",
+        "IBM Plex Sans",
+        "IBM Plex Sans Arabic",
+        "IBM Plex Sans Devanagari",
+        "IBM Plex Sans Hebrew",
+        "IBM Plex Sans Thai",
+        "IBM Plex Sans Thai Looped",
+        "IBM Plex Serif"
       ],
       "props": [
         {
@@ -6089,7 +4053,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -6100,7 +4063,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -6111,7 +4073,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -6120,21 +4081,9 @@
     {
       "name": "Icons",
       "category": "Elements",
-      "filePath": "./src/components/Icons/Icons.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "elements-icons--default",
-          "name": "Default"
-        },
-        {
-          "id": "elements-icons--with-relative-size",
-          "name": "With Relative Size"
-        }
+        "Default",
+        "With Relative Size"
       ],
       "props": [
         {
@@ -6144,7 +4093,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -6155,7 +4103,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -6166,7 +4113,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -6175,17 +4121,8 @@
     {
       "name": "HideAtBreakpoint",
       "category": "Helpers",
-      "filePath": "./src/components/HideAtBreakpoint/HideAtBreakpoint.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "helpers-hideatbreakpoint--hide-at-breakpoint",
-          "name": "Hide At Breakpoint"
-        }
+        "Hide At Breakpoint"
       ],
       "props": [
         {
@@ -6195,7 +4132,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -6206,7 +4142,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -6217,7 +4152,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -6226,21 +4160,9 @@
     {
       "name": "useContextMenu",
       "category": "Hooks",
-      "filePath": "./src/components/ContextMenu/useContextMenu.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "hooks-usecontextmenu--specific-element",
-          "name": "Specific Element"
-        },
-        {
-          "id": "hooks-usecontextmenu--use-context-menu",
-          "name": "Use Context Menu"
-        }
+        "Specific Element",
+        "Use Context Menu"
       ],
       "props": [
         {
@@ -6250,7 +4172,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -6261,7 +4182,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -6272,7 +4192,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -6281,13 +4200,6 @@
     {
       "name": "usePrefix",
       "category": "Hooks",
-      "filePath": "./src/internal/usePrefix.mdx",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs",
-        "unattached-mdx"
-      ],
       "stories": [],
       "props": [
         {
@@ -6297,7 +4209,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -6308,7 +4219,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -6319,7 +4229,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -6328,21 +4237,9 @@
     {
       "name": "Stack",
       "category": "Layout",
-      "filePath": "./src/components/Stack/Stack.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "layout-stack--default",
-          "name": "Default"
-        },
-        {
-          "id": "layout-stack--horizontal",
-          "name": "Horizontal"
-        }
+        "Default",
+        "Horizontal"
       ],
       "props": [
         {
@@ -6352,7 +4249,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -6363,7 +4259,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -6374,7 +4269,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -6383,37 +4277,13 @@
     {
       "name": "preview__PageHeader",
       "category": "Patterns",
-      "filePath": "./src/components/PageHeader/PageHeader.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "patterns-preview-pageheader--default",
-          "name": "Default"
-        },
-        {
-          "id": "patterns-preview-pageheader--content-with-contextual-actions",
-          "name": "Content With Contextual Actions"
-        },
-        {
-          "id": "patterns-preview-pageheader--content-with-contextual-actions-and-page-actions",
-          "name": "Content With Contextual Actions And Page Actions"
-        },
-        {
-          "id": "patterns-preview-pageheader--content-with-hero-image",
-          "name": "Content With Hero Image"
-        },
-        {
-          "id": "patterns-preview-pageheader--content-with-icon",
-          "name": "Content With Icon"
-        },
-        {
-          "id": "patterns-preview-pageheader--tab-bar-with-tabs-and-tags",
-          "name": "Tab Bar With Tabs And Tags"
-        }
+        "Default",
+        "Content With Contextual Actions",
+        "Content With Contextual Actions And Page Actions",
+        "Content With Hero Image",
+        "Content With Icon",
+        "Tab Bar With Tabs And Tags"
       ],
       "props": [
         {
@@ -6423,7 +4293,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -6434,7 +4303,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -6445,7 +4313,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -6454,17 +4321,8 @@
     {
       "name": "preview__ChatButton",
       "category": "Preview",
-      "filePath": "./src/components/ChatButton/ChatButton.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "preview-preview-chatbutton--default",
-          "name": "Default"
-        }
+        "Default"
       ],
       "props": [
         {
@@ -6474,7 +4332,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -6485,7 +4342,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -6496,7 +4352,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -6505,33 +4360,12 @@
     {
       "name": "preview__Dialog",
       "category": "Preview",
-      "filePath": "./src/components/Dialog/Dialog.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "preview-preview-dialog--danger-dialog",
-          "name": "Danger Dialog"
-        },
-        {
-          "id": "preview-preview-dialog--modal",
-          "name": "Modal"
-        },
-        {
-          "id": "preview-preview-dialog--non-modal",
-          "name": "Non Modal"
-        },
-        {
-          "id": "preview-preview-dialog--passive-dialog",
-          "name": "Passive Dialog"
-        },
-        {
-          "id": "preview-preview-dialog--with-scrolling-content",
-          "name": "With Scrolling Content"
-        }
+        "Danger Dialog",
+        "Modal",
+        "Non Modal",
+        "Passive Dialog",
+        "With Scrolling Content"
       ],
       "props": [
         {
@@ -6541,7 +4375,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -6552,7 +4385,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -6563,7 +4395,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -6572,17 +4403,8 @@
     {
       "name": "preview__Layout",
       "category": "Preview",
-      "filePath": "./src/components/Layout/Layout.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "preview-preview-layout--default",
-          "name": "Default"
-        }
+        "Default"
       ],
       "props": [
         {
@@ -6592,7 +4414,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -6603,7 +4424,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -6614,7 +4434,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -6623,17 +4442,8 @@
     {
       "name": "preview__OverflowMenuV2",
       "category": "Preview",
-      "filePath": "./src/components/OverflowMenuV2/OverflowMenuv2.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "preview-preview-overflowmenuv2--overflow-menu-v-2",
-          "name": "Overflow Menu V 2"
-        }
+        "Overflow Menu V 2"
       ],
       "props": [
         {
@@ -6643,7 +4453,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -6654,7 +4463,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -6665,7 +4473,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -6674,25 +4481,10 @@
     {
       "name": "preview_Pagination",
       "category": "Preview",
-      "filePath": "./src/components/Pagination/experimental/Pagination-story.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "preview-preview-pagination--with-a-page-selector",
-          "name": "with a page selector"
-        },
-        {
-          "id": "preview-preview-pagination--with-no-sizer-child-input-or-child-selector",
-          "name": "with no sizer, child input, or child selector"
-        },
-        {
-          "id": "preview-preview-pagination--playground",
-          "name": "Playground"
-        }
+        "with a page selector",
+        "with no sizer, child input, or child selector",
+        "Playground"
       ],
       "props": [
         {
@@ -6702,7 +4494,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -6713,7 +4504,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -6724,7 +4514,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -6733,29 +4522,11 @@
     {
       "name": "preview_Text",
       "category": "Preview",
-      "filePath": "./src/components/Text/Text.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "preview-preview-text--default",
-          "name": "Default"
-        },
-        {
-          "id": "preview-preview-text--usage-examples",
-          "name": "Usage Examples"
-        },
-        {
-          "id": "preview-preview-text--layout-and-text",
-          "name": "Layout And Text"
-        },
-        {
-          "id": "preview-preview-text--set-text-direction",
-          "name": "Set Text Direction"
-        }
+        "Default",
+        "Usage Examples",
+        "Layout And Text",
+        "Set Text Direction"
       ],
       "props": [
         {
@@ -6765,7 +4536,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -6776,7 +4546,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -6787,7 +4556,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -6796,21 +4564,9 @@
     {
       "name": "preview__IconIndicator",
       "category": "Preview/StatusIndicators",
-      "filePath": "./src/components/IconIndicator/IconIndicator.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "preview-statusindicators-preview-iconindicator--default",
-          "name": "Default"
-        },
-        {
-          "id": "preview-statusindicators-preview-iconindicator--default-with-size-20",
-          "name": "Default With Size 20"
-        }
+        "Default",
+        "Default With Size 20"
       ],
       "props": [
         {
@@ -6820,7 +4576,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -6831,7 +4586,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -6842,7 +4596,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -6851,21 +4604,9 @@
     {
       "name": "preview__ShapeIndicator",
       "category": "Preview/StatusIndicators",
-      "filePath": "./src/components/ShapeIndicator/ShapeIndicator.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs"
-      ],
       "stories": [
-        {
-          "id": "preview-statusindicators-preview-shapeindicator--default",
-          "name": "Default"
-        },
-        {
-          "id": "preview-statusindicators-preview-shapeindicator--default-with-text-size-14",
-          "name": "Default With Text Size 14"
-        }
+        "Default",
+        "Default With Text Size 14"
       ],
       "props": [
         {
@@ -6875,7 +4616,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -6886,7 +4626,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -6897,7 +4636,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -6906,18 +4644,8 @@
     {
       "name": "Feature Flag",
       "category": "Components/ComboBox",
-      "filePath": "./src/components/ComboBox/Combobox.DynamicStyles.featureflag.mdx",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs",
-        "unattached-mdx"
-      ],
       "stories": [
-        {
-          "id": "components-combobox-feature-flag--floating-styles",
-          "name": "Floating Styles"
-        }
+        "Floating Styles"
       ],
       "props": [
         {
@@ -6927,7 +4655,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -6938,7 +4665,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -6949,7 +4675,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -6958,18 +4683,8 @@
     {
       "name": "Feature Flag",
       "category": "Components/ComboButton",
-      "filePath": "./src/components/ComboButton/ComboButton.DynamicStyles.featureflag.mdx",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs",
-        "unattached-mdx"
-      ],
       "stories": [
-        {
-          "id": "components-combobutton-feature-flag--floating-styles",
-          "name": "Floating Styles"
-        }
+        "Floating Styles"
       ],
       "props": [
         {
@@ -6979,7 +4694,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -6990,7 +4704,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -7001,7 +4714,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -7010,26 +4722,10 @@
     {
       "name": "Feature Flags",
       "category": "Components/ComposedModal",
-      "filePath": "./src/components/ComposedModal/ComposedModal.featureflag.mdx",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs",
-        "unattached-mdx"
-      ],
       "stories": [
-        {
-          "id": "components-composedmodal-feature-flags--enable-dialog-element",
-          "name": "enable-dialog-element"
-        },
-        {
-          "id": "components-composedmodal-feature-flags--enable-focus-wrap-without-sentinels",
-          "name": "enable-focus-wrap-without-sentinels"
-        },
-        {
-          "id": "components-composedmodal-feature-flags--enable-presence",
-          "name": "enable-presence"
-        }
+        "enable-dialog-element",
+        "enable-focus-wrap-without-sentinels",
+        "enable-presence"
       ],
       "props": [
         {
@@ -7039,7 +4735,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -7050,7 +4745,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -7061,7 +4755,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -7070,18 +4763,8 @@
     {
       "name": "Feature Flag",
       "category": "Components/Dropdown",
-      "filePath": "./src/components/Dropdown/Dropdown.DynamicStyles.featureflag.mdx",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs",
-        "unattached-mdx"
-      ],
       "stories": [
-        {
-          "id": "components-dropdown-feature-flag--floating-styles",
-          "name": "Floating Styles"
-        }
+        "Floating Styles"
       ],
       "props": [
         {
@@ -7091,7 +4774,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -7102,7 +4784,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -7113,7 +4794,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -7122,18 +4802,8 @@
     {
       "name": "Feature Flag",
       "category": "Components/FileUploader",
-      "filePath": "./src/components/FileUploader/FileUploader.featureflag.mdx",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs",
-        "unattached-mdx"
-      ],
       "stories": [
-        {
-          "id": "components-fileuploader-feature-flag--enhanced-callbacks",
-          "name": "Enhanced Callbacks"
-        }
+        "Enhanced Callbacks"
       ],
       "props": [
         {
@@ -7143,7 +4813,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -7154,7 +4823,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -7165,7 +4833,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -7174,18 +4841,8 @@
     {
       "name": "Feature Flag",
       "category": "Components/MenuButton",
-      "filePath": "./src/components/MenuButton/MenuButton.DynamicStyles.featureflag.mdx",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs",
-        "unattached-mdx"
-      ],
       "stories": [
-        {
-          "id": "components-menubutton-feature-flag--floating-styles",
-          "name": "Floating Styles"
-        }
+        "Floating Styles"
       ],
       "props": [
         {
@@ -7195,7 +4852,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -7206,7 +4862,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -7217,7 +4872,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -7226,26 +4880,10 @@
     {
       "name": "Feature Flags",
       "category": "Components/Modal",
-      "filePath": "./src/components/Modal/Modal.featureflag.mdx",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs",
-        "unattached-mdx"
-      ],
       "stories": [
-        {
-          "id": "components-modal-feature-flags--enable-dialog-element",
-          "name": "enable-dialog-element"
-        },
-        {
-          "id": "components-modal-feature-flags--enable-focus-wrap-without-sentinels",
-          "name": "enable-focus-wrap-without-sentinels"
-        },
-        {
-          "id": "components-modal-feature-flags--enable-presence",
-          "name": "enable-presence"
-        }
+        "enable-dialog-element",
+        "enable-focus-wrap-without-sentinels",
+        "enable-presence"
       ],
       "props": [
         {
@@ -7255,7 +4893,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -7266,7 +4903,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -7277,7 +4913,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -7286,18 +4921,8 @@
     {
       "name": "Feature Flag",
       "category": "Components/MultiSelect",
-      "filePath": "./src/components/MultiSelect/MultiSelect.DynamicStyles.featureflag.mdx",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs",
-        "unattached-mdx"
-      ],
       "stories": [
-        {
-          "id": "components-multiselect-feature-flag--floating-styles",
-          "name": "Floating Styles"
-        }
+        "Floating Styles"
       ],
       "props": [
         {
@@ -7307,7 +4932,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -7318,7 +4942,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -7329,7 +4952,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -7338,18 +4960,8 @@
     {
       "name": "Feature Flag",
       "category": "Components/Notifications/Actionable",
-      "filePath": "./src/components/Notification/Notification.featureflag.mdx",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs",
-        "unattached-mdx"
-      ],
       "stories": [
-        {
-          "id": "components-notifications-actionable-feature-flag--focus-wrap-without-sentinels",
-          "name": "Focus Wrap Without Sentinels"
-        }
+        "Focus Wrap Without Sentinels"
       ],
       "props": [
         {
@@ -7359,7 +4971,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -7370,7 +4981,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -7381,7 +4991,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -7390,34 +4999,12 @@
     {
       "name": "Feature Flag",
       "category": "Components/OverflowMenu",
-      "filePath": "./src/components/OverflowMenu/OverflowMenu.featureflag.stories.js",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs",
-        "unattached-mdx"
-      ],
       "stories": [
-        {
-          "id": "components-overflowmenu-feature-flag--default",
-          "name": "Default"
-        },
-        {
-          "id": "components-overflowmenu-feature-flag--auto-align",
-          "name": "Auto Align"
-        },
-        {
-          "id": "components-overflowmenu-feature-flag--floating-styles",
-          "name": "Floating Styles"
-        },
-        {
-          "id": "components-overflowmenu-feature-flag--nested",
-          "name": "Nested"
-        },
-        {
-          "id": "components-overflowmenu-feature-flag--with-menu-alignment",
-          "name": "With Menu Alignment"
-        }
+        "Default",
+        "Auto Align",
+        "Floating Styles",
+        "Nested",
+        "With Menu Alignment"
       ],
       "props": [
         {
@@ -7427,7 +5014,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -7438,7 +5024,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -7449,7 +5034,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -7458,18 +5042,8 @@
     {
       "name": "Feature Flag",
       "category": "Components/Popover",
-      "filePath": "./src/components/Popover/Popover.DynamicStyles.featureflag.mdx",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs",
-        "unattached-mdx"
-      ],
       "stories": [
-        {
-          "id": "components-popover-feature-flag--floating-styles",
-          "name": "Floating Styles"
-        }
+        "Floating Styles"
       ],
       "props": [
         {
@@ -7479,7 +5053,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -7490,7 +5063,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -7501,7 +5073,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -7510,22 +5081,9 @@
     {
       "name": "Feature Flag",
       "category": "Components/StructuredList",
-      "filePath": "./src/components/StructuredList/StructuredList.featureflag.mdx",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs",
-        "unattached-mdx"
-      ],
       "stories": [
-        {
-          "id": "components-structuredlist-feature-flag--selection",
-          "name": "Selection"
-        },
-        {
-          "id": "components-structuredlist-feature-flag--with-background-layer",
-          "name": "With Background Layer"
-        }
+        "Selection",
+        "With Background Layer"
       ],
       "props": [
         {
@@ -7535,7 +5093,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -7546,7 +5103,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -7557,7 +5113,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -7566,54 +5121,17 @@
     {
       "name": "Feature Flag",
       "category": "Components/Tile",
-      "filePath": "./src/components/Tile/Tile.featureflag.mdx",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs",
-        "unattached-mdx"
-      ],
       "stories": [
-        {
-          "id": "components-tile-feature-flag--clickable",
-          "name": "Clickable"
-        },
-        {
-          "id": "components-tile-feature-flag--clickable-with-layer",
-          "name": "Clickable With Layer"
-        },
-        {
-          "id": "components-tile-feature-flag--expandable",
-          "name": "Expandable"
-        },
-        {
-          "id": "components-tile-feature-flag--expandable-with-interactive",
-          "name": "Expandable With Interactive"
-        },
-        {
-          "id": "components-tile-feature-flag--expandable-with-layer",
-          "name": "Expandable With Layer"
-        },
-        {
-          "id": "components-tile-feature-flag--multi-select",
-          "name": "Multi Select"
-        },
-        {
-          "id": "components-tile-feature-flag--radio",
-          "name": "Radio"
-        },
-        {
-          "id": "components-tile-feature-flag--radio-with-layer",
-          "name": "Radio With Layer"
-        },
-        {
-          "id": "components-tile-feature-flag--selectable",
-          "name": "Selectable"
-        },
-        {
-          "id": "components-tile-feature-flag--with-ai-label",
-          "name": "With AI Label"
-        }
+        "Clickable",
+        "Clickable With Layer",
+        "Expandable",
+        "Expandable With Interactive",
+        "Expandable With Layer",
+        "Multi Select",
+        "Radio",
+        "Radio With Layer",
+        "Selectable",
+        "With AI Label"
       ],
       "props": [
         {
@@ -7623,7 +5141,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -7634,7 +5151,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -7645,7 +5161,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -7654,18 +5169,8 @@
     {
       "name": "Feature Flag",
       "category": "Components/Toggle",
-      "filePath": "./src/components/Toggle/Toggle.featureflag.mdx",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs",
-        "unattached-mdx"
-      ],
       "stories": [
-        {
-          "id": "components-toggle-feature-flag--toggle",
-          "name": "Toggle"
-        }
+        "Toggle"
       ],
       "props": [
         {
@@ -7675,7 +5180,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -7686,7 +5190,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -7697,7 +5200,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -7706,18 +5208,8 @@
     {
       "name": "Feature Flag",
       "category": "Components/Toggletip",
-      "filePath": "./src/components/Toggletip/Toggletip.DynamicStyles.featureflag.mdx",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs",
-        "unattached-mdx"
-      ],
       "stories": [
-        {
-          "id": "components-toggletip-feature-flag--floating-styles",
-          "name": "Floating Styles"
-        }
+        "Floating Styles"
       ],
       "props": [
         {
@@ -7727,7 +5219,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -7738,7 +5229,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -7749,7 +5239,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -7758,18 +5247,8 @@
     {
       "name": "Feature Flag",
       "category": "Components/Tooltip",
-      "filePath": "./src/components/Tooltip/Tooltip.DynamicStyles.featureflag.mdx",
-      "tags": [
-        "dev",
-        "test",
-        "autodocs",
-        "unattached-mdx"
-      ],
       "stories": [
-        {
-          "id": "components-tooltip-feature-flag--floating-styles",
-          "name": "Floating Styles"
-        }
+        "Floating Styles"
       ],
       "props": [
         {
@@ -7779,7 +5258,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -7790,7 +5268,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         },
@@ -7801,7 +5278,6 @@
             "unknown"
           ],
           "defaultValue": "defaultValue",
-          "required": false,
           "control": null,
           "options": null
         }
@@ -7810,16 +5286,8 @@
     {
       "name": "Feature Flag",
       "category": "components/TreeView",
-      "filePath": "./src/components/TreeView/TreeView.featureflag.stories.js",
-      "tags": [
-        "dev",
-        "test"
-      ],
       "stories": [
-        {
-          "id": "components-treeview-feature-flag--default",
-          "name": "Default"
-        }
+        "Default"
       ],
       "props": []
     }
