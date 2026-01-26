@@ -94,10 +94,11 @@ def build_instance_edit_context(
 2. **원본 보존**: 컴포넌트 정의(스키마)는 절대 변경 금지
 3. **다른 인스턴스**: 다른 인스턴스는 변경하지 않음
 4. **응답 형식**: 전체 코드를 다시 생성하되, 선택된 인스턴스의 props만 변경
+5. **NO IMPORTS**: import 문을 절대 사용하지 마세요. React.useState, React.useEffect 등 직접 사용
 
 예시) "배경색 파란색으로" 요청 시:
 - 변경 전: `<Button data-instance-id="{selected.id}" variant="primary">로그인</Button>`
-- 변경 후: `<Button data-instance-id="{selected.id}" variant="primary" className="bg-blue-500">로그인</Button>`
+- 변경 후: `<Button data-instance-id="{selected.id}" variant="primary" style={{{{ backgroundColor: 'blue' }}}}>로그인</Button>`
 
 사용자의 요청에 따라 선택된 인스턴스({selected.id})만 수정하세요.
 """
