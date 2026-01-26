@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useRef, useEffect } from 'react';
 import { ChatStreamRequest, SSEEvent, CodeEvent } from '@/types/chat';
 
 interface UseChatStreamOptions {
@@ -14,90 +14,101 @@ export function useChatStream(options: UseChatStreamOptions = {}) {
   const [accumulatedText, setAccumulatedText] = useState('');
   const [generatedFiles, setGeneratedFiles] = useState<CodeEvent[]>([]);
 
-  const sendMessage = useCallback(
-    async (request: ChatStreamRequest) => {
-      setIsLoading(true);
-      setError(null);
-      setAccumulatedText('');
-      setGeneratedFiles([]);
+  // 클로저 문제 해결: 항상 최신 콜백을 참조하도록 ref 사용
+  const optionsRef = useRef(options);
+  useEffect(() => {
+    optionsRef.current = options;
+  });
 
-      try {
-        const response = await fetch('/api/chat/stream', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(request),
-        });
+  const sendMessage = useCallback(async (request: ChatStreamRequest) => {
+    setIsLoading(true);
+    setError(null);
+    setAccumulatedText('');
+    setGeneratedFiles([]);
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
+    try {
+      const response = await fetch('/api/chat/stream', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+      });
 
-        const reader = response.body?.getReader();
-        const decoder = new TextDecoder();
-
-        if (!reader) {
-          throw new Error('Response body is not readable');
-        }
-
-        let buffer = '';
-
-        while (true) {
-          const { done, value } = await reader.read();
-
-          if (done) {
-            break;
-          }
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n\n');
-
-          // 마지막 줄은 불완전할 수 있으므로 버퍼에 유지
-          buffer = lines.pop() || '';
-
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              try {
-                const event: SSEEvent = JSON.parse(line.slice(6));
-
-                switch (event.type) {
-                  case 'chat':
-                    setAccumulatedText((prev) => prev + event.text);
-                    options.onChat?.(event.text);
-                    break;
-
-                  case 'code':
-                    setGeneratedFiles((prev) => [...prev, event]);
-                    options.onCode?.(event);
-                    break;
-
-                  case 'done':
-                    options.onDone?.();
-                    break;
-
-                  case 'error':
-                    setError(event.error);
-                    options.onError?.(event.error);
-                    break;
-                }
-              } catch (parseError) {
-                console.error('Failed to parse SSE event:', parseError);
-              }
-            }
-          }
-        }
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : 'Unknown error occurred';
-        setError(errorMessage);
-        options.onError?.(errorMessage);
-      } finally {
-        setIsLoading(false);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    },
-    [options]
-  );
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (!reader) {
+        throw new Error('Response body is not readable');
+      }
+
+      let buffer = '';
+
+      const processLine = (line: string) => {
+        if (line.startsWith('data: ')) {
+          try {
+            const event: SSEEvent = JSON.parse(line.slice(6));
+
+            switch (event.type) {
+              case 'chat':
+                setAccumulatedText((prev) => prev + event.text);
+                optionsRef.current.onChat?.(event.text);
+                break;
+
+              case 'code':
+                setGeneratedFiles((prev) => [...prev, event]);
+                optionsRef.current.onCode?.(event);
+                break;
+
+              case 'done':
+                optionsRef.current.onDone?.();
+                break;
+
+              case 'error':
+                setError(event.error);
+                optionsRef.current.onError?.(event.error);
+                break;
+            }
+          } catch (parseError) {
+            console.error('Failed to parse SSE event:', parseError);
+          }
+        }
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) {
+          // 스트림 종료 시 남은 버퍼 처리
+          if (buffer.trim()) {
+            processLine(buffer);
+          }
+          break;
+        }
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n\n');
+
+        // 마지막 줄은 불완전할 수 있으므로 버퍼에 유지
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          processLine(line);
+        }
+      }
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Unknown error occurred';
+      setError(errorMessage);
+      optionsRef.current.onError?.(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   const reset = useCallback(() => {
     setAccumulatedText('');
