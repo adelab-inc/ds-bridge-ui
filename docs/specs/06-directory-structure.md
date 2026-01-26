@@ -70,6 +70,10 @@ apps/web/app/
 │   │   └── 📁 parse/
 │   │       └── 📄 route.ts            # POST /api/storybook/parse
 │   │
+│   ├── 📁 ds/                         # 🆕 DS 추출 API
+│   │   └── 📁 extract/
+│   │       └── 📄 route.ts            # POST /api/ds/extract (422줄)
+│   │
 │   ├── 📁 ai/                         # AI 서비스 프록시
 │   │   ├── 📁 chat/
 │   │   │   └── 📄 route.ts            # POST /api/ai/chat → FastAPI
@@ -141,11 +145,16 @@ apps/web/components/
 
 ```
 apps/web/lib/
-├── 📁 storybook/                      # Storybook 파싱 유틸리티
+├── 📁 storybook/                      # Storybook 파싱 유틸리티 (기본)
 │   ├── 📄 parser.ts                   # stories.json / index.json 파싱
 │   ├── 📄 transformer.ts              # ds.json으로 변환
 │   ├── 📄 validators.ts               # URL 및 데이터 유효성 검사
 │   └── 📄 index.ts
+│
+├── 📄 storybook-extractor.ts          # 🆕 고급 Storybook 메타데이터 추출 (761줄)
+├── 📄 playwright-extractor.ts         # 🆕 CSR Storybook Playwright 대응 (100줄)
+├── 📄 extraction-cache.ts             # 🆕 추출 결과 메모리 캐싱 (184줄)
+├── 📄 schema-converter.ts             # 🆕 ds.json ↔ legacy 포맷 변환 (229줄)
 │
 ├── 📁 api/                            # API 클라이언트
 │   ├── 📄 ai-client.ts                # AI 서비스 호출 클라이언트
@@ -178,7 +187,12 @@ apps/web/hooks/
 
 apps/web/types/
 ├── 📄 api.ts                          # 웹앱 전용 API 타입
+├── 📄 ds-extraction.ts                # 🆕 DS 추출 관련 타입 정의 (220줄)
 └── 📄 index.ts
+
+apps/web/public/
+└── 📁 ds-schemas/                     # 🆕 추출된 DS 스키마 저장
+    └── 📄 *.ds.json                   # 예: react.ds.json, workday.ds.json
 ```
 
 ---
@@ -528,10 +542,13 @@ ALLOWED_ORIGINS=http://localhost:3000
 | 디렉토리 | 담당 | 책임 |
 |----------|------|------|
 | `apps/web/` | FE | Next.js 웹앱 전체 |
-| `apps/web/app/api/storybook` | FE | Storybook URL 파싱 |
+| `apps/web/app/api/storybook` | FE | Storybook URL 파싱 (기본) |
+| `apps/web/app/api/ds/extract` | FE | **DS 메타데이터 추출 (고급)** |
 | `apps/web/app/api/ai` | FE | AI 서비스 프록시 |
 | `apps/web/components` | FE | 모든 React 컴포넌트 |
-| `apps/web/lib/storybook` | FE | 파싱 로직 |
+| `apps/web/lib/storybook` | FE | 파싱 로직 (기본) |
+| `apps/web/lib/storybook-extractor.ts` | FE | **고급 추출 로직** |
+| `apps/web/public/ds-schemas` | FE | **추출된 DS 스키마 저장** |
 | `apps/ai-service/` | AI | Python FastAPI 전체 |
 | `apps/ai-service/src/core` | AI | Claude 연동 |
 | `apps/ai-service/src/prompts` | AI | System Prompt 설계 |

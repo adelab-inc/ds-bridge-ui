@@ -52,9 +52,10 @@
 
 | # | 엔드포인트 | Method | 담당 | 목적 |
 |---|------------|--------|------|------|
-| 1 | `/api/storybook/parse` | POST | FE | Storybook URL을 ds.json으로 파싱 |
-| 2 | `/api/composition` | POST | FE | 페이지 composition 관리 |
-| 3 | `/api/export/copy-for-ai` | POST | FE | Copy for AI 출력 생성 |
+| 1 | `/api/storybook/parse` | POST | FE | Storybook URL을 ds.json으로 파싱 (간단) |
+| 2 | `/api/ds/extract` | POST | FE | **Storybook 메타데이터 추출 (고급)** |
+| 3 | `/api/composition` | POST | FE | 페이지 composition 관리 |
+| 4 | `/api/export/copy-for-ai` | POST | FE | Copy for AI 출력 생성 |
 
 ### Next.js 프록시 API (→ FastAPI)
 
@@ -125,6 +126,123 @@ export async function POST(req: Request) {
   return Response.json({ success: false, error: 'Failed to parse' });
 }
 ```
+
+---
+
+## 1.5. DS Extract API (고급 추출)
+
+**엔드포인트**: `POST /api/ds/extract`
+
+**목적**: Public Storybook URL에서 디자인 시스템 메타데이터 추출 (Props, Stories, Components)
+
+**구현 파일**: `apps/web/app/api/ds/extract/route.ts`
+
+### Query Parameters
+
+| 파라미터 | 타입 | 기본값 | 설명 |
+|---------|------|--------|------|
+| `format` | `ds` \| `legacy` | `ds` | 출력 포맷 |
+| `stream` | `true` \| `false` | `false` | 스트리밍 응답 활성화 |
+| `playwright` | `true` \| `false` | `true` | Playwright CSR 대응 활성화 |
+
+### Request
+
+```typescript
+interface DSExtractRequest {
+  url: string;  // Storybook Public URL
+}
+```
+
+### Response (일반 모드)
+
+```typescript
+interface DSExtractResponse {
+  success: boolean;
+  data?: DSJson;
+  format: 'ds' | 'legacy';
+  savedPath?: string;      // 저장된 파일 경로
+  warnings?: ExtractWarning[];
+  cached?: boolean;
+  error?: string;
+  code?: ExtractErrorCode;
+}
+
+// 에러 코드
+type ExtractErrorCode =
+  | 'INVALID_URL'
+  | 'FETCH_FAILED'
+  | 'INDEX_NOT_FOUND'
+  | 'EXTRACTION_ERROR'
+  | 'PLAYWRIGHT_ERROR';
+
+// 경고 타입
+interface ExtractWarning {
+  type: 'PLACEHOLDER_PROPS' | 'CSR_DETECTED' | 'MISSING_PROPS';
+  component: string;
+  message: string;
+}
+```
+
+### Response (스트리밍 모드 - NDJSON)
+
+```typescript
+// Content-Type: application/x-ndjson
+// 각 라인은 독립적인 JSON 객체
+
+// 진행상황 이벤트
+{ "type": "progress", "component": "Button", "current": 5, "total": 128 }
+
+// 완료 이벤트
+{
+  "type": "complete",
+  "data": { /* DSJson */ },
+  "format": "ds",
+  "savedPath": "/ds-schemas/react.ds.json",
+  "warnings": []
+}
+
+// 에러 이벤트
+{ "type": "error", "message": "Failed to fetch", "code": "FETCH_FAILED" }
+```
+
+### 사용 예시
+
+```bash
+# 기본 추출 (Playwright 활성화)
+curl -X POST http://localhost:3000/api/ds/extract \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://react.carbondesignsystem.com"}'
+
+# 고속 추출 (Playwright 비활성화) - 권장
+curl -X POST "http://localhost:3000/api/ds/extract?playwright=false" \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://react.carbondesignsystem.com"}'
+
+# 스트리밍 응답
+curl -X POST "http://localhost:3000/api/ds/extract?stream=true" \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://react.carbondesignsystem.com"}'
+
+# 레거시 포맷
+curl -X POST "http://localhost:3000/api/ds/extract?format=legacy" \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://react.carbondesignsystem.com"}'
+```
+
+### Vercel 설정
+
+```typescript
+// Vercel Pro 플랜 기준 최대 5분
+export const maxDuration = 300;
+```
+
+### 성능 참고
+
+| 시나리오 | 소요 시간 |
+|---------|----------|
+| 기본 (Playwright 활성화) | ~30초 (5회 실패 후 중단) |
+| `?playwright=false` | ~6.8초 (권장) |
+| 캐시 히트 | 즉시 |
 
 ---
 
