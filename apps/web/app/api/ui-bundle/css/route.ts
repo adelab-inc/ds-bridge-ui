@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
-import { readFile } from "fs/promises";
-import { join } from "path";
+import { NextResponse } from 'next/server';
+import { readFile } from 'fs/promises';
+import { join } from 'path';
 
 /**
  * @aplus/ui CSS 번들 서빙 API
@@ -15,30 +15,30 @@ export async function GET() {
     // storybook-standalone/packages/ui/dist/ui.css 경로
     const cssPath = join(
       process.cwd(),
-      "..",
-      "..",
-      "storybook-standalone",
-      "packages",
-      "ui",
-      "dist",
-      "ui.css"
+      '..',
+      '..',
+      'storybook-standalone',
+      'packages',
+      'ui',
+      'dist',
+      'ui.css'
     );
 
-    const css = await readFile(cssPath, "utf-8");
+    const css = await readFile(cssPath, 'utf-8');
 
     return new NextResponse(css, {
       status: 200,
       headers: {
-        "Content-Type": "text/css; charset=utf-8",
-        "Cache-Control": "public, max-age=31536000, immutable",
+        'Content-Type': 'text/css; charset=utf-8',
+        'Cache-Control': 'public, max-age=31536000, immutable',
       },
     });
   } catch (error) {
-    console.error("Failed to load CSS bundle:", error);
+    console.error('Failed to load CSS bundle:', error);
 
     return NextResponse.json(
       {
-        error: "CSS bundle not found",
+        error: 'CSS bundle not found',
         message:
           "Run 'pnpm build:umd' in storybook-standalone/packages/ui first",
       },

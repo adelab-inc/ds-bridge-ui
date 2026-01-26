@@ -69,7 +69,10 @@ export const useRealtimeMessages = ({
       | QueryFieldFilterConstraint
       | QueryOrderByConstraint
       | QueryLimitConstraint
-    )[] = [where('room_id', '==', sessionId), orderBy('question_created_at', 'desc')];
+    )[] = [
+      where('room_id', '==', sessionId),
+      orderBy('question_created_at', 'desc'),
+    ];
 
     if (pageSize) {
       queryConstraints.push(limit(pageSize));
@@ -117,7 +120,9 @@ export const useRealtimeMessages = ({
               setMessages((prev) => {
                 const updated = prev
                   .map((m) => (m.id === msg.id ? msg : m))
-                  .sort((a, b) => a.question_created_at - b.question_created_at);
+                  .sort(
+                    (a, b) => a.question_created_at - b.question_created_at
+                  );
                 return updated;
               });
               callbacksRef.current?.onModified?.(msg);

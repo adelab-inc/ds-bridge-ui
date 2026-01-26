@@ -52,8 +52,8 @@ function ChatSection({
             prev.map((msg) =>
               msg.id === currentMessageIdRef.current
                 ? { ...msg, text: msg.text + text, status: 'GENERATING' }
-                : msg,
-            ),
+                : msg
+            )
           );
         }
       },
@@ -64,8 +64,8 @@ function ChatSection({
             prev.map((msg) =>
               msg.id === currentMessageIdRef.current
                 ? { ...msg, content: code.content, path: code.path }
-                : msg,
-            ),
+                : msg
+            )
           );
         }
         // 부모 컴포넌트에 코드 생성 알림
@@ -84,8 +84,8 @@ function ChatSection({
                     status: 'DONE' as const,
                     answer_created_at: now,
                   }
-                : msg,
-            ),
+                : msg
+            )
           );
           currentMessageIdRef.current = null;
         }
@@ -106,8 +106,8 @@ function ChatSection({
                     status: 'ERROR' as const,
                     answer_created_at: now,
                   }
-                : msg,
-            ),
+                : msg
+            )
           );
           currentMessageIdRef.current = null;
         }
@@ -179,7 +179,11 @@ function ChatSection({
   const initialCodeSetRef = React.useRef(false);
   React.useEffect(() => {
     // 초기 로드 시 한 번만 실행 (스트리밍 중이 아닐 때)
-    if (!initialCodeSetRef.current && !isLoading && firebaseMessages.length > 0) {
+    if (
+      !initialCodeSetRef.current &&
+      !isLoading &&
+      firebaseMessages.length > 0
+    ) {
       const lastMessage = firebaseMessages[firebaseMessages.length - 1];
       if (lastMessage.content) {
         onCodeGenerated?.({
@@ -197,7 +201,7 @@ function ChatSection({
       data-slot="chat-section"
       className={cn(
         'bg-card border-border flex-1 flex flex-col overflow-hidden rounded-lg border',
-        className,
+        className
       )}
       {...props}
     >

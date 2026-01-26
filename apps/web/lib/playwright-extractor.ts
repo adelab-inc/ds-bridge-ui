@@ -69,7 +69,9 @@ export async function fetchDocsHtmlWithPlaywright(
     }
 
     if (!found) {
-      console.warn(`[Playwright] ArgTypes 테이블을 찾을 수 없습니다: ${docsUrl}`);
+      console.warn(
+        `[Playwright] ArgTypes 테이블을 찾을 수 없습니다: ${docsUrl}`
+      );
     }
 
     // 추가 렌더링 대기 (동적 컨텐츠)
@@ -145,12 +147,17 @@ export async function extractPropsViaStorybookAPI(
   try {
     const storyData = await page.evaluate((): StorybookAPIResult | null => {
       // Storybook 7+ API
-      const preview = (window as unknown as Record<string, unknown>).__STORYBOOK_PREVIEW__ as {
-        storyStore?: {
-          getStoryContext: (selection: unknown) => { argTypes?: Record<string, StorybookArgType> };
-          getSelection: () => unknown;
-        };
-      } | undefined;
+      const preview = (window as unknown as Record<string, unknown>)
+        .__STORYBOOK_PREVIEW__ as
+        | {
+            storyStore?: {
+              getStoryContext: (selection: unknown) => {
+                argTypes?: Record<string, StorybookArgType>;
+              };
+              getSelection: () => unknown;
+            };
+          }
+        | undefined;
 
       if (preview?.storyStore) {
         try {
@@ -167,10 +174,15 @@ export async function extractPropsViaStorybookAPI(
       }
 
       // Storybook 6 API (Legacy)
-      const legacyStore = (window as unknown as Record<string, unknown>).__STORYBOOK_STORY_STORE__ as {
-        getSelection: () => { storyId?: string };
-        fromId: (id: string) => { argTypes?: Record<string, StorybookArgType> };
-      } | undefined;
+      const legacyStore = (window as unknown as Record<string, unknown>)
+        .__STORYBOOK_STORY_STORE__ as
+        | {
+            getSelection: () => { storyId?: string };
+            fromId: (id: string) => {
+              argTypes?: Record<string, StorybookArgType>;
+            };
+          }
+        | undefined;
 
       if (legacyStore) {
         try {
@@ -367,7 +379,9 @@ export async function fetchDocsWithAPIFallback(
     const apiProps = await extractPropsViaStorybookAPI(page);
 
     if (apiProps && apiProps.length > 0) {
-      console.log(`[Playwright] Storybook API로 ${apiProps.length}개 props 추출 성공`);
+      console.log(
+        `[Playwright] Storybook API로 ${apiProps.length}개 props 추출 성공`
+      );
     }
 
     // 2. HTML도 반환 (fallback용)

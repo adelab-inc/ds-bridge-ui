@@ -39,7 +39,10 @@ export const maxDuration = 300;
 import { writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
-import { extractDSFromUrl, validateStorybookUrl } from '@/lib/storybook-extractor';
+import {
+  extractDSFromUrl,
+  validateStorybookUrl,
+} from '@/lib/storybook-extractor';
 import { convertDSToLegacy } from '@/lib/schema-converter';
 import { getCachedDS, setCachedDS } from '@/lib/extraction-cache';
 import type {
@@ -82,7 +85,10 @@ interface StreamErrorMessage {
   code: ExtractErrorCode;
 }
 
-type StreamMessage = StreamProgressMessage | StreamCompleteMessage | StreamErrorMessage;
+type StreamMessage =
+  | StreamProgressMessage
+  | StreamCompleteMessage
+  | StreamErrorMessage;
 
 // =============================================================================
 // Helper Functions
@@ -178,11 +184,16 @@ function writeStreamMessage(
  * - force: 'true' (optional) - 캐시 무시하고 재추출
  * - playwright: 'false' (optional) - Playwright 비활성화 (CSR Storybook 빠른 추출)
  */
-export async function POST(request: NextRequest): Promise<NextResponse<ExtractResponse> | Response> {
+export async function POST(
+  request: NextRequest
+): Promise<NextResponse<ExtractResponse> | Response> {
   const useStreaming = request.nextUrl.searchParams.get('stream') === 'true';
-  const format = (request.nextUrl.searchParams.get('format') || 'ds') as 'ds' | 'legacy';
+  const format = (request.nextUrl.searchParams.get('format') || 'ds') as
+    | 'ds'
+    | 'legacy';
   const forceRefresh = request.nextUrl.searchParams.get('force') === 'true';
-  const usePlaywright = request.nextUrl.searchParams.get('playwright') !== 'false';
+  const usePlaywright =
+    request.nextUrl.searchParams.get('playwright') !== 'false';
 
   // 공통 검증 로직
   let body: ExtractRequest;
@@ -222,17 +233,32 @@ export async function POST(request: NextRequest): Promise<NextResponse<ExtractRe
 
   // 스트리밍 모드 (캐시 사용 안 함 - 진행상황 표시 필요)
   if (useStreaming) {
-    return handleStreamingExtract(url, format, forceRefresh, usePlaywright, request.signal);
+    return handleStreamingExtract(
+      url,
+      format,
+      forceRefresh,
+      usePlaywright,
+      request.signal
+    );
   }
 
   // 기존 JSON 응답 모드
-  return handleJsonExtract(url, format, forceRefresh, usePlaywright, request.signal);
+  return handleJsonExtract(
+    url,
+    format,
+    forceRefresh,
+    usePlaywright,
+    request.signal
+  );
 }
 
 /**
  * 스트리밍 에러 응답 생성
  */
-function createStreamErrorResponse(message: string, code: ExtractErrorCode): Response {
+function createStreamErrorResponse(
+  message: string,
+  code: ExtractErrorCode
+): Response {
   const encoder = new TextEncoder();
   const errorMessage: StreamErrorMessage = { type: 'error', message, code };
   return new Response(encoder.encode(JSON.stringify(errorMessage) + '\n'), {
@@ -301,7 +327,8 @@ function handleStreamingExtract(
       console.error('[DS Extract] Streaming error:', error);
       const errorMessage: StreamErrorMessage = {
         type: 'error',
-        message: error instanceof Error ? error.message : 'Internal server error',
+        message:
+          error instanceof Error ? error.message : 'Internal server error',
         code: 'INTERNAL_ERROR',
       };
       await writeStreamMessage(writer, encoder, errorMessage);
@@ -314,7 +341,7 @@ function handleStreamingExtract(
     headers: {
       'Content-Type': 'application/x-ndjson',
       'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
+      Connection: 'keep-alive',
     },
   });
 }
@@ -343,7 +370,11 @@ async function handleJsonExtract(
           outputData = cached.ds;
         }
 
-        const savedPath = await saveSchemaToFile(outputData, cached.ds.name, format);
+        const savedPath = await saveSchemaToFile(
+          outputData,
+          cached.ds.name,
+          format
+        );
 
         return NextResponse.json({
           success: true,
@@ -357,7 +388,10 @@ async function handleJsonExtract(
     }
 
     // 캐시 미스 또는 강제 새로고침 - 새로 추출
-    const { ds: dsJson, warnings } = await extractDSFromUrl(url, { signal, usePlaywright });
+    const { ds: dsJson, warnings } = await extractDSFromUrl(url, {
+      signal,
+      usePlaywright,
+    });
 
     // 캐시에 저장
     setCachedDS(url, dsJson, warnings);

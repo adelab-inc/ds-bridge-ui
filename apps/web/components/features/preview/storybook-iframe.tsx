@@ -1,12 +1,12 @@
-"use client"
+'use client';
 
-import * as React from "react"
+import * as React from 'react';
 
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils';
 
-interface StorybookIframeProps extends React.ComponentProps<"div"> {
-  url?: string
-  storyId?: string
+interface StorybookIframeProps extends React.ComponentProps<'div'> {
+  url?: string;
+  storyId?: string;
 }
 
 function StorybookIframe({
@@ -16,19 +16,19 @@ function StorybookIframe({
   ...props
 }: StorybookIframeProps) {
   const iframeSrc = React.useMemo(() => {
-    if (!url) return null
+    if (!url) return null;
     if (storyId) {
-      return `${url}/iframe.html?id=${storyId}&viewMode=story`
+      return `${url}/iframe.html?id=${storyId}&viewMode=story`;
     }
-    return url
-  }, [url, storyId])
+    return url;
+  }, [url, storyId]);
 
   if (!iframeSrc) {
     return (
       <div
         data-slot="storybook-iframe"
         className={cn(
-          "bg-muted/50 text-muted-foreground flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center",
+          'bg-muted/50 text-muted-foreground flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center',
           className
         )}
         {...props}
@@ -57,13 +57,13 @@ function StorybookIframe({
           </p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
     <div
       data-slot="storybook-iframe"
-      className={cn("relative flex-1 overflow-hidden", className)}
+      className={cn('relative flex-1 overflow-hidden', className)}
       {...props}
     >
       <iframe
@@ -74,8 +74,8 @@ function StorybookIframe({
         loading="lazy"
       />
     </div>
-  )
+  );
 }
 
-export { StorybookIframe }
-export type { StorybookIframeProps }
+export { StorybookIframe };
+export type { StorybookIframeProps };

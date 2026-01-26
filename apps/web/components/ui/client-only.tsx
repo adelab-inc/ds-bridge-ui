@@ -1,10 +1,10 @@
-"use client"
+'use client';
 
-import * as React from "react"
+import * as React from 'react';
 
 interface ClientOnlyProps {
-  children: React.ReactNode
-  fallback?: React.ReactNode
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
 }
 
 /**
@@ -15,18 +15,18 @@ interface ClientOnlyProps {
  * 서버/클라이언트 간 ID 불일치가 발생할 때 이 컴포넌트로 감싸면 해결됨
  */
 function ClientOnly({ children, fallback = null }: ClientOnlyProps) {
-  const [hasMounted, setHasMounted] = React.useState(false)
+  const [hasMounted, setHasMounted] = React.useState(false);
 
   React.useEffect(() => {
-    setHasMounted(true)
-  }, [])
+    setHasMounted(true);
+  }, []);
 
   if (!hasMounted) {
-    return <>{fallback}</>
+    return <>{fallback}</>;
   }
 
-  return <>{children}</>
+  return <>{children}</>;
 }
 
-export { ClientOnly }
-export type { ClientOnlyProps }
+export { ClientOnly };
+export type { ClientOnlyProps };

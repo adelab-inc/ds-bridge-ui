@@ -1,38 +1,38 @@
-"use client"
+'use client';
 
-import * as React from "react"
-import { HugeiconsIcon } from "@hugeicons/react"
+import * as React from 'react';
+import { HugeiconsIcon } from '@hugeicons/react';
 import {
   Link02Icon,
   Upload01Icon,
   MoreVerticalIcon,
   ArrowRight01Icon,
-} from "@hugeicons/core-free-icons"
+} from '@hugeicons/core-free-icons';
 
-import { cn } from "@/lib/utils"
-import { HeaderLogo } from "@/components/layout/header-logo"
-import { ClientOnly } from "@/components/ui/client-only"
-import { Button } from "@/components/ui/button"
+import { cn } from '@/lib/utils';
+import { HeaderLogo } from '@/components/layout/header-logo';
+import { ClientOnly } from '@/components/ui/client-only';
+import { Button } from '@/components/ui/button';
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
   InputGroupInput,
   InputGroupText,
-} from "@/components/ui/input-group"
+} from '@/components/ui/input-group';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from '@/components/ui/dropdown-menu';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
+} from '@/components/ui/tooltip';
 
 /**
  * SSR fallback skeleton for header controls
@@ -51,13 +51,13 @@ function HeaderControlsSkeleton() {
         <div className="bg-muted size-9 rounded-md" />
       </div>
     </>
-  )
+  );
 }
 
-interface HeaderProps extends React.ComponentProps<"header"> {
-  onURLSubmit?: (url: string) => void
-  onJSONUpload?: (file: File) => void
-  isLoading?: boolean
+interface HeaderProps extends React.ComponentProps<'header'> {
+  onURLSubmit?: (url: string) => void;
+  onJSONUpload?: (file: File) => void;
+  isLoading?: boolean;
 }
 
 function Header({
@@ -67,34 +67,34 @@ function Header({
   isLoading = false,
   ...props
 }: HeaderProps) {
-  const [url, setUrl] = React.useState("")
-  const fileInputRef = React.useRef<HTMLInputElement>(null)
+  const [url, setUrl] = React.useState('');
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (url.trim() && onURLSubmit) {
-      onURLSubmit(url.trim())
+      onURLSubmit(url.trim());
     }
-  }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+    const file = e.target.files?.[0];
     if (file && onJSONUpload) {
-      onJSONUpload(file)
+      onJSONUpload(file);
     }
     // Reset input
-    e.target.value = ""
-  }
+    e.target.value = '';
+  };
 
   const handleUploadClick = () => {
-    fileInputRef.current?.click()
-  }
+    fileInputRef.current?.click();
+  };
 
   return (
     <header
       data-slot="header"
       className={cn(
-        "bg-background/95 supports-[backdrop-filter]:bg-background/60 border-border sticky top-0 z-50 flex h-14 w-full items-center gap-3 border-b px-4 backdrop-blur md:px-6",
+        'bg-background/95 supports-[backdrop-filter]:bg-background/60 border-border sticky top-0 z-50 flex h-14 w-full items-center gap-3 border-b px-4 backdrop-blur md:px-6',
         className
       )}
       {...props}
@@ -183,8 +183,8 @@ function Header({
         </TooltipProvider>
       </ClientOnly>
     </header>
-  )
+  );
 }
 
-export { Header }
-export type { HeaderProps }
+export { Header };
+export type { HeaderProps };

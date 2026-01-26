@@ -7,19 +7,12 @@
     {
       "name": "Accordion",
       "category": "Components",
-      "stories": [
-        "Default",
-        "Controlled",
-        "Skeleton",
-        "With Layer"
-      ],
+      "stories": ["Default", "Controlled", "Skeleton", "With Layer"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -27,9 +20,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -37,9 +28,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -49,17 +38,12 @@
     {
       "name": "AILabel",
       "category": "Components",
-      "stories": [
-        "Default",
-        "Explainability Popover"
-      ],
+      "stories": ["Default", "Explainability Popover"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -67,9 +51,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -77,9 +59,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -89,16 +69,12 @@
     {
       "name": "AspectRatio",
       "category": "Components",
-      "stories": [
-        "Default"
-      ],
+      "stories": ["Default"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -106,9 +82,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -116,9 +90,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -139,9 +111,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -149,9 +119,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -159,9 +127,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -185,9 +151,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -195,9 +159,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -205,9 +167,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -217,17 +177,12 @@
     {
       "name": "Set Of Buttons",
       "category": "Components/Button",
-      "stories": [
-        "Default",
-        "Fluid"
-      ],
+      "stories": ["Default", "Fluid"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -235,9 +190,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -245,9 +198,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -268,9 +219,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -278,9 +227,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -288,9 +235,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -300,16 +245,12 @@
     {
       "name": "ClassPrefix",
       "category": "Components",
-      "stories": [
-        "Default"
-      ],
+      "stories": ["Default"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -317,9 +258,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -327,9 +266,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -352,9 +289,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -362,9 +297,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -372,9 +305,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -397,9 +328,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -407,9 +336,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -417,9 +344,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -440,9 +365,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -450,9 +373,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -460,9 +381,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -485,9 +404,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -495,9 +412,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -505,9 +420,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -534,9 +447,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -544,9 +455,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -554,9 +463,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -578,9 +485,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -588,9 +493,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -598,9 +501,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -610,16 +511,12 @@
     {
       "name": "CopyButton",
       "category": "Components",
-      "stories": [
-        "Default"
-      ],
+      "stories": ["Default"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -627,9 +524,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -637,9 +532,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -649,17 +542,12 @@
     {
       "name": "Basic",
       "category": "Components/DataTable",
-      "stories": [
-        "Default",
-        "XL With Two Lines"
-      ],
+      "stories": ["Default", "XL With Two Lines"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -667,9 +555,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -677,9 +563,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -689,16 +573,12 @@
     {
       "name": "Batch Actions",
       "category": "Components/DataTable",
-      "stories": [
-        "Default"
-      ],
+      "stories": ["Default"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -706,9 +586,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -716,9 +594,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -728,16 +604,12 @@
     {
       "name": "Dynamic",
       "category": "Components/DataTable",
-      "stories": [
-        "Default"
-      ],
+      "stories": ["Default"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -745,9 +617,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -755,9 +625,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -776,9 +644,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -786,9 +652,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -796,9 +660,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -808,16 +670,12 @@
     {
       "name": "Filtering",
       "category": "Components/DataTable",
-      "stories": [
-        "Default"
-      ],
+      "stories": ["Default"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -825,9 +683,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -835,9 +691,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -856,9 +710,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -866,9 +718,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -876,9 +726,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -888,16 +736,12 @@
     {
       "name": "Skeleton",
       "category": "Components/DataTable",
-      "stories": [
-        "Skeleton"
-      ],
+      "stories": ["Skeleton"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -905,9 +749,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -915,9 +757,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -927,16 +767,12 @@
     {
       "name": "Sorting",
       "category": "Components/DataTable",
-      "stories": [
-        "Default"
-      ],
+      "stories": ["Default"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -944,9 +780,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -954,9 +788,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -976,9 +808,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -986,9 +816,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -996,9 +824,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1021,9 +847,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1031,9 +855,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1041,9 +863,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1068,9 +888,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1078,9 +896,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1088,9 +904,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1100,17 +914,12 @@
     {
       "name": "DefinitionTooltip",
       "category": "Components",
-      "stories": [
-        "Default",
-        "With Large Text"
-      ],
+      "stories": ["Default", "With Large Text"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1118,9 +927,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1128,9 +935,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1155,9 +960,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1165,9 +968,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1175,9 +976,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1187,17 +986,12 @@
     {
       "name": "ErrorBoundary",
       "category": "Components",
-      "stories": [
-        "Default",
-        "with custom context"
-      ],
+      "stories": ["Default", "with custom context"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1205,9 +999,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1215,9 +1007,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1239,9 +1029,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1249,9 +1037,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1259,9 +1045,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1271,19 +1055,12 @@
     {
       "name": "FluidComboBox",
       "category": "Components/Fluid Components",
-      "stories": [
-        "Default",
-        "Condensed",
-        "Skeleton",
-        "With AI Label"
-      ],
+      "stories": ["Default", "Condensed", "Skeleton", "With AI Label"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1291,9 +1068,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1301,9 +1076,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1313,19 +1086,12 @@
     {
       "name": "FluidDatePicker",
       "category": "Components/Fluid Components",
-      "stories": [
-        "Range With Calendar",
-        "Simple",
-        "Single",
-        "Skeleton"
-      ],
+      "stories": ["Range With Calendar", "Simple", "Single", "Skeleton"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1333,9 +1099,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1343,9 +1107,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1355,19 +1117,12 @@
     {
       "name": "FluidDropdown",
       "category": "Components/Fluid Components",
-      "stories": [
-        "Default",
-        "Condensed",
-        "Skeleton",
-        "With AI Label"
-      ],
+      "stories": ["Default", "Condensed", "Skeleton", "With AI Label"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1375,9 +1130,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1385,9 +1138,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1397,16 +1148,12 @@
     {
       "name": "FluidForm",
       "category": "Components/Fluid Components",
-      "stories": [
-        "Default"
-      ],
+      "stories": ["Default"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1414,9 +1161,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1424,9 +1169,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1448,9 +1191,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1458,9 +1199,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1468,9 +1207,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1480,17 +1217,12 @@
     {
       "name": "FluidNumberInput",
       "category": "Components/Fluid Components",
-      "stories": [
-        "Default",
-        "Skeleton"
-      ],
+      "stories": ["Default", "Skeleton"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1498,9 +1230,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1508,9 +1238,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1520,16 +1248,12 @@
     {
       "name": "FluidPasswordInput",
       "category": "Components/Fluid Components",
-      "stories": [
-        "Default"
-      ],
+      "stories": ["Default"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1537,9 +1261,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1547,9 +1269,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1559,17 +1279,12 @@
     {
       "name": "FluidSearch",
       "category": "Components/Fluid Components",
-      "stories": [
-        "Default",
-        "Skeleton"
-      ],
+      "stories": ["Default", "Skeleton"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1577,9 +1292,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1587,9 +1300,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1599,18 +1310,12 @@
     {
       "name": "FluidSelect",
       "category": "Components/Fluid Components",
-      "stories": [
-        "Default",
-        "Skeleton",
-        "With AI Label"
-      ],
+      "stories": ["Default", "Skeleton", "With AI Label"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1618,9 +1323,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1628,9 +1331,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1650,9 +1351,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1660,9 +1359,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1670,9 +1367,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1682,18 +1377,12 @@
     {
       "name": "FluidTextInput",
       "category": "Components/Fluid Components",
-      "stories": [
-        "Default",
-        "Default With Toggletip",
-        "Skeleton"
-      ],
+      "stories": ["Default", "Default With Toggletip", "Skeleton"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1701,9 +1390,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1711,9 +1398,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1723,17 +1408,12 @@
     {
       "name": "FluidTimePicker",
       "category": "Components/Fluid Components",
-      "stories": [
-        "Default",
-        "Skeleton"
-      ],
+      "stories": ["Default", "Skeleton"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1741,9 +1421,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1751,9 +1429,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1763,17 +1439,12 @@
     {
       "name": "Form",
       "category": "Components",
-      "stories": [
-        "Default",
-        "With AI Label"
-      ],
+      "stories": ["Default", "With AI Label"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1781,9 +1452,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1791,9 +1460,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1803,16 +1470,12 @@
     {
       "name": "FormGroup",
       "category": "Components",
-      "stories": [
-        "Default"
-      ],
+      "stories": ["Default"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1820,9 +1483,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1830,9 +1491,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1842,17 +1501,12 @@
     {
       "name": "FormLabel",
       "category": "Components",
-      "stories": [
-        "Default",
-        "With Toggletip"
-      ],
+      "stories": ["Default", "With Toggletip"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1860,9 +1514,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1870,9 +1522,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1882,17 +1532,12 @@
     {
       "name": "Heading",
       "category": "Components",
-      "stories": [
-        "Default",
-        "Custom Level"
-      ],
+      "stories": ["Default", "Custom Level"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1900,9 +1545,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1910,9 +1553,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1922,17 +1563,12 @@
     {
       "name": "IconButton",
       "category": "Components",
-      "stories": [
-        "Default",
-        "With Badge Indicator"
-      ],
+      "stories": ["Default", "With Badge Indicator"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1940,9 +1576,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1950,9 +1584,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1962,16 +1594,12 @@
     {
       "name": "IdPrefix",
       "category": "Components",
-      "stories": [
-        "Default"
-      ],
+      "stories": ["Default"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1979,9 +1607,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -1989,9 +1615,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2001,17 +1625,12 @@
     {
       "name": "InlineLoading",
       "category": "Components",
-      "stories": [
-        "Default",
-        "Ux Example"
-      ],
+      "stories": ["Default", "Ux Example"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2019,9 +1638,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2029,9 +1646,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2041,19 +1656,12 @@
     {
       "name": "Layer",
       "category": "Components",
-      "stories": [
-        "Default",
-        "Custom Level",
-        "Use Layer",
-        "With Background"
-      ],
+      "stories": ["Default", "Custom Level", "Use Layer", "With Background"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2061,9 +1669,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2071,9 +1677,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2083,18 +1687,12 @@
     {
       "name": "Link",
       "category": "Components",
-      "stories": [
-        "Default",
-        "Inline",
-        "Paired With Icon"
-      ],
+      "stories": ["Default", "Inline", "Paired With Icon"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2102,9 +1700,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2112,9 +1708,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2124,16 +1718,12 @@
     {
       "name": "Loading",
       "category": "Components",
-      "stories": [
-        "Default"
-      ],
+      "stories": ["Default"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2141,9 +1731,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2151,9 +1739,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2163,16 +1749,12 @@
     {
       "name": "Menu",
       "category": "Components",
-      "stories": [
-        "Default"
-      ],
+      "stories": ["Default"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2180,9 +1762,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2190,9 +1770,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2215,9 +1793,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2225,9 +1801,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2235,9 +1809,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2261,9 +1833,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2271,9 +1841,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2281,9 +1849,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2312,9 +1878,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2322,9 +1886,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2332,9 +1894,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2344,16 +1904,12 @@
     {
       "name": "Actionable",
       "category": "Components/Notifications",
-      "stories": [
-        "Default"
-      ],
+      "stories": ["Default"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2361,9 +1917,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2371,9 +1925,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2383,17 +1935,12 @@
     {
       "name": "Callout",
       "category": "Components/Notifications",
-      "stories": [
-        "Default",
-        "With Interactive Elements"
-      ],
+      "stories": ["Default", "With Interactive Elements"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2401,9 +1948,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2411,9 +1956,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2423,16 +1966,12 @@
     {
       "name": "Inline",
       "category": "Components/Notifications",
-      "stories": [
-        "Default"
-      ],
+      "stories": ["Default"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2440,9 +1979,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2450,9 +1987,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2462,16 +1997,12 @@
     {
       "name": "Toast",
       "category": "Components/Notifications",
-      "stories": [
-        "Default"
-      ],
+      "stories": ["Default"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2479,9 +2010,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2489,9 +2018,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2513,9 +2040,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2523,9 +2048,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2533,9 +2056,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2545,18 +2066,12 @@
     {
       "name": "OrderedList",
       "category": "Components",
-      "stories": [
-        "Default",
-        "Native List Styles",
-        "Nested"
-      ],
+      "stories": ["Default", "Native List Styles", "Nested"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2564,9 +2079,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2574,9 +2087,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2586,17 +2097,12 @@
     {
       "name": "OverflowMenu",
       "category": "Components",
-      "stories": [
-        "Default",
-        "Render Custom Icon"
-      ],
+      "stories": ["Default", "Render Custom Icon"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2604,9 +2110,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2614,9 +2118,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2636,9 +2138,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2646,9 +2146,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2656,9 +2154,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2668,16 +2164,12 @@
     {
       "name": "PaginationNav",
       "category": "Components",
-      "stories": [
-        "Default"
-      ],
+      "stories": ["Default"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2685,9 +2177,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2695,9 +2185,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2707,16 +2195,12 @@
     {
       "name": "PasswordInput",
       "category": "Components",
-      "stories": [
-        "Default"
-      ],
+      "stories": ["Default"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2724,9 +2208,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2734,9 +2216,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2757,9 +2237,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2767,9 +2245,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2777,9 +2253,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2789,19 +2263,12 @@
     {
       "name": "ProgressBar",
       "category": "Components",
-      "stories": [
-        "Default",
-        "Determinate",
-        "Indeterminate",
-        "With Layer"
-      ],
+      "stories": ["Default", "Determinate", "Indeterminate", "With Layer"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2809,9 +2276,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2819,9 +2284,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2831,18 +2294,12 @@
     {
       "name": "ProgressIndicator",
       "category": "Components",
-      "stories": [
-        "Default",
-        "Interactive",
-        "Skeleton"
-      ],
+      "stories": ["Default", "Interactive", "Skeleton"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2850,9 +2307,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2860,9 +2315,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2872,19 +2325,12 @@
     {
       "name": "RadioButton",
       "category": "Components",
-      "stories": [
-        "Default",
-        "Skeleton",
-        "Vertical",
-        "With AI Label"
-      ],
+      "stories": ["Default", "Skeleton", "Vertical", "With AI Label"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2892,9 +2338,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2902,9 +2346,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2925,9 +2367,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2935,9 +2375,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2945,9 +2383,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2968,9 +2404,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2978,9 +2412,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -2988,9 +2420,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3009,9 +2439,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3019,9 +2447,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3029,9 +2455,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3041,16 +2465,12 @@
     {
       "name": "SkeletonIcon",
       "category": "Components/Skeleton",
-      "stories": [
-        "Default"
-      ],
+      "stories": ["Default"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3058,9 +2478,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3068,9 +2486,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3080,16 +2496,12 @@
     {
       "name": "SkeletonPlaceholder",
       "category": "Components/Skeleton",
-      "stories": [
-        "Default"
-      ],
+      "stories": ["Default"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3097,9 +2509,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3107,9 +2517,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3119,16 +2527,12 @@
     {
       "name": "SkeletonText",
       "category": "Components/Skeleton",
-      "stories": [
-        "Default"
-      ],
+      "stories": ["Default"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3136,9 +2540,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3146,9 +2548,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3174,9 +2574,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3184,9 +2582,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3194,9 +2590,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3217,9 +2611,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3227,9 +2619,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3237,9 +2627,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3272,9 +2660,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3282,9 +2668,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3292,9 +2676,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3316,9 +2698,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3326,9 +2706,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3336,9 +2714,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3348,19 +2724,12 @@
     {
       "name": "TextArea",
       "category": "Components",
-      "stories": [
-        "Default",
-        "Skeleton",
-        "With AI Label",
-        "With Layer"
-      ],
+      "stories": ["Default", "Skeleton", "With AI Label", "With Layer"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3368,9 +2737,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3378,9 +2745,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3403,9 +2768,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3413,9 +2776,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3423,9 +2784,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3435,19 +2794,12 @@
     {
       "name": "Theme",
       "category": "Components",
-      "stories": [
-        "Default",
-        "usePrefersDarkScheme",
-        "useTheme",
-        "With Layer"
-      ],
+      "stories": ["Default", "usePrefersDarkScheme", "useTheme", "With Layer"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3455,9 +2807,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3465,9 +2815,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3496,9 +2844,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3506,9 +2852,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3516,9 +2860,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3528,17 +2870,12 @@
     {
       "name": "TimePicker",
       "category": "Components",
-      "stories": [
-        "Default",
-        "With Layer"
-      ],
+      "stories": ["Default", "With Layer"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3546,9 +2883,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3556,9 +2891,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3578,9 +2911,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3588,9 +2919,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3598,9 +2927,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3610,17 +2937,12 @@
     {
       "name": "Toggletip",
       "category": "Components",
-      "stories": [
-        "Default",
-        "Experimental Auto Align"
-      ],
+      "stories": ["Default", "Experimental Auto Align"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3628,9 +2950,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3638,9 +2958,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3660,9 +2978,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3670,9 +2986,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3680,9 +2994,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3703,9 +3015,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3713,9 +3023,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3723,9 +3031,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3747,9 +3053,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3757,9 +3061,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3767,9 +3069,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3790,9 +3090,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3800,9 +3098,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3810,9 +3106,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3822,17 +3116,12 @@
     {
       "name": "UnorderedList",
       "category": "Components",
-      "stories": [
-        "Default",
-        "nested"
-      ],
+      "stories": ["Default", "nested"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3840,9 +3129,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3850,9 +3137,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3862,16 +3147,12 @@
     {
       "name": "ModalWrapper",
       "category": "Deprecated",
-      "stories": [
-        "Default"
-      ],
+      "stories": ["Default"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3879,9 +3160,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3889,9 +3168,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3901,16 +3178,12 @@
     {
       "name": "preview__StaticNotification",
       "category": "Deprecated",
-      "stories": [
-        "Default"
-      ],
+      "stories": ["Default"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3918,9 +3191,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3928,9 +3199,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3956,9 +3225,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3966,9 +3233,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -3976,9 +3241,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4003,9 +3266,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4013,9 +3274,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4023,9 +3282,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4049,9 +3306,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4059,9 +3314,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4069,9 +3322,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4081,17 +3332,12 @@
     {
       "name": "Icons",
       "category": "Elements",
-      "stories": [
-        "Default",
-        "With Relative Size"
-      ],
+      "stories": ["Default", "With Relative Size"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4099,9 +3345,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4109,9 +3353,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4121,16 +3363,12 @@
     {
       "name": "HideAtBreakpoint",
       "category": "Helpers",
-      "stories": [
-        "Hide At Breakpoint"
-      ],
+      "stories": ["Hide At Breakpoint"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4138,9 +3376,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4148,9 +3384,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4160,17 +3394,12 @@
     {
       "name": "useContextMenu",
       "category": "Hooks",
-      "stories": [
-        "Specific Element",
-        "Use Context Menu"
-      ],
+      "stories": ["Specific Element", "Use Context Menu"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4178,9 +3407,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4188,9 +3415,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4205,9 +3430,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4215,9 +3438,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4225,9 +3446,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4237,17 +3456,12 @@
     {
       "name": "Stack",
       "category": "Layout",
-      "stories": [
-        "Default",
-        "Horizontal"
-      ],
+      "stories": ["Default", "Horizontal"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4255,9 +3469,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4265,9 +3477,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4289,9 +3499,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4299,9 +3507,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4309,9 +3515,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4321,16 +3525,12 @@
     {
       "name": "preview__ChatButton",
       "category": "Preview",
-      "stories": [
-        "Default"
-      ],
+      "stories": ["Default"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4338,9 +3538,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4348,9 +3546,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4371,9 +3567,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4381,9 +3575,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4391,9 +3583,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4403,16 +3593,12 @@
     {
       "name": "preview__Layout",
       "category": "Preview",
-      "stories": [
-        "Default"
-      ],
+      "stories": ["Default"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4420,9 +3606,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4430,9 +3614,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4442,16 +3624,12 @@
     {
       "name": "preview__OverflowMenuV2",
       "category": "Preview",
-      "stories": [
-        "Overflow Menu V 2"
-      ],
+      "stories": ["Overflow Menu V 2"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4459,9 +3637,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4469,9 +3645,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4490,9 +3664,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4500,9 +3672,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4510,9 +3680,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4532,9 +3700,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4542,9 +3708,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4552,9 +3716,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4564,17 +3726,12 @@
     {
       "name": "preview__IconIndicator",
       "category": "Preview/StatusIndicators",
-      "stories": [
-        "Default",
-        "Default With Size 20"
-      ],
+      "stories": ["Default", "Default With Size 20"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4582,9 +3739,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4592,9 +3747,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4604,17 +3757,12 @@
     {
       "name": "preview__ShapeIndicator",
       "category": "Preview/StatusIndicators",
-      "stories": [
-        "Default",
-        "Default With Text Size 14"
-      ],
+      "stories": ["Default", "Default With Text Size 14"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4622,9 +3770,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4632,9 +3778,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4644,16 +3788,12 @@
     {
       "name": "Feature Flag",
       "category": "Components/ComboBox",
-      "stories": [
-        "Floating Styles"
-      ],
+      "stories": ["Floating Styles"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4661,9 +3801,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4671,9 +3809,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4683,16 +3819,12 @@
     {
       "name": "Feature Flag",
       "category": "Components/ComboButton",
-      "stories": [
-        "Floating Styles"
-      ],
+      "stories": ["Floating Styles"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4700,9 +3832,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4710,9 +3840,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4731,9 +3859,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4741,9 +3867,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4751,9 +3875,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4763,16 +3885,12 @@
     {
       "name": "Feature Flag",
       "category": "Components/Dropdown",
-      "stories": [
-        "Floating Styles"
-      ],
+      "stories": ["Floating Styles"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4780,9 +3898,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4790,9 +3906,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4802,16 +3916,12 @@
     {
       "name": "Feature Flag",
       "category": "Components/FileUploader",
-      "stories": [
-        "Enhanced Callbacks"
-      ],
+      "stories": ["Enhanced Callbacks"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4819,9 +3929,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4829,9 +3937,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4841,16 +3947,12 @@
     {
       "name": "Feature Flag",
       "category": "Components/MenuButton",
-      "stories": [
-        "Floating Styles"
-      ],
+      "stories": ["Floating Styles"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4858,9 +3960,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4868,9 +3968,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4889,9 +3987,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4899,9 +3995,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4909,9 +4003,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4921,16 +4013,12 @@
     {
       "name": "Feature Flag",
       "category": "Components/MultiSelect",
-      "stories": [
-        "Floating Styles"
-      ],
+      "stories": ["Floating Styles"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4938,9 +4026,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4948,9 +4034,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4960,16 +4044,12 @@
     {
       "name": "Feature Flag",
       "category": "Components/Notifications/Actionable",
-      "stories": [
-        "Focus Wrap Without Sentinels"
-      ],
+      "stories": ["Focus Wrap Without Sentinels"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4977,9 +4057,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -4987,9 +4065,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -5010,9 +4086,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -5020,9 +4094,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -5030,9 +4102,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -5042,16 +4112,12 @@
     {
       "name": "Feature Flag",
       "category": "Components/Popover",
-      "stories": [
-        "Floating Styles"
-      ],
+      "stories": ["Floating Styles"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -5059,9 +4125,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -5069,9 +4133,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -5081,17 +4143,12 @@
     {
       "name": "Feature Flag",
       "category": "Components/StructuredList",
-      "stories": [
-        "Selection",
-        "With Background Layer"
-      ],
+      "stories": ["Selection", "With Background Layer"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -5099,9 +4156,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -5109,9 +4164,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -5137,9 +4190,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -5147,9 +4198,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -5157,9 +4206,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -5169,16 +4216,12 @@
     {
       "name": "Feature Flag",
       "category": "Components/Toggle",
-      "stories": [
-        "Toggle"
-      ],
+      "stories": ["Toggle"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -5186,9 +4229,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -5196,9 +4237,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -5208,16 +4247,12 @@
     {
       "name": "Feature Flag",
       "category": "Components/Toggletip",
-      "stories": [
-        "Floating Styles"
-      ],
+      "stories": ["Floating Styles"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -5225,9 +4260,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -5235,9 +4268,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -5247,16 +4278,12 @@
     {
       "name": "Feature Flag",
       "category": "Components/Tooltip",
-      "stories": [
-        "Floating Styles"
-      ],
+      "stories": ["Floating Styles"],
       "props": [
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -5264,9 +4291,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -5274,9 +4299,7 @@
         {
           "name": "propertyName",
           "description": "This is a short description",
-          "type": [
-            "unknown"
-          ],
+          "type": ["unknown"],
           "defaultValue": "defaultValue",
           "control": null,
           "options": null
@@ -5286,9 +4309,7 @@
     {
       "name": "Feature Flag",
       "category": "components/TreeView",
-      "stories": [
-        "Default"
-      ],
+      "stories": ["Default"],
       "props": []
     }
   ]

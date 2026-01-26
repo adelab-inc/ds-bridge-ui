@@ -31,44 +31,44 @@ import type {
 const SELECTORS = {
   // ArgTypes 테이블 (Storybook 버전별 fallback)
   table: [
-    '.docblock-argstable',           // Storybook 7+ 기본
-    '[class*="argstable"]',          // 클래스명 변형
-    'table[class*="args"]',          // 일반 패턴
-    '.sbdocs-argtable',              // Storybook 6 레거시
-    '.sbdocs-table',                 // Storybook 6 docs
-    '[data-testid="prop-table"]',    // 테스트 ID 기반
-    'table.props-table',             // 일부 커스텀 테마
-    '.sb-arg-table',                 // Storybook 8 일부 버전
+    '.docblock-argstable', // Storybook 7+ 기본
+    '[class*="argstable"]', // 클래스명 변형
+    'table[class*="args"]', // 일반 패턴
+    '.sbdocs-argtable', // Storybook 6 레거시
+    '.sbdocs-table', // Storybook 6 docs
+    '[data-testid="prop-table"]', // 테스트 ID 기반
+    'table.props-table', // 일부 커스텀 테마
+    '.sb-arg-table', // Storybook 8 일부 버전
   ].join(', '),
 
   // Prop 이름 (다양한 마크업 구조 대응)
   propName: [
     'td:first-child span',
     'td:first-child code',
-    'td:first-child button span',    // 확장 가능한 row (Storybook 7+)
-    'td:first-child > strong',       // 일부 테마
-    '[data-testid="prop-name"]',     // 테스트 ID 기반
-    'td:first-child',                // fallback
+    'td:first-child button span', // 확장 가능한 row (Storybook 7+)
+    'td:first-child > strong', // 일부 테마
+    '[data-testid="prop-name"]', // 테스트 ID 기반
+    'td:first-child', // fallback
   ].join(', '),
 
   // 설명
   description: [
     'td:nth-child(2) > div:first-child',
     'td:nth-child(2) > span:first-child',
-    'td:nth-child(2) > p:first-child',  // 일부 테마
-    'td:nth-child(2) .description',     // 클래스 기반
+    'td:nth-child(2) > p:first-child', // 일부 테마
+    'td:nth-child(2) .description', // 클래스 기반
     '[data-testid="prop-description"]',
   ].join(', '),
 
   // 타입 옵션 (union/enum 값들)
   typeOptions: [
-    'td:nth-child(2) span.css-o1d7ko',           // Storybook 7 해시 클래스
-    'td:nth-child(2) span[class*="o1d7ko"]',     // 해시 클래스 변형
-    'td:nth-child(2) code',                      // 코드 블록
-    'td:nth-child(2) .type-content span',        // Storybook 8
-    'td:nth-child(2) [class*="type"] span',      // 타입 관련 클래스
-    '[data-testid="prop-type"]',                 // 테스트 ID 기반
-    'td:nth-child(2) [role="generic"]',          // Carbon DS role 기반 타입
+    'td:nth-child(2) span.css-o1d7ko', // Storybook 7 해시 클래스
+    'td:nth-child(2) span[class*="o1d7ko"]', // 해시 클래스 변형
+    'td:nth-child(2) code', // 코드 블록
+    'td:nth-child(2) .type-content span', // Storybook 8
+    'td:nth-child(2) [class*="type"] span', // 타입 관련 클래스
+    '[data-testid="prop-type"]', // 테스트 ID 기반
+    'td:nth-child(2) [role="generic"]', // Carbon DS role 기반 타입
   ].join(', '),
 
   // Carbon DS 전용 타입 추출 (role="generic" 요소)
@@ -78,7 +78,7 @@ const SELECTORS = {
   defaultValue: [
     'td:nth-child(3) span',
     'td:nth-child(3) code',
-    'td:nth-child(3) .default-value',    // 클래스 기반
+    'td:nth-child(3) .default-value', // 클래스 기반
     'td:nth-child(3) [class*="default"]',
     '[data-testid="prop-default"]',
   ].join(', '),
@@ -233,11 +233,18 @@ export async function extractDSFromUrl(
   const componentInfos = parseComponentsFromIndex(index.entries);
   const totalComponents = componentInfos.length;
 
-  console.log(`[Extractor] ${totalComponents}개 컴포넌트 추출 시작 (동시 처리: ${concurrency}개)`);
+  console.log(
+    `[Extractor] ${totalComponents}개 컴포넌트 추출 시작 (동시 처리: ${concurrency}개)`
+  );
 
   // Playwright 사용 가능 여부 확인
   let playwrightAvailable = false;
-  let fetchDocsWithAPIFallback: ((url: string, timeout?: number) => Promise<{ html: string; apiProps: PropInfo[] | null }>) | null = null;
+  let fetchDocsWithAPIFallback:
+    | ((
+        url: string,
+        timeout?: number
+      ) => Promise<{ html: string; apiProps: PropInfo[] | null }>)
+    | null = null;
   let closeBrowserFn: (() => Promise<void>) | null = null;
 
   if (usePlaywright) {
@@ -249,7 +256,9 @@ export async function extractDSFromUrl(
         closeBrowserFn = playwrightModule.closeBrowser;
       }
     } catch {
-      console.warn('[Extractor] Playwright를 로드할 수 없습니다. Cheerio만 사용합니다.');
+      console.warn(
+        '[Extractor] Playwright를 로드할 수 없습니다. Cheerio만 사용합니다.'
+      );
     }
   }
 
@@ -264,7 +273,9 @@ export async function extractDSFromUrl(
     needsPlaywright: boolean;
   }
 
-  const processWithCheerio = async (info: ComponentInfo): Promise<CheerioResult> => {
+  const processWithCheerio = async (
+    info: ComponentInfo
+  ): Promise<CheerioResult> => {
     // 취소 확인
     if (signal?.aborted) {
       return { info, props: [], needsPlaywright: false };
@@ -293,12 +304,18 @@ export async function extractDSFromUrl(
     return { info, props, needsPlaywright };
   };
 
-  const cheerioResults = await processInBatches(componentInfos, processWithCheerio, concurrency);
+  const cheerioResults = await processInBatches(
+    componentInfos,
+    processWithCheerio,
+    concurrency
+  );
 
   // ==========================================================================
   // 2단계: Playwright 필요한 컴포넌트만 순차적으로 재시도
   // ==========================================================================
-  const componentsNeedingPlaywright = cheerioResults.filter((r) => r.needsPlaywright && r.info.docsId);
+  const componentsNeedingPlaywright = cheerioResults.filter(
+    (r) => r.needsPlaywright && r.info.docsId
+  );
 
   if (
     usePlaywright &&
@@ -328,17 +345,25 @@ export async function extractDSFromUrl(
       }
 
       const { info } = result;
-      const reason = result.props.length === 0 ? 'props 없음' : 'Placeholder 감지';
+      const reason =
+        result.props.length === 0 ? 'props 없음' : 'Placeholder 감지';
       console.log(`[Extractor] ${info.name}: ${reason} → Playwright로 재시도`);
 
       try {
         const docsUrl = `${baseUrl}/iframe.html?id=${info.docsId}&viewMode=docs`;
-        const { html: playwrightHtml, apiProps } = await fetchDocsWithAPIFallback(docsUrl, playwrightTimeout);
+        const { html: playwrightHtml, apiProps } =
+          await fetchDocsWithAPIFallback(docsUrl, playwrightTimeout);
 
         // 1순위: Storybook API에서 추출한 props 사용
-        if (apiProps && apiProps.length > 0 && !apiProps.every(isPlaceholderProp)) {
+        if (
+          apiProps &&
+          apiProps.length > 0 &&
+          !apiProps.every(isPlaceholderProp)
+        ) {
           result.props = apiProps;
-          console.log(`[Extractor] ${info.name}: Storybook API 성공 (${apiProps.length} props)`);
+          console.log(
+            `[Extractor] ${info.name}: Storybook API 성공 (${apiProps.length} props)`
+          );
           consecutiveFailures = 0;
           continue;
         }
@@ -346,9 +371,14 @@ export async function extractDSFromUrl(
         // 2순위: HTML 파싱으로 fallback
         const playwrightProps = parseArgTypesFromHtml(playwrightHtml);
 
-        if (playwrightProps.length > 0 && !playwrightProps.every(isPlaceholderProp)) {
+        if (
+          playwrightProps.length > 0 &&
+          !playwrightProps.every(isPlaceholderProp)
+        ) {
           result.props = playwrightProps;
-          console.log(`[Extractor] ${info.name}: HTML 파싱 성공 (${playwrightProps.length} props)`);
+          console.log(
+            `[Extractor] ${info.name}: HTML 파싱 성공 (${playwrightProps.length} props)`
+          );
           consecutiveFailures = 0;
         } else {
           consecutiveFailures++;
@@ -416,7 +446,9 @@ export async function extractDSFromUrl(
 /**
  * Storybook index.json 가져오기
  */
-export async function fetchStorybookIndex(baseUrl: string): Promise<StorybookIndex> {
+export async function fetchStorybookIndex(
+  baseUrl: string
+): Promise<StorybookIndex> {
   const indexUrl = `${baseUrl}/index.json`;
 
   const response = await fetch(indexUrl, {
@@ -426,7 +458,9 @@ export async function fetchStorybookIndex(baseUrl: string): Promise<StorybookInd
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch index.json: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `Failed to fetch index.json: ${response.status} ${response.statusText}`
+    );
   }
 
   const data = await response.json();
@@ -442,7 +476,10 @@ export async function fetchStorybookIndex(baseUrl: string): Promise<StorybookInd
 /**
  * Docs iframe HTML 가져오기
  */
-export async function fetchDocsHtml(baseUrl: string, docsId: string): Promise<string> {
+export async function fetchDocsHtml(
+  baseUrl: string,
+  docsId: string
+): Promise<string> {
   const docsUrl = `${baseUrl}/iframe.html?id=${docsId}&viewMode=docs`;
 
   const response = await fetch(docsUrl, {
@@ -522,7 +559,9 @@ export function parseComponentsFromIndex(
     );
 
     if (isDocOnlyPage) {
-      console.log(`[Extractor] 문서 페이지 제외: ${comp.category}/${comp.name}`);
+      console.log(
+        `[Extractor] 문서 페이지 제외: ${comp.category}/${comp.name}`
+      );
       return false;
     }
 
@@ -584,7 +623,8 @@ export function parseArgTypesFromHtml(html: string): PropInfo[] {
     // 기본값 (SELECTORS 사용)
     const defaultEl = cells.eq(2).find(SELECTORS.defaultValue).first();
     const defaultText = defaultEl.text().trim();
-    const defaultValue = defaultText === '-' || defaultText === '' ? null : defaultText;
+    const defaultValue =
+      defaultText === '-' || defaultText === '' ? null : defaultText;
 
     // Control 타입 및 옵션
     const { control, options } = extractControlInfo($, cells);
@@ -642,9 +682,22 @@ function extractCarbonDSTypes(
 ): string[] {
   const types: string[] = [];
   const knownTypes = [
-    'boolean', 'string', 'number', 'object', 'function', 'array',
-    'node', 'element', 'symbol', 'any', 'enum', 'union',
-    'true', 'false', 'null', 'undefined',
+    'boolean',
+    'string',
+    'number',
+    'object',
+    'function',
+    'array',
+    'node',
+    'element',
+    'symbol',
+    'any',
+    'enum',
+    'union',
+    'true',
+    'false',
+    'null',
+    'undefined',
   ];
 
   // role="generic" 요소에서 타입 텍스트 찾기
@@ -660,7 +713,9 @@ function extractCarbonDSTypes(
 
     // union 타입 (| 구분자) 처리
     if (text.includes('|')) {
-      const unionTypes = text.split('|').map(t => t.trim().replace(/['"`]/g, ''));
+      const unionTypes = text
+        .split('|')
+        .map((t) => t.trim().replace(/['"`]/g, ''));
       for (const ut of unionTypes) {
         if (ut && !types.includes(ut)) {
           types.push(ut);
@@ -699,15 +754,25 @@ function extractControlInfo(
   const controlCell = cells.length >= 4 ? cells.eq(3) : cells.last();
 
   // Select 체크 (SELECTORS 사용)
-  const select = controlCell.find(SELECTORS.controlSelect.split(', ').map(s => {
-    // 셀 내부 셀렉터로 변환 (td:nth-child(4) select -> select)
-    return s.split(' ').pop() || s;
-  }).join(', '));
+  const select = controlCell.find(
+    SELECTORS.controlSelect
+      .split(', ')
+      .map((s) => {
+        // 셀 내부 셀렉터로 변환 (td:nth-child(4) select -> select)
+        return s.split(' ').pop() || s;
+      })
+      .join(', ')
+  );
   if (select.length) {
     const options: string[] = [];
     select.find('option').each((_, opt) => {
       const value = $(opt).attr('value') || $(opt).text().trim();
-      if (value && value !== 'Choose option...' && value !== '' && value !== 'Select...') {
+      if (
+        value &&
+        value !== 'Choose option...' &&
+        value !== '' &&
+        value !== 'Select...'
+      ) {
         options.push(value);
       }
     });
@@ -718,9 +783,14 @@ function extractControlInfo(
   }
 
   // Input 체크 (SELECTORS 사용)
-  const input = controlCell.find(SELECTORS.controlInput.split(', ').map(s => {
-    return s.split(' ').pop() || s;
-  }).join(', '));
+  const input = controlCell.find(
+    SELECTORS.controlInput
+      .split(', ')
+      .map((s) => {
+        return s.split(' ').pop() || s;
+      })
+      .join(', ')
+  );
   if (input.length) {
     const inputType = input.attr('type');
     if (inputType === 'number') {
@@ -736,17 +806,27 @@ function extractControlInfo(
   }
 
   // Textarea 체크 (SELECTORS 사용)
-  const textarea = controlCell.find(SELECTORS.controlTextarea.split(', ').map(s => {
-    return s.split(' ').pop() || s;
-  }).join(', '));
+  const textarea = controlCell.find(
+    SELECTORS.controlTextarea
+      .split(', ')
+      .map((s) => {
+        return s.split(' ').pop() || s;
+      })
+      .join(', ')
+  );
   if (textarea.length) {
     return { control: 'text', options: null };
   }
 
   // Object editor 체크 (SELECTORS 사용)
-  const objectEditor = controlCell.find(SELECTORS.controlObject.split(', ').map(s => {
-    return s.split(' ').pop() || s;
-  }).join(', '));
+  const objectEditor = controlCell.find(
+    SELECTORS.controlObject
+      .split(', ')
+      .map((s) => {
+        return s.split(' ').pop() || s;
+      })
+      .join(', ')
+  );
   if (objectEditor.length) {
     return { control: 'object', options: null };
   }
@@ -861,12 +941,18 @@ export function isPlaceholderProp(prop: PropInfo): boolean {
   }
 
   // 타입이 unknown만 있는 경우
-  if (prop.type.length === 1 && PLACEHOLDER_PATTERNS.types.includes(prop.type[0])) {
+  if (
+    prop.type.length === 1 &&
+    PLACEHOLDER_PATTERNS.types.includes(prop.type[0])
+  ) {
     return true;
   }
 
   // 설명이 placeholder 패턴인 경우
-  if (prop.description && PLACEHOLDER_PATTERNS.descriptions.includes(prop.description)) {
+  if (
+    prop.description &&
+    PLACEHOLDER_PATTERNS.descriptions.includes(prop.description)
+  ) {
     return true;
   }
 

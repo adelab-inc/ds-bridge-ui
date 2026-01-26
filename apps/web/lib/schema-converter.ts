@@ -204,7 +204,14 @@ function isEnumType(type: string[]): boolean {
   // 모든 값이 짧은 문자열이면 enum으로 간주
   return type.every((t) => {
     // 일반적인 타입명이 아닌 경우 (예: "primary", "secondary")
-    const commonTypes = ['string', 'number', 'boolean', 'object', 'undefined', 'null'];
+    const commonTypes = [
+      'string',
+      'number',
+      'boolean',
+      'object',
+      'undefined',
+      'null',
+    ];
     return !commonTypes.includes(t.toLowerCase()) && t.length < 30;
   });
 }

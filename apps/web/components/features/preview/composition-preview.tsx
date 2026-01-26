@@ -1,20 +1,20 @@
-"use client"
+'use client';
 
-import * as React from "react"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { LayoutIcon } from "@hugeicons/core-free-icons"
+import * as React from 'react';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { LayoutIcon } from '@hugeicons/core-free-icons';
 
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils';
 
 interface CompositionNode {
-  componentId: string
-  storyId?: string
-  props?: Record<string, unknown>
-  children?: CompositionNode[]
+  componentId: string;
+  storyId?: string;
+  props?: Record<string, unknown>;
+  children?: CompositionNode[];
 }
 
-interface CompositionPreviewProps extends React.ComponentProps<"div"> {
-  composition?: CompositionNode[]
+interface CompositionPreviewProps extends React.ComponentProps<'div'> {
+  composition?: CompositionNode[];
 }
 
 function CompositionPreview({
@@ -27,13 +27,17 @@ function CompositionPreview({
       <div
         data-slot="composition-preview"
         className={cn(
-          "bg-muted/50 text-muted-foreground flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center",
+          'bg-muted/50 text-muted-foreground flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center',
           className
         )}
         {...props}
       >
         <div className="bg-muted flex size-16 items-center justify-center rounded-full">
-          <HugeiconsIcon icon={LayoutIcon} className="size-8" strokeWidth={1.5} />
+          <HugeiconsIcon
+            icon={LayoutIcon}
+            className="size-8"
+            strokeWidth={1.5}
+          />
         </div>
         <div className="space-y-1">
           <p className="font-medium">Composition Preview</p>
@@ -47,14 +51,14 @@ function CompositionPreview({
           🚧 이 기능은 준비 중입니다
         </div>
       </div>
-    )
+    );
   }
 
   // TODO: Implement actual composition rendering
   return (
     <div
       data-slot="composition-preview"
-      className={cn("flex-1 overflow-auto p-4", className)}
+      className={cn('flex-1 overflow-auto p-4', className)}
       {...props}
     >
       <div className="bg-background border-border rounded-lg border p-4">
@@ -63,8 +67,8 @@ function CompositionPreview({
         </pre>
       </div>
     </div>
-  )
+  );
 }
 
-export { CompositionPreview }
-export type { CompositionPreviewProps, CompositionNode }
+export { CompositionPreview };
+export type { CompositionPreviewProps, CompositionNode };

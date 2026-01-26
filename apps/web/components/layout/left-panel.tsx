@@ -15,7 +15,7 @@ function LeftPanel({ className, children, ...props }: LeftPanelProps) {
       data-slot="left-panel"
       className={cn(
         'bg-background border-border flex h-full flex-col border-r',
-        className,
+        className
       )}
       {...props}
     >

@@ -26,12 +26,14 @@ export const useCodeGenerationStore = create<CodeGenerationState>((set) => ({
 
   // 액션
   setGeneratedCode: (code) => set({ generatedCode: code }),
-  setIsGeneratingCode: (isGenerating) => set({ isGeneratingCode: isGenerating }),
+  setIsGeneratingCode: (isGenerating) =>
+    set({ isGeneratingCode: isGenerating }),
 
   // 핸들러
   onStreamStart: () => set({ generatedCode: null, isGeneratingCode: true }),
   onStreamEnd: () => set({ isGeneratingCode: false }),
-  onCodeGenerated: (code) => set({ generatedCode: code, isGeneratingCode: false }),
+  onCodeGenerated: (code) =>
+    set({ generatedCode: code, isGeneratingCode: false }),
 
   // 리셋
   reset: () => set({ generatedCode: null, isGeneratingCode: false }),

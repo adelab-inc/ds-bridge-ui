@@ -1,28 +1,28 @@
-"use client"
+'use client';
 
-import * as React from "react"
-import { HugeiconsIcon } from "@hugeicons/react"
+import * as React from 'react';
+import { HugeiconsIcon } from '@hugeicons/react';
 import {
   Copy01Icon,
   CodeIcon,
   Download02Icon,
-} from "@hugeicons/core-free-icons"
+} from '@hugeicons/core-free-icons';
 
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
+} from '@/components/ui/tooltip';
 
-interface ActionsSectionProps extends React.ComponentProps<"section"> {
-  onCopyForAI?: () => void
-  onCopyTokens?: () => void
-  onExportJSON?: () => void
-  disabled?: boolean
+interface ActionsSectionProps extends React.ComponentProps<'section'> {
+  onCopyForAI?: () => void;
+  onCopyTokens?: () => void;
+  onExportJSON?: () => void;
+  disabled?: boolean;
 }
 
 function ActionsSection({
@@ -35,34 +35,34 @@ function ActionsSection({
 }: ActionsSectionProps) {
   const handleCopyForAI = () => {
     if (onCopyForAI) {
-      onCopyForAI()
+      onCopyForAI();
     } else {
-      console.log("Copy for AI clicked")
+      console.log('Copy for AI clicked');
     }
-  }
+  };
 
   const handleCopyTokens = () => {
     if (onCopyTokens) {
-      onCopyTokens()
+      onCopyTokens();
     } else {
-      console.log("Copy Tokens clicked")
+      console.log('Copy Tokens clicked');
     }
-  }
+  };
 
   const handleExportJSON = () => {
     if (onExportJSON) {
-      onExportJSON()
+      onExportJSON();
     } else {
-      console.log("Export JSON clicked")
+      console.log('Export JSON clicked');
     }
-  }
+  };
 
   return (
     <TooltipProvider>
       <section
         data-slot="actions-section"
         className={cn(
-          "bg-card border-border flex flex-col gap-2 rounded-lg border p-4",
+          'bg-card border-border flex flex-col gap-2 rounded-lg border p-4',
           className
         )}
         {...props}
@@ -102,7 +102,11 @@ function ActionsSection({
                 onClick={handleCopyTokens}
                 disabled={disabled}
               >
-                <HugeiconsIcon icon={CodeIcon} className="size-3.5" strokeWidth={2} />
+                <HugeiconsIcon
+                  icon={CodeIcon}
+                  className="size-3.5"
+                  strokeWidth={2}
+                />
                 Copy Tokens
               </Button>
             </TooltipTrigger>
@@ -120,7 +124,11 @@ function ActionsSection({
                 onClick={handleExportJSON}
                 disabled={disabled}
               >
-                <HugeiconsIcon icon={Download02Icon} className="size-3.5" strokeWidth={2} />
+                <HugeiconsIcon
+                  icon={Download02Icon}
+                  className="size-3.5"
+                  strokeWidth={2}
+                />
                 Export JSON
               </Button>
             </TooltipTrigger>
@@ -138,8 +146,8 @@ function ActionsSection({
         )}
       </section>
     </TooltipProvider>
-  )
+  );
 }
 
-export { ActionsSection }
-export type { ActionsSectionProps }
+export { ActionsSection };
+export type { ActionsSectionProps };

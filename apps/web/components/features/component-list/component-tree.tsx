@@ -1,22 +1,25 @@
-"use client"
+'use client';
 
-import * as React from "react"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { ArrowDown01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons"
+import * as React from 'react';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { ArrowDown01Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons';
 
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible"
-import { Button } from "@/components/ui/button"
-import { ComponentItem, type ComponentItemData } from "./component-item"
+} from '@/components/ui/collapsible';
+import { Button } from '@/components/ui/button';
+import { ComponentItem, type ComponentItemData } from './component-item';
 
-interface ComponentTreeProps extends Omit<React.ComponentProps<"div">, 'onSelect'> {
-  components?: ComponentItemData[]
-  selectedId?: string
-  onSelectItem?: (id: string) => void
+interface ComponentTreeProps extends Omit<
+  React.ComponentProps<'div'>,
+  'onSelect'
+> {
+  components?: ComponentItemData[];
+  selectedId?: string;
+  onSelectItem?: (id: string) => void;
 }
 
 function ComponentTree({
@@ -28,27 +31,27 @@ function ComponentTree({
 }: ComponentTreeProps) {
   // Group components by category
   const groupedComponents = React.useMemo(() => {
-    const groups: Record<string, ComponentItemData[]> = {}
+    const groups: Record<string, ComponentItemData[]> = {};
 
     components.forEach((component) => {
-      const category = component.category || "Uncategorized"
+      const category = component.category || 'Uncategorized';
       if (!groups[category]) {
-        groups[category] = []
+        groups[category] = [];
       }
-      groups[category].push(component)
-    })
+      groups[category].push(component);
+    });
 
-    return groups
-  }, [components])
+    return groups;
+  }, [components]);
 
-  const categories = Object.keys(groupedComponents).sort()
+  const categories = Object.keys(groupedComponents).sort();
 
   if (components.length === 0) {
     return (
       <div
         data-slot="component-tree"
         className={cn(
-          "text-muted-foreground flex flex-col items-center justify-center gap-2 py-8 text-center text-sm",
+          'text-muted-foreground flex flex-col items-center justify-center gap-2 py-8 text-center text-sm',
           className
         )}
         {...props}
@@ -56,13 +59,13 @@ function ComponentTree({
         <p>컴포넌트가 없습니다</p>
         <p className="text-xs">Storybook URL을 입력해주세요</p>
       </div>
-    )
+    );
   }
 
   return (
     <div
       data-slot="component-tree"
-      className={cn("flex flex-col gap-1", className)}
+      className={cn('flex flex-col gap-1', className)}
       {...props}
     >
       {categories.map((category) => (
@@ -75,14 +78,14 @@ function ComponentTree({
         />
       ))}
     </div>
-  )
+  );
 }
 
 interface CategoryGroupProps {
-  name: string
-  components: ComponentItemData[]
-  selectedId?: string
-  onSelectItem?: (id: string) => void
+  name: string;
+  components: ComponentItemData[];
+  selectedId?: string;
+  onSelectItem?: (id: string) => void;
 }
 
 function CategoryGroup({
@@ -91,7 +94,7 @@ function CategoryGroup({
   selectedId,
   onSelectItem,
 }: CategoryGroupProps) {
-  const [isOpen, setIsOpen] = React.useState(true)
+  const [isOpen, setIsOpen] = React.useState(true);
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -125,8 +128,8 @@ function CategoryGroup({
         ))}
       </CollapsibleContent>
     </Collapsible>
-  )
+  );
 }
 
-export { ComponentTree }
-export type { ComponentTreeProps }
+export { ComponentTree };
+export type { ComponentTreeProps };

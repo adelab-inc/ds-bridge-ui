@@ -1,40 +1,43 @@
-"use client"
+'use client';
 
-import * as React from "react"
-import { HugeiconsIcon } from "@hugeicons/react"
+import * as React from 'react';
+import { HugeiconsIcon } from '@hugeicons/react';
 import {
   PlayIcon,
   LayoutIcon,
   SparklesIcon,
   Copy01Icon,
   Tick02Icon,
-} from "@hugeicons/core-free-icons"
+} from '@hugeicons/core-free-icons';
 
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
-import { StorybookIframe } from "./storybook-iframe"
-import { CompositionPreview, type CompositionNode } from "./composition-preview"
-import { CodePreviewIframe } from "./code-preview-iframe"
-import { CodePreviewLoading } from "./code-preview-loading"
+} from '@/components/ui/tooltip';
+import { StorybookIframe } from './storybook-iframe';
+import {
+  CompositionPreview,
+  type CompositionNode,
+} from './composition-preview';
+import { CodePreviewIframe } from './code-preview-iframe';
+import { CodePreviewLoading } from './code-preview-loading';
 
-interface PreviewSectionProps extends React.ComponentProps<"section"> {
-  storybookUrl?: string
-  storyId?: string
-  composition?: CompositionNode[]
+interface PreviewSectionProps extends React.ComponentProps<'section'> {
+  storybookUrl?: string;
+  storyId?: string;
+  composition?: CompositionNode[];
   /** AI 생성 코드 (있으면 AI Generated 탭 표시) */
-  aiCode?: string
+  aiCode?: string;
   /** AI 생성 코드의 파일 경로 */
-  aiFilePath?: string
+  aiFilePath?: string;
   /** AI 코드 생성 진행 중 여부 */
-  isGeneratingCode?: boolean
-  defaultTab?: "storybook" | "composition" | "ai-generated"
+  isGeneratingCode?: boolean;
+  defaultTab?: 'storybook' | 'composition' | 'ai-generated';
 }
 
 function PreviewSection({
@@ -44,40 +47,40 @@ function PreviewSection({
   aiCode,
   aiFilePath,
   isGeneratingCode = false,
-  defaultTab = "storybook",
+  defaultTab = 'storybook',
   className,
   ...props
 }: PreviewSectionProps) {
   // AI 코드가 있거나 생성 중이면 자동으로 ai-generated 탭 선택
   const effectiveDefaultTab =
-    aiCode || isGeneratingCode ? "ai-generated" : defaultTab
+    aiCode || isGeneratingCode ? 'ai-generated' : defaultTab;
 
   // Controlled tabs state
-  const [activeTab, setActiveTab] = React.useState<string>(effectiveDefaultTab)
-  const [copied, setCopied] = React.useState(false)
+  const [activeTab, setActiveTab] = React.useState<string>(effectiveDefaultTab);
+  const [copied, setCopied] = React.useState(false);
 
   // aiCode 변경 시 탭 자동 전환
   React.useEffect(() => {
     if (aiCode || isGeneratingCode) {
-      setActiveTab("ai-generated")
+      setActiveTab('ai-generated');
     }
-  }, [aiCode, isGeneratingCode])
+  }, [aiCode, isGeneratingCode]);
 
   // 현재 URL 복사 핸들러
   const handleCopy = React.useCallback(async () => {
     try {
-      await navigator.clipboard.writeText(window.location.href)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error("Failed to copy:", err)
+      console.error('Failed to copy:', err);
     }
-  }, [])
+  }, []);
 
   return (
     <section
       data-slot="preview-section"
-      className={cn("flex h-full flex-col overflow-hidden", className)}
+      className={cn('flex h-full flex-col overflow-hidden', className)}
       {...props}
     >
       <Tabs
@@ -90,16 +93,28 @@ function PreviewSection({
           <TabsList>
             {(aiCode || isGeneratingCode) && (
               <TabsTrigger value="ai-generated" className="gap-1.5">
-                <HugeiconsIcon icon={SparklesIcon} className="size-3.5" strokeWidth={2} />
+                <HugeiconsIcon
+                  icon={SparklesIcon}
+                  className="size-3.5"
+                  strokeWidth={2}
+                />
                 AI Generated
               </TabsTrigger>
             )}
             <TabsTrigger value="storybook" className="gap-1.5">
-              <HugeiconsIcon icon={PlayIcon} className="size-3.5" strokeWidth={2} />
+              <HugeiconsIcon
+                icon={PlayIcon}
+                className="size-3.5"
+                strokeWidth={2}
+              />
               Storybook
             </TabsTrigger>
             <TabsTrigger value="composition" className="gap-1.5">
-              <HugeiconsIcon icon={LayoutIcon} className="size-3.5" strokeWidth={2} />
+              <HugeiconsIcon
+                icon={LayoutIcon}
+                className="size-3.5"
+                strokeWidth={2}
+              />
               Composition
             </TabsTrigger>
           </TabsList>
@@ -133,30 +148,30 @@ function PreviewSection({
         {/* Tabs Content with Copy Button */}
         <div className="relative flex-1 overflow-hidden">
           {/* Copy button - AI Generated 탭 활성화 시에만 표시 */}
-          {aiCode && activeTab === "ai-generated" && (
+          {aiCode && activeTab === 'ai-generated' && (
             <div className="absolute left-3 top-10 z-10">
               <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon-lg"
-                    onClick={handleCopy}
-                    className={cn(
-                      "bg-background/80 backdrop-blur-sm hover:bg-background",
-                      copied && "border-green-600 text-green-600"
-                    )}
-                  >
-                    <HugeiconsIcon
-                      icon={copied ? Tick02Icon : Copy01Icon}
-                      className="size-3.5"
-                      strokeWidth={2}
-                    />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="right">
-                  <p>{copied ? "복사됨!" : "URL 복사"}</p>
-                </TooltipContent>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon-lg"
+                      onClick={handleCopy}
+                      className={cn(
+                        'bg-background/80 backdrop-blur-sm hover:bg-background',
+                        copied && 'border-green-600 text-green-600'
+                      )}
+                    >
+                      <HugeiconsIcon
+                        icon={copied ? Tick02Icon : Copy01Icon}
+                        className="size-3.5"
+                        strokeWidth={2}
+                      />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p>{copied ? '복사됨!' : 'URL 복사'}</p>
+                  </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </div>
@@ -192,8 +207,8 @@ function PreviewSection({
         </div>
       </Tabs>
     </section>
-  )
+  );
 }
 
-export { PreviewSection }
-export type { PreviewSectionProps }
+export { PreviewSection };
+export type { PreviewSectionProps };
