@@ -158,7 +158,7 @@ function ChatSection({
     <section
       data-slot="chat-section"
       className={cn(
-        'bg-card border-border flex flex-col overflow-hidden rounded-lg border',
+        'bg-card border-border flex-1 flex flex-col overflow-hidden rounded-lg border',
         className,
       )}
       {...props}
@@ -179,7 +179,7 @@ function ChatSection({
       {/* Messages */}
       <ChatMessageList
         messages={displayMessages}
-        className="min-h-50 max-h-100 flex-1 overflow-y-auto"
+        className="min-h-0 flex-1 overflow-y-auto"
       />
 
       {/* Input */}

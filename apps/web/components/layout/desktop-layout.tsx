@@ -79,8 +79,8 @@ function DesktopLayout({ onURLSubmit, onJSONUpload }: DesktopLayoutProps) {
                 onStreamEnd={onStreamEnd}
               />
             ) : null}
-            <ComponentListSection />
-            <ActionsSection />
+            {/* <ComponentListSection />
+            <ActionsSection /> */}
           </LeftPanel>
         </ResizablePanel>
 
