@@ -13,6 +13,9 @@ from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
 
+# Default schema key for rooms without one
+DEFAULT_SCHEMA_KEY = "exports/default/component-schema.json"
+
 
 # ============================================================================
 # Type Definitions
@@ -180,7 +183,7 @@ async def create_chat_room(
         storybook_url: Storybook URL (참고용, 선택)
 
     Returns:
-        생성된 채팅방 문서 (schema_key는 null로 생성됨)
+        생성된 채팅방 문서 (기본 schema_key 사용)
 
     Raises:
         FirestoreError: Firestore 작업 실패
@@ -191,7 +194,7 @@ async def create_chat_room(
     room_data: RoomData = {
         "id": room_id,
         "storybook_url": storybook_url,
-        "schema_key": None,
+        "schema_key": DEFAULT_SCHEMA_KEY,
         "user_id": user_id,
         "created_at": get_timestamp_ms(),
     }
@@ -220,7 +223,11 @@ async def get_chat_room(room_id: str) -> RoomData | None:
     doc = await db.collection(CHAT_ROOMS_COLLECTION).document(room_id).get()
 
     if doc.exists:
-        return doc.to_dict()  # type: ignore[return-value]
+        room_data: RoomData = doc.to_dict()  # type: ignore[assignment]
+        # 기존 방에 schema_key가 없으면 기본값 설정
+        if room_data.get("schema_key") is None:
+            room_data["schema_key"] = DEFAULT_SCHEMA_KEY
+        return room_data
     return None
 
 

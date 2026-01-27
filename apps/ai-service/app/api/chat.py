@@ -11,6 +11,7 @@ from app.core.auth import verify_api_key
 from app.schemas.chat import (
     ChatRequest,
     ChatResponse,
+    CurrentComposition,
     FileContent,
     Message,
     ParsedResponse,
@@ -36,34 +37,117 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 
 
-async def resolve_system_prompt(schema_key: str | None) -> str:
+def build_instance_edit_context(
+    composition: CurrentComposition,
+    selected_id: str,
+) -> str:
+    """
+    선택된 인스턴스 편집을 위한 컨텍스트 생성
+
+    Args:
+        composition: 현재 렌더링된 컴포넌트 구조
+        selected_id: 선택된 인스턴스 ID
+
+    Returns:
+        인스턴스 편집 모드 컨텍스트 문자열
+    """
+    # 선택된 인스턴스 찾기
+    selected = None
+    for instance in composition.instances:
+        if instance.id == selected_id:
+            selected = instance
+            break
+
+    if not selected:
+        return ""
+
+    # composition을 dict로 변환
+    composition_dict = {
+        "instances": [
+            {"id": inst.id, "component": inst.component, "props": inst.props}
+            for inst in composition.instances
+        ]
+    }
+
+    return f"""
+
+## INSTANCE EDIT MODE (인스턴스 편집 모드)
+
+사용자가 특정 컴포넌트 인스턴스를 선택했습니다. 해당 인스턴스만 수정하세요.
+
+### 선택된 인스턴스
+- **ID**: {selected.id}
+- **Component**: {selected.component}
+- **Current Props**:
+```json
+{json.dumps(selected.props, indent=2, ensure_ascii=False)}
+```
+
+### 전체 Composition (현재 화면 상태)
+```json
+{json.dumps(composition_dict, indent=2, ensure_ascii=False)}
+```
+
+### 인스턴스 편집 규칙 (CRITICAL)
+
+1. **수정 범위**: 선택된 인스턴스({selected.id})의 props만 수정
+2. **원본 보존**: 컴포넌트 정의(스키마)는 절대 변경 금지
+3. **다른 인스턴스**: 다른 인스턴스는 변경하지 않음
+4. **응답 형식**: 전체 코드를 다시 생성하되, 선택된 인스턴스의 props만 변경
+5. **NO IMPORTS**: import 문을 절대 사용하지 마세요. React.useState, React.useEffect 등 직접 사용
+
+예시) "배경색 파란색으로" 요청 시:
+- 변경 전: `<Button data-instance-id="{selected.id}" variant="primary">로그인</Button>`
+- 변경 후: `<Button data-instance-id="{selected.id}" variant="primary" style={{{{ backgroundColor: 'blue' }}}}>로그인</Button>`
+
+사용자의 요청에 따라 선택된 인스턴스({selected.id})만 수정하세요.
+"""
+
+
+async def resolve_system_prompt(
+    schema_key: str | None,
+    current_composition: CurrentComposition | None = None,
+    selected_instance_id: str | None = None,
+) -> str:
     """
     schema_key 여부에 따라 시스템 프롬프트 반환
 
     Args:
         schema_key: Firebase Storage 스키마 경로 (None이면 자유 모드)
+        current_composition: 현재 렌더링된 컴포넌트 구조 (인스턴스 편집용)
+        selected_instance_id: 선택된 인스턴스 ID (인스턴스 편집용)
 
     Returns:
         시스템 프롬프트 문자열
     """
+    # 기본 프롬프트 생성
     if not schema_key:
-        # 스키마 없으면 자유 모드 (React + Tailwind CSS)
-        return get_free_mode_system_prompt()
+        base_prompt = get_free_mode_system_prompt()
+    else:
+        try:
+            schema = await fetch_schema_from_storage(schema_key)
+            base_prompt = generate_system_prompt(schema)
+        except FileNotFoundError:
+            logger.warning("Schema not found: %s, using free mode", schema_key)
+            base_prompt = get_free_mode_system_prompt()
+        except Exception as e:
+            logger.error("Failed to fetch schema: %s - %s", schema_key, str(e), exc_info=True)
+            raise HTTPException(
+                status_code=500, detail="Failed to load schema from storage. Please try again."
+            ) from e
 
-    try:
-        schema = await fetch_schema_from_storage(schema_key)
-        return generate_system_prompt(schema)
-    except FileNotFoundError:
-        logger.warning("Schema not found: %s, using free mode", schema_key)
-        return get_free_mode_system_prompt()
-    except Exception as e:
-        logger.error("Failed to fetch schema: %s - %s", schema_key, str(e), exc_info=True)
-        raise HTTPException(
-            status_code=500, detail="Failed to load schema from storage. Please try again."
-        ) from e
+    # 인스턴스 편집 모드면 컨텍스트 추가
+    if current_composition and selected_instance_id:
+        instance_context = build_instance_edit_context(
+            current_composition,
+            selected_instance_id,
+        )
+        base_prompt += instance_context
+
+    return base_prompt
 
 
-MAX_HISTORY_COUNT = 5  # 최근 N개 대화만 포함
+MAX_HISTORY_COUNT = 10  # 최근 N개 대화만 포함
 
 
 async def build_conversation_history(
@@ -295,6 +379,8 @@ async def chat(request: ChatRequest) -> ChatResponse:
         provider = get_ai_provider()
         system_prompt = await resolve_system_prompt(
             schema_key=room.get("schema_key"),
+            current_composition=request.current_composition,
+            selected_instance_id=request.selected_instance_id,
         )
 
         # 이전 대화 내역 포함하여 메시지 빌드
@@ -417,6 +503,8 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
         # 4. 시스템 프롬프트 생성 (Firebase Storage에서 스키마 로드 포함)
         system_prompt = await resolve_system_prompt(
             schema_key=room.get("schema_key"),
+            current_composition=request.current_composition,
+            selected_instance_id=request.selected_instance_id,
         )
 
         # 5. 이전 대화 내역 포함하여 메시지 빌드
