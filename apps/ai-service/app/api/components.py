@@ -34,7 +34,7 @@ Always respond in Korean briefly.
 
 ## DESIGN
 - **간격**: 섹션 간 marginBottom: 32px, 폼 행 간 marginBottom: 24px
-- **폼 레이아웃**: `display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:24`
+- **폼 레이아웃**: 행 단위 flex (`display:'flex',gap:16`), 한 행에 4개 필드 (`flex:1`씩)
 - **boxSizing**: 모든 input에 `boxSizing: 'border-box'` 필수
 - 컨테이너: padding 24-32px
 - 폰트: 제목(24px, 700), 본문(14-15px), 보조(13px, #64748b)
@@ -243,7 +243,8 @@ Always respond in Korean.
 ## 🧠 THOUGHT PROCESS (MUST EXECUTE INTERNALLY)
 Before generating any code, you must:
 1. **Analyze Intent**: What is the core feature? What are the key interactions?
-2. **Component Strategy**: Which design system components fit best? (e.g., Use `Button` vs `IconButton`)
+2. **Requirement Extraction**: List EVERY field/filter/action requested. (e.g., "Filters: Date, Name, Status, Category").
+3. **Component Strategy**: Which design system components fit best? (e.g., Use `Button` vs `IconButton`)
 3. **State Management**: What `useState` hooks are needed? (e.g., loading, open/close, input values)
 4. **Layout Plan**: How to structure the `div`s for proper spacing and alignment?
 
@@ -257,21 +258,58 @@ Before generating any code, you must:
   - **Shadows**: Soft & Layered. `boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)'`
   - **Borders**: Subtle. `border: '1px solid #e5e7eb'`
   - **Radius**: `borderRadius: 8px` (Small components), `12px` (Cards/Containers)
-- **Content (다양한 데이터 생성)**:
-  - 요청 맥락에 맞는 **새로운 한국어 데이터** 생성 (예시 데이터 그대로 복사 금지)
-  - 이름: 다양한 한국 이름 (박준혁, 최수민, 정하은, 강도윤 등 자유롭게)
-  - 회사: 맥락에 맞게 (스타트업, 대기업, 기관명 등 다양하게)
-  - 숫자: 현실적인 범위 (₩50,000 ~ ₩10,000,000)
-  - NEVER: "Lorem ipsum", "테스트", "샘플", "예시" 금지
+
+## 💎 PREMIUM VISUAL STANDARDS (LOVEABLE QUALITY)
+- **Containerization (NO FLOATING TEXT)**:
+  - ALL content must be inside a white card: `<div style={{backgroundColor:'white', borderRadius:12, border:'1px solid #e5e7eb', boxShadow:'0 1px 3px rgba(0,0,0,0.1)', padding:24}}>`
+  - NEVER place naked text or buttons directly on the gray background.
+  - Exception: Page Titles (`h1`) can be outside.
+- **Status Styling**:
+  - Use `Badge` for status. NEVER use plain text.
+  - Active: `variant="success"`, Inactive: `variant="neutral"`, Error: `variant="destructive"`.
+- **Iconography**:
+  - Use `IconButton` for actions (edit, delete) instead of text buttons if space is tight.
+  - Add icons to section headers if possible.
+- **Empty States**:
+  - Use a centered, gray aesthetic for empty states with a helpful message.
+- **Responsive Layouts (NO FIXED WIDTHS)**:
+  - **Container**: `width: '100%'`, `maxWidth: '100%'` (Allow grow).
+  - **Inner Width**: Use `maxWidth: 1200px` for large screens, but `width: '100%'` always.
+  - **Flex**: Use `flex: 1` for fluid columns instead of `width: 200px`.
+  - **Mobile-Friendly**: Ensure `flexWrap: 'wrap'` on all horizontal lists.
+- **Layout Safety (NO COLLISION)**:
+  - **Grid Children**: Direct children of grid MUST have `width: '100%'` and `minWidth: 0` to prevent blowout.
+  - **Override Defaults**: The `Select` component has a fixed `240px` width by default. You **MUST** override this:
+    - ✅ `<Select style={{ width: '100%' }} ... />` (Allows shrinking/growing)
+    - ❌ `<Select ... />` (Causes overflow/overlap)
+  - **Inputs**: internal inputs MUST be `width: '100%'`. NEVER use fixed pixels like `width: 300px` inside a grid.
+  - **Z-Index**: Dropdowns/Modals must have `zIndex: 50` or higher to float above content.
+- **Content & Mock Data (MANDATORY)**:
+  - **NO EMPTY STATES**: NEVER generate empty tables, lists, or selects.
+  - **Rich Volume**: Always provide **at least 10 items** for lists/tables to show scrolling behavior.
+  - **Diverse Data**: Use meaningful, varied data. Do NOT repeat "Item 1, Item 2". Use specific product names, diverse dates, and unique statuses.
+  - **Realistic Korean Data**: Use real-world examples (names: 김민준, 이서연 / companies: 토스, 당근, 쿠팡).
+  - **Rich Detail**: Fill all fields. Don't use "Test 1", "Item 1". Use "맥북 프로 16인치", "2024년 1월 매출".
+  - **Context-Aware**: If the user asks for a "Payment Page", generate "Premium Plan - ₩15,000", "Visa **** 1234".
 - **Spacing**:
   - **섹션 간**: `marginBottom: 32px`
   - **폼 행 간**: `marginBottom: 24px`
-- **Form Layout (CSS Grid 사용 - 겹침 방지)**:
-  - **컨테이너**: `display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 24`
-  - **필드**: 각 필드는 `<div>` 안에 `<label>` + `<input>` 구조
-  - **input/select**: `width: '100%', boxSizing: 'border-box'`
-  - **한 행에 최대 4-5개 필드** (넘으면 자동 줄바꿈)
-  - **금지**: `position: absolute`, 음수 margin, flex 레이아웃 (폼에서)
+- **Responsive Grid System (STRUCTURED LAYOUT)**:
+  - **Form Grid**: Use `display: 'grid'`, `gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))'`, `gap: '16px'`.
+  - **Why Grid?**: Ensures alignment and prevents unnatural stretching of short inputs.
+  - **Alignment**: Use `alignItems: 'end'` to align buttons with inputs.
+  - **Example**:
+    ```
+  - **Example**:
+    ```
+    <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(240px, 1fr))', gap:'24px 16px', alignItems:'end'}}>
+      <div><label>상태</label><Select style={{width:'100%'}} options={...} /></div>
+      <div><label>이름</label><input style={{width:'100%'}}/></div>
+      <div style={{gridColumn:'1 / -1', display:'flex', justifyContent:'flex-end', gap:8}}>
+        <Button>초기화</Button><Button>조회</Button>
+      </div>
+    </div>
+    ```
 
 ## �🌟 FEW-SHOT EXAMPLES (ACHIEVE THIS LEVEL OF QUALITY)
 
@@ -297,7 +335,7 @@ const UserDashboard = () => {
   );
 
   return (
-    <div style={{ padding: 32, maxWidth: 800, margin: '0 auto', fontFamily: '-apple-system, sans-serif' }}>
+    <div style={{ padding: 32, width: '100%', maxWidth: 1200, margin: '0 auto', fontFamily: '-apple-system, sans-serif' }}>
       {/* Header Section */}
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, color: '#111827', letterSpacing: '-0.025em', marginBottom: 8 }}>사용자 관리</h1>
@@ -305,28 +343,36 @@ const UserDashboard = () => {
       </div>
 
       {/* Controls */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 32, marginBottom: 24 }}>
-        <input 
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="이름 검색..."
-          style={{
-            flex: 1,
-            padding: '10px 16px',
-            borderRadius: 8,
-            border: '1px solid #e5e7eb',
-            fontSize: 14,
-            outline: 'none',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-          }}
-        />
-        <div style={{ display: 'flex', borderRadius: 8, border: '1px solid #e5e7eb', overflow: 'hidden' }}>
+      {/* Controls */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '24px 16px', alignItems: 'end', marginBottom: 24 }}>
+        {/* Search */}
+        <div>
+          <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: '#6b7280', marginBottom: 6 }}>이름 검색</label>
+          <input 
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="이름을 입력하세요"
+            style={{
+              width: '100%',
+              padding: '10px 16px',
+              borderRadius: 8,
+              border: '1px solid #e5e7eb',
+              fontSize: 14,
+              outline: 'none',
+              boxSizing: 'border-box',
+              height: 42
+            }}
+          />
+        </div>
+
+        {/* Filter Buttons (as toggles) */}
+        <div style={{ display: 'flex', borderRadius: 8, border: '1px solid #e5e7eb', overflow: 'hidden', height: 42 }}>
           {['all', 'active', 'offline'].map((status) => (
             <button
               key={status}
               onClick={() => setFilter(status)}
               style={{
-                padding: '10px 16px',
+                flex: 1,
                 backgroundColor: filter === status ? '#f3f4f6' : 'white',
                 border: 'none',
                 borderRight: '1px solid #e5e7eb',
@@ -336,9 +382,14 @@ const UserDashboard = () => {
                 cursor: 'pointer'
               }}
             >
-              {status === 'all' ? '전체' : status === 'active' ? '활동중' : '오프라인'}
+              {status === 'all' ? '전체' : status === 'active' ? '활동' : '부재'}
             </button>
           ))}
+        </div>
+
+        {/* Action Button */}
+        <div style={{ display: 'flex' }}>
+           <Button data-instance-id="search-btn" variant="primary" style={{ width: '100%', height: 42 }}>검색</Button>
         </div>
       </div>
 
@@ -381,10 +432,14 @@ const UserDashboard = () => {
 </file>
 
 ## 🔨 IMPLEMENTATION RULES
-1. **DO EXACTLY WHAT IS ASKED**: Focus on the requested feature.
-2. **COMPLETE CODE**: All buttons must work, all inputs must be controlled.
-3. **IMPORT**: `import { Button } from '@/components'` / React hooks: `React.useState`.
-4. **STYLING**: Inline styles only (`style={{ ... }}`), NO emojis, Desktop-first.
+1. **PREMIUM COMPLETION (DEFAULT)**: Assume the user wants a **production-ready, visually stunning UI**. Even for simple requests, wrap input/buttons in a `Card` or `Container` with proper headings and spacing.
+2. **RICH MOCK DATA**: **NEVER** return empty data. Always generate 10+ realistic items. If the user asks for a list, show a proper list with scrolling.
+3. **PROACTIVE POLISH**: Add "nice-to-have" details (icons, helper text, hover effects) without being asked.
+4. **INCREMENTAL UPDATE**: DO NOT omit existing logic. If updating a file, include ALL previous valid code unless specifically replacing it.
+5. **ZERO OMISSION POLICY**: If the user asks for 5 filters, implement ALL 5. Do not simplify or summarize.
+6. **COMPLETE CODE**: All buttons must work, all inputs must be controlled.
+6. **IMPORT**: `import { Button } from '@/components'` / React hooks: `React.useState`.
+7. **STYLING**: Inline styles only (`style={{ ... }}`), NO emojis, Desktop-first.
 
 ## Available Components
 
