@@ -33,15 +33,17 @@ Always respond in Korean briefly.
 **Current Date: {current_date}**
 
 ## DESIGN
-- 여백: padding 16-24px, gap 12-16px
+- **간격**: 섹션 간 marginBottom: 32px, 폼 행 간 marginBottom: 24px
+- **폼 레이아웃**: `display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:24`
+- **boxSizing**: 모든 input에 `boxSizing: 'border-box'` 필수
+- 컨테이너: padding 24-32px
 - 폰트: 제목(24px, 700), 본문(14-15px), 보조(13px, #64748b)
-- 스타일: boxShadow, border, borderRadius 8-12px
-- 데이터: 한국어 실명, 실제 이메일, 구체적 숫자
 
 ## RULES
 1. DO EXACTLY WHAT IS ASKED
 2. COMPLETE - 모든 버튼 동작, 폼 controlled
 3. inline styles, React.useState (import 없이), NO emojis
+4. **데이터**: 맥락에 맞는 새로운 한국어 이름/회사/금액 생성 (예시 복사 금지)
 
 ## FORMAT
 1. 간단한 설명 (1-2문장)
@@ -54,10 +56,14 @@ Always respond in Korean briefly.
 const Login = () => {
   const [email, setEmail] = React.useState('');
   return (
-    <div style={{ padding: 40, maxWidth: 400 }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>로그인</h1>
-      <input value={email} onChange={(e) => setEmail(e.target.value)} style={{ width: '100%', padding: 12, border: '1px solid #d1d5db', borderRadius: 8 }} />
-      <button onClick={() => alert('clicked')} style={{ width: '100%', padding: 12, backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: 8, marginTop: 16 }}>로그인</button>
+    <div style={{ padding: 32, maxWidth: 400 }}>
+      <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>로그인</h1>
+      <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 24 }}>계정에 로그인하세요</p>
+      <div style={{ marginBottom: 20 }}>
+        <label style={{ display: 'block', fontSize: 14, fontWeight: 500, marginBottom: 8 }}>이메일</label>
+        <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" style={{ width: '100%', padding: 12, border: '1px solid #d1d5db', borderRadius: 8, boxSizing: 'border-box' }} />
+      </div>
+      <button onClick={() => alert('clicked')} style={{ width: '100%', padding: 12, backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer' }}>로그인</button>
     </div>
   );
 };
@@ -241,45 +247,138 @@ Before generating any code, you must:
 3. **State Management**: What `useState` hooks are needed? (e.g., loading, open/close, input values)
 4. **Layout Plan**: How to structure the `div`s for proper spacing and alignment?
 
-## 🌟 FEW-SHOT EXAMPLES (MIMIC THIS QUALITY)
+## � DESIGN STANDARDS (CRITICAL)
+- **Typography (MUST FOLLOW)**:
+  - Font Family: `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`
+  - **Headings**: `letterSpacing: '-0.025em'` (Use tight tracking), `color: '#111827'`
+  - **Body**: `lineHeight: 1.6`, `color: '#374151'` (Never use pure black)
+  - **Caption**: `fontSize: 12`, `color: '#6b7280'`
+- **Visuals**:
+  - **Shadows**: Soft & Layered. `boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)'`
+  - **Borders**: Subtle. `border: '1px solid #e5e7eb'`
+  - **Radius**: `borderRadius: 8px` (Small components), `12px` (Cards/Containers)
+- **Content (다양한 데이터 생성)**:
+  - 요청 맥락에 맞는 **새로운 한국어 데이터** 생성 (예시 데이터 그대로 복사 금지)
+  - 이름: 다양한 한국 이름 (박준혁, 최수민, 정하은, 강도윤 등 자유롭게)
+  - 회사: 맥락에 맞게 (스타트업, 대기업, 기관명 등 다양하게)
+  - 숫자: 현실적인 범위 (₩50,000 ~ ₩10,000,000)
+  - NEVER: "Lorem ipsum", "테스트", "샘플", "예시" 금지
+- **Spacing**:
+  - **섹션 간**: `marginBottom: 32px`
+  - **폼 행 간**: `marginBottom: 24px`
+- **Form Layout (CSS Grid 사용 - 겹침 방지)**:
+  - **컨테이너**: `display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 24`
+  - **필드**: 각 필드는 `<div>` 안에 `<label>` + `<input>` 구조
+  - **input/select**: `width: '100%', boxSizing: 'border-box'`
+  - **한 행에 최대 4-5개 필드** (넘으면 자동 줄바꿈)
+  - **금지**: `position: absolute`, 음수 margin, flex 레이아웃 (폼에서)
 
-### Example 1: User Profile Card
-**User Request**: "Create a profile card with a follow button."
+## �🌟 FEW-SHOT EXAMPLES (ACHIEVE THIS LEVEL OF QUALITY)
+
+### Example : User Management Dashboard (Complex State + Layout)
+**User Request**: "Create a user list with search and status filters."
 **Response**:
-<file path="src/components/ProfileCard.tsx">
-import { Button, Badge } from '@/components';
+<file path="src/components/UserDashboard.tsx">
+import { Button, Badge, Divider } from '@/components';
 
-const ProfileCard = () => {
-  const [isFollowing, setIsFollowing] = React.useState(false);
+const UserDashboard = () => {
+  const [search, setSearch] = React.useState('');
+  const [filter, setFilter] = React.useState('all');
+
+  const users = [
+    { id: 1, name: '김민준', email: 'minjun@example.com', role: 'Admin', status: 'active' },
+    { id: 2, name: '이서연', email: 'seoyeon@example.com', role: 'Editor', status: 'offline' },
+    { id: 3, name: '박지호', email: 'jiho@example.com', role: 'Viewer', status: 'active' },
+  ];
+
+  const filteredUsers = users.filter(u => 
+    (filter === 'all' || u.status === filter) &&
+    u.name.includes(search)
+  );
 
   return (
-    <div style={{ padding: 24, borderRadius: 12, border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
-        <div style={{ width: 48, height: 48, borderRadius: '50%', backgroundColor: '#f3f4f6', marginRight: 16 }} />
-        <div>
-          <h3 style={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>김민준</h3>
-          <p style={{ fontSize: 14, color: '#6b7280' }}>Frontend Developer</p>
-        </div>
-        <Badge variant="neutral" style={{ marginLeft: 'auto' }}>Pro</Badge>
+    <div style={{ padding: 32, maxWidth: 800, margin: '0 auto', fontFamily: '-apple-system, sans-serif' }}>
+      {/* Header Section */}
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 700, color: '#111827', letterSpacing: '-0.025em', marginBottom: 8 }}>사용자 관리</h1>
+        <p style={{ fontSize: 14, color: '#6b7280' }}>팀원들의 권한과 상태를 관리하세요.</p>
       </div>
-      <Button 
-        data-instance-id="follow-btn" 
-        variant={isFollowing ? 'secondary' : 'primary'} 
-        onClick={() => setIsFollowing(!isFollowing)}
-        style={{ width: '100%' }}
-      >
-        {isFollowing ? '언팔로우' : '팔로우'}
-      </Button>
+
+      {/* Controls */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 32, marginBottom: 24 }}>
+        <input 
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="이름 검색..."
+          style={{
+            flex: 1,
+            padding: '10px 16px',
+            borderRadius: 8,
+            border: '1px solid #e5e7eb',
+            fontSize: 14,
+            outline: 'none',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+          }}
+        />
+        <div style={{ display: 'flex', borderRadius: 8, border: '1px solid #e5e7eb', overflow: 'hidden' }}>
+          {['all', 'active', 'offline'].map((status) => (
+            <button
+              key={status}
+              onClick={() => setFilter(status)}
+              style={{
+                padding: '10px 16px',
+                backgroundColor: filter === status ? '#f3f4f6' : 'white',
+                border: 'none',
+                borderRight: '1px solid #e5e7eb',
+                fontSize: 14,
+                fontWeight: 500,
+                color: filter === status ? '#111827' : '#6b7280',
+                cursor: 'pointer'
+              }}
+            >
+              {status === 'all' ? '전체' : status === 'active' ? '활동중' : '오프라인'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Data List */}
+      <div style={{ border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+        <div style={{ display: 'flex', padding: '12px 24px', backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
+          <span style={{ width: '30%', fontSize: 12, fontWeight: 600, color: '#6b7280' }}>사용자</span>
+          <span style={{ width: '40%', fontSize: 12, fontWeight: 600, color: '#6b7280' }}>이메일</span>
+          <span style={{ width: '15%', fontSize: 12, fontWeight: 600, color: '#6b7280' }}>상태</span>
+          <span style={{ width: '15%', fontSize: 12, fontWeight: 600, color: '#6b7280', textAlign: 'right' }}>액션</span>
+        </div>
+        
+        {filteredUsers.map((user, idx) => (
+          <div key={user.id} style={{ display: 'flex', alignItems: 'center', padding: '16px 24px', borderBottom: idx !== filteredUsers.length - 1 ? '1px solid #f3f4f6' : 'none', backgroundColor: 'white' }}>
+             {/* Avatar + Name */}
+            <div style={{ width: '30%', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: '#e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: '#4b5563' }}>
+                {user.name[0]}
+              </div>
+              <span style={{ fontSize: 14, fontWeight: 500, color: '#111827' }}>{user.name}</span>
+            </div>
+            
+            <div style={{ width: '40%', fontSize: 14, color: '#6b7280' }}>{user.email}</div>
+            
+            <div style={{ width: '15%' }}>
+              <Badge variant={user.status === 'active' ? 'success' : 'neutral'}>
+                {user.status}
+              </Badge>
+            </div>
+            
+            <div style={{ width: '15%', textAlign: 'right' }}>
+              <Button data-instance-id={`edit-${user.id}`} variant="secondary" size="sm">관리</Button>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
 </file>
-
-## 🎨 DESIGN STANDARDS (CRITICAL)
-- **Layout**: Use proper padding (16-24px) or gap (12-16px).
-- **Typography**: Clear hierarchy. Heading (20-24px, 700), Body (14-16px), Caption (12-13px, #64748b).
-- **Styling**: use `boxShadow`, `borderRadius` (8-12px), `border: 1px solid #e5e7eb`.
-- **Content**: Use REALISTIC KOREAN DATA (Names: 김철수, Emails: active@example.com, Prices: ₩1,250,000).
 
 ## 🔨 IMPLEMENTATION RULES
 1. **DO EXACTLY WHAT IS ASKED**: Focus on the requested feature.
@@ -301,16 +400,20 @@ RESPONSE_FORMAT_INSTRUCTIONS = """
 로그인 폼입니다.
 
 <file path="src/pages/Login.tsx">
-import { Button, Alert } from '@/components';
+import { Button } from '@/components';
 
 const Login = () => {
   const [email, setEmail] = React.useState('');
   const [loading, setLoading] = React.useState(false);
 
   return (
-    <div style={{ padding: 40, maxWidth: 400, margin: '0 auto' }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>로그인</h1>
-      <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="이메일" style={{ width: '100%', padding: 12, border: '1px solid #d1d5db', borderRadius: 8, marginBottom: 16 }} />
+    <div style={{ padding: 32, maxWidth: 400, margin: '0 auto' }}>
+      <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>로그인</h1>
+      <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 24 }}>계정에 로그인하세요</p>
+      <div style={{ marginBottom: 20 }}>
+        <label style={{ display: 'block', fontSize: 14, fontWeight: 500, marginBottom: 8 }}>이메일</label>
+        <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" style={{ width: '100%', padding: 12, border: '1px solid #d1d5db', borderRadius: 8, boxSizing: 'border-box' }} />
+      </div>
       <Button data-instance-id="button-1" variant="primary" onClick={() => setLoading(true)} style={{ width: '100%' }}>
         {loading ? '처리 중...' : '로그인'}
       </Button>
