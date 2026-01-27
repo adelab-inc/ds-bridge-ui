@@ -1,6 +1,6 @@
 {
   "button": {
-    "base": "inline-flex justify-center items-center py-component-inset-button-y",
+    "base": "inline-flex justify-center items-center",
     "variants": {
       "variant": {
         "primary": "bg-bg-accent",
@@ -11,9 +11,13 @@
         "outline-destructive": "outline outline-1"
       },
       "size": {
-        "lg": "min-w-[56px] px-component-inset-button-lg-x text-button-lg-medium rounded-lg gap-component-gap-icon-label-x-md",
-        "md": "min-w-[52px] px-component-inset-button-md-x text-button-md-medium rounded-lg gap-component-gap-icon-label-x-md",
-        "sm": "min-w-[49px] px-component-inset-button-sm-x text-button-sm-medium rounded-md gap-component-gap-icon-label-x-sm"
+        "lg": "min-w-[56px] text-button-lg-medium rounded-lg",
+        "md": "min-w-[52px] text-button-md-medium rounded-lg",
+        "sm": "min-w-[49px] text-button-sm-medium rounded-md"
+      },
+      "mode": {
+        "base": "",
+        "compact": ""
       },
       "isLoading": {
         "true": "cursor-wait",
@@ -25,6 +29,36 @@
       }
     },
     "compoundVariants": [
+      {
+        "mode": "base",
+        "size": "lg",
+        "class": "px-component-inset-button-lg-x py-component-inset-button-y gap-component-gap-icon-label-md"
+      },
+      {
+        "mode": "base",
+        "size": "md",
+        "class": "px-component-inset-button-md-x py-component-inset-button-y gap-component-gap-icon-label-md"
+      },
+      {
+        "mode": "base",
+        "size": "sm",
+        "class": "px-component-inset-button-sm-x py-component-inset-button-y gap-component-gap-icon-label-sm"
+      },
+      {
+        "mode": "compact",
+        "size": "lg",
+        "class": "px-component-inset-button-lg-x-compact py-component-inset-button-y-compact gap-component-gap-icon-label-md-compact"
+      },
+      {
+        "mode": "compact",
+        "size": "md",
+        "class": "px-component-inset-button-md-x-compact py-component-inset-button-y-compact gap-component-gap-icon-label-md-compact"
+      },
+      {
+        "mode": "compact",
+        "size": "sm",
+        "class": "px-component-inset-button-sm-x-compact py-component-inset-button-y-compact gap-component-gap-icon-label-sm-compact"
+      },
       {
         "variant": ["primary", "secondary", "destructive"],
         "isDisabled": true,
@@ -128,6 +162,7 @@
     "defaultVariants": {
       "variant": "primary",
       "size": "md",
+      "mode": "base",
       "isLoading": false,
       "isDisabled": false
     }
@@ -142,9 +177,13 @@
         "tertiary": "bg-bg-subtle"
       },
       "size": {
-        "lg": "w-[40px] h-[40px] text-button-lg-medium rounded-lg",
-        "md": "w-[36px] h-[36px] text-button-md-medium rounded-lg",
-        "sm": "w-[32px] h-[32px] text-button-sm-medium rounded-[6px]"
+        "lg": "text-button-lg-medium rounded-lg",
+        "md": "text-button-md-medium rounded-lg",
+        "sm": "text-button-sm-medium rounded-[6px]"
+      },
+      "mode": {
+        "base": "",
+        "compact": ""
       },
       "isLoading": {
         "true": "cursor-wait",
@@ -156,6 +195,36 @@
       }
     },
     "compoundVariants": [
+      {
+        "mode": "base",
+        "size": "lg",
+        "class": "w-[40px] h-[40px]"
+      },
+      {
+        "mode": "base",
+        "size": "md",
+        "class": "w-[36px] h-[36px]"
+      },
+      {
+        "mode": "base",
+        "size": "sm",
+        "class": "w-[32px] h-[32px]"
+      },
+      {
+        "mode": "compact",
+        "size": "lg",
+        "class": "w-[40px] h-[40px]"
+      },
+      {
+        "mode": "compact",
+        "size": "md",
+        "class": "w-[36px] h-[36px]"
+      },
+      {
+        "mode": "compact",
+        "size": "sm",
+        "class": "w-[32px] h-[32px]"
+      },
       {
         "variant": "ghost",
         "isDisabled": false,
@@ -227,6 +296,7 @@
     "defaultVariants": {
       "variant": "ghost",
       "size": "md",
+      "mode": "base",
       "isLoading": false,
       "isDisabled": false
     }
@@ -272,14 +342,29 @@
     }
   },
   "pagination": {
-    "base": "flex items-center justify-center gap-layout-stack-xs",
+    "base": "flex items-center justify-center",
     "variants": {
+      "mode": {
+        "base": "",
+        "compact": ""
+      },
       "disabled": {
         "true": "cursor-not-allowed opacity-50",
         "false": ""
       }
     },
+    "compoundVariants": [
+      {
+        "mode": "base",
+        "class": "gap-layout-stack-xs"
+      },
+      {
+        "mode": "compact",
+        "class": "gap-layout-stack-xs-compact"
+      }
+    ],
     "defaultVariants": {
+      "mode": "base",
       "disabled": false
     }
   },
@@ -308,10 +393,14 @@
     "base": "inline-flex items-center shrink-0 rounded-full",
     "variants": {
       "type": {
-        "level": "py-component-inset-pill-y px-component-inset-pill-x gap-component-gap-icon-label-x-xs text-caption-xs-regular",
-        "status": "py-component-inset-pill-y px-component-inset-pill-x gap-component-gap-icon-label-x-xs text-caption-xs-regular",
-        "count": "py-component-inset-pill-y px-component-inset-pill-x gap-component-gap-icon-label-x-xs text-caption-xs-medium",
+        "level": "text-caption-xs-regular",
+        "status": "text-caption-xs-regular",
+        "count": "text-caption-xs-medium",
         "dot": "w-[6px] h-[6px]"
+      },
+      "mode": {
+        "base": "",
+        "compact": ""
       },
       "levelVariant": {
         "announcement": ""
@@ -322,80 +411,80 @@
         "warning": "",
         "error": ""
       },
-      "variant": {
-        "announcement-solid": "",
-        "announcement-subtle": "",
-        "info-solid": "",
-        "info-subtle": "",
-        "success-solid": "",
-        "success-subtle": "",
-        "warning-solid": "",
-        "warning-subtle": "",
-        "error-solid": "",
-        "error-subtle": "",
+      "appearance": {
         "solid": "",
         "subtle": ""
       }
     },
     "compoundVariants": [
       {
+        "mode": "base",
+        "type": ["level", "status", "count"],
+        "class": "py-component-inset-pill-y px-component-inset-pill-x gap-component-gap-icon-label-xs"
+      },
+      {
+        "mode": "compact",
+        "type": ["level", "status", "count"],
+        "class": "py-component-inset-pill-y-compact px-component-inset-pill-x-compact gap-component-gap-icon-label-xs-compact"
+      },
+      {
         "type": "level",
         "levelVariant": "announcement",
-        "variant": "announcement-solid",
+        "appearance": "solid",
         "class": "bg-badge-primary-solid-bg text-badge-solid-text"
       },
       {
         "type": "level",
         "levelVariant": "announcement",
-        "variant": "announcement-subtle",
+        "appearance": "subtle",
         "class": "bg-badge-primary-subtle-bg text-badge-primary-subtle-text"
       },
       {
         "type": "status",
         "statusVariant": "info",
-        "variant": "info-solid",
+        "appearance": "solid",
         "class": "bg-bg-semantic-info text-badge-solid-text"
       },
       {
         "type": "status",
         "statusVariant": "info",
-        "variant": "info-subtle",
+        "appearance": "subtle",
         "class": "bg-badge-status-info-subtle-bg text-badge-status-info-subtle-text"
       },
       {
         "type": "status",
         "statusVariant": "success",
-        "variant": "success-solid",
+        "appearance": "solid",
         "class": "bg-bg-semantic-success text-badge-solid-text"
       },
       {
         "type": "status",
         "statusVariant": "success",
-        "variant": "success-subtle",
+        "appearance": "subtle",
         "class": "bg-badge-status-success-subtle-bg text-badge-status-success-subtle-text"
       },
       {
         "type": "status",
         "statusVariant": "warning",
-        "variant": "warning-solid",
+        "appearance": "solid",
         "class": "bg-bg-semantic-warning text-badge-solid-text"
       },
       {
         "type": "status",
         "statusVariant": "warning",
-        "variant": "warning-subtle",
+        "appearance": "subtle",
         "class": "bg-badge-status-warning-subtle-bg text-badge-status-warning-subtle-text"
       },
       {
         "type": "status",
         "statusVariant": "error",
-        "variant": "error-solid",
+        "appearance": "solid",
         "class": "bg-bg-semantic-error text-badge-solid-text"
       },
       {
         "type": "status",
         "statusVariant": "error",
-        "variant": "error-subtle",
+        "appearance": "subtle",
         "class": "bg-badge-status-error-subtle-bg text-badge-status-error-subtle-text"
       },
       {
@@ -409,39 +498,37 @@
     ],
     "defaultVariants": {
       "type": "level",
+      "mode": "base",
       "levelVariant": "announcement",
-      "variant": "announcement-solid"
-    }
-  },
-  "scrollbar": {
-    "base": "overflow-auto bg-role-bg-surface",
-    "variants": {
-      "variant": {
-        "default": ""
-      }
-    },
-    "defaultVariants": {
-      "variant": "default"
+      "appearance": "solid"
     }
   },
   "chip": {
-    "base": "inline-flex items-center rounded-full px-component-inset-chip-x py-component-inset-chip-y cursor-pointer",
+    "base": "inline-flex items-center rounded-full cursor-pointer",
     "variants": {
+      "variant": {
+        "default": "",
+        "ghost": ""
+      },
       "size": {
         "md": "text-chip-label-md-medium",
         "sm": "text-chip-label-sm-medium"
       },
+      "mode": {
+        "base": "",
+        "compact": ""
+      },
       "state": {
-        "default": "bg-chip-bg-off text-text-primary border border-transparent",
+        "default": "",
         "selected": "",
-        "disabled": "text-text-disabled bg-chip-bg-disabled"
+        "disabled": "cursor-not-allowed"
       },
       "selectionStyle": {
         "single": "",
         "multiple": ""
       },
       "hasIcon": {
-        "true": "pl-component-inset-chip-with-icon-x",
+        "true": "",
         "false": ""
       },
       "hasCloseButton": {
@@ -451,22 +538,58 @@
     },
     "compoundVariants": [
       {
+        "mode": "base",
+        "class": "px-component-inset-chip-x py-component-inset-chip-y"
+      },
+      {
+        "mode": "compact",
+        "class": "px-component-inset-chip-x-compact py-component-inset-chip-y-compact"
+      },
+      {
+        "mode": "base",
+        "hasIcon": true,
+        "class": "pl-component-inset-chip-with-icon-x"
+      },
+      {
+        "mode": "compact",
+        "hasIcon": true,
+        "class": "pl-component-inset-chip-with-icon-x-compact"
+      },
+      {
+        "variant": "default",
         "state": "default",
-        "class": "hover:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-hover),theme(colors.state-overlay-on-neutral-hover)),theme(colors.chip-bg-off)] active:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-pressed),theme(colors.state-overlay-on-neutral-pressed)),theme(colors.chip-bg-off)] focus:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]"
+        "class": "text-text-primary bg-chip-bg-off border border-transparent hover:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-hover),theme(colors.state-overlay-on-neutral-hover))] [&:active:not(:has(button:active))]:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-pressed),theme(colors.state-overlay-on-neutral-pressed))] focus:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]"
       },
       {
-        "state": "selected",
-        "selectionStyle": "single",
-        "class": "text-text-on-selection bg-chip-bg-off border border-transparent"
+        "variant": "default",
+        "state": "disabled",
+        "class": "text-text-disabled bg-chip-bg-disabled border border-transparent"
       },
       {
+        "variant": "default",
         "state": "selected",
-        "selectionStyle": "multiple",
-        "class": "text-text-on-selection border border-border-selection bg-chip-bg-selected"
+        "class": "text-text-on-selection border border-border-selection bg-chip-bg-selected hover:bg-brand-selection-hover [&:active:not(:has(button:active))]:bg-brand-selection-pressed focus:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]"
+      },
+      {
+        "variant": "ghost",
+        "state": "default",
+        "class": "text-text-primary border border-transparent hover:bg-state-overlay-on-neutral-hover [&:active:not(:has(button:active))]:bg-state-overlay-on-neutral-pressed focus:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]"
+      },
+      {
+        "variant": "ghost",
+        "state": "disabled",
+        "class": "text-text-disabled border border-transparent"
+      },
+      {
+        "variant": "ghost",
+        "state": "selected",
+        "class": "text-text-on-selection border border-transparent bg-chip-bg-selected hover:bg-brand-selection-hover [&:active:not(:has(button:active))]:bg-brand-selection-pressed focus:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]"
       }
     ],
     "defaultVariants": {
+      "variant": "default",
       "size": "md",
+      "mode": "base",
       "state": "default",
       "selectionStyle": "multiple",
       "hasIcon": false,
@@ -474,15 +597,30 @@
     }
   },
   "chipGroup": {
-    "base": "flex gap-component-gap-tags-x",
+    "base": "flex",
     "variants": {
       "variant": {
         "scroll": "whitespace-nowrap",
         "no-scroll": "flex-wrap"
+      },
+      "mode": {
+        "base": "",
+        "compact": ""
       }
     },
+    "compoundVariants": [
+      {
+        "mode": "base",
+        "class": "gap-component-gap-tag-group"
+      },
+      {
+        "mode": "compact",
+        "class": "gap-component-gap-tag-group-compact"
+      }
+    ],
     "defaultVariants": {
-      "variant": "scroll"
+      "variant": "scroll",
+      "mode": "base"
     }
   },
   "chipCloseButton": {
@@ -504,35 +642,74 @@
     }
   },
   "dialog": {
-    "base": "flex flex-col items-start py-component-inset-dialog-y px-component-inset-dialog-x gap-component-gap-dialog-contents-y rounded-xl border border-border-subtle bg-bg-surface shadow-[0_4px_8px_0_rgba(0,0,0,0.20)]",
+    "base": "flex flex-col items-start rounded-xl border border-border-subtle bg-bg-surface shadow-[0_4px_8px_0_rgba(0,0,0,0.20)]",
     "variants": {
       "size": {
         "sm": "w-[480px] max-h-[80vh]",
         "md": "w-[612px] max-h-[80vh]",
         "lg": "w-[928px] max-h-[80vh]",
         "xl": "w-[1244px] max-h-[80vh]"
+      },
+      "mode": {
+        "base": "",
+        "compact": ""
       }
     },
+    "compoundVariants": [
+      {
+        "mode": "base",
+        "class": "py-component-inset-dialog-y px-component-inset-dialog-x gap-component-gap-dialog-structure"
+      },
+      {
+        "mode": "compact",
+        "class": "py-component-inset-dialog-y-compact px-component-inset-dialog-x-compact gap-component-gap-dialog-structure-compact"
+      }
+    ],
     "defaultVariants": {
-      "size": "md"
+      "size": "md",
+      "mode": "base"
     }
   },
   "alert": {
-    "base": "inline-flex items-center min-w-[483px] py-component-inset-alert-inline-y px-component-inset-alert-inline-x gap-component-gap-alert-inline-label-close-x rounded-lg",
+    "base": "inline-flex items-start rounded-lg",
     "variants": {
       "variant": {
-        "default": "bg-[var(--color-role-bg-container-low,rgba(0,0,0,0.04))] text-text-primary",
+        "default": "bg-bg-container-low text-text-primary",
         "info": "",
         "success": "",
         "warning": "",
         "error": ""
       },
+      "mode": {
+        "base": "",
+        "compact": ""
+      },
       "isToast": {
-        "true": "w-[360px] shadow-[0_4px_8px_0_rgba(0,0,0,0.20)]",
-        "false": ""
+        "true": "w-[480px] shadow-[0_4px_8px_0_rgba(0,0,0,0.20)]",
+        "false": "w-full"
       }
     },
     "compoundVariants": [
+      {
+        "mode": "base",
+        "isToast": true,
+        "class": "py-[16px] px-[20px] gap-component-gap-icon-label-md"
+      },
+      {
+        "mode": "base",
+        "isToast": false,
+        "class": "py-[12px] px-[16px] gap-component-gap-icon-label-md"
+      },
+      {
+        "mode": "compact",
+        "isToast": true,
+        "class": "py-[16px] px-[20px] gap-component-gap-icon-label-md-compact"
+      },
+      {
+        "mode": "compact",
+        "isToast": false,
+        "class": "py-[12px] px-[16px] gap-component-gap-icon-label-md-compact"
+      },
       {
         "variant": "info",
         "class": "bg-alert-info-bg text-alert-info-text"
@@ -552,15 +729,20 @@
     ],
     "defaultVariants": {
       "variant": "default",
+      "mode": "base",
       "isToast": false
     }
   },
   "tag": {
-    "base": "text-caption-xs-regular text-tag-default-text flex py-component-inset-pill-y pr-component-inset-pill-x pl-component-inset-pill-with-icon-x items-center gap-component-gap-icon-label-x-xs self-stretch rounded-full whitespace-nowrap flex-shrink-0",
+    "base": "text-caption-xs-regular text-tag-default-text flex items-center self-stretch rounded-full whitespace-nowrap flex-shrink-0",
     "variants": {
       "variant": {
         "default": "bg-tag-default-bg",
         "more": "border border-tag-more-border bg-tag-more-bg cursor-pointer relative"
+      },
+      "mode": {
+        "base": "",
+        "compact": ""
       },
       "hasCloseButton": {
         "true": "",
@@ -569,48 +751,85 @@
     },
     "compoundVariants": [
       {
+        "mode": "base",
+        "class": "py-component-inset-pill-y pr-component-inset-pill-x pl-component-inset-pill-with-icon-x gap-component-gap-icon-label-xs"
+      },
+      {
+        "mode": "compact",
+        "class": "py-component-inset-pill-y-compact pr-component-inset-pill-x-compact pl-component-inset-pill-with-icon-x-compact gap-component-gap-icon-label-xs-compact"
+      },
+      {
         "variant": "more",
         "class": "before:absolute before:inset-0 before:rounded-full before:bg-transparent hover:before:bg-black/[0.06] active:before:bg-black/[0.10] before:transition-colors"
       }
     ],
     "defaultVariants": {
       "variant": "default",
+      "mode": "base",
       "hasCloseButton": false
     }
   },
   "tagGroup": {
-    "base": "flex gap-component-gap-tags-x",
+    "base": "flex",
     "variants": {
       "layout": {
         "wrap": "",
         "singleLineWithMore": "",
         "horizontalScroll": "flex-nowrap"
-      }
-    },
-    "defaultVariants": {
-      "layout": "wrap"
-    }
-  },
-  "tooltip": {
-    "base": "flex justify-center items-center py-component-inset-tooltip-y px-component-inset-tooltip-x rounded-md border border-border-default bg-bg-surface shadow-md text-text-primary text-caption-xs-regular",
-    "variants": {
-      "truncation": {
-        "true": "",
-        "false": ""
+      },
+      "mode": {
+        "base": "",
+        "compact": ""
       }
     },
     "compoundVariants": [
       {
-        "truncation": false,
-        "class": "max-w-[320px] max-h-[44px]"
+        "mode": "base",
+        "class": "gap-component-gap-tag-group"
       },
       {
-        "truncation": true,
-        "class": "max-w-[540px] max-h-[240px] overflow-y-scroll"
+        "mode": "compact",
+        "class": "gap-component-gap-tag-group-compact"
       }
     ],
     "defaultVariants": {
-      "truncation": false
+      "layout": "wrap",
+      "mode": "base"
+    }
+  },
+  "tooltip": {
+    "base": "flex justify-center items-center rounded-md border border-border-default bg-bg-surface shadow-md text-text-primary text-caption-xs-regular word-break-keep-all",
+    "variants": {
+      "truncation": {
+        "true": "",
+        "false": ""
+      },
+      "mode": {
+        "base": "",
+        "compact": ""
+      }
+    },
+    "compoundVariants": [
+      {
+        "mode": "base",
+        "class": "py-component-inset-tooltip-y px-component-inset-tooltip-x"
+      },
+      {
+        "mode": "compact",
+        "class": "py-component-inset-tooltip-y-compact px-component-inset-tooltip-x-compact"
+      },
+      {
+        "truncation": false,
+        "class": "max-w-[320px] line-clamp-2"
+      },
+      {
+        "truncation": true,
+        "class": "max-w-[500px] max-h-[320px] overflow-y-auto break-all"
+      }
+    ],
+    "defaultVariants": {
+      "truncation": false,
+      "mode": "base"
     }
   },
   "toggleSwitch": {
@@ -740,11 +959,15 @@
     }
   },
   "field": {
-    "base": "flex flex-col w-[222px] gap-component-gap-contents-sm",
+    "base": "flex flex-col w-full",
     "variants": {
       "size": {
         "md": "",
         "sm": ""
+      },
+      "mode": {
+        "base": "",
+        "compact": ""
       },
       "multiline": {
         "true": "",
@@ -769,8 +992,19 @@
         "false": ""
       }
     },
+    "compoundVariants": [
+      {
+        "mode": "base",
+        "class": "gap-component-gap-content-sm"
+      },
+      {
+        "mode": "compact",
+        "class": "gap-component-gap-content-sm-compact"
+      }
+    ],
     "defaultVariants": {
       "size": "md",
+      "mode": "base",
       "multiline": false,
       "rowsVariant": "flexible",
       "hasError": false,
@@ -779,11 +1013,15 @@
     }
   },
   "select": {
-    "base": "flex py-component-inset-fields-y px-component-inset-fields-x items-center flex-1 border appearance-none",
+    "base": "flex items-center flex-1 border appearance-none",
     "variants": {
       "size": {
-        "md": "gap-component-gap-icon-label-x-md rounded-lg text-body-md-medium",
-        "sm": "gap-component-gap-icon-label-x-xs rounded-md text-body-sm-medium"
+        "md": "rounded-lg text-body-md-medium",
+        "sm": "rounded-md text-body-sm-medium"
+      },
+      "mode": {
+        "base": "",
+        "compact": ""
       },
       "error": {
         "true": "",
@@ -796,67 +1034,130 @@
     },
     "compoundVariants": [
       {
+        "mode": "base",
+        "size": "md",
+        "class": "py-component-inset-input-y px-component-inset-input-x gap-component-gap-icon-label-md"
+      },
+      {
+        "mode": "base",
+        "size": "sm",
+        "class": "py-component-inset-input-y px-component-inset-input-x gap-component-gap-icon-label-xs"
+      },
+      {
+        "mode": "compact",
+        "size": "md",
+        "class": "py-component-inset-input-y-compact px-component-inset-input-x-compact gap-component-gap-icon-label-md-compact"
+      },
+      {
+        "mode": "compact",
+        "size": "sm",
+        "class": "py-component-inset-input-y-compact px-component-inset-input-x-compact gap-component-gap-icon-label-xs-compact"
+      },
+      {
         "error": false,
         "hasValue": false,
-        "class": "border-field-border-default bg-field-bg-surface text-text-primary hover:bg-[#f0f0f0] active:bg-[#e6e6e6] focus:shadow-[0_0_0_1px_#212529_inset_0_0_0_2px_#0066ff]"
+        "class": "border-field-border-default bg-field-bg-surface text-text-primary hover:bg-[#f0f0f0] active:bg-[#e6e6e6] focus:outline focus:outline-2 focus:outline-focus focus:outline-offset-[-2px]"
       },
       {
         "error": false,
         "hasValue": true,
-        "class": "text-text-accent border-field-border-focus bg-bg-selection hover:bg-[#dde1eb] active:bg-[#d3d7e1] focus:shadow-[0_0_0_1px_#212529_inset_0_0_0_2px_#0066ff]"
+        "class": "text-text-accent border-field-border-focus bg-bg-selection hover:bg-[#dde1eb] active:bg-[#d3d7e1] focus:outline focus:outline-2 focus:outline-focus focus:outline-offset-[-2px]"
       },
       {
         "error": true,
-        "class": "border-field-border-error bg-field-bg-surface text-text-primary hover:bg-[#f0f0f0] active:bg-[#e6e6e6] focus:shadow-[0_0_0_1px_#212529_inset_0_0_0_2px_#0066ff]"
+        "class": "border-field-border-error bg-field-bg-surface text-text-primary hover:bg-[#f0f0f0] active:bg-[#e6e6e6] focus:outline focus:outline-2 focus:outline-focus focus:outline-offset-[-2px]"
       }
     ],
     "defaultVariants": {
       "size": "md",
+      "mode": "base",
       "error": false,
       "hasValue": false
     }
   },
   "option": {
-    "base": "inline-flex items-center gap-layout-inline-md",
-    "variants": {},
-    "defaultVariants": {}
+    "base": "cursor-pointer inline-flex items-center",
+    "variants": {
+      "mode": {
+        "base": "",
+        "compact": ""
+      }
+    },
+    "compoundVariants": [
+      {
+        "mode": "base",
+        "class": "gap-layout-inline-md"
+      },
+      {
+        "mode": "compact",
+        "class": "gap-layout-inline-md-compact"
+      }
+    ],
+    "defaultVariants": {
+      "mode": "base"
+    }
   },
   "optionGroup": {
-    "base": "inline-flex flex-col items-start gap-component-gap-contents-sm",
+    "base": "inline-flex flex-col items-start",
     "variants": {
       "size": {
         "lg": "",
         "md": "",
         "sm": ""
       },
+      "mode": {
+        "base": "",
+        "compact": ""
+      },
       "orientation": {
         "horizontal": "",
         "vertical": ""
       }
     },
+    "compoundVariants": [
+      {
+        "mode": "base",
+        "class": "gap-component-gap-content-sm"
+      },
+      {
+        "mode": "compact",
+        "class": "gap-component-gap-content-sm-compact"
+      }
+    ],
     "defaultVariants": {
       "size": "md",
+      "mode": "base",
       "orientation": "vertical"
     }
   },
   "menu": {
-    "base": "flex flex-col min-w-[180px] max-w-[240px] py-component-inset-menu-y px-component-inset-menu-x rounded-lg border border-border-default bg-bg-surface shadow-[0_2px_4px_0_rgba(0,0,0,0.16)]",
+    "base": "flex flex-col max-h-[640px] min-w-[200px] max-w-[400px] rounded-lg border border-border-default bg-bg-surface shadow-[0_2px_4px_0_rgba(0,0,0,0.16)]",
     "variants": {
       "size": {
         "md": "",
         "sm": ""
+      },
+      "mode": {
+        "base": "",
+        "compact": ""
       }
     },
+    "compoundVariants": [],
     "defaultVariants": {
-      "size": "md"
+      "size": "md",
+      "mode": "base"
     }
   },
   "menu.item": {
-    "base": "flex min-w-[168px] max-w-[264px] py-component-inset-menu-item-y px-component-inset-menu-item-x items-center gap-component-gap-icon-label-x-md cursor-pointer transition-colors",
+    "base": "flex items-center cursor-pointer transition-colors rounded-[4px]",
     "variants": {
       "size": {
         "md": "text-button-md-medium",
         "sm": "text-button-sm-medium"
+      },
+      "mode": {
+        "base": "",
+        "compact": ""
       },
       "state": {
         "default": "text-text-primary",
@@ -874,6 +1175,14 @@
       }
     },
     "compoundVariants": [
+      {
+        "mode": "base",
+        "class": "py-component-inset-menu-item-y px-component-inset-menu-item-x gap-component-gap-icon-label-md"
+      },
+      {
+        "mode": "compact",
+        "class": "py-component-inset-menu-item-y-compact px-component-inset-menu-item-x-compact gap-component-gap-icon-label-md-compact"
+      },
       {
         "state": "default",
         "destructive": false,
@@ -908,7 +1217,7 @@
       {
         "state": "focused",
         "destructive": false,
-        "class": "outline outline-2 outline-focus outline-offset-[-2px]"
+        "class": "shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]"
       },
       {
         "destructive": true,
@@ -927,11 +1236,201 @@
     ],
     "defaultVariants": {
       "size": "md",
+      "mode": "base",
       "state": "default",
       "destructive": false
     }
   },
   "menu.heading": {
-    "base": "flex py-component-inset-menu-item-y px-component-inset-menu-item-x pb-layout-stack-xs items-center text-text-tertiary text-button-sm-medium"
+    "base": "flex items-center text-text-tertiary text-button-sm-medium",
+    "variants": {
+      "mode": {
+        "base": "",
+        "compact": ""
+      }
+    },
+    "compoundVariants": [
+      {
+        "mode": "base",
+        "class": "py-component-inset-menu-item-y px-component-inset-menu-item-x pb-layout-stack-xs"
+      },
+      {
+        "mode": "compact",
+        "class": "py-component-inset-menu-item-y-compact px-component-inset-menu-item-x-compact pb-layout-stack-xs-compact"
+      }
+    ],
+    "defaultVariants": {
+      "mode": "base"
+    }
+  },
+  "segment": {
+    "base": "flex items-center w-full rounded-[10px] border border-border-default bg-segment-group-bg",
+    "variants": {
+      "mode": {
+        "base": "",
+        "compact": ""
+      },
+      "widthMode": {
+        "equal": "",
+        "content": "w-fit"
+      },
+      "isDisabled": {
+        "true": "cursor-not-allowed",
+        "false": ""
+      }
+    },
+    "compoundVariants": [
+      {
+        "mode": "base",
+        "class": "p-component-inset-segment-group-xy"
+      },
+      {
+        "mode": "compact",
+        "class": "p-component-inset-segment-group-xy-compact"
+      }
+    ],
+    "defaultVariants": {
+      "mode": "base",
+      "widthMode": "equal",
+      "isDisabled": false
+    }
+  },
+  "segment.item": {
+    "base": "flex justify-center items-center min-w-[56px] max-w-[200px] rounded-lg cursor-pointer transition-colors",
+    "variants": {
+      "size": {
+        "lg": "text-button-lg-medium",
+        "md": "text-button-md-medium",
+        "sm": "text-button-sm-medium"
+      },
+      "mode": {
+        "base": "",
+        "compact": ""
+      },
+      "widthMode": {
+        "equal": "flex-1",
+        "content": ""
+      },
+      "isSelected": {
+        "true": "",
+        "false": ""
+      },
+      "isDisabled": {
+        "true": "cursor-not-allowed",
+        "false": ""
+      }
+    },
+    "compoundVariants": [
+      {
+        "mode": "base",
+        "size": "lg",
+        "class": "py-component-inset-segment-item-y px-component-inset-segment-item-lg-x"
+      },
+      {
+        "mode": "base",
+        "size": "md",
+        "class": "py-component-inset-segment-item-y px-component-inset-segment-item-md-x"
+      },
+      {
+        "mode": "base",
+        "size": "sm",
+        "class": "py-component-inset-segment-item-y px-component-inset-segment-item-sm-x"
+      },
+      {
+        "mode": "compact",
+        "size": "lg",
+        "class": "py-component-inset-segment-item-y-compact px-component-inset-segment-item-lg-x-compact"
+      },
+      {
+        "mode": "compact",
+        "size": "md",
+        "class": "py-component-inset-segment-item-y-compact px-component-inset-segment-item-md-x-compact"
+      },
+      {
+        "mode": "compact",
+        "size": "sm",
+        "class": "py-component-inset-segment-item-y-compact px-component-inset-segment-item-sm-x-compact"
+      },
+      {
+        "isSelected": false,
+        "isDisabled": false,
+        "class": "text-text-primary hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed focus-visible:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]"
+      },
+      {
+        "isSelected": true,
+        "isDisabled": false,
+        "class": "text-text-on-selection bg-segment-item-bg-selected hover:bg-brand-selection-hover active:bg-brand-selection-pressed focus-visible:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]"
+      },
+      {
+        "isDisabled": true,
+        "class": "bg-bg-disabled-on-filled text-text-disabled"
+      }
+    ],
+    "defaultVariants": {
+      "size": "md",
+      "mode": "base",
+      "widthMode": "equal",
+      "isSelected": false,
+      "isDisabled": false
+    }
+  },
+  "tab": {
+    "base": "flex max-w-[1200px] items-center",
+    "variants": {
+      "mode": {
+        "base": "",
+        "compact": ""
+      },
+      "widthMode": {
+        "equal": "",
+        "content": ""
+      },
+      "isDisabled": {
+        "true": "cursor-not-allowed",
+        "false": ""
+      }
+    },
+    "compoundVariants": [
+      {
+        "mode": "base",
+        "class": "gap-component-gap-tab-group"
+      },
+      {
+        "mode": "compact",
+        "class": "gap-component-gap-tab-group-compact"
+      }
+    ],
+    "defaultVariants": {
+      "mode": "base",
+      "widthMode": "content",
+      "isDisabled": false
+    }
+  },
+  "fieldGroup": {
+    "base": "flex flex-col w-full",
+    "variants": {
+      "size": {
+        "md": "",
+        "sm": ""
+      },
+      "mode": {
+        "base": "",
+        "compact": ""
+      }
+    },
+    "compoundVariants": [
+      {
+        "mode": "base",
+        "class": "gap-component-gap-content-sm"
+      },
+      {
+        "mode": "compact",
+        "class": "gap-component-gap-content-sm-compact"
+      }
+    ],
+    "defaultVariants": {
+      "size": "md",
+      "mode": "base"
+    }
   }
 }

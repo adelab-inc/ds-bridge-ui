@@ -2,13 +2,17 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from './Button';
-import { IconButton } from './IconButton';
 import { Icon } from './Icon';
 import { cn } from './utils';
 import { useEscapeKey } from '../hooks/useEscapeKey';
+import { useSpacingMode } from './SpacingModeProvider';
 
-const dialogVariants = cva('flex flex-col items-start py-component-inset-dialog-y px-component-inset-dialog-x gap-component-gap-dialog-contents-y rounded-xl border border-border-subtle bg-bg-surface shadow-[0_4px_8px_0_rgba(0,0,0,0.20)]', ({
+const dialogVariants = cva('flex flex-col items-start rounded-xl border border-border-subtle bg-bg-surface shadow-[0_4px_8px_0_rgba(0,0,0,0.20)]', ({
     variants: {
+      "mode": {
+        "base": "",
+        "compact": "",
+      },
       "size": {
         "lg": "w-[928px] max-h-[80vh]",
         "md": "w-[612px] max-h-[80vh]",
@@ -17,8 +21,19 @@ const dialogVariants = cva('flex flex-col items-start py-component-inset-dialog-
       },
     },
     defaultVariants: {
+      "mode": "base",
       "size": "md",
     },
+    compoundVariants: [
+      {
+        "class": "py-component-inset-dialog-y px-component-inset-dialog-x gap-component-gap-dialog-structure",
+        "mode": "base",
+      },
+      {
+        "class": "py-component-inset-dialog-y-compact px-component-inset-dialog-x-compact gap-component-gap-dialog-structure-compact",
+        "mode": "compact",
+      },
+    ],
   }));
 
 export interface DialogProps
@@ -49,6 +64,7 @@ const Dialog = React.forwardRef<HTMLDivElement, DialogProps>(
       x = '50%',
       y = '50%',
       size,
+      mode: propMode,
       onClose,
       onPrimaryClick,
       onSecondaryClick,
@@ -59,6 +75,9 @@ const Dialog = React.forwardRef<HTMLDivElement, DialogProps>(
     },
     ref,
   ) => {
+    const contextMode = useSpacingMode();
+    const mode = propMode ?? contextMode;
+
     // ESC 키로 닫기 (open일 때만)
     useEscapeKey(open ? onClose : () => {});
 
@@ -106,7 +125,7 @@ const Dialog = React.forwardRef<HTMLDivElement, DialogProps>(
           style={dialogPosition}
         >
           <div
-            className={cn(dialogVariants({ size, className }))}
+            className={cn(dialogVariants({ size, mode, className }))}
             ref={ref}
             role="dialog"
             aria-modal="true"
@@ -114,8 +133,8 @@ const Dialog = React.forwardRef<HTMLDivElement, DialogProps>(
             {...props}
           >
             {/* Header */}
-            <div className="flex items-start justify-between w-full">
-              <div className="flex flex-col">
+            <div className="flex items-start gap-component-gap-content-md w-full">
+              <div className="flex flex-col flex-1 min-w-0">
                 <h2
                   id="dialog-title"
                   className={titleClassName}
@@ -128,13 +147,13 @@ const Dialog = React.forwardRef<HTMLDivElement, DialogProps>(
                   </p>
                 )}
               </div>
-              <IconButton
-                variant="ghost"
-                size="md"
+              <button
                 onClick={onClose}
+                className="flex-shrink-0 size-[32px] box-border p-2 flex items-center justify-center rounded-full hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed"
                 aria-label="닫기"
-                icon={<Icon name="close" size={20} />}
-              />
+              >
+                <Icon name="close" size={16} className="text-icon-interactive-default" />
+              </button>
             </div>
 
             {/* Body */}
@@ -146,7 +165,7 @@ const Dialog = React.forwardRef<HTMLDivElement, DialogProps>(
             {(onPrimaryClick || onSecondaryClick || footerContent) && (
               <div
                 className={cn(
-                  "flex gap-component-gap-actions-x w-full",
+                  "flex gap-component-gap-control-group w-full",
                   footerContent && (onPrimaryClick || onSecondaryClick)
                     ? "justify-between"
                     : footerContent
@@ -155,12 +174,12 @@ const Dialog = React.forwardRef<HTMLDivElement, DialogProps>(
                 )}
               >
                 {footerContent && (
-                  <div className="flex gap-component-gap-actions-x items-center">
+                  <div className="flex gap-component-gap-control-group items-center">
                     {footerContent}
                   </div>
                 )}
                 {(onPrimaryClick || onSecondaryClick) && (
-                  <div className="flex gap-component-gap-actions-x">
+                  <div className="flex gap-component-gap-control-group">
                     {onSecondaryClick && (
                       <Button
                         variant="outline"

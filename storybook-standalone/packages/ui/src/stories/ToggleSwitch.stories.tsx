@@ -35,15 +35,20 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  render: () => {
-    const [checked, setChecked] = React.useState(false);
+  render: (args) => {
+    const [checked, setChecked] = React.useState(args.checked ?? false);
+
+    React.useEffect(() => {
+      setChecked(args.checked ?? false);
+    }, [args.checked]);
 
     return (
       <div className="flex flex-col gap-4">
         <ToggleSwitch
           checked={checked}
-          onChange={(e) => setChecked(e.target.checked)}
-          aria-label="Default toggle switch"
+          disabled={args.disabled}
+          onChange={(e) => !args.disabled && setChecked(e.target.checked)}
+          aria-label={args['aria-label']}
         />
         <p className="text-sm">상태: {checked ? 'ON' : 'OFF'}</p>
       </div>
@@ -52,6 +57,18 @@ export const Default: Story = {
 };
 
 export const Disabled: Story = {
+  render: (args) => {
+    return (
+      <div className="flex flex-col gap-4">
+        <ToggleSwitch
+          checked={args.checked}
+          disabled={args.disabled}
+          aria-label={args['aria-label']}
+        />
+        <p className="text-sm">상태: {args.checked ? 'ON' : 'OFF'} (비활성화)</p>
+      </div>
+    );
+  },
   args: {
     checked: false,
     disabled: true,

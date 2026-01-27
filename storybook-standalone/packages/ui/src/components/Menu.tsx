@@ -6,14 +6,19 @@ import { cn } from './utils';
 import { Heading as MenuHeading } from './Menu/Heading';
 import { Item as MenuItemComponent } from './Menu/Item';
 
-const menuVariants = cva('flex flex-col min-w-[180px] max-w-[240px] py-component-inset-menu-y px-component-inset-menu-x rounded-lg border border-border-default bg-bg-surface shadow-[0_2px_4px_0_rgba(0,0,0,0.16)]', ({
+const menuVariants = cva('flex flex-col max-h-[640px] min-w-[200px] max-w-[400px] rounded-lg border border-border-default bg-bg-surface shadow-[0_2px_4px_0_rgba(0,0,0,0.16)]', ({
     variants: {
+      "mode": {
+        "base": "",
+        "compact": "",
+      },
       "size": {
         "md": "",
         "sm": "",
       },
     },
     defaultVariants: {
+      "mode": "base",
       "size": "md",
     },
   }));
@@ -45,6 +50,8 @@ export interface MenuItem {
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
   badge?: React.ReactNode;
+  /** badge를 텍스트 우측상단에 absolute로 배치 (dot badge용) */
+  badgeDot?: boolean;
   onClick?: () => void;
   disabled?: boolean;
   destructive?: boolean;
@@ -157,6 +164,18 @@ const Menu = React.forwardRef<HTMLDivElement, MenuProps>(
         }
       };
     }, []);
+
+    // 브라우저 resize 시 서브메뉴 닫기
+    React.useEffect(() => {
+      if (activeIdPath.length === 0) return;
+
+      const handleResize = () => {
+        setActiveIdPath([]);
+      };
+
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }, [activeIdPath.length]);
 
     const handleItemHover = (item: MenuItem, depth: number, focusableIndex: number) => {
       if (activationTimeoutRef.current) clearTimeout(activationTimeoutRef.current);
@@ -431,6 +450,12 @@ const Menu = React.forwardRef<HTMLDivElement, MenuProps>(
       let currentItems = items;
       let parentLeft = 0;
       let parentTop = 0;
+      // 이전 서브메뉴의 배치 방향 추적 (연속된 서브메뉴는 같은 방향으로)
+      let previousPlacement: 'right' | 'left' = 'right';
+
+      // 서브메뉴 예상 너비 (min-w-[200px] 기준)
+      const SUBMENU_WIDTH = 200;
+      const GAP = 4;
 
       for (let depth = 0; depth < activeIdPath.length; depth++) {
         const activeId = activeIdPath[depth];
@@ -443,9 +468,36 @@ const Menu = React.forwardRef<HTMLDivElement, MenuProps>(
 
           if (parentElement) {
             const rect = parentElement.getBoundingClientRect();
-            // Portal은 document.body에 렌더링되므로 viewport 기준 절대 좌표 사용
-            parentLeft = rect.right + 4; // ml-1 (4px)
+
+            // 화면 경계 체크 및 위치 자동 조정
+            const rightSpace = window.innerWidth - rect.right - GAP;
+            const leftSpace = rect.left - GAP;
+
+            // 기본: 오른쪽 배치, 공간 부족 시 왼쪽 배치
+            // 이전 서브메뉴가 왼쪽이면 계속 왼쪽으로 (일관성 유지)
+            if (previousPlacement === 'left' || rightSpace < SUBMENU_WIDTH) {
+              if (leftSpace >= SUBMENU_WIDTH) {
+                // 왼쪽에 배치
+                parentLeft = rect.left - SUBMENU_WIDTH - GAP;
+                previousPlacement = 'left';
+              } else {
+                // 양쪽 다 부족하면 오른쪽에 배치 (잘리더라도)
+                parentLeft = rect.right + GAP;
+                previousPlacement = 'right';
+              }
+            } else {
+              // 오른쪽에 배치
+              parentLeft = rect.right + GAP;
+              previousPlacement = 'right';
+            }
+
             parentTop = rect.top;
+
+            // 화면 아래 경계 체크 (서브메뉴가 화면 아래로 넘어가는 경우)
+            const estimatedHeight = Math.min(activeItem.children.length * 40, 400);
+            if (parentTop + estimatedHeight > window.innerHeight) {
+              parentTop = Math.max(8, window.innerHeight - estimatedHeight - 8);
+            }
           }
 
           const submenuStyle = {
@@ -517,7 +569,7 @@ const Menu = React.forwardRef<HTMLDivElement, MenuProps>(
           </div>
         )}
         <div className="menu-scroll-container">
-          <div className={cn("menu-scroll-inner", size === 'sm' ? 'max-h-[180px]' : 'max-h-[224px]')}>
+          <div className={cn("menu-scroll-inner py-component-inset-menu-y px-component-inset-menu-x", size === 'sm' ? 'max-h-[180px]' : 'max-h-[224px]')}>
             {items.length === 0 ? (
               emptyText ? (
                 <div

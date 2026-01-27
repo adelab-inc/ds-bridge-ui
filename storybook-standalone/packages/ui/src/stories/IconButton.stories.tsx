@@ -25,6 +25,11 @@ const meta: Meta<typeof IconButton> = {
       control: { type: 'select' },
       options: ['sm', 'md', 'lg'],
     },
+    mode: {
+      control: { type: 'select' },
+      options: ['base', 'compact'],
+      description: 'Spacing density mode',
+    },
     isLoading: {
       control: { type: 'boolean' },
     },
@@ -67,6 +72,7 @@ export const Ghost: Story = {
   args: {
     variant: 'ghost',
     size: 'md',
+    mode: 'base',
     isLoading: false,
     disabled: false,
     icon: 'dashed-square',

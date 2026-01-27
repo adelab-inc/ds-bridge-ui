@@ -2,6 +2,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 import { LoadingSpinner } from './LoadingSpinner';
 import { cn } from './utils';
+import { useSpacingMode } from './SpacingModeProvider';
 
 const iconButtonVariants = cva('flex justify-center items-center flex-shrink-0', ({
     variants: {
@@ -9,29 +10,64 @@ const iconButtonVariants = cva('flex justify-center items-center flex-shrink-0',
         "false": "",
         "true": "",
       },
+      "isLoading": {
+        "false": "",
+        "true": "cursor-wait",
+      },
+      "mode": {
+        "base": "",
+        "compact": "",
+      },
+      "size": {
+        "lg": "text-button-lg-medium rounded-lg",
+        "md": "text-button-md-medium rounded-lg",
+        "sm": "text-button-sm-medium rounded-[6px]",
+      },
       "variant": {
         "ghost": "text-icon-interactive-default",
         "ghost-destructive": "",
         "secondary": "bg-bg-accent-secondary",
         "tertiary": "bg-bg-subtle",
       },
-      "size": {
-        "lg": "w-[40px] h-[40px] text-button-lg-medium rounded-lg",
-        "md": "w-[36px] h-[36px] text-button-md-medium rounded-lg",
-        "sm": "w-[32px] h-[32px] text-button-sm-medium rounded-[6px]",
-      },
-      "isLoading": {
-        "false": "",
-        "true": "cursor-wait",
-      },
     },
     defaultVariants: {
       "isDisabled": false,
       "isLoading": false,
+      "mode": "base",
       "size": "md",
       "variant": "ghost",
     },
     compoundVariants: [
+      {
+        "class": "w-[40px] h-[40px]",
+        "mode": "base",
+        "size": "lg",
+      },
+      {
+        "class": "w-[36px] h-[36px]",
+        "mode": "base",
+        "size": "md",
+      },
+      {
+        "class": "w-[32px] h-[32px]",
+        "mode": "base",
+        "size": "sm",
+      },
+      {
+        "class": "w-[40px] h-[40px]",
+        "mode": "compact",
+        "size": "lg",
+      },
+      {
+        "class": "w-[36px] h-[36px]",
+        "mode": "compact",
+        "size": "md",
+      },
+      {
+        "class": "w-[32px] h-[32px]",
+        "mode": "compact",
+        "size": "sm",
+      },
       {
         "class": "hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus",
         "isDisabled": false,
@@ -117,6 +153,7 @@ const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
       className,
       variant,
       size,
+      mode: propMode,
       icon,
       isLoading,
       disabled,
@@ -124,6 +161,9 @@ const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
     },
     ref,
   ) => {
+    const contextMode = useSpacingMode();
+    const mode = propMode ?? contextMode;
+
     const isFunctionallyDisabled = isLoading || disabled;
     const iconSize = {
       lg: 24,
@@ -142,7 +182,7 @@ const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
 
     return (
       <button
-        className={cn(iconButtonVariants({ variant, size, isLoading: isLoading && !disabled, isDisabled: isFunctionallyDisabled, className }))}
+        className={cn(iconButtonVariants({ variant, size, mode, isLoading: isLoading && !disabled, isDisabled: isFunctionallyDisabled, className }))}
         ref={ref}
         disabled={isFunctionallyDisabled}
         {...props}

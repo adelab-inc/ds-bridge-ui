@@ -6,13 +6,13 @@ import { Icon } from '../components/Icon';
 
 const iconMap = {
   none: null,
-  'alert-info': <Icon name="alert-info" />,
-  'alert-success': <Icon name="alert-success" />,
-  'alert-warning': <Icon name="alert-warning" />,
-  'alert-error': <Icon name="alert-error" />,
-  'search': <Icon name="search" />,
-  'dehaze': <Icon name="dehaze" />,
-  'list-alt': <Icon name="list-alt" />,
+  'alert-info': <Icon name="alert-info" size={20} />,
+  'alert-success': <Icon name="alert-success" size={20} />,
+  'alert-warning': <Icon name="alert-warning" size={20} />,
+  'alert-error': <Icon name="alert-error" size={20} />,
+  'search': <Icon name="search" size={20} />,
+  'dehaze': <Icon name="dehaze" size={20} />,
+  'list-alt': <Icon name="list-alt" size={20} />,
 };
 
 const meta: Meta<typeof Alert> = {
@@ -23,202 +23,75 @@ const meta: Meta<typeof Alert> = {
     variant: {
       control: { type: 'select' },
       options: ['default', 'info', 'success', 'warning', 'error'],
+      description: '알림 유형을 선택합니다',
+    },
+    mode: {
+      control: { type: 'select' },
+      options: ['base', 'compact'],
+      description: 'Spacing density mode',
     },
     isToast: {
       control: { type: 'boolean' },
+      description: 'Toast 모드 (고정 너비 360px + 그림자)',
     },
     hasCloseButton: {
       control: { type: 'boolean' },
+      description: '닫기 버튼 표시 여부',
+    },
+    hasActions: {
+      control: { type: 'boolean' },
+      description: '액션 버튼 표시 (실행/실행취소)',
     },
     title: {
       control: { type: 'text' },
+      description: '알림 제목 (있으면 2줄 레이아웃)',
     },
     children: {
       control: { type: 'text' },
+      description: '알림 본문 내용',
     },
     icon: {
       options: Object.keys(iconMap),
       mapping: iconMap,
       control: { type: 'select' },
+      description: '커스텀 아이콘 (variant 아이콘 대신 표시)',
+    },
+    actions: {
+      table: { disable: true },
     },
     onClose: { action: 'closed', table: { disable: true } },
-  },
+  } as any,
 };
 
 export default meta;
 type Story = StoryObj<typeof Alert>;
 
-// 1줄 레이아웃 (제목 없음)
-export const OneLine: Story = {
-  name: '1줄 - 기본',
-  args: {
-    variant: 'default',
-    children: '이것은 기본 알림 메시지입니다.',
-    icon: 'none',
-    isToast: false,
-  },
+type AlertStoryArgs = React.ComponentProps<typeof Alert> & {
+  hasActions?: boolean;
 };
 
-export const OneLineWithIcon: Story = {
-  name: '1줄 - 아이콘 있음',
+// 단일 통합 스토리 - Controls에서 모든 옵션 제어 가능
+export const Default: StoryObj<AlertStoryArgs> = {
   args: {
     variant: 'default',
-    children: '이것은 아이콘이 있는 알림 메시지입니다.',
-    icon: 'alert-info',
-    isToast: false,
-  },
-};
-
-export const OneLineWithClose: Story = {
-  name: '1줄 - 닫기 버튼',
-  args: {
-    variant: 'default',
-    children: '이것은 닫기 버튼이 있는 알림 메시지입니다.',
+    mode: 'base',
+    children: '이것은 알림 메시지입니다. Controls 패널에서 모든 옵션을 변경할 수 있습니다.',
+    title: '',
     icon: 'none',
+    isToast: false,
+    hasCloseButton: false,
+    hasActions: false,
     onClose: () => console.log('Alert closed'),
-    isToast: false,
   },
-};
+  render: (args) => {
+    const { hasActions, ...restArgs } = args;
+    const actions = hasActions
+      ? [
+          { label: '실행', onClick: () => console.log('Action 1') },
+          { label: '실행취소', onClick: () => console.log('Action 2') },
+        ]
+      : undefined;
 
-export const OneLineWithActions: Story = {
-  name: '1줄 - 액션 버튼',
-  args: {
-    variant: 'default',
-    children: '이것은 액션 버튼이 있는 알림 메시지입니다.',
-    icon: 'none',
-    actions: [
-      { label: '실행', onClick: () => console.log('Action 1') },
-      { label: '실행취소', onClick: () => console.log('Action 2') },
-    ],
-    isToast: false,
-  },
-};
-
-// 2줄 레이아웃 (제목 있음)
-export const TwoLines: Story = {
-  name: '2줄 - 기본',
-  args: {
-    variant: 'default',
-    title: '알림 제목',
-    children: '이것은 제목이 있는 알림 메시지입니다. 본문 내용이 여기에 표시됩니다.',
-    icon: 'none',
-    isToast: false,
-  },
-};
-
-export const TwoLinesWithIcon: Story = {
-  name: '2줄 - 아이콘 있음',
-  args: {
-    variant: 'default',
-    title: '알림 제목',
-    children: '이것은 아이콘과 제목이 있는 알림 메시지입니다.',
-    icon: 'alert-info',
-    isToast: false,
-  },
-};
-
-export const TwoLinesComplete: Story = {
-  name: '2줄 - 전체 구성',
-  args: {
-    variant: 'default',
-    title: '알림 제목',
-    children: '이것은 모든 요소가 포함된 알림 메시지입니다.',
-    icon: 'alert-info',
-    actions: [
-      { label: '확인', onClick: () => console.log('Confirm') },
-      { label: '취소', onClick: () => console.log('Cancel') },
-    ],
-    onClose: () => console.log('Alert closed'),
-    isToast: false,
-  },
-};
-
-// State Variants
-export const Info: Story = {
-  name: 'Info',
-  args: {
-    variant: 'info',
-    title: '정보 알림',
-    children: '이것은 정보성 알림 메시지입니다.',
-    onClose: () => console.log('Info closed'),
-    isToast: false,
-  },
-};
-
-export const Success: Story = {
-  name: 'Success',
-  args: {
-    variant: 'success',
-    title: '성공',
-    children: '작업이 성공적으로 완료되었습니다.',
-    onClose: () => console.log('Success closed'),
-    isToast: false,
-  },
-};
-
-export const Warning: Story = {
-  name: 'Warning',
-  args: {
-    variant: 'warning',
-    title: '경고',
-    children: '이 작업을 수행하기 전에 주의가 필요합니다.',
-    onClose: () => console.log('Warning closed'),
-    isToast: false,
-  },
-};
-
-export const Error: Story = {
-  name: 'Error',
-  args: {
-    variant: 'error',
-    title: '오류',
-    children: '오류가 발생했습니다. 다시 시도해주세요.',
-    onClose: () => console.log('Error closed'),
-    isToast: false,
-  },
-};
-
-// Toast 버전
-export const ToastInfo: Story = {
-  name: 'Toast - Info',
-  args: {
-    variant: 'info',
-    children: '정보 알림입니다.',
-    hasCloseButton: true,
-    onClose: () => console.log('Toast closed'),
-    isToast: true,
-  },
-};
-
-export const ToastSuccess: Story = {
-  name: 'Toast - Success',
-  args: {
-    variant: 'success',
-    children: '성공적으로 저장되었습니다.',
-    hasCloseButton: true,
-    onClose: () => console.log('Toast closed'),
-    isToast: true,
-  },
-};
-
-export const ToastWarning: Story = {
-  name: 'Toast - Warning',
-  args: {
-    variant: 'warning',
-    children: '주의가 필요합니다.',
-    hasCloseButton: true,
-    onClose: () => console.log('Toast closed'),
-    isToast: true,
-  },
-};
-
-export const ToastError: Story = {
-  name: 'Toast - Error',
-  args: {
-    variant: 'error',
-    children: '오류가 발생했습니다.',
-    hasCloseButton: true,
-    onClose: () => console.log('Toast closed'),
-    isToast: true,
+    return <Alert {...restArgs} actions={actions} />;
   },
 };

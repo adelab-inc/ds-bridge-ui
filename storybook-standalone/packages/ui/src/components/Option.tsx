@@ -3,14 +3,30 @@ import { cva } from 'class-variance-authority';
 import * as React from 'react';
 
 import { cn } from './utils';
+import { useSpacingMode } from './SpacingModeProvider';
 
 const optionVariants = cva(
-  'cursor-pointer inline-flex items-center gap-layout-inline-md',
+  'cursor-pointer inline-flex items-center',
   ({
     variants: {
+      "mode": {
+        "base": "",
+        "compact": "",
+      },
     },
     defaultVariants: {
+      "mode": "base",
     },
+    compoundVariants: [
+      {
+        "class": "gap-layout-inline-md",
+        "mode": "base",
+      },
+      {
+        "class": "gap-layout-inline-md-compact",
+        "mode": "compact",
+      },
+    ],
   })
 );
 
@@ -41,7 +57,10 @@ export interface OptionProps
 }
 
 const Option = React.forwardRef<HTMLLabelElement, OptionProps>(
-  ({ className, children, label, inputSize = '18', ...props }, ref) => {
+  ({ className, children, label, inputSize = '18', mode: propMode, ...props }, ref) => {
+    const contextMode = useSpacingMode();
+    const mode = propMode ?? contextMode;
+
     // 고유 ID 생성 (접근성)
     const inputId = React.useId();
 
@@ -58,7 +77,7 @@ const Option = React.forwardRef<HTMLLabelElement, OptionProps>(
       <label
         ref={ref}
         htmlFor={inputId}
-        className={cn(optionVariants({ className }))}
+        className={cn(optionVariants({ mode, className }))}
         {...props}
       >
         {childWithProps}

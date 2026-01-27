@@ -9,6 +9,7 @@ import { Checkbox } from '../components/Checkbox';
 // Radio용 확장 타입
 interface RadioGroupStoryArgs {
   title?: string;
+  required?: boolean;
   helperText?: string;
   size?: 'sm' | 'md' | 'lg';
   orientation?: 'horizontal' | 'vertical';
@@ -18,6 +19,7 @@ interface RadioGroupStoryArgs {
 // Checkbox용 확장 타입
 interface CheckboxGroupStoryArgs {
   title?: string;
+  required?: boolean;
   helperText?: string;
   size?: 'sm' | 'md' | 'lg';
   orientation?: 'horizontal' | 'vertical';
@@ -32,6 +34,10 @@ const meta: Meta<typeof OptionGroup> = {
     title: {
       control: 'text',
       description: '그룹 제목',
+    },
+    required: {
+      control: 'boolean',
+      description: '필수 입력 표시 (asterisk *)',
     },
     helperText: {
       control: 'text',
@@ -59,11 +65,11 @@ export default meta;
 
 export const WithRadio: StoryObj<RadioGroupStoryArgs> = {
   render: (args) => {
-    const { title, helperText, size = 'md', orientation = 'vertical', disabled = false } = args;
+    const { title, required = false, helperText, size = 'md', orientation = 'vertical', disabled = false } = args;
     const [selected, setSelected] = React.useState('option1');
 
     return (
-      <OptionGroup title={title} helperText={helperText} size={size} orientation={orientation} groupType="radio">
+      <OptionGroup title={title} required={required} helperText={helperText} size={size} orientation={orientation} groupType="radio">
         <Option label="옵션 1">
           <Radio
             checked={selected === 'option1'}
@@ -93,6 +99,7 @@ export const WithRadio: StoryObj<RadioGroupStoryArgs> = {
   },
   args: {
     title: '라디오 그룹',
+    required: false,
     helperText: '하나의 옵션을 선택하세요',
     size: 'md',
     orientation: 'vertical',
@@ -102,6 +109,10 @@ export const WithRadio: StoryObj<RadioGroupStoryArgs> = {
     title: {
       control: 'text',
       description: '그룹 제목',
+    },
+    required: {
+      control: 'boolean',
+      description: '필수 입력 표시 (asterisk *)',
     },
     helperText: {
       control: 'text',
@@ -126,13 +137,13 @@ export const WithRadio: StoryObj<RadioGroupStoryArgs> = {
 
 export const WithCheckbox: StoryObj<CheckboxGroupStoryArgs> = {
   render: (args) => {
-    const { title, helperText, size = 'md', orientation = 'vertical', disabled = false } = args;
+    const { title, required = false, helperText, size = 'md', orientation = 'vertical', disabled = false } = args;
     const [checked1, setChecked1] = React.useState(false);
     const [checked2, setChecked2] = React.useState(false);
     const [checked3, setChecked3] = React.useState(false);
 
     return (
-      <OptionGroup title={title} helperText={helperText} size={size} orientation={orientation} groupType="checkbox">
+      <OptionGroup title={title} required={required} helperText={helperText} size={size} orientation={orientation} groupType="checkbox">
         <Option label="옵션 1">
           <Checkbox
             checked={checked1}
@@ -162,6 +173,7 @@ export const WithCheckbox: StoryObj<CheckboxGroupStoryArgs> = {
   },
   args: {
     title: '체크박스 그룹',
+    required: false,
     helperText: '여러 옵션을 선택할 수 있습니다',
     size: 'md',
     orientation: 'vertical',
@@ -171,6 +183,10 @@ export const WithCheckbox: StoryObj<CheckboxGroupStoryArgs> = {
     title: {
       control: 'text',
       description: '그룹 제목',
+    },
+    required: {
+      control: 'boolean',
+      description: '필수 입력 표시 (asterisk *)',
     },
     helperText: {
       control: 'text',

@@ -9,13 +9,13 @@ const toggleSwitchVariants = cva(
   'relative inline-flex items-center flex-shrink-0 w-[32px] h-[18px] rounded-full transition-colors duration-300 cursor-pointer shadow-[0_0_1px_0_rgba(0,0,0,0.08)]',
   ({
     variants: {
-      "disabled": {
-        "false": "",
-        "true": "bg-control-bg-disabled cursor-not-allowed",
-      },
       "checked": {
         "false": "bg-control-bg-off",
         "true": "bg-control-bg-on",
+      },
+      "disabled": {
+        "false": "",
+        "true": "bg-control-bg-disabled cursor-not-allowed",
       },
     },
     defaultVariants: {

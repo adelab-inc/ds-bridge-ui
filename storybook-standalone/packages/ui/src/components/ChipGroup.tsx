@@ -3,16 +3,31 @@ import React, { Children, cloneElement, isValidElement, useState } from "react";
 import { ChipProps } from "./Chip";
 import { cn } from "./utils";
 
-const chipGroupVariants = cva('flex gap-component-gap-tags-x', ({
+const chipGroupVariants = cva('flex', ({
     variants: {
+      "mode": {
+        "base": "",
+        "compact": "",
+      },
       "variant": {
         "no-scroll": "flex-wrap",
         "scroll": "whitespace-nowrap",
       },
     },
     defaultVariants: {
+      "mode": "base",
       "variant": "scroll",
     },
+    compoundVariants: [
+      {
+        "class": "gap-component-gap-tag-group",
+        "mode": "base",
+      },
+      {
+        "class": "gap-component-gap-tag-group-compact",
+        "mode": "compact",
+      },
+    ],
   }));
 
 export interface ChipGroupProps
@@ -21,10 +36,11 @@ export interface ChipGroupProps
   selectionType?: "single" | "multiple";
   children: React.ReactNode;
   defaultValue?: string | string[];
+  disabled?: boolean;
 }
 
 const ChipGroup = React.forwardRef<HTMLDivElement, ChipGroupProps>(
-  ({ className, variant, selectionType = "multiple", children, defaultValue, ...props }, ref) => {
+  ({ className, variant, selectionType = "multiple", children, defaultValue, disabled, ...props }, ref) => {
     const [selectedValues, setSelectedValues] = useState<string[]>(() => {
       if (!defaultValue) return [];
       return Array.isArray(defaultValue) ? defaultValue : [defaultValue];
@@ -60,15 +76,18 @@ const ChipGroup = React.forwardRef<HTMLDivElement, ChipGroupProps>(
           }
 
           const isSelected = selectedValues.includes(value);
+          const chipState = disabled ? "disabled" : isSelected ? "selected" : "default";
 
           return cloneElement(child, {
             ...child.props,
-            state: isSelected ? "selected" : "default",
+            state: chipState,
             selectionStyle: selectionType,
-            onClick: () => {
-              handleChipClick(value);
-              child.props.onClick?.(child.props as any);
-            },
+            onClick: disabled
+              ? undefined
+              : () => {
+                  handleChipClick(value);
+                  child.props.onClick?.(child.props as any);
+                },
           });
         })}
       </div>

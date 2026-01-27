@@ -2,21 +2,26 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 import { LoadingSpinner } from './LoadingSpinner';
 import { cn } from './utils';
+import { useSpacingMode } from './SpacingModeProvider';
 
-const buttonVariants = cva('inline-flex justify-center items-center py-component-inset-button-y', ({
+const buttonVariants = cva('inline-flex justify-center items-center', ({
     variants: {
-      "size": {
-        "lg": "min-w-[56px] px-component-inset-button-lg-x text-button-lg-medium rounded-lg gap-component-gap-icon-label-x-md",
-        "md": "min-w-[52px] px-component-inset-button-md-x text-button-md-medium rounded-lg gap-component-gap-icon-label-x-md",
-        "sm": "min-w-[49px] px-component-inset-button-sm-x text-button-sm-medium rounded-md gap-component-gap-icon-label-x-sm",
+      "isDisabled": {
+        "false": "",
+        "true": "",
       },
       "isLoading": {
         "false": "",
         "true": "cursor-wait",
       },
-      "isDisabled": {
-        "false": "",
-        "true": "",
+      "mode": {
+        "base": "",
+        "compact": "",
+      },
+      "size": {
+        "lg": "min-w-[56px] text-button-lg-medium rounded-lg",
+        "md": "min-w-[52px] text-button-md-medium rounded-lg",
+        "sm": "min-w-[49px] text-button-sm-medium rounded-md",
       },
       "variant": {
         "destructive": "",
@@ -30,10 +35,41 @@ const buttonVariants = cva('inline-flex justify-center items-center py-component
     defaultVariants: {
       "isDisabled": false,
       "isLoading": false,
+      "mode": "base",
       "size": "md",
       "variant": "primary",
     },
     compoundVariants: [
+      {
+        "class": "px-component-inset-button-lg-x py-component-inset-button-y gap-component-gap-icon-label-md",
+        "mode": "base",
+        "size": "lg",
+      },
+      {
+        "class": "px-component-inset-button-md-x py-component-inset-button-y gap-component-gap-icon-label-md",
+        "mode": "base",
+        "size": "md",
+      },
+      {
+        "class": "px-component-inset-button-sm-x py-component-inset-button-y gap-component-gap-icon-label-sm",
+        "mode": "base",
+        "size": "sm",
+      },
+      {
+        "class": "px-component-inset-button-lg-x-compact py-component-inset-button-y-compact gap-component-gap-icon-label-md-compact",
+        "mode": "compact",
+        "size": "lg",
+      },
+      {
+        "class": "px-component-inset-button-md-x-compact py-component-inset-button-y-compact gap-component-gap-icon-label-md-compact",
+        "mode": "compact",
+        "size": "md",
+      },
+      {
+        "class": "px-component-inset-button-sm-x-compact py-component-inset-button-y-compact gap-component-gap-icon-label-sm-compact",
+        "mode": "compact",
+        "size": "sm",
+      },
       {
         "class": "bg-bg-disabled-on-filled text-text-disabled",
         "isDisabled": true,
@@ -152,6 +188,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       className,
       variant,
       size,
+      mode: propMode,
       children,
       isLoading,
       leftIcon,
@@ -161,6 +198,9 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref,
   ) => {
+    const contextMode = useSpacingMode();
+    const mode = propMode ?? contextMode; // prop이 우선, 없으면 context 사용
+
     const isFunctionallyDisabled = disabled;
     const iconSize = {
       lg: 24,
@@ -190,7 +230,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     return (
       <button
-        className={cn(buttonVariants({ variant, size, isLoading: isLoading && !isFunctionallyDisabled, isDisabled: isFunctionallyDisabled, className }))}
+        className={cn(buttonVariants({ variant, size, mode, isLoading: isLoading && !isFunctionallyDisabled, isDisabled: isFunctionallyDisabled, className }))}
         ref={ref}
         disabled={isFunctionallyDisabled || isLoading}
         {...props}

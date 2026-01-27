@@ -6,14 +6,14 @@ const dividerVariants = cva(
   'flex-shrink-0',
   ({
     variants: {
-      "orientation": {
-        "horizontal": "h-px w-full",
-        "vertical": "w-px h-full self-stretch",
-      },
       "color": {
         "default": "bg-border-default",
         "strong": "bg-border-strong",
         "subtle": "bg-border-subtle",
+      },
+      "orientation": {
+        "horizontal": "h-px w-full",
+        "vertical": "w-px h-full self-stretch",
       },
     },
     defaultVariants: {

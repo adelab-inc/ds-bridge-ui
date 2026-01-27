@@ -51,14 +51,16 @@ export const WithRadio: StoryObj<RadioStoryArgs> = {
     }, [checked]);
 
     return (
-      <Option label={label} inputSize={inputSize}>
-        <Radio
-          checked={checkedState}
-          disabled={disabled}
-          onChange={(e) => !disabled && setCheckedState(e.target.checked)}
-          aria-label="radio option"
-        />
-      </Option>
+      <div className="flex items-center min-h-[40px]">
+        <Option label={label} inputSize={inputSize}>
+          <Radio
+            checked={checkedState}
+            disabled={disabled}
+            onChange={(e) => !disabled && setCheckedState(e.target.checked)}
+            aria-label="radio option"
+          />
+        </Option>
+      </div>
     );
   },
   args: {
@@ -98,15 +100,17 @@ export const WithCheckbox: StoryObj<CheckboxStoryArgs> = {
     }, [checked]);
 
     return (
-      <Option label={label} inputSize={inputSize}>
-        <Checkbox
-          checked={checkedState}
-          disabled={disabled}
-          variant={variant}
-          onChange={(e) => !disabled && setCheckedState(e.target.checked)}
-          aria-label="checkbox option"
-        />
-      </Option>
+      <div className="flex items-center min-h-[40px]">
+        <Option label={label} inputSize={inputSize}>
+          <Checkbox
+            checked={checkedState}
+            disabled={disabled}
+            variant={variant}
+            onChange={(e) => !disabled && setCheckedState(e.target.checked)}
+            aria-label="checkbox option"
+          />
+        </Option>
+      </div>
     );
   },
   args: {

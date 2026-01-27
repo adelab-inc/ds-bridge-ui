@@ -20,72 +20,38 @@ const meta: Meta<typeof Pagination> = {
       control: 'number',
       description: '현재 페이지 번호',
     },
-    onPageChange: {
-      action: 'page changed',
-      description: '페이지 변경 시 호출되는 콜백 함수',
-    },
     disabled: {
       control: 'boolean',
       description: '페이지네이션 비활성화 여부',
     },
-  },
-  args: {
-    onPageChange: () => {},
-    disabled: false,
+    totalCount: {
+      control: 'number',
+      description: '전체 항목 수 (standard variant)',
+    },
+    pageSize: {
+      control: 'number',
+      description: '페이지당 항목 수 (standard variant)',
+    },
+    siblingCount: {
+      control: 'number',
+      description: '현재 페이지 양쪽에 표시할 페이지 수',
+    },
+    onPageChange: { table: { disable: true } },
+    totalPages: { table: { disable: true } },
   },
 };
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Standard: Story = {
+export const Default: Story = {
   args: {
     variant: 'standard',
     totalCount: 1000,
     pageSize: 10,
     currentPage: 1,
     siblingCount: 1,
-  },
-  render: (args: any) => {
-    const [page, setPage] = useState(args.currentPage);
-    return <Pagination {...args} currentPage={page} onPageChange={setPage} />;
-  },
-};
-
-export const Simple: Story = {
-  args: {
-    variant: 'simple',
-    currentPage: 1,
-    totalPages: 100,
-  },
-  render: (args: any) => {
-    const [page, setPage] = useState(args.currentPage);
-    return <Pagination {...args} currentPage={page} onPageChange={setPage} />;
-  },
-};
-
-export const StandardWithManyPages: Story = {
-  args: {
-    variant: 'standard',
-    totalCount: 5000,
-    pageSize: 10,
-    currentPage: 50,
-    siblingCount: 2,
-  },
-  render: (args: any) => {
-    const [page, setPage] = useState(args.currentPage);
-    return <Pagination {...args} currentPage={page} onPageChange={setPage} />;
-  },
-};
-
-export const DisabledPagination: Story = {
-  args: {
-    variant: 'standard',
-    totalCount: 1000,
-    pageSize: 10,
-    currentPage: 1,
-    siblingCount: 1,
-    disabled: true,
+    disabled: false,
   },
   render: (args: any) => {
     const [page, setPage] = useState(args.currentPage);

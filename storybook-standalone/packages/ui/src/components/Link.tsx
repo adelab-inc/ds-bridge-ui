@@ -6,6 +6,11 @@ import { cn } from './utils';
 
 const linkVariants = cva("'inline-flex justify-center items-center'", ({
     variants: {
+      "size": {
+        "lg": "text-body-lg-regular",
+        "md": "text-body-md-regular",
+        "sm": "text-body-sm-regular",
+      },
       "variant": {
         "always-inherit": "text-text-primary underline underline-offset-auto",
         "always-link": "text-text-semantic-info underline underline-offset-auto",
@@ -13,11 +18,6 @@ const linkVariants = cva("'inline-flex justify-center items-center'", ({
         "none-link": "text-text-semantic-info",
         "on-hover-inherit": "text-text-primary hover:underline hover:underline-offset-auto",
         "on-hover-link": "text-text-semantic-info hover:underline hover:underline-offset-auto",
-      },
-      "size": {
-        "lg": "text-body-lg-regular",
-        "md": "text-body-md-regular",
-        "sm": "text-body-sm-regular",
       },
     },
     defaultVariants: {

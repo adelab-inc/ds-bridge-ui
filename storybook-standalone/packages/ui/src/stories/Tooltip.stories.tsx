@@ -38,7 +38,7 @@ const meta: Meta<typeof Tooltip> = {
       description: '마우스 커서를 따라다니는 툴팁을 활성화합니다.',
     },
     cursorOffset: {
-      control: 'object',
+      table: { disable: true },
       description: '커서와 툴팁 사이의 오프셋입니다. (예: { x: 10, y: 10 })',
     },
   },
@@ -54,7 +54,9 @@ const meta: Meta<typeof Tooltip> = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
+type TooltipStoryArgs = React.ComponentProps<typeof Tooltip>;
+
+export const Default: StoryObj<TooltipStoryArgs> = {
   args: {
     content: 'This is a default tooltip with short content',
     truncation: false,
@@ -66,7 +68,7 @@ export const Default: Story = {
   ),
 };
 
-export const Truncation: Story = {
+export const Truncation: StoryObj<TooltipStoryArgs> = {
   args: {
     content: `This is a truncation tooltip with very long content.
     Lorem ipsum dolor sit amet, consectetur adipiscing elit.
@@ -86,7 +88,7 @@ export const Truncation: Story = {
   ),
 };
 
-export const PositionTop: Story = {
+export const PositionTop: StoryObj<TooltipStoryArgs> = {
   args: {
     content: 'Tooltip positioned at top',
     preferredPosition: 'top',
@@ -100,7 +102,7 @@ export const PositionTop: Story = {
   ),
 };
 
-export const PositionBottom: Story = {
+export const PositionBottom: StoryObj<TooltipStoryArgs> = {
   args: {
     content: 'Tooltip positioned at bottom',
     preferredPosition: 'bottom',
@@ -112,7 +114,7 @@ export const PositionBottom: Story = {
   ),
 };
 
-export const PositionLeft: Story = {
+export const PositionLeft: StoryObj<TooltipStoryArgs> = {
   args: {
     content: 'Tooltip positioned at left',
     preferredPosition: 'left',
@@ -126,7 +128,7 @@ export const PositionLeft: Story = {
   ),
 };
 
-export const PositionRight: Story = {
+export const PositionRight: StoryObj<TooltipStoryArgs> = {
   args: {
     content: 'Tooltip positioned at right',
     preferredPosition: 'right',
@@ -138,7 +140,7 @@ export const PositionRight: Story = {
   ),
 };
 
-export const WithDelay: Story = {
+export const WithDelay: StoryObj<TooltipStoryArgs> = {
   args: {
     content: 'This tooltip appears after 500ms',
     delay: 500,
@@ -150,7 +152,7 @@ export const WithDelay: Story = {
   ),
 };
 
-export const WithCloseDelay: Story = {
+export const WithCloseDelay: StoryObj<TooltipStoryArgs> = {
   args: {
     content: 'This tooltip stays for 1000ms after mouse leave',
     closeDelay: 1000,
@@ -162,7 +164,7 @@ export const WithCloseDelay: Story = {
   ),
 };
 
-export const CustomContent: Story = {
+export const CustomContent: StoryObj<TooltipStoryArgs> = {
   args: {
     content: (
       <div>
@@ -178,7 +180,7 @@ export const CustomContent: Story = {
   ),
 };
 
-export const FollowCursor: Story = {
+export const FollowCursor: StoryObj<TooltipStoryArgs> = {
   args: {
     content: 'This tooltip follows your cursor!',
     followCursor: true,
@@ -193,7 +195,7 @@ export const FollowCursor: Story = {
   ),
 };
 
-export const FollowCursorCustomOffset: Story = {
+export const FollowCursorCustomOffset: StoryObj<TooltipStoryArgs> = {
   args: {
     content: 'Tooltip with custom offset (x: 20, y: 20)',
     followCursor: true,
