@@ -147,7 +147,7 @@ async def resolve_system_prompt(
     return base_prompt
 
 
-MAX_HISTORY_COUNT = 5  # 최근 N개 대화만 포함
+MAX_HISTORY_COUNT = 10  # 최근 N개 대화만 포함
 
 
 async def build_conversation_history(
