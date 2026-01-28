@@ -797,6 +797,135 @@ def get_schema() -> dict | None:
 
 
 # ============================================================================
+# Vision (Image-to-Code) System Prompts
+# ============================================================================
+
+VISION_SYSTEM_PROMPT_HEADER = """You are a premium UI/UX expert AI specializing in converting design images to React code.
+Always respond in Korean.
+
+**Current Date: {current_date}**
+
+## Your Task
+Analyze the provided UI design image(s) and generate production-ready React + TypeScript code.
+
+## Image Analysis Guidelines
+When analyzing the image, identify:
+1. **Layout Structure**: Flex/Grid containers, spacing, alignment, responsive breakpoints
+2. **Components**: Map visual elements to available design system components
+3. **Colors**: Extract color palette and map to design tokens if available
+4. **Typography**: Font sizes, weights, line heights
+5. **Spacing**: Margins, paddings, gaps (use consistent scale)
+6. **States**: Hover, active, disabled states if visible
+7. **Interactions**: Buttons, inputs, clickable areas
+
+## Code Generation Rules
+- Use TypeScript with proper type annotations
+- Use inline styles (style={{ ... }})
+- Import components from @/components
+- Use <file path="...">...</file> tags for code output
+- Generate complete, runnable code (no placeholders)
+- Follow React best practices (hooks, functional components)
+- Use React.useState, React.useEffect directly (no imports)
+- Add data-instance-id to every component
+
+{design_tokens_section}
+"""
+
+VISION_ANALYSIS_PROMPT = """
+## Analysis Mode (2-Step)
+Analyze this UI design image and return ONLY a valid JSON object.
+
+Required JSON structure:
+```json
+{
+  "layout": {
+    "type": "flex" | "grid" | "stack",
+    "direction": "row" | "column",
+    "gap": "spacing value (e.g., 16px, 1rem)",
+    "alignment": "start" | "center" | "end" | "between"
+  },
+  "components": [
+    {
+      "type": "component name",
+      "props": { "key": "value" },
+      "children": "text content or null",
+      "position": { "x": 0, "y": 0, "width": 100, "height": 50 }
+    }
+  ],
+  "colors": {
+    "primary": "#hex",
+    "secondary": "#hex",
+    "background": "#hex",
+    "text": "#hex"
+  },
+  "typography": {
+    "heading": { "size": "24px", "weight": 700 },
+    "body": { "size": "16px", "weight": 400 }
+  }
+}
+```
+
+Do NOT include any explanation. Return ONLY the JSON object.
+"""
+
+
+async def get_vision_system_prompt(
+    schema_key: str | None,
+    mode: str = "direct",
+) -> str:
+    """
+    Vision 모드용 시스템 프롬프트 생성
+
+    Args:
+        schema_key: Firebase Storage 스키마 경로 (None이면 기본 컴포넌트만)
+        mode: 생성 모드 - "direct" (바로 코드 생성) 또는 "analyze" (분석만)
+
+    Returns:
+        Vision 시스템 프롬프트 문자열
+    """
+    current_date = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M KST")
+
+    # 디자인 토큰 로드
+    design_tokens = await fetch_design_tokens_from_storage()
+    design_tokens_section = format_design_tokens(design_tokens)
+
+    # 컴포넌트 스키마 로드
+    if schema_key:
+        try:
+            schema = await fetch_schema_from_storage(schema_key)
+            component_docs = format_component_docs(schema)
+            available_note = get_available_components_note(schema)
+        except Exception:
+            component_docs = ""
+            available_note = "Use standard React components with inline styles."
+    else:
+        component_docs = ""
+        available_note = "Use standard React components with inline styles."
+
+    # 기본 헤더 구성
+    base_prompt = VISION_SYSTEM_PROMPT_HEADER.replace(
+        "{current_date}", current_date
+    ).replace("{design_tokens_section}", design_tokens_section)
+
+    if mode == "analyze":
+        # 2-Step: 분석만 수행
+        return base_prompt + "\n" + available_note + "\n" + VISION_ANALYSIS_PROMPT
+    else:
+        # 1-Step: 바로 코드 생성
+        return (
+            base_prompt
+            + "\n## Available Components\n"
+            + available_note
+            + "\n"
+            + component_docs
+            + "\n"
+            + RESPONSE_FORMAT_INSTRUCTIONS
+            + "\n"
+            + SYSTEM_PROMPT_FOOTER
+        )
+
+
+# ============================================================================
 # API Endpoints
 # ============================================================================
 

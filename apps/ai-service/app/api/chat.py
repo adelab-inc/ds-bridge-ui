@@ -6,7 +6,11 @@ from collections.abc import AsyncGenerator
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
-from app.api.components import generate_system_prompt, get_schema
+from app.api.components import (
+    generate_system_prompt,
+    get_schema,
+    get_vision_system_prompt,
+)
 from app.core.auth import verify_api_key
 from app.schemas.chat import (
     ChatRequest,
@@ -15,6 +19,7 @@ from app.schemas.chat import (
     FileContent,
     Message,
     ParsedResponse,
+    VisionChatRequest,
 )
 from app.services.ai_provider import get_ai_provider
 from app.services.firebase_storage import (
@@ -611,6 +616,183 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
         raise HTTPException(status_code=500, detail="Database error. Please try again.") from e
     except Exception as e:
         logger.error("Unexpected error in chat_stream: %s", str(e), exc_info=True)
+        raise HTTPException(
+            status_code=500, detail="An unexpected error occurred. Please try again."
+        ) from e
+
+
+# ============================================================================
+# Vision (Image-to-Code) Endpoint
+# ============================================================================
+
+
+@router.post(
+    "/vision",
+    summary="Vision AI 채팅 (Image-to-Code)",
+    description="""
+이미지 + 텍스트 프롬프트를 받아 React 코드를 생성합니다.
+
+## 요청 예시
+```json
+{
+  "message": "이 디자인을 React 코드로 만들어줘",
+  "room_id": "550e8400-e29b-41d4-a716-446655440000",
+  "images": [
+    {
+      "type": "image",
+      "media_type": "image/png",
+      "data": "iVBORw0KGgo..."
+    }
+  ],
+  "mode": "direct"
+}
+```
+
+## 모드
+| 모드 | 설명 |
+|------|------|
+| `direct` | 이미지 → 바로 코드 생성 (1-Step) |
+| `analyze` | 이미지 분석 → JSON 반환 (2-Step) |
+
+## SSE 이벤트 타입
+| 타입 | 설명 | 필드 |
+|------|------|------|
+| `chat` | 대화 텍스트 | `text` |
+| `code` | 코드 파일 | `path`, `content` |
+| `analysis` | 분석 결과 (2-Step) | `data` |
+| `done` | 완료 | - |
+| `error` | 오류 | `error` |
+
+## 제한
+- 최대 5개 이미지
+- 지원 형식: JPEG, PNG, GIF, WebP
+""",
+    response_description="SSE 스트림",
+    responses={
+        200: {
+            "description": "SSE 스트림",
+            "content": {
+                "text/event-stream": {
+                    "example": 'data: {"type": "chat", "text": "이미지를 분석하여..."}\n\ndata: {"type": "code", "path": "src/pages/Login.tsx", "content": "..."}\n\ndata: {"type": "done"}\n\n'
+                }
+            },
+        },
+        404: {"description": "채팅방을 찾을 수 없음"},
+        500: {"description": "AI API 호출 실패"},
+    },
+)
+async def chat_vision(request: VisionChatRequest) -> StreamingResponse:
+    """
+    Vision AI 채팅 API (Image-to-Code)
+
+    이미지와 텍스트 프롬프트를 받아 React 코드를 생성합니다.
+    SSE 스트리밍으로 실시간 응답을 제공합니다.
+    """
+    try:
+        # 1. room 조회 및 검증
+        room = await get_chat_room(request.room_id)
+        if room is None:
+            raise RoomNotFoundError(f"채팅방을 찾을 수 없습니다: {request.room_id}")
+
+        question_created_at = get_timestamp_ms()
+
+        # 2. GENERATING 상태로 메시지 먼저 생성
+        message_data = await create_chat_message(
+            room_id=request.room_id,
+            question=f"[이미지 {len(request.images)}개] {request.message}",
+            question_created_at=question_created_at,
+            status="GENERATING",
+        )
+        message_id = message_data["id"]
+
+        # 3. AI Provider 초기화
+        provider = get_ai_provider()
+
+        # 4. Vision 시스템 프롬프트 생성
+        system_prompt = await get_vision_system_prompt(
+            schema_key=room.get("schema_key"),
+            mode=request.mode,
+        )
+
+        # 5. 메시지 구성 (이전 히스토리 + 현재 메시지)
+        messages = await build_conversation_history(
+            room_id=request.room_id,
+            system_prompt=system_prompt,
+            current_message=request.message,
+        )
+
+        async def generate() -> AsyncGenerator[str, None]:
+            parser = StreamingParser()
+            collected_text = ""
+            collected_files: list[dict] = []
+
+            try:
+                # Vision API 스트리밍 호출
+                async for chunk in provider.chat_vision_stream(messages, request.images):
+                    events = parser.process_chunk(chunk)
+                    for event in events:
+                        # 이벤트 수집
+                        if event["type"] == "chat":
+                            collected_text += event.get("text", "")
+                        elif event["type"] == "code":
+                            collected_files.append(event)
+
+                        yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+
+                # 남은 버퍼 처리
+                final_events = parser.flush()
+                for event in final_events:
+                    if event["type"] == "chat":
+                        collected_text += event.get("text", "")
+                    yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+
+                # 완료 시 DONE으로 업데이트
+                first_file = collected_files[0] if collected_files else None
+                await update_chat_message(
+                    message_id=message_id,
+                    text=collected_text.strip(),
+                    content=first_file.get("content", "") if first_file else "",
+                    path=first_file.get("path", "") if first_file else "",
+                    status="DONE",
+                )
+
+                yield f"data: {json.dumps({'type': 'done'})}\n\n"
+
+            except NotImplementedError:
+                # Vision 미지원 Provider
+                logger.error("Vision not supported by current AI provider")
+                await update_chat_message(message_id=message_id, status="ERROR")
+                error_event = {
+                    "type": "error",
+                    "error": "현재 AI 프로바이더는 Vision 기능을 지원하지 않습니다.",
+                }
+                yield f"data: {json.dumps(error_event, ensure_ascii=False)}\n\n"
+            except Exception as e:
+                # 에러 시 ERROR로 업데이트
+                logger.error("Vision streaming error: %s", str(e), exc_info=True)
+                await update_chat_message(message_id=message_id, status="ERROR")
+                error_event = {
+                    "type": "error",
+                    "error": "이미지 처리 중 오류가 발생했습니다. 다시 시도해주세요.",
+                }
+                yield f"data: {json.dumps(error_event, ensure_ascii=False)}\n\n"
+
+        return StreamingResponse(
+            generate(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",
+            },
+        )
+    except RoomNotFoundError as e:
+        raise HTTPException(status_code=404, detail="Chat room not found.") from e
+    except FirestoreError as e:
+        logger.error("Firestore error in chat_vision: %s", str(e), exc_info=True)
+        raise HTTPException(status_code=500, detail="Database error. Please try again.") from e
+    except Exception as e:
+        logger.error("Unexpected error in chat_vision: %s", str(e), exc_info=True)
         raise HTTPException(
             status_code=500, detail="An unexpected error occurred. Please try again."
         ) from e
