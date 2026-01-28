@@ -6,7 +6,7 @@ from collections.abc import AsyncGenerator
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
-from app.api.components import generate_system_prompt, get_free_mode_system_prompt
+from app.api.components import generate_system_prompt, get_schema
 from app.core.auth import verify_api_key
 from app.schemas.chat import (
     ChatRequest,
@@ -119,7 +119,7 @@ async def resolve_system_prompt(
     schema_key 여부에 따라 시스템 프롬프트 반환
 
     Args:
-        schema_key: Firebase Storage 스키마 경로 (None이면 자유 모드)
+        schema_key: Firebase Storage 스키마 경로 (None이면 로컬 스키마 사용)
         current_composition: 현재 렌더링된 컴포넌트 구조 (인스턴스 편집용)
         selected_instance_id: 선택된 인스턴스 ID (인스턴스 편집용)
 
@@ -140,7 +140,15 @@ async def resolve_system_prompt(
 
     # 기본 프롬프트 생성
     if not schema_key:
-        base_prompt = get_free_mode_system_prompt(design_tokens)
+        # 로컬 스키마 사용
+        local_schema = get_schema()
+        if not local_schema:
+            raise HTTPException(
+                status_code=500, detail="No schema available. Please upload a schema first."
+            )
+        base_prompt = generate_system_prompt(
+            local_schema, design_tokens, ag_grid_schema, ag_grid_tokens
+        )
     else:
         try:
             schema = await fetch_schema_from_storage(schema_key)
@@ -148,8 +156,15 @@ async def resolve_system_prompt(
                 schema, design_tokens, ag_grid_schema, ag_grid_tokens
             )
         except FileNotFoundError:
-            logger.warning("Schema not found: %s, using free mode", schema_key)
-            base_prompt = get_free_mode_system_prompt(design_tokens)
+            logger.warning("Schema not found: %s, using local schema", schema_key)
+            local_schema = get_schema()
+            if not local_schema:
+                raise HTTPException(
+                    status_code=404, detail=f"Schema not found: {schema_key}"
+                )
+            base_prompt = generate_system_prompt(
+                local_schema, design_tokens, ag_grid_schema, ag_grid_tokens
+            )
         except Exception as e:
             logger.error("Failed to fetch schema: %s - %s", schema_key, str(e), exc_info=True)
             raise HTTPException(
