@@ -124,6 +124,35 @@ class CurrentComposition(BaseModel):
     )
 
 
+class ImageContent(BaseModel):
+    """Base64 인코딩된 이미지"""
+
+    type: Literal["image"] = Field(
+        default="image",
+        description="컨텐츠 타입",
+    )
+    media_type: Literal["image/jpeg", "image/png", "image/gif", "image/webp"] = Field(
+        ...,
+        description="이미지 MIME 타입",
+    )
+    data: str = Field(
+        ...,
+        description="Base64 인코딩된 이미지 데이터 (data: prefix 제외)",
+    )
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "type": "image",
+                    "media_type": "image/png",
+                    "data": "iVBORw0KGgoAAAANSUhEUgAAAAUA...",
+                }
+            ]
+        }
+    }
+
+
 class ChatRequest(BaseModel):
     """채팅 요청"""
 
@@ -138,6 +167,11 @@ class ChatRequest(BaseModel):
         ...,
         description="채팅방 ID",
         json_schema_extra={"example": "550e8400-e29b-41d4-a716-446655440000"},
+    )
+    images: list[ImageContent] | None = Field(
+        default=None,
+        max_length=5,
+        description="이미지 목록 (최대 5개) - Vision 모드 활성화",
     )
     stream: bool = Field(
         default=False,
@@ -439,190 +473,4 @@ class MessageDocument(BaseModel):
     status: Literal["GENERATING", "DONE", "ERROR"] = Field(..., description="응답 상태")
 
 
-# ============================================================================
-# Vision (Image-to-Code) Schemas
-# ============================================================================
 
-
-class ImageContent(BaseModel):
-    """Base64 인코딩된 이미지"""
-
-    type: Literal["image"] = Field(
-        default="image",
-        description="컨텐츠 타입",
-    )
-    media_type: Literal["image/jpeg", "image/png", "image/gif", "image/webp"] = Field(
-        ...,
-        description="이미지 MIME 타입",
-    )
-    data: str = Field(
-        ...,
-        description="Base64 인코딩된 이미지 데이터 (data: prefix 제외)",
-    )
-
-    model_config = {
-        "json_schema_extra": {
-            "examples": [
-                {
-                    "type": "image",
-                    "media_type": "image/png",
-                    "data": "iVBORw0KGgoAAAANSUhEUgAAAAUA...",
-                }
-            ]
-        }
-    }
-
-
-class VisionChatRequest(BaseModel):
-    """Vision 채팅 요청"""
-
-    message: str = Field(
-        ...,
-        min_length=1,
-        max_length=10000,
-        description="사용자 프롬프트",
-        json_schema_extra={"example": "이 디자인을 React 코드로 만들어줘"},
-    )
-    room_id: str = Field(
-        ...,
-        description="채팅방 ID",
-        json_schema_extra={"example": "550e8400-e29b-41d4-a716-446655440000"},
-    )
-    images: list[ImageContent] = Field(
-        default_factory=list,
-        max_length=5,
-        description="이미지 목록 (최대 5개)",
-    )
-    mode: Literal["direct", "analyze"] = Field(
-        default="direct",
-        description="생성 모드: direct(1-Step 바로 코드 생성), analyze(2-Step 분석 후 코드 생성)",
-    )
-    stream: bool = Field(
-        default=True,
-        description="스트리밍 응답 여부",
-    )
-
-    model_config = {
-        "json_schema_extra": {
-            "examples": [
-                {
-                    "message": "이 디자인을 React 코드로 만들어줘",
-                    "room_id": "550e8400-e29b-41d4-a716-446655440000",
-                    "images": [
-                        {
-                            "type": "image",
-                            "media_type": "image/png",
-                            "data": "iVBORw0KGgo...",
-                        }
-                    ],
-                    "mode": "direct",
-                    "stream": True,
-                }
-            ]
-        }
-    }
-
-
-class ImageAnalysis(BaseModel):
-    """이미지 분석 결과 (2-Step 모드)"""
-
-    layout: dict = Field(
-        ...,
-        description="레이아웃 구조 (type, direction, gap, alignment)",
-    )
-    components: list[dict] = Field(
-        ...,
-        description="감지된 컴포넌트 목록 (type, props, children, position)",
-    )
-    colors: dict = Field(
-        ...,
-        description="색상 팔레트 (primary, secondary, background, text)",
-    )
-    typography: dict = Field(
-        ...,
-        description="타이포그래피 정보 (heading, body)",
-    )
-
-    model_config = {
-        "json_schema_extra": {
-            "examples": [
-                {
-                    "layout": {
-                        "type": "flex",
-                        "direction": "column",
-                        "gap": "16px",
-                        "alignment": "center",
-                    },
-                    "components": [
-                        {
-                            "type": "Button",
-                            "props": {"variant": "primary"},
-                            "children": "로그인",
-                        }
-                    ],
-                    "colors": {
-                        "primary": "#0033A0",
-                        "background": "#FFFFFF",
-                        "text": "#212529",
-                    },
-                    "typography": {
-                        "heading": {"size": "24px", "weight": 700},
-                        "body": {"size": "16px", "weight": 400},
-                    },
-                }
-            ]
-        }
-    }
-
-
-class VisionStreamEvent(BaseModel):
-    """Vision SSE 스트리밍 이벤트"""
-
-    type: Literal["chat", "code", "analysis", "done", "error"] = Field(
-        ...,
-        description="이벤트 타입: chat(대화), code(코드파일), analysis(분석결과), done(완료), error(오류)",
-    )
-    text: str | None = Field(
-        default=None,
-        description="대화 텍스트 (type=chat일 때)",
-    )
-    path: str | None = Field(
-        default=None,
-        description="파일 경로 (type=code일 때)",
-    )
-    content: str | None = Field(
-        default=None,
-        description="파일 내용 (type=code일 때)",
-    )
-    data: ImageAnalysis | None = Field(
-        default=None,
-        description="분석 결과 (type=analysis일 때)",
-    )
-    error: str | None = Field(
-        default=None,
-        description="오류 메시지 (type=error일 때)",
-    )
-
-    model_config = {
-        "json_schema_extra": {
-            "examples": [
-                {"type": "chat", "text": "이미지를 분석하여 React 코드를 생성합니다."},
-                {
-                    "type": "code",
-                    "path": "src/pages/Login.tsx",
-                    "content": "import { Button } from '@/components';...",
-                },
-                {
-                    "type": "analysis",
-                    "data": {
-                        "layout": {"type": "flex", "direction": "column"},
-                        "components": [{"type": "Button", "props": {}}],
-                        "colors": {"primary": "#0033A0"},
-                        "typography": {"heading": {"size": "24px"}},
-                    },
-                },
-                {"type": "done"},
-                {"type": "error", "error": "이미지 처리 실패"},
-            ]
-        }
-    }

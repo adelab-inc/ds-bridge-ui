@@ -831,54 +831,12 @@ When analyzing the image, identify:
 {design_tokens_section}
 """
 
-VISION_ANALYSIS_PROMPT = """
-## Analysis Mode (2-Step)
-Analyze this UI design image and return ONLY a valid JSON object.
-
-Required JSON structure:
-```json
-{
-  "layout": {
-    "type": "flex" | "grid" | "stack",
-    "direction": "row" | "column",
-    "gap": "spacing value (e.g., 16px, 1rem)",
-    "alignment": "start" | "center" | "end" | "between"
-  },
-  "components": [
-    {
-      "type": "component name",
-      "props": { "key": "value" },
-      "children": "text content or null",
-      "position": { "x": 0, "y": 0, "width": 100, "height": 50 }
-    }
-  ],
-  "colors": {
-    "primary": "#hex",
-    "secondary": "#hex",
-    "background": "#hex",
-    "text": "#hex"
-  },
-  "typography": {
-    "heading": { "size": "24px", "weight": 700 },
-    "body": { "size": "16px", "weight": 400 }
-  }
-}
-```
-
-Do NOT include any explanation. Return ONLY the JSON object.
-"""
-
-
-async def get_vision_system_prompt(
-    schema_key: str | None,
-    mode: str = "direct",
-) -> str:
+async def get_vision_system_prompt(schema_key: str | None) -> str:
     """
     Vision 모드용 시스템 프롬프트 생성
 
     Args:
         schema_key: Firebase Storage 스키마 경로 (None이면 기본 컴포넌트만)
-        mode: 생성 모드 - "direct" (바로 코드 생성) 또는 "analyze" (분석만)
 
     Returns:
         Vision 시스템 프롬프트 문자열
@@ -907,22 +865,17 @@ async def get_vision_system_prompt(
         "{current_date}", current_date
     ).replace("{design_tokens_section}", design_tokens_section)
 
-    if mode == "analyze":
-        # 2-Step: 분석만 수행
-        return base_prompt + "\n" + available_note + "\n" + VISION_ANALYSIS_PROMPT
-    else:
-        # 1-Step: 바로 코드 생성
-        return (
-            base_prompt
-            + "\n## Available Components\n"
-            + available_note
-            + "\n"
-            + component_docs
-            + "\n"
-            + RESPONSE_FORMAT_INSTRUCTIONS
-            + "\n"
-            + SYSTEM_PROMPT_FOOTER
-        )
+    return (
+        base_prompt
+        + "\n## Available Components\n"
+        + available_note
+        + "\n"
+        + component_docs
+        + "\n"
+        + RESPONSE_FORMAT_INSTRUCTIONS
+        + "\n"
+        + SYSTEM_PROMPT_FOOTER
+    )
 
 
 # ============================================================================
