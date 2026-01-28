@@ -11,6 +11,10 @@ from pydantic import BaseModel, Field
 from app.core.auth import verify_api_key
 from app.schemas.chat import ReloadResponse
 from app.services.firebase_storage import (
+    DEFAULT_AG_GRID_SCHEMA_KEY,
+    DEFAULT_AG_GRID_TOKENS_KEY,
+    fetch_ag_grid_tokens_from_storage,
+    fetch_design_tokens_from_storage,
     fetch_schema_from_storage,
     upload_schema_to_storage,
 )
@@ -72,9 +76,14 @@ export default Login;
 </file>"""
 
 
-def get_free_mode_system_prompt() -> str:
-    """스키마 제약 없는 자유로운 시스템 프롬프트 반환"""
+def get_free_mode_system_prompt(design_tokens: dict | None = None) -> str:
+    """스키마 제약 없는 자유로운 시스템 프롬프트 반환
+
+    Args:
+        design_tokens: 디자인 토큰 dict (현재 FREE_MODE에서는 미사용, 추후 확장 가능)
+    """
     current_date = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M KST")
+    # FREE_MODE는 간소화된 프롬프트 사용 (디자인 토큰 미적용)
     return FREE_MODE_SYSTEM_PROMPT.replace("{current_date}", current_date)
 
 
@@ -123,6 +132,8 @@ AVAILABLE_COMPONENTS_WHITELIST = {
     # Layout
     "Scrollbar",
     "Heading",
+    # Data (프리뷰 미지원 - UMD 빌드에서 stub 처리됨)
+    "DataGrid",
 }
 
 
@@ -230,6 +241,291 @@ def get_available_components_note(schema: dict) -> str:
     return f"**Available Components ({len(names)}):** {', '.join(names)}\n\n"
 
 
+def format_design_tokens(tokens: dict | None) -> str:
+    """
+    디자인 토큰을 시스템 프롬프트용 문자열로 포맷팅
+
+    Args:
+        tokens: 디자인 토큰 dict (Firebase에서 로드) 또는 None
+
+    Returns:
+        포맷팅된 디자인 토큰 문자열
+    """
+    if not tokens:
+        # 토큰이 없으면 기본 하드코딩 값 사용
+        return DEFAULT_DESIGN_TOKENS_SECTION
+
+    design_tokens = tokens.get("designTokens", tokens)
+    colors = design_tokens.get("colors", {})
+    font_size = design_tokens.get("fontSize", {})
+    font_weight = design_tokens.get("fontWeight", {})
+
+    # 주요 색상 추출
+    text_primary = colors.get("text-primary", "#212529")
+    text_secondary = colors.get("text-secondary", "#495057")
+    text_tertiary = colors.get("text-tertiary", "#6c757d")
+    text_accent = colors.get("text-accent", "#0033a0")
+    border_default = colors.get("border-default", "#dee2e6")
+    bg_surface = colors.get("bg-surface", "#ffffff")
+    bg_canvas = colors.get("bg-canvas", "#f4f6f8")
+    bg_selection = colors.get("bg-selection", "#ecf0fa")
+
+    # 폰트 크기/두께 추출 (Mapping to smaller tokens for better density)
+    # Page Title (h1) -> Use Heading LG token
+    heading_xl = font_size.get("typography-heading-lg-bold", ["24px", {}])
+    heading_xl_weight = font_weight.get("typography-heading-lg-bold", 700)
+
+    # Section Title (h2) -> Use Heading MD token
+    heading_lg = font_size.get("typography-heading-md-semibold", ["20px", {}])
+    heading_lg_weight = font_weight.get("typography-heading-md-semibold", 600)
+
+    # Subsection (h3) -> Use Body LG Medium token
+    heading_md = font_size.get("typography-body-lg-medium", ["18px", {}])
+    heading_md_weight = font_weight.get("typography-body-lg-medium", 500)
+
+    # Form Label -> Use Label SM token
+    form_label_md = font_size.get("typography-form-label-sm-medium", ["14px", {}])
+    form_label_weight = font_weight.get("typography-form-label-sm-medium", 500)
+
+    body_md = font_size.get("typography-body-md-regular", ["16px", {}])
+    helper_text = font_size.get("typography-form-helper-text-md-regular", ["14px", {}])
+
+    return f"""## 🎨 DESIGN STANDARDS (CRITICAL - USE EXACT VALUES)
+- **Typography (MUST FOLLOW EXACT TOKENS)**:
+  - Font Family: `'Pretendard', sans-serif`
+  - **Page Title (h1)**: `fontSize: {heading_xl[0].replace('px', '')}`, `fontWeight: {heading_xl_weight}`, `color: '{text_primary}'`
+  - **Section Title (h2)**: `fontSize: {heading_lg[0].replace('px', '')}`, `fontWeight: {heading_lg_weight}`, `color: '{text_primary}'`
+  - **Subsection (h3)**: `fontSize: {heading_md[0].replace('px', '')}`, `fontWeight: {heading_md_weight}`, `color: '{text_primary}'`
+  - **Form Label**: `fontSize: {form_label_md[0].replace('px', '')}`, `fontWeight: {form_label_weight}`, `color: '{text_primary}'`
+  - **Body Text**: `fontSize: {body_md[0].replace('px', '')}`, `fontWeight: 400`, `color: '{text_primary}'`
+  - **Helper Text**: `fontSize: {helper_text[0].replace('px', '')}`, `fontWeight: 400`, `color: '{text_secondary}'`
+- **Colors (EXACT HEX - DO NOT CHANGE)**:
+  - **Primary Text**: `{text_primary}` (titles, labels, body)
+  - **Secondary Text**: `{text_secondary}` (helper text, descriptions)
+  - **Tertiary Text**: `{text_tertiary}` (placeholder, caption)
+  - **Brand/Accent**: `{text_accent}` (links, selected state)
+  - **Border Default**: `{border_default}`
+  - **Background Surface**: `{bg_surface}`
+  - **Background Canvas**: `{bg_canvas}`
+  - **Background Selection**: `{bg_selection}` (selected state only)
+- **Visuals**:
+  - **Shadows**: `boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)'`
+  - **Borders**: `border: '1px solid {border_default}'`
+  - **Radius**: `borderRadius: 8px` (inputs, buttons), `12px` (cards)
+
+"""
+
+
+def format_ag_grid_component_docs(schema: dict | None) -> str:
+    """
+    AG Grid 컴포넌트 스키마를 프롬프트용 문서로 변환
+
+    Args:
+        schema: AG Grid 컴포넌트 스키마 dict 또는 None
+                (단일 컴포넌트 구조: componentName, props 등이 최상위에 있음)
+
+    Returns:
+        포맷팅된 AG Grid 컴포넌트 문서 문자열
+    """
+    if not schema:
+        return ""
+
+    # AG Grid 스키마는 단일 컴포넌트 구조
+    comp_name = schema.get("componentName") or schema.get("displayName", "DataGrid")
+    description = schema.get("description", "")
+    props = schema.get("props", {})
+    required_imports = schema.get("requiredImports", [])
+    theme_config = schema.get("themeConfig", {})
+
+    if not props:
+        return ""
+
+    lines = ["## 📊 AG Grid Component (DataGrid)"]
+    lines.append("")
+    lines.append(f"**{comp_name}** - {description}" if description else f"**{comp_name}**")
+    lines.append("")
+
+    # Import 가이드
+    if required_imports:
+        lines.append("### Required Imports")
+        lines.append("```tsx")
+        for imp in required_imports:
+            imp_name = imp.get("name", "")
+            imp_from = imp.get("from", "")
+            is_type = imp.get("isTypeOnly", False)
+            if is_type:
+                lines.append(f"import type {{ {imp_name} }} from '{imp_from}';")
+            else:
+                lines.append(f"import {{ {imp_name} }} from '{imp_from}';")
+        lines.append("```")
+        lines.append("")
+
+    # 테마 설정
+    if theme_config:
+        lines.append("### Theme Configuration")
+        lines.append(f"- Always use `theme={{dsRuntimeTheme}}` prop")
+        lines.append(f"- Import theme from `{theme_config.get('themeFile', '@/themes/agGridTheme')}`")
+        lines.append("")
+
+    # Props 문서
+    lines.append("### Props")
+    prop_lines = []
+    for prop_name, prop_info in props.items():
+        prop_type = prop_info.get("type", "any")
+        required = prop_info.get("required", False)
+        default = prop_info.get("default")
+        prop_desc = prop_info.get("description", "")
+
+        type_str = format_prop_type(prop_type)
+        line = f"  ├─ {prop_name}: {type_str}"
+
+        if required:
+            line += " [required]"
+        elif default is not None:
+            if isinstance(default, str):
+                line += f' (= "{default}")'
+            elif isinstance(default, bool):
+                line += f" (= {str(default).lower()})"
+            else:
+                line += f" (= {default})"
+
+        if prop_desc:
+            line += f" - {prop_desc[:50]}"
+
+        prop_lines.append(line)
+
+    if prop_lines:
+        prop_lines[-1] = prop_lines[-1].replace("├─", "└─")
+        lines.extend(prop_lines)
+
+    lines.append("")
+
+    # 사용 예시
+    lines.append("### Usage Example")
+    lines.append("```tsx")
+    lines.append("import { AgGridReact } from 'ag-grid-react';")
+    lines.append("import { dsRuntimeTheme } from '@/themes/agGridTheme';")
+    lines.append("import type { ColDef } from 'ag-grid-community';")
+    lines.append("")
+    lines.append("const columnDefs: ColDef[] = [")
+    lines.append("  { field: 'name', headerName: '이름', flex: 1 },")
+    lines.append("  { field: 'email', headerName: '이메일', flex: 2 },")
+    lines.append("  { field: 'status', headerName: '상태', width: 100 },")
+    lines.append("];")
+    lines.append("")
+    lines.append("const rowData = [")
+    lines.append("  { name: '김민수', email: 'kim@example.com', status: '활성' },")
+    lines.append("  { name: '이지은', email: 'lee@example.com', status: '비활성' },")
+    lines.append("];")
+    lines.append("")
+    lines.append("<div style={{ height: 400 }}>")
+    lines.append("  <AgGridReact")
+    lines.append("    theme={dsRuntimeTheme}")
+    lines.append("    rowData={rowData}")
+    lines.append("    columnDefs={columnDefs}")
+    lines.append("    pagination={true}")
+    lines.append("    paginationPageSize={10}")
+    lines.append("  />")
+    lines.append("</div>")
+    lines.append("```")
+    lines.append("")
+
+    return "\n".join(lines)
+
+
+def format_ag_grid_tokens(tokens: dict | None) -> str:
+    """
+    AG Grid 토큰을 시스템 프롬프트용 문자열로 포맷팅
+
+    Args:
+        tokens: AG Grid 토큰 dict 또는 None
+                구조: { "agGrid": { "colors": { "accent": { "value": "#xxx" }, ... } } }
+
+    Returns:
+        포맷팅된 AG Grid 토큰 문자열
+    """
+    if not tokens:
+        return ""
+
+    # agGrid 키 아래에 토큰이 있음
+    grid_tokens = tokens.get("agGrid", tokens)
+    if not grid_tokens:
+        return ""
+
+    lines = ["### AG Grid Styling Tokens"]
+    lines.append("")
+
+    def extract_value(token_data):
+        """토큰 데이터에서 값 추출 (nested 구조 처리)"""
+        if isinstance(token_data, dict):
+            if "value" in token_data:
+                return token_data["value"]
+            # nested 객체는 첫 번째 레벨만 처리
+            return {k: v.get("value", v) if isinstance(v, dict) else v for k, v in token_data.items()}
+        return token_data
+
+    # 색상 토큰
+    colors = grid_tokens.get("colors", {})
+    if colors:
+        lines.append("**Colors:**")
+        for key, value in list(colors.items())[:8]:
+            extracted = extract_value(value)
+            if isinstance(extracted, str):
+                lines.append(f"  - {key}: `{extracted}`")
+            elif isinstance(extracted, dict):
+                # nested (e.g., background.chrome)
+                for sub_key, sub_val in list(extracted.items())[:3]:
+                    lines.append(f"  - {key}.{sub_key}: `{sub_val}`")
+        lines.append("")
+
+    # 간격/크기 토큰
+    spacing = grid_tokens.get("spacing", {})
+    if spacing:
+        lines.append("**Spacing:**")
+        for key, value in list(spacing.items())[:6]:
+            extracted = extract_value(value)
+            lines.append(f"  - {key}: `{extracted}`")
+        lines.append("")
+
+    # 폰트 토큰
+    font = grid_tokens.get("font", {})
+    if font:
+        lines.append("**Font:**")
+        for key, value in list(font.items())[:6]:
+            extracted = extract_value(value)
+            lines.append(f"  - {key}: `{extracted}`")
+        lines.append("")
+
+    return "\n".join(lines) if len(lines) > 2 else ""
+
+
+# 디자인 토큰을 로드하지 못했을 때 사용할 기본값
+DEFAULT_DESIGN_TOKENS_SECTION = """## 🎨 DESIGN STANDARDS (CRITICAL - USE EXACT VALUES)
+- **Typography (MUST FOLLOW EXACT TOKENS)**:
+  - Font Family: `'Pretendard', sans-serif`
+  - **Page Title (h1)**: `fontSize: 28`, `fontWeight: 700`, `color: '#212529'`
+  - **Section Title (h2)**: `fontSize: 24`, `fontWeight: 700`, `color: '#212529'`
+  - **Subsection (h3)**: `fontSize: 18`, `fontWeight: 600`, `color: '#212529'`
+  - **Form Label**: `fontSize: 14`, `fontWeight: 500`, `color: '#212529'`
+  - **Body Text**: `fontSize: 16`, `fontWeight: 400`, `color: '#212529'`
+  - **Helper Text**: `fontSize: 14`, `fontWeight: 400`, `color: '#495057'`
+- **Colors (EXACT HEX - DO NOT CHANGE)**:
+  - **Primary Text**: `#212529` (titles, labels, body)
+  - **Secondary Text**: `#495057` (helper text, descriptions)
+  - **Tertiary Text**: `#6c757d` (placeholder, caption)
+  - **Brand/Accent**: `#0033a0` (links, selected state)
+  - **Border Default**: `#dee2e6`
+  - **Background Surface**: `#ffffff`
+  - **Background Canvas**: `#f4f6f8`
+  - **Background Selection**: `#ecf0fa` (selected state only)
+- **Visuals**:
+  - **Shadows**: `boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)'`
+  - **Borders**: `border: '1px solid #dee2e6'`
+  - **Radius**: `borderRadius: 8px` (inputs, buttons), `12px` (cards)
+
+"""
+
+
 # ============================================================================
 # System Prompt Templates
 # ============================================================================
@@ -240,30 +536,31 @@ Always respond in Korean.
 
 **Current Date: {current_date}**
 
+## ⚠️ CRITICAL: PRESERVE PREVIOUS CODE (HIGHEST PRIORITY)
+When updating existing code, you MUST:
+1. **KEEP ALL existing features** - filters, buttons, state, handlers. DO NOT remove anything.
+2. **KEEP ALL existing text/labels** - Do not change button text, titles, or messages unless explicitly asked.
+3. **ADD new features ON TOP of existing code** - Never start from scratch.
+4. If unsure, include MORE code rather than less. Missing features = FAILURE.
+
 ## 🧠 THOUGHT PROCESS (MUST EXECUTE INTERNALLY)
 Before generating any code, you must:
-1. **Analyze Intent**: What is the core feature? What are the key interactions?
-2. **Requirement Extraction**: List EVERY field/filter/action requested. (e.g., "Filters: Date, Name, Status, Category").
-3. **Component Strategy**: Which design system components fit best? (e.g., Use `Button` vs `IconButton`)
-3. **State Management**: What `useState` hooks are needed? (e.g., loading, open/close, input values)
-4. **Layout Plan**: How to structure the `div`s for proper spacing and alignment?
+1. **Review Previous Code**: What features exist? What filters/buttons/state are already there? (PRESERVE ALL)
+2. **Analyze Intent**: What is the core feature? What are the key interactions?
+3. **Requirement Extraction**: List EVERY field/filter/action requested. (e.g., "Filters: Date, Name, Status, Category").
+4. **Component Strategy**: Which design system components fit best? (e.g., Use `Button` vs `IconButton`)
+5. **State Management**: What `useState` hooks are needed? (e.g., loading, open/close, input values)
+6. **Layout Plan**: How to structure the `div`s for proper spacing and alignment?
 
-## � DESIGN STANDARDS (CRITICAL)
-- **Typography (MUST FOLLOW)**:
-  - Font Family: `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`
-  - **Headings**: `letterSpacing: '-0.025em'` (Use tight tracking), `color: '#111827'`
-  - **Body**: `lineHeight: 1.6`, `color: '#374151'` (Never use pure black)
-  - **Caption**: `fontSize: 12`, `color: '#6b7280'`
-- **Visuals**:
-  - **Shadows**: Soft & Layered. `boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)'`
-  - **Borders**: Subtle. `border: '1px solid #e5e7eb'`
-  - **Radius**: `borderRadius: 8px` (Small components), `12px` (Cards/Containers)
-
-## 💎 PREMIUM VISUAL STANDARDS (LOVEABLE QUALITY)
+{design_tokens_section}## 💎 PREMIUM VISUAL STANDARDS (LOVEABLE QUALITY)
 - **Containerization (NO FLOATING TEXT)**:
-  - ALL content must be inside a white card: `<div style={{backgroundColor:'white', borderRadius:12, border:'1px solid #e5e7eb', boxShadow:'0 1px 3px rgba(0,0,0,0.1)', padding:24}}>`
+  - ALL content must be inside a white card: `<div style={{backgroundColor:'#ffffff', borderRadius:12, border:'1px solid #dee2e6', boxShadow:'0 1px 3px rgba(0,0,0,0.1)', padding:24}}>`
   - NEVER place naked text or buttons directly on the gray background.
   - Exception: Page Titles (`h1`) can be outside.
+- **Filter + Table Layout (IMPORTANT)**:
+  - Filter bar and DataGrid/Table MUST be in the SAME card container.
+  - Structure: `<Card> <FilterBar /> <Divider /> <DataGrid /> </Card>`
+  - DO NOT separate filters and table into different cards.
 - **Status Styling**:
   - Use `Badge` for status. NEVER use plain text.
   - Active: `variant="success"`, Inactive: `variant="neutral"`, Error: `variant="destructive"`.
@@ -284,13 +581,14 @@ Before generating any code, you must:
     - ❌ `<Select ... />` (Causes overflow/overlap)
   - **Inputs**: internal inputs MUST be `width: '100%'`. NEVER use fixed pixels like `width: 300px` inside a grid.
   - **Z-Index**: Dropdowns/Modals must have `zIndex: 50` or higher to float above content.
+
 - **Content & Mock Data (MANDATORY)**:
   - **NO EMPTY STATES**: NEVER generate empty tables, lists, or selects.
   - **Rich Volume**: Always provide **at least 10 items** for lists/tables to show scrolling behavior.
-  - **Diverse Data**: Use meaningful, varied data. Do NOT repeat "Item 1, Item 2". Use specific product names, diverse dates, and unique statuses.
+  - **Diverse Data**: Use meaningful, varied data. Do NOT repeat "Item 1, Item 2". Use specific names, diverse dates, and unique statuses.
   - **Realistic Korean Data**: Use real-world examples (names: 김민준, 이서연 / companies: 토스, 당근, 쿠팡).
-  - **Rich Detail**: Fill all fields. Don't use "Test 1", "Item 1". Use "맥북 프로 16인치", "2024년 1월 매출".
-  - **Context-Aware**: If the user asks for a "Payment Page", generate "Premium Plan - ₩15,000", "Visa **** 1234".
+  - **Rich Detail**: Fill all fields. Don't use "Test 1", "Item 1". Use "프로젝트 알파", "2024년 1분기 보고서".
+  - **Context-Aware**: If the user asks for a "Project Dashboard", generate "Project A - In Progress", "Team Meeting - 10:00 AM".
 - **Spacing**:
   - **섹션 간**: `marginBottom: 32px`
   - **폼 행 간**: `marginBottom: 24px`
@@ -435,11 +733,79 @@ const UserDashboard = () => {
 1. **PREMIUM COMPLETION (DEFAULT)**: Assume the user wants a **production-ready, visually stunning UI**. Even for simple requests, wrap input/buttons in a `Card` or `Container` with proper headings and spacing.
 2. **RICH MOCK DATA**: **NEVER** return empty data. Always generate 10+ realistic items. If the user asks for a list, show a proper list with scrolling.
 3. **PROACTIVE POLISH**: Add "nice-to-have" details (icons, helper text, hover effects) without being asked.
-4. **INCREMENTAL UPDATE**: DO NOT omit existing logic. If updating a file, include ALL previous valid code unless specifically replacing it.
-5. **ZERO OMISSION POLICY**: If the user asks for 5 filters, implement ALL 5. Do not simplify or summarize.
+4. **INCREMENTAL UPDATE (CRITICAL)**: When updating code, NEVER remove existing features. Include ALL previous filters, buttons, handlers, and state. Missing code = FAILURE.
+5. **ZERO OMISSION POLICY**: If the user asks for 5 filters, implement ALL 5. If previous code had 3 filters and user asks for 2 more, result must have ALL 5.
 6. **COMPLETE CODE**: All buttons must work, all inputs must be controlled.
 6. **IMPORT**: `import { Button } from '@/components'` / React hooks: `React.useState`.
 7. **STYLING**: Inline styles only (`style={{ ... }}`), NO emojis, Desktop-first.
+
+## 📊 Data Tables - USE HTML TABLE (NOT DataGrid)
+When user requests a **data table, list, or grid**, use native HTML `<table>` with inline styles.
+
+### Table Style Guide
+```tsx
+const tableStyle = {
+  width: '100%',
+  borderCollapse: 'collapse' as const,
+  fontSize: 14,
+};
+
+const thStyle = {
+  padding: '12px 16px',
+  textAlign: 'left' as const,
+  borderBottom: '2px solid #dee2e6',
+  backgroundColor: '#f8f9fa',
+  fontWeight: 600,
+  color: '#212529',
+};
+
+const tdStyle = {
+  padding: '12px 16px',
+  borderBottom: '1px solid #dee2e6',
+  color: '#212529',
+};
+```
+
+### Example Usage
+```tsx
+const UserTable = () => {
+  const users = [
+    { id: 1, name: '김민수', email: 'kim@example.com', status: '활성' },
+    { id: 2, name: '이지은', email: 'lee@example.com', status: '비활성' },
+  ];
+
+  return (
+    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+      <thead>
+        <tr>
+          <th style={{ padding: '12px 16px', textAlign: 'left', borderBottom: '2px solid #dee2e6', backgroundColor: '#f8f9fa', fontWeight: 600 }}>ID</th>
+          <th style={{ padding: '12px 16px', textAlign: 'left', borderBottom: '2px solid #dee2e6', backgroundColor: '#f8f9fa', fontWeight: 600 }}>이름</th>
+          <th style={{ padding: '12px 16px', textAlign: 'left', borderBottom: '2px solid #dee2e6', backgroundColor: '#f8f9fa', fontWeight: 600 }}>이메일</th>
+          <th style={{ padding: '12px 16px', textAlign: 'left', borderBottom: '2px solid #dee2e6', backgroundColor: '#f8f9fa', fontWeight: 600 }}>상태</th>
+        </tr>
+      </thead>
+      <tbody>
+        {users.map((user) => (
+          <tr key={user.id} style={{ ':hover': { backgroundColor: '#f8f9fa' } }}>
+            <td style={{ padding: '12px 16px', borderBottom: '1px solid #dee2e6' }}>{user.id}</td>
+            <td style={{ padding: '12px 16px', borderBottom: '1px solid #dee2e6' }}>{user.name}</td>
+            <td style={{ padding: '12px 16px', borderBottom: '1px solid #dee2e6' }}>{user.email}</td>
+            <td style={{ padding: '12px 16px', borderBottom: '1px solid #dee2e6' }}>
+              <Badge variant={user.status === '활성' ? 'success' : 'neutral'}>{user.status}</Badge>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+};
+```
+
+### Table Design Rules
+- Header: `backgroundColor: '#f8f9fa'`, `fontWeight: 600`, `borderBottom: '2px solid #dee2e6'`
+- Cells: `padding: '12px 16px'`, `borderBottom: '1px solid #dee2e6'`
+- Use `Badge` for status columns
+- Always generate 10+ rows of mock data
 
 ## Available Components
 
@@ -523,12 +889,20 @@ def get_system_prompt() -> str:
     return SYSTEM_PROMPT.replace("{current_date}", current_date)
 
 
-def generate_system_prompt(schema: dict) -> str:
+def generate_system_prompt(
+    schema: dict,
+    design_tokens: dict | None = None,
+    ag_grid_schema: dict | None = None,
+    ag_grid_tokens: dict | None = None,
+) -> str:
     """
     주어진 스키마로 시스템 프롬프트 동적 생성
 
     Args:
         schema: 컴포넌트 스키마 dict
+        design_tokens: 디자인 토큰 dict (Firebase에서 로드, None이면 기본값 사용)
+        ag_grid_schema: AG Grid 컴포넌트 스키마 dict (Firebase에서 로드, None이면 미포함)
+        ag_grid_tokens: AG Grid 토큰 dict (Firebase에서 로드, None이면 미포함)
 
     Returns:
         생성된 시스템 프롬프트 문자열 (현재 날짜 포함)
@@ -536,11 +910,22 @@ def generate_system_prompt(schema: dict) -> str:
     component_docs = format_component_docs(schema)
     available_components = get_available_components_note(schema)
     current_date = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M KST")
+    design_tokens_section = format_design_tokens(design_tokens)
+
+    # AG Grid 섹션 (스키마와 토큰이 있으면 추가)
+    ag_grid_section = ""
+    if ag_grid_schema:
+        ag_grid_section += format_ag_grid_component_docs(ag_grid_schema)
+    if ag_grid_tokens:
+        ag_grid_section += format_ag_grid_tokens(ag_grid_tokens)
 
     return (
-        SYSTEM_PROMPT_HEADER.replace("{current_date}", current_date)
+        SYSTEM_PROMPT_HEADER.replace("{current_date}", current_date).replace(
+            "{design_tokens_section}", design_tokens_section
+        )
         + available_components
         + component_docs
+        + ag_grid_section
         + RESPONSE_FORMAT_INSTRUCTIONS
         + SYSTEM_PROMPT_FOOTER
     )
