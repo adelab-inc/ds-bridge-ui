@@ -132,8 +132,8 @@ AVAILABLE_COMPONENTS_WHITELIST = {
     # Layout
     "Scrollbar",
     "Heading",
-    # Data (비활성화 - UMD 빌드에서 ag-grid stub 처리됨)
-    # "DataGrid",
+    # Data (프리뷰 미지원 - UMD 빌드에서 stub 처리됨)
+    "DataGrid",
 }
 
 
