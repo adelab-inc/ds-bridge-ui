@@ -2,69 +2,115 @@ import { cva, type VariantProps } from "class-variance-authority";
 import React from "react";
 import { Icon } from "./Icon";
 import { cn } from "./utils";
+import { useSpacingMode } from "./SpacingModeProvider";
 
-const chipVariants = cva('inline-flex items-center rounded-full px-component-inset-chip-x py-component-inset-chip-y cursor-pointer', ({
+const chipVariants = cva('inline-flex items-center rounded-full cursor-pointer', ({
     variants: {
-      "size": {
-        "md": "text-chip-label-md-medium",
-        "sm": "text-chip-label-sm-medium",
+      "hasCloseButton": {
+        "false": "",
+        "true": "",
       },
-      "state": {
-        "default": "bg-chip-bg-off text-text-primary border border-transparent",
-        "disabled": "text-text-disabled bg-chip-bg-disabled",
-        "selected": "",
+      "hasIcon": {
+        "false": "",
+        "true": "",
+      },
+      "mode": {
+        "base": "",
+        "compact": "",
       },
       "selectionStyle": {
         "multiple": "",
         "single": "",
       },
-      "hasIcon": {
-        "false": "",
-        "true": "pl-component-inset-chip-with-icon-x",
+      "size": {
+        "md": "text-chip-label-md-medium",
+        "sm": "text-chip-label-sm-medium",
       },
-      "hasCloseButton": {
-        "false": "",
-        "true": "",
+      "state": {
+        "default": "",
+        "disabled": "cursor-not-allowed",
+        "selected": "",
+      },
+      "variant": {
+        "default": "",
+        "ghost": "",
       },
     },
     defaultVariants: {
       "hasCloseButton": false,
       "hasIcon": false,
+      "mode": "base",
       "selectionStyle": "multiple",
       "size": "md",
       "state": "default",
+      "variant": "default",
     },
     compoundVariants: [
       {
-        "class": "hover:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-hover),theme(colors.state-overlay-on-neutral-hover)),theme(colors.chip-bg-off)] active:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-pressed),theme(colors.state-overlay-on-neutral-pressed)),theme(colors.chip-bg-off)] focus:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]",
+        "class": "px-component-inset-chip-x py-component-inset-chip-y",
+        "mode": "base",
+      },
+      {
+        "class": "px-component-inset-chip-x-compact py-component-inset-chip-y-compact",
+        "mode": "compact",
+      },
+      {
+        "class": "pl-component-inset-chip-with-icon-x",
+        "hasIcon": true,
+        "mode": "base",
+      },
+      {
+        "class": "pl-component-inset-chip-with-icon-x-compact",
+        "hasIcon": true,
+        "mode": "compact",
+      },
+      {
+        "class": "text-text-primary bg-chip-bg-off border border-transparent hover:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-hover),theme(colors.state-overlay-on-neutral-hover))] [&:active:not(:has(button:active))]:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-pressed),theme(colors.state-overlay-on-neutral-pressed))] focus:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]",
         "state": "default",
+        "variant": "default",
       },
       {
-        "class": "text-text-on-selection bg-chip-bg-off border border-transparent",
-        "selectionStyle": "single",
-        "state": "selected",
+        "class": "text-text-disabled bg-chip-bg-disabled border border-transparent",
+        "state": "disabled",
+        "variant": "default",
       },
       {
-        "class": "text-text-on-selection border border-border-selection bg-chip-bg-selected",
-        "selectionStyle": "multiple",
+        "class": "text-text-on-selection border border-border-selection bg-chip-bg-selected hover:bg-brand-selection-hover [&:active:not(:has(button:active))]:bg-brand-selection-pressed focus:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]",
         "state": "selected",
+        "variant": "default",
+      },
+      {
+        "class": "text-text-primary border border-transparent hover:bg-state-overlay-on-neutral-hover [&:active:not(:has(button:active))]:bg-state-overlay-on-neutral-pressed focus:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]",
+        "state": "default",
+        "variant": "ghost",
+      },
+      {
+        "class": "text-text-disabled border border-transparent",
+        "state": "disabled",
+        "variant": "ghost",
+      },
+      {
+        "class": "text-text-on-selection border border-transparent bg-chip-bg-selected hover:bg-brand-selection-hover [&:active:not(:has(button:active))]:bg-brand-selection-pressed focus:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]",
+        "state": "selected",
+        "variant": "ghost",
       },
     ],
   }));
-const chipCloseButtonVariants = cva("flex items-center justify-center rounded-full text-icon-interactive-default", {
+const chipCloseButtonVariants = cva("flex items-center justify-center rounded-full p-[3px]", {
   variants: {
     size: {
-      md: "w-[20px] h-[20px]",
-      sm: "w-[16px] h-[16px]",
+      md: "",
+      sm: "",
+    },
+    state: {
+      default: "text-icon-interactive-default hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed",
+      selected: "text-icon-interactive-on-selection hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed",
+      disabled: "text-icon-interactive-disabled cursor-not-allowed",
     },
   },
-  compoundVariants: [
-    {
-      class: "hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed",
-    },
-  ],
   defaultVariants: {
     size: "md",
+    state: "default",
   },
 });
 
@@ -77,30 +123,40 @@ export interface ChipProps
 }
 
 const Chip = React.forwardRef<HTMLDivElement, ChipProps>(
-  ({ className, size, state, selectionStyle, hasIcon, hasCloseButton, icon, children, value, onClose, ...props }, ref) => {
+  ({ className, variant, size, mode: propMode, state, selectionStyle, hasIcon, hasCloseButton, icon, children, onClose, ...props }, ref) => {
+    const contextMode = useSpacingMode();
+    const mode = propMode ?? contextMode;
+
     const isDisabled = state === "disabled";
-    // value prop을 children 대신 사용할 수 있도록 지원 (AI 생성 코드 호환성)
-    const content = children || value;
-    const numElements = (icon ? 1 : 0) + (content ? 1 : 0) + (hasCloseButton ? 1 : 0);
+    const numElements = (icon ? 1 : 0) + (children ? 1 : 0) + (hasCloseButton ? 1 : 0);
+
+    const iconColorClass = {
+      default: "text-icon-interactive-default",
+      selected: "text-icon-interactive-on-selection",
+      disabled: "text-icon-interactive-disabled",
+    }[state ?? "default"];
 
     return (
       <div
         ref={ref}
         className={cn(
-          chipVariants({ size, state, selectionStyle, hasIcon, hasCloseButton, className }),
-          numElements > 1 && "gap-component-gap-icon-label-x-xs"
+          chipVariants({ variant, size, mode, state, selectionStyle, hasIcon, hasCloseButton, className }),
+          numElements > 1 && "gap-component-gap-icon-label-xs"
         )}
         aria-disabled={isDisabled}
         {...props}
       >
-        {icon}
-        <span>{content}</span>
+        {icon && <span className={iconColorClass}>{icon}</span>}
+        <span>{children}</span>
         {hasCloseButton && (
           <button
             type="button"
-            onClick={onClose}
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose?.();
+            }}
             disabled={isDisabled}
-            className={cn(chipCloseButtonVariants({ size }))}
+            className={cn(chipCloseButtonVariants({ size, state: state ?? "default" }))}
           >
             <Icon name="close" size={size === "sm" ? 16 : 20} />
           </button>

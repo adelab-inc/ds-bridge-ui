@@ -7,6 +7,13 @@ const meta: Meta<typeof Radio> = {
   title: 'UI/Radio',
   component: Radio,
   tags: ['autodocs'],
+  decorators: [
+    (Story) => (
+      <div className="flex items-center min-h-[40px]">
+        <Story />
+      </div>
+    ),
+  ],
   argTypes: {
     size: {
       control: 'select',
@@ -25,6 +32,8 @@ const meta: Meta<typeof Radio> = {
       control: 'text',
       description: '접근성 라벨',
     },
+    onChange: { table: { disable: true } },
+    renderContainer: { table: { disable: true } },
   },
 };
 

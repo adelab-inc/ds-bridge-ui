@@ -4,6 +4,7 @@ import { within, userEvent } from '@storybook/test';
 import { Menu, MenuItem } from '../components/Menu';
 import { Icon } from '../components/Icon';
 import { Button } from '../components/Button';
+import { Badge } from '../components/Badge';
 
 const sampleMenuData: MenuItem[] = [
   {
@@ -192,16 +193,17 @@ const meta: Meta<typeof Menu> = {
       },
       description: 'Menu items data (select preset)',
     },
-    title: {
-      control: { type: 'text' },
-      description: 'Menu container title (optional)',
-    },
-    description: {
-      control: { type: 'text' },
-      description: 'Menu container description (optional)',
-    },
+    title: { table: { disable: true } },
+    description: { table: { disable: true } },
+    position: { table: { disable: true } },
+    triggerRef: { table: { disable: true } },
+    emptyText: { table: { disable: true } },
+    checkedIds: { table: { disable: true } },
+    onCheckChange: { table: { disable: true } },
+    mode: { table: { disable: true } },
     onItemClick: { action: 'item clicked', table: { disable: true } },
     onClose: { action: 'menu closed', table: { disable: true } },
+    checkboxMode: { table: { disable: true } },
   },
 };
 
@@ -211,39 +213,11 @@ type Story = StoryObj<typeof Menu>;
 export const Default: Story = {
   args: {
     size: 'md',
-    items: sampleMenuData,
+    items: hierarchicalMenuData,
   },
   render: (args) => (
     <div className="flex h-[400px] items-start justify-center pt-8">
-      <Menu {...args} />
-    </div>
-  ),
-};
-
-export const EmptyState: Story = {
-  args: {
-    size: 'md',
-    items: [],
-  },
-  render: (args) => (
-    <div className="flex h-[400px] items-start justify-center pt-8">
-      <Menu {...args} />
-    </div>
-  ),
-};
-
-/**
- * emptyText prop을 사용하여 빈 상태 메시지를 커스터마이즈할 수 있습니다.
- */
-export const EmptyStateCustomText: Story = {
-  args: {
-    size: 'md',
-    items: [],
-    emptyText: '선택 가능한 항목이 없습니다',
-  },
-  render: (args) => (
-    <div className="flex h-[400px] items-start justify-center pt-8">
-      <Menu {...args} />
+      <Menu {...args} className="w-[240px]" />
     </div>
   ),
 };
@@ -262,7 +236,7 @@ export const WithSelected: Story = {
   },
   render: (args) => (
     <div className="flex h-[400px] items-start justify-center pt-8">
-      <Menu {...args} />
+      <Menu {...args} className="w-[240px]" />
     </div>
   ),
 };
@@ -316,7 +290,7 @@ export const LabelOnly: Story = {
   },
   render: (args) => (
     <div className="flex h-[600px] items-start justify-center pt-8">
-      <Menu {...args} />
+      <Menu {...args} className="w-[240px]" />
     </div>
   ),
 };
@@ -328,7 +302,7 @@ export const ItemTitleDescription: Story = {
   },
   render: (args) => (
     <div className="flex h-[400px] items-start justify-center pt-8">
-      <Menu {...args} />
+      <Menu {...args} className="w-[240px]" />
     </div>
   ),
 };
@@ -346,6 +320,8 @@ export const IconWithTitleDescription: Story = {
         title: '새 문서 작성',
         description: '빈 문서를 생성하여 작업을 시작합니다',
         leftIcon: <Icon name="plus" />,
+        badge: <Badge type="dot" position="top-right" />,
+        badgeDot: true,
       },
       {
         id: '2',
@@ -358,6 +334,8 @@ export const IconWithTitleDescription: Story = {
         title: '최근 문서 열기',
         description: '최근에 작업한 문서 목록을 확인하고 빠르게 접근할 수 있습니다. 최근 30일간 수정된 파일들이 시간순으로 정렬되어 표시됩니다.',
         leftIcon: <Icon name="list-alt" />,
+        badge: <Badge type="dot" position="top-right" />,
+        badgeDot: true,
       },
       { id: 'divider-1' },
       {
@@ -385,7 +363,7 @@ export const IconWithTitleDescription: Story = {
   },
   render: (args) => (
     <div className="flex h-[600px] items-start justify-center pt-8">
-      <Menu {...args} />
+      <Menu {...args} className="w-[240px]" />
     </div>
   ),
 };
@@ -443,22 +421,77 @@ export const WithBadge: Story = {
   },
   render: (args) => (
     <div className="flex h-[600px] items-start justify-center pt-8">
-      <Menu {...args} />
+      <Menu {...args} className="w-[240px]" />
+    </div>
+  ),
+};
+
+/**
+ * Badge Dot Type
+ *
+ * badgeDot prop과 Badge의 position="top-right"를 함께 사용하여
+ * dot을 텍스트 우측상단에 배치합니다. 알림 표시 등에 적합합니다.
+ */
+export const WithBadgeDot: Story = {
+  args: {
+    size: 'md',
+    items: [
+      {
+        id: '1',
+        label: '알림',
+        leftIcon: <Icon name="alert-info" />,
+        badge: <Badge type="dot" position="top-right" />,
+        badgeDot: true,
+      },
+      {
+        id: '2',
+        label: '메시지',
+        leftIcon: <Icon name="post" />,
+        badge: <Badge type="dot" position="top-right" />,
+        badgeDot: true,
+      },
+      { id: 'divider-1' },
+      {
+        id: '3',
+        label: '설정',
+        leftIcon: <Icon name="widgets" />,
+      },
+      {
+        id: '4',
+        label: '프로필',
+        leftIcon: <Icon name="person" />,
+        badge: <Badge type="dot" position="top-right" />,
+        badgeDot: true,
+      },
+    ],
+  },
+  render: (args) => (
+    <div className="flex h-[400px] items-start justify-center pt-8">
+      <Menu {...args} className="w-[240px]" />
     </div>
   ),
 };
 
 export const TitleDescription: Story = {
+  argTypes: {
+    title: {
+      control: { type: 'text' },
+      description: 'Menu container title',
+    },
+    description: {
+      control: { type: 'text' },
+      description: 'Menu container description',
+    },
+  },
   args: {
     size: 'md',
     title: '문서 작업',
     description: '문서 관련 작업을 선택하세요',
-    items: [],
-    emptyText: '',
+    items: sampleMenuData,
   },
   render: (args) => (
     <div className="flex h-[600px] items-start justify-center pt-8">
-      <Menu {...args} />
+      <Menu {...args} className="w-[240px]" />
     </div>
   ),
 };
@@ -732,6 +765,7 @@ export const WithCheckboxMode: Story = {
         </p>
         <Menu
           {...args}
+          className="w-[240px]"
           items={items}
           checkboxMode="checkbox"
           checkedIds={checkedIds}
@@ -798,6 +832,7 @@ export const WithRadioMode: Story = {
         </p>
         <Menu
           {...args}
+          className="w-[240px]"
           items={items}
           checkboxMode="radio"
           checkedIds={checkedIds}

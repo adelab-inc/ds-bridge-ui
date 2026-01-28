@@ -3,17 +3,32 @@ import { cva, VariantProps } from 'class-variance-authority'
 import { cn } from './utils'
 import { Tag } from './Tag'
 
-const tagGroupVariants = cva('flex gap-component-gap-tags-x', ({
+const tagGroupVariants = cva('flex', ({
     variants: {
       "layout": {
         "horizontalScroll": "flex-nowrap",
         "singleLineWithMore": "",
         "wrap": "",
       },
+      "mode": {
+        "base": "",
+        "compact": "",
+      },
     },
     defaultVariants: {
       "layout": "wrap",
+      "mode": "base",
     },
+    compoundVariants: [
+      {
+        "class": "gap-component-gap-tag-group",
+        "mode": "base",
+      },
+      {
+        "class": "gap-component-gap-tag-group-compact",
+        "mode": "compact",
+      },
+    ],
   }))
 
 /**
@@ -197,7 +212,7 @@ const TagGroup = forwardRef<HTMLDivElement, TagGroupProps>(
       <div ref={ref} className={cn(tagGroupVariants({ layout, className }), layout === 'wrap' && 'flex-wrap', canBeCollapsed && 'flex-col')} {...props}>
         {canBeCollapsed ? (
           <>
-            <div className="flex flex-nowrap gap-component-gap-tags-x">
+            <div className="flex flex-nowrap gap-component-gap-tag-group">
               {visibleTags}
               <Tag
                 variant="more"
@@ -218,7 +233,7 @@ const TagGroup = forwardRef<HTMLDivElement, TagGroupProps>(
               </Tag>
             </div>
             {isExpanded && remainingTags.length > 0 && (
-              <div className="flex flex-wrap gap-component-gap-tags-x">
+              <div className="flex flex-wrap gap-component-gap-tag-group">
                 {remainingTags}
               </div>
             )}

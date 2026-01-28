@@ -4,31 +4,42 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
 import { cn } from './utils';
+import { useSpacingMode } from './SpacingModeProvider';
 
-const tooltipVariants = cva(
-  'flex justify-center items-center py-component-inset-tooltip-y px-component-inset-tooltip-x rounded-md border border-border-default bg-bg-surface shadow-md text-text-primary text-caption-xs-regular',
-  ({
+const tooltipVariants = cva('flex justify-center items-center rounded-md border border-border-default bg-bg-surface shadow-md text-text-primary text-caption-xs-regular word-break-keep-all', ({
     variants: {
+      "mode": {
+        "base": "",
+        "compact": "",
+      },
       "truncation": {
         "false": "",
         "true": "",
       },
     },
     defaultVariants: {
+      "mode": "base",
       "truncation": false,
     },
     compoundVariants: [
       {
-        "class": "max-w-[320px] max-h-[44px]",
+        "class": "py-component-inset-tooltip-y px-component-inset-tooltip-x",
+        "mode": "base",
+      },
+      {
+        "class": "py-component-inset-tooltip-y-compact px-component-inset-tooltip-x-compact",
+        "mode": "compact",
+      },
+      {
+        "class": "max-w-[320px] line-clamp-2",
         "truncation": false,
       },
       {
-        "class": "max-w-[540px] max-h-[240px] overflow-y-scroll",
+        "class": "max-w-[500px] max-h-[320px] overflow-y-auto break-all",
         "truncation": true,
       },
     ],
-  })
-);
+  }));
 
 type Position = 'top' | 'bottom' | 'left' | 'right';
 
@@ -58,15 +69,19 @@ const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(
       content,
       children,
       truncation,
-      delay = 200,
-      closeDelay = 300,
+      delay = 300,
+      closeDelay = 100,
       preferredPosition = 'top',
       followCursor = false,
       cursorOffset = { x: 10, y: 10 },
+      mode: propMode,
       ...props
     },
     _ref,
   ) => {
+    const contextMode = useSpacingMode();
+    const mode = propMode ?? contextMode;
+
     const [isVisible, setIsVisible] = React.useState(false);
     const [isMounted, setIsMounted] = React.useState(false);
     const [isAnimating, setIsAnimating] = React.useState(false);
@@ -296,6 +311,14 @@ const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(
         handleMouseLeave();
         children.props.onMouseLeave?.(e);
       },
+      onFocus: (e: React.FocusEvent<HTMLElement>) => {
+        setIsVisible(true);
+        children.props.onFocus?.(e);
+      },
+      onBlur: (e: React.FocusEvent<HTMLElement>) => {
+        setIsVisible(false);
+        children.props.onBlur?.(e);
+      },
     });
 
     const tooltipStyle: React.CSSProperties = {
@@ -322,7 +345,7 @@ const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(
             <div
               id={tooltipId}
               ref={tooltipRef}
-              className={cn(tooltipVariants({ truncation, className }))}
+              className={cn(tooltipVariants({ mode, truncation, className }))}
               style={tooltipStyle}
               role="tooltip"
               onMouseEnter={preventClose}

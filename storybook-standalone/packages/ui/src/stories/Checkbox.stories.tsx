@@ -7,6 +7,13 @@ const meta: Meta<typeof Checkbox> = {
   title: 'UI/Checkbox',
   component: Checkbox,
   tags: ['autodocs'],
+  decorators: [
+    (Story) => (
+      <div className="flex items-center min-h-[40px]">
+        <Story />
+      </div>
+    ),
+  ],
   argTypes: {
     size: {
       control: 'select',
@@ -30,6 +37,8 @@ const meta: Meta<typeof Checkbox> = {
       control: 'text',
       description: '접근성 라벨',
     },
+    onChange: { table: { disable: true } },
+    renderContainer: { table: { disable: true } },
   },
 };
 

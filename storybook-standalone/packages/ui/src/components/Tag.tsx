@@ -1,6 +1,7 @@
 import React, { forwardRef, HTMLAttributes } from 'react'
 import { cva, VariantProps } from 'class-variance-authority'
 import { Icon } from './Icon'
+import { useSpacingMode } from './SpacingModeProvider'
 
 /**
  * colorSwatch prop에 사용 가능한 색상과 해당 Tailwind 클래스 매핑
@@ -20,22 +21,35 @@ const colorMap: Record<string, string> = {
 
 import { cn } from './utils'
 
-const tagVariants = cva('text-caption-xs-regular text-tag-default-text flex py-component-inset-pill-y pr-component-inset-pill-x pl-component-inset-pill-with-icon-x items-center gap-component-gap-icon-label-x-xs self-stretch rounded-full whitespace-nowrap flex-shrink-0', ({
+const tagVariants = cva('text-caption-xs-regular text-tag-default-text flex items-center self-stretch rounded-full whitespace-nowrap flex-shrink-0', ({
     variants: {
-      "variant": {
-        "default": "bg-tag-default-bg",
-        "more": "border border-tag-more-border bg-tag-more-bg cursor-pointer relative",
-      },
       "hasCloseButton": {
         "false": "",
         "true": "",
       },
+      "mode": {
+        "base": "",
+        "compact": "",
+      },
+      "variant": {
+        "default": "bg-tag-default-bg",
+        "more": "border border-tag-more-border bg-tag-more-bg cursor-pointer relative",
+      },
     },
     defaultVariants: {
       "hasCloseButton": false,
+      "mode": "base",
       "variant": "default",
     },
     compoundVariants: [
+      {
+        "class": "py-component-inset-pill-y pr-component-inset-pill-x pl-component-inset-pill-with-icon-x gap-component-gap-icon-label-xs",
+        "mode": "base",
+      },
+      {
+        "class": "py-component-inset-pill-y-compact pr-component-inset-pill-x-compact pl-component-inset-pill-with-icon-x-compact gap-component-gap-icon-label-xs-compact",
+        "mode": "compact",
+      },
       {
         "class": "before:absolute before:inset-0 before:rounded-full before:bg-transparent hover:before:bg-black/[0.06] active:before:bg-black/[0.10] before:transition-colors",
         "variant": "more",
@@ -187,7 +201,10 @@ const extractTextFromChildren = (children: React.ReactNode): string => {
  * ```
  */
 const Tag = forwardRef<HTMLDivElement, TagProps>(
-  ({ className, variant, colorSwatch, hasCloseButton, children, onClose, ...props }, ref) => {
+  ({ className, variant, mode: propMode, colorSwatch, hasCloseButton, children, onClose, ...props }, ref) => {
+    const contextMode = useSpacingMode();
+    const mode = propMode ?? contextMode;
+
     // 방어 코드: colorSwatch 유효성 검증
     let swatchColorClass = ''
     if (colorSwatch) {
@@ -205,7 +222,7 @@ const Tag = forwardRef<HTMLDivElement, TagProps>(
     const shouldShowCloseButton = hasCloseButton && onClose
 
     return (
-      <div ref={ref} className={cn(tagVariants({ variant, className }))} {...props}>
+      <div ref={ref} className={cn(tagVariants({ variant, mode, className }))} {...props}>
         {colorSwatch && swatchColorClass && (
           <div data-testid="color-swatch" className={`w-[6px] h-[6px] rounded-full ${swatchColorClass}`} aria-hidden="true" />
         )}

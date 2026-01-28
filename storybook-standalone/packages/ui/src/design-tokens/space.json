@@ -26,12 +26,14 @@
     "VariableID:4:234",
     "VariableID:4:235",
     "VariableID:4:236",
+    "VariableID:3318:531123",
     "VariableID:4:237",
     "VariableID:1038:19109",
     "VariableID:4:279",
     "VariableID:4:282",
     "VariableID:4:229",
     "VariableID:4:230",
+    "VariableID:3318:531122",
     "VariableID:4:231",
     "VariableID:1038:19108",
     "VariableID:4:232",
@@ -69,27 +71,17 @@
     "VariableID:4:249",
     "VariableID:4:250",
     "VariableID:4:251",
-    "VariableID:4:283",
-    "VariableID:345:5559",
+    "VariableID:3590:657316",
     "VariableID:409:6715",
-    "VariableID:4:252",
-    "VariableID:409:6698",
-    "VariableID:4:284",
-    "VariableID:4:285",
-    "VariableID:4:255",
-    "VariableID:4:258",
     "VariableID:263:5411",
-    "VariableID:1238:20131",
-    "VariableID:4:256",
-    "VariableID:1238:20132",
-    "VariableID:4:259",
-    "VariableID:409:6706",
-    "VariableID:409:6710",
-    "VariableID:4:260",
-    "VariableID:1238:20158",
+    "VariableID:3795:2687291",
+    "VariableID:3621:1302496",
+    "VariableID:2842:48258",
+    "VariableID:1865:31733",
+    "VariableID:1865:31734",
     "VariableID:4:257",
-    "VariableID:1238:20159",
     "VariableID:4:253",
+    "VariableID:352:17901",
     "VariableID:4:254",
     "VariableID:4:273",
     "VariableID:16:641",
@@ -102,50 +94,42 @@
     "VariableID:322:5546",
     "VariableID:345:5546",
     "VariableID:345:5581",
-    "VariableID:352:17901",
     "VariableID:409:6699",
     "VariableID:409:6704",
-    "VariableID:409:6707",
     "VariableID:416:55894",
     "VariableID:416:55895",
-    "VariableID:416:55898",
-    "VariableID:416:55899",
-    "VariableID:487:9762",
     "VariableID:539:137214",
     "VariableID:539:137215",
     "VariableID:539:137216",
+    "VariableID:3370:542476",
+    "VariableID:4:283",
+    "VariableID:4:284",
+    "VariableID:4:285",
+    "VariableID:409:6707",
+    "VariableID:409:6698",
+    "VariableID:4:252",
+    "VariableID:345:5559",
+    "VariableID:3058:253426",
     "VariableID:574:172300",
     "VariableID:605:31464",
     "VariableID:605:49996",
-    "VariableID:637:36402",
-    "VariableID:637:36403",
-    "VariableID:653:12037",
     "VariableID:659:12564",
     "VariableID:966:14446",
-    "VariableID:692:57626",
     "VariableID:966:14447",
     "VariableID:966:14448",
     "VariableID:966:14449",
-    "VariableID:775:15421",
-    "VariableID:966:14432",
     "VariableID:1073:57650",
+    "VariableID:966:14432",
     "VariableID:966:14434",
     "VariableID:1073:57657",
     "VariableID:1073:57654",
     "VariableID:1108:338456",
     "VariableID:1108:338457",
-    "VariableID:1248:18053",
-    "VariableID:1248:18054",
-    "VariableID:1248:18055",
-    "VariableID:1248:18056",
-    "VariableID:1248:18057",
-    "VariableID:1248:18058",
     "VariableID:1321:16410",
     "VariableID:1321:16411",
     "VariableID:1865:31451",
     "VariableID:1865:31452",
-    "VariableID:1865:31733",
-    "VariableID:1865:31734"
+    "VariableID:3590:657314"
   ],
   "variables": [
     {
@@ -333,7 +317,7 @@
     {
       "id": "VariableID:4:228",
       "name": "space/layout/stack/xs",
-      "description": "리스트 아이템의 제목과 바로 아래에 붙는 날짜, 작성자 등 메타데이터 텍스트 사이",
+      "description": "4값을 갖는 수직 레이아웃 간격",
       "type": "FLOAT",
       "valuesByMode": {
         "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" },
@@ -350,7 +334,7 @@
     {
       "id": "VariableID:4:229",
       "name": "space/layout/stack/sm",
-      "description": "필드와 바로 아래에 붙는 도움말 텍스트 사이 제목과 부제목 사이",
+      "description": "8값을 갖는 수직 레이아웃 간격",
       "type": "FLOAT",
       "valuesByMode": {
         "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
@@ -367,7 +351,7 @@
     {
       "id": "VariableID:4:230",
       "name": "space/layout/stack/md",
-      "description": "필드와 필드 사이의 표준 간격 폼 필드, 리스트 아이템 사이",
+      "description": "12값을 갖는 수직 레이아웃 간격",
       "type": "FLOAT",
       "valuesByMode": {
         "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
@@ -384,15 +368,15 @@
     {
       "id": "VariableID:4:231",
       "name": "space/layout/stack/lg",
-      "description": "서로 다른 필드 그룹(예: 개인정보, 주소정보) 사이",
+      "description": "20값을 갖는 수직 레이아웃 간격",
       "type": "FLOAT",
       "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" }
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:222" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:222" }
       },
       "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" },
-        "4:2": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" }
+        "4:1": { "resolvedValue": 20, "alias": "VariableID:4:222", "aliasName": "space/scale/20" },
+        "4:2": { "resolvedValue": 20, "alias": "VariableID:4:222", "aliasName": "space/scale/20" }
       },
       "scopes": ["GAP"],
       "hiddenFromPublishing": false,
@@ -401,15 +385,15 @@
     {
       "id": "VariableID:4:232",
       "name": "space/layout/stack/xl",
-      "description": "연관성이 낮은 큰 섹션 사이의 구분",
+      "description": "32값을 갖는 수직 레이아웃 간격",
       "type": "FLOAT",
       "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" }
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:224" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:224" }
       },
       "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" },
-        "4:2": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" }
+        "4:1": { "resolvedValue": 32, "alias": "VariableID:4:224", "aliasName": "space/scale/32" },
+        "4:2": { "resolvedValue": 32, "alias": "VariableID:4:224", "aliasName": "space/scale/32" }
       },
       "scopes": ["GAP"],
       "hiddenFromPublishing": false,
@@ -418,7 +402,7 @@
     {
       "id": "VariableID:4:233",
       "name": "space/layout/inline/xs",
-      "description": "칩(Chip) 내부의 텍스트와 닫기(x) 아이콘 사이\n사용자 이름 옆 온라인/오프라인 상태 아이콘 사이",
+      "description": "4값을 갖는 수평 레이아웃 간격",
       "type": "FLOAT",
       "valuesByMode": {
         "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" },
@@ -435,7 +419,7 @@
     {
       "id": "VariableID:4:234",
       "name": "space/layout/inline/sm",
-      "description": "아이콘과 텍스트 라벨 사이의 간격으로 주로 사용",
+      "description": "6값을 갖는 수평 레이아웃 간격",
       "type": "FLOAT",
       "valuesByMode": {
         "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" },
@@ -452,7 +436,7 @@
     {
       "id": "VariableID:4:235",
       "name": "space/layout/inline/md",
-      "description": "가장 일반적으로 사용되는 수평 간격. 버튼 그룹, \n칩 그룹 사이에 주로 사용",
+      "description": "8값을 갖는 수평 레이아웃 간격",
       "type": "FLOAT",
       "valuesByMode": {
         "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
@@ -469,7 +453,7 @@
     {
       "id": "VariableID:4:236",
       "name": "space/layout/inline/lg",
-      "description": "조금 더 넓은 수평 분리가 필요한 요소 그룹 사이",
+      "description": "12값을 갖는 수평 레이아웃 간격",
       "type": "FLOAT",
       "valuesByMode": {
         "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
@@ -486,15 +470,15 @@
     {
       "id": "VariableID:4:237",
       "name": "space/layout/inline/xl",
-      "description": "툴바의 아이콘 그룹처럼 \n시각적 분리가 더 필요할 때 사용.",
+      "description": "20값을 갖는 수평 레이아웃 간격",
       "type": "FLOAT",
       "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" }
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:222" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:222" }
       },
       "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" },
-        "4:2": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" }
+        "4:1": { "resolvedValue": 20, "alias": "VariableID:4:222", "aliasName": "space/scale/20" },
+        "4:2": { "resolvedValue": 20, "alias": "VariableID:4:222", "aliasName": "space/scale/20" }
       },
       "scopes": ["GAP"],
       "hiddenFromPublishing": false,
@@ -553,7 +537,7 @@
     },
     {
       "id": "VariableID:4:242",
-      "name": "space/component/inset/fields/x",
+      "name": "space/component/inset/input/x",
       "description": "입력 필드의 좌우 내부 여백",
       "type": "FLOAT",
       "valuesByMode": {
@@ -706,8 +690,8 @@
     },
     {
       "id": "VariableID:4:252",
-      "name": "space/component/gap/icon-label/x/sm",
-      "description": "버튼, 칩 등에서 \n아이콘과 텍스트 사이의 범용 간격",
+      "name": "space/component/gap/icon-label/sm",
+      "description": "[L3] 아이콘과 라벨이 결합되어 하나의 부품을 이룰 때의 공용 배치 간격",
       "type": "FLOAT",
       "valuesByMode": {
         "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" },
@@ -723,16 +707,16 @@
     },
     {
       "id": "VariableID:4:253",
-      "name": "space/component/gap/chips/x",
-      "description": "",
+      "name": "space/component/gap/chip-group",
+      "description": "[L2] 칩들이 클러스터 형태로 나열될 때의 배치 간격",
       "type": "FLOAT",
       "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" }
       },
       "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
-        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
+        "4:1": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" },
+        "4:2": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" }
       },
       "scopes": ["GAP"],
       "hiddenFromPublishing": false,
@@ -740,8 +724,8 @@
     },
     {
       "id": "VariableID:4:254",
-      "name": "space/component/gap/breadcrumb/items/x",
-      "description": "브레드크럼 아이템(뎁스1>뎁스2와 같은 이동경로 표시)",
+      "name": "space/component/gap/breadcrumb",
+      "description": "[L2] 이동 경로 아이템들이 클러스터 형태로 모일 때의 배치 간격",
       "type": "FLOAT",
       "valuesByMode": {
         "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:215" },
@@ -756,77 +740,9 @@
       "codeSyntax": {}
     },
     {
-      "id": "VariableID:4:255",
-      "name": "space/component/gap/toolbar/items/x",
-      "description": "필터바/툴바(데이터 “조회 조건”을 바꾸는 컨트롤 묶음/ 버튼묶음)",
-      "type": "FLOAT",
-      "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" }
-      },
-      "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
-        "4:2": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" }
-      },
-      "scopes": ["GAP"],
-      "hiddenFromPublishing": false,
-      "codeSyntax": {}
-    },
-    {
-      "id": "VariableID:4:256",
-      "name": "space/component/gap/form/fields-inter/x/md",
-      "description": "2열 폼의 가로 간격",
-      "type": "FLOAT",
-      "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" }
-      },
-      "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
-        "4:2": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" }
-      },
-      "scopes": ["GAP"],
-      "hiddenFromPublishing": false,
-      "codeSyntax": {}
-    },
-    {
       "id": "VariableID:4:257",
-      "name": "space/component/gap/form/fields-inter/y/md",
-      "description": "폼 필드 세로 간격",
-      "type": "FLOAT",
-      "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
-      },
-      "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
-        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
-      },
-      "scopes": ["GAP"],
-      "hiddenFromPublishing": false,
-      "codeSyntax": {}
-    },
-    {
-      "id": "VariableID:4:258",
-      "name": "space/component/gap/list/items/y",
-      "description": "리스트 아이템 세로간",
-      "type": "FLOAT",
-      "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
-      },
-      "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
-        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
-      },
-      "scopes": ["GAP"],
-      "hiddenFromPublishing": false,
-      "codeSyntax": {}
-    },
-    {
-      "id": "VariableID:4:259",
-      "name": "space/component/gap/card/header-body/y",
-      "description": "카드 헤더–본문",
+      "name": "space/component/gap/field-group/y",
+      "description": "[L2] 폼 필드들이 그리드 형태로 나열될 때의 수직 간격",
       "type": "FLOAT",
       "valuesByMode": {
         "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
@@ -835,23 +751,6 @@
       "resolvedValuesByMode": {
         "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
         "4:2": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" }
-      },
-      "scopes": ["GAP"],
-      "hiddenFromPublishing": false,
-      "codeSyntax": {}
-    },
-    {
-      "id": "VariableID:4:260",
-      "name": "space/component/gap/table/cell/contents/x",
-      "description": "셀 내부 아이콘–텍스트",
-      "type": "FLOAT",
-      "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
-      },
-      "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
-        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
       },
       "scopes": ["GAP"],
       "hiddenFromPublishing": false,
@@ -863,12 +762,12 @@
       "description": "필터 바의 좌우 내부 여백",
       "type": "FLOAT",
       "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" }
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" }
       },
       "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" },
-        "4:2": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" }
+        "4:1": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" },
+        "4:2": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" }
       },
       "scopes": ["GAP"],
       "hiddenFromPublishing": false,
@@ -881,11 +780,11 @@
       "type": "FLOAT",
       "valuesByMode": {
         "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" }
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" }
       },
       "resolvedValuesByMode": {
         "4:1": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" },
-        "4:2": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" }
+        "4:2": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" }
       },
       "scopes": ["GAP"],
       "hiddenFromPublishing": false,
@@ -1166,24 +1065,7 @@
     {
       "id": "VariableID:4:279",
       "name": "space/layout/inline/xxl",
-      "description": "서로 다른 기능의 영역을 수평으로 분리할 때 사용하는 넓은 간격.",
-      "type": "FLOAT",
-      "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" }
-      },
-      "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" },
-        "4:2": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" }
-      },
-      "scopes": ["GAP"],
-      "hiddenFromPublishing": false,
-      "codeSyntax": {}
-    },
-    {
-      "id": "VariableID:4:280",
-      "name": "space/layout/stack/xxl",
-      "description": "서로 다른 의미를 가진 큰 섹션 그룹을 구분.",
+      "description": "32값을 갖는 수평 레이아웃 간격",
       "type": "FLOAT",
       "valuesByMode": {
         "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:224" },
@@ -1198,9 +1080,9 @@
       "codeSyntax": {}
     },
     {
-      "id": "VariableID:4:281",
-      "name": "space/layout/stack/xxxl",
-      "description": "페이지 내에서 시각적으로 매우 명확한 분리가 필요할 때 사용하는 가장 넓은 수직 간격.",
+      "id": "VariableID:4:280",
+      "name": "space/layout/stack/xxl",
+      "description": "40값을 갖는 수직 레이아웃 간격",
       "type": "FLOAT",
       "valuesByMode": {
         "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:225" },
@@ -1215,17 +1097,34 @@
       "codeSyntax": {}
     },
     {
-      "id": "VariableID:4:282",
-      "name": "space/layout/inline/xxxl",
-      "description": "메인 콘텐츠 영역과 사이드바를 구분하는 등, 페이지의 가장 큰 단위를 수평으로 나눌 때 사용하는 가장 넓은 간격.",
+      "id": "VariableID:4:281",
+      "name": "space/layout/stack/xxxl",
+      "description": "48값을 갖는 수직 레이아웃 간격",
       "type": "FLOAT",
       "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:224" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:224" }
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:226" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:226" }
       },
       "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 32, "alias": "VariableID:4:224", "aliasName": "space/scale/32" },
-        "4:2": { "resolvedValue": 32, "alias": "VariableID:4:224", "aliasName": "space/scale/32" }
+        "4:1": { "resolvedValue": 48, "alias": "VariableID:4:226", "aliasName": "space/scale/48" },
+        "4:2": { "resolvedValue": 48, "alias": "VariableID:4:226", "aliasName": "space/scale/48" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4:282",
+      "name": "space/layout/inline/xxxl",
+      "description": "40값을 갖는 수평 레이아웃 간격",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:225" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:225" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 40, "alias": "VariableID:4:225", "aliasName": "space/scale/40" },
+        "4:2": { "resolvedValue": 40, "alias": "VariableID:4:225", "aliasName": "space/scale/40" }
       },
       "scopes": ["GAP"],
       "hiddenFromPublishing": false,
@@ -1233,25 +1132,8 @@
     },
     {
       "id": "VariableID:4:283",
-      "name": "space/component/gap/contents/lg",
-      "description": "섹션 내부의 가장 큰 단위의 콘텐츠\n(타이틀, 내용, 액션등) 사이 간격.",
-      "type": "FLOAT",
-      "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" }
-      },
-      "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" },
-        "4:2": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" }
-      },
-      "scopes": ["GAP"],
-      "hiddenFromPublishing": false,
-      "codeSyntax": {}
-    },
-    {
-      "id": "VariableID:4:284",
-      "name": "space/component/gap/contents/md",
-      "description": "섹션 내부의 여러 요소로 구성된 그룹의 \n콘텐츠(타이틀, 내용, 액션등) 사이 간격.",
+      "name": "space/component/gap/content/lg",
+      "description": "[L3] 제목, 본문 등 콘텐츠 요소들의 해부학적 결합에 쓰이는 공용 배치 간격",
       "type": "FLOAT",
       "valuesByMode": {
         "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" },
@@ -1266,9 +1148,26 @@
       "codeSyntax": {}
     },
     {
+      "id": "VariableID:4:284",
+      "name": "space/component/gap/content/md",
+      "description": "[L3] 제목, 본문 등 콘텐츠 요소들의 해부학적 결합에 쓰이는 공용 배치 간격",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
+        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
+      },
+      "scopes": ["GAP"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
       "id": "VariableID:4:285",
-      "name": "space/component/gap/contents/sm",
-      "description": "섹션 내부의 작은 단위의 \n콘텐츠(타이틀, 내용, 액션등) 사이 간격.",
+      "name": "space/component/gap/content/sm",
+      "description": "[L3] 제목, 본문 등 콘텐츠 요소들의 해부학적 결합에 쓰이는 공용 배치 간격",
       "type": "FLOAT",
       "valuesByMode": {
         "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
@@ -1370,12 +1269,12 @@
       "description": "",
       "type": "FLOAT",
       "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" }
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" }
       },
       "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
-        "4:2": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" }
+        "4:1": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" },
+        "4:2": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" }
       },
       "scopes": ["GAP"],
       "hiddenFromPublishing": false,
@@ -1387,12 +1286,12 @@
       "description": "",
       "type": "FLOAT",
       "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" }
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:140:6218" }
       },
       "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
-        "4:2": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" }
+        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
+        "4:2": { "resolvedValue": 10, "alias": "VariableID:140:6218", "aliasName": "space/scale/10" }
       },
       "scopes": ["GAP"],
       "hiddenFromPublishing": false,
@@ -1417,7 +1316,7 @@
     },
     {
       "id": "VariableID:230:16581",
-      "name": "space/component/inset/fields/y",
+      "name": "space/component/inset/input/y",
       "description": "",
       "type": "FLOAT",
       "valuesByMode": {
@@ -1434,8 +1333,8 @@
     },
     {
       "id": "VariableID:263:5411",
-      "name": "space/component/gap/dialog/contents/y",
-      "description": "",
+      "name": "space/component/gap/dialog/structure",
+      "description": "[L3] 다이얼로그의 부품(헤더, 바디, 푸터) 사이 결속을 위한 전용 구조 간격",
       "type": "FLOAT",
       "valuesByMode": {
         "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" },
@@ -1502,8 +1401,8 @@
     },
     {
       "id": "VariableID:345:5559",
-      "name": "space/component/gap/icon-label/x/xs",
-      "description": "태그, 뱃지 내부의  아이콘과 텍스트 사이의 범용 간격",
+      "name": "space/component/gap/icon-label/xs",
+      "description": "[L3] 아이콘과 라벨이 결합되어 하나의 부품을 이룰 때의 공용 배치 간격",
       "type": "FLOAT",
       "valuesByMode": {
         "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" },
@@ -1536,8 +1435,8 @@
     },
     {
       "id": "VariableID:352:17901",
-      "name": "space/component/gap/tags/x",
-      "description": "",
+      "name": "space/component/gap/tag-group",
+      "description": "[L2] 태그들이 클러스터 형태로 나열될 때의 배치 간격",
       "type": "FLOAT",
       "valuesByMode": {
         "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" },
@@ -1553,8 +1452,8 @@
     },
     {
       "id": "VariableID:409:6698",
-      "name": "space/component/gap/icon-label/x/md",
-      "description": "얼럿 등에서 \n아이콘과 텍스트 사이의 범용 간격",
+      "name": "space/component/gap/icon-label/md",
+      "description": "[L3] 아이콘과 라벨이 결합되어 하나의 부품을 이룰 때의 공용 배치 간격",
       "type": "FLOAT",
       "valuesByMode": {
         "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
@@ -1574,12 +1473,12 @@
       "description": "토스트 얼럿의 좌우간격",
       "type": "FLOAT",
       "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" }
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:222" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" }
       },
       "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" },
-        "4:2": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" }
+        "4:1": { "resolvedValue": 20, "alias": "VariableID:4:222", "aliasName": "space/scale/20" },
+        "4:2": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" }
       },
       "scopes": ["GAP"],
       "hiddenFromPublishing": false,
@@ -1591,29 +1490,12 @@
       "description": "토스트 얼럿의 상하 간격",
       "type": "FLOAT",
       "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:140:6218" }
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:605:31988" }
       },
       "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
-        "4:2": { "resolvedValue": 10, "alias": "VariableID:140:6218", "aliasName": "space/scale/10" }
-      },
-      "scopes": ["GAP"],
-      "hiddenFromPublishing": false,
-      "codeSyntax": {}
-    },
-    {
-      "id": "VariableID:409:6706",
-      "name": "space/component/gap/alert/toast/label-close/x",
-      "description": "토스트 얼럿 내부의 타이블 혹은 본문\n과 닫기아이콘 사이의 간격",
-      "type": "FLOAT",
-      "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:140:6218" }
-      },
-      "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
-        "4:2": { "resolvedValue": 10, "alias": "VariableID:140:6218", "aliasName": "space/scale/10" }
+        "4:1": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" },
+        "4:2": { "resolvedValue": 14, "alias": "VariableID:605:31988", "aliasName": "space/scale/14" }
       },
       "scopes": ["GAP"],
       "hiddenFromPublishing": false,
@@ -1621,8 +1503,8 @@
     },
     {
       "id": "VariableID:409:6707",
-      "name": "space/component/gap/contents/xs",
-      "description": "섹션 내부의 아주 작은 단위의 콘텐츠\n(얼럿, 다이얼로그)사이 간격",
+      "name": "space/component/gap/content/xs",
+      "description": "[L3] 제목, 본문 등 콘텐츠 요소들의 해부학적 결합에 쓰이는 공용 배치 간격",
       "type": "FLOAT",
       "valuesByMode": {
         "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" },
@@ -1637,26 +1519,9 @@
       "codeSyntax": {}
     },
     {
-      "id": "VariableID:409:6710",
-      "name": "space/component/gap/alert/toast/text-actions/x",
-      "description": "토스트 얼럿 내부의 타이블 혹은 본문\n과 액션 사이의 간격",
-      "type": "FLOAT",
-      "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
-      },
-      "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
-        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
-      },
-      "scopes": ["GAP"],
-      "hiddenFromPublishing": false,
-      "codeSyntax": {}
-    },
-    {
       "id": "VariableID:409:6715",
-      "name": "space/component/gap/actions/x",
-      "description": "동일 문맥의 액션들 사이의 수평 간격",
+      "name": "space/component/gap/control-group",
+      "description": "[L2] 동일 문맥의 액션들이 클러스터 형태로 모일 때의 배치 간격",
       "type": "FLOAT",
       "valuesByMode": {
         "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
@@ -1676,12 +1541,12 @@
       "description": "인라인 얼럿의 좌우간격",
       "type": "FLOAT",
       "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:140:6218" }
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:605:31988" }
       },
       "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
-        "4:2": { "resolvedValue": 10, "alias": "VariableID:140:6218", "aliasName": "space/scale/10" }
+        "4:1": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" },
+        "4:2": { "resolvedValue": 14, "alias": "VariableID:605:31988", "aliasName": "space/scale/14" }
       },
       "scopes": ["GAP"],
       "hiddenFromPublishing": false,
@@ -1693,57 +1558,6 @@
       "description": "인라인 얼럿의 상하간격",
       "type": "FLOAT",
       "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:140:6218" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
-      },
-      "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 10, "alias": "VariableID:140:6218", "aliasName": "space/scale/10" },
-        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
-      },
-      "scopes": ["GAP"],
-      "hiddenFromPublishing": false,
-      "codeSyntax": {}
-    },
-    {
-      "id": "VariableID:416:55898",
-      "name": "space/component/gap/alert/inline/text-actions/x",
-      "description": "인라인 얼럿 내부의 타이블 혹은 본문\n과 액션 사이의 간격",
-      "type": "FLOAT",
-      "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" }
-      },
-      "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
-        "4:2": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" }
-      },
-      "scopes": ["GAP"],
-      "hiddenFromPublishing": false,
-      "codeSyntax": {}
-    },
-    {
-      "id": "VariableID:416:55899",
-      "name": "space/component/gap/alert/inline/label-close/x",
-      "description": "인라인 얼럿 내부의 타이블 혹은 본문\n과 닫기아이콘 사이의 간격",
-      "type": "FLOAT",
-      "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" }
-      },
-      "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
-        "4:2": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" }
-      },
-      "scopes": ["GAP"],
-      "hiddenFromPublishing": false,
-      "codeSyntax": {}
-    },
-    {
-      "id": "VariableID:487:9762",
-      "name": "space/component/gap/dialog/header/label-close/x",
-      "description": "다이얼로그 헤더에서 \n제목블록과 닫기버튼의 수평 간격",
-      "type": "FLOAT",
-      "valuesByMode": {
         "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
         "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:140:6218" }
       },
@@ -1751,7 +1565,7 @@
         "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
         "4:2": { "resolvedValue": 10, "alias": "VariableID:140:6218", "aliasName": "space/scale/10" }
       },
-      "scopes": ["ALL_SCOPES"],
+      "scopes": ["GAP"],
       "hiddenFromPublishing": false,
       "codeSyntax": {}
     },
@@ -1761,12 +1575,12 @@
       "description": "",
       "type": "FLOAT",
       "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" }
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" }
       },
       "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
-        "4:2": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" }
+        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
+        "4:2": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" }
       },
       "scopes": ["ALL_SCOPES"],
       "hiddenFromPublishing": false,
@@ -1778,12 +1592,12 @@
       "description": "",
       "type": "FLOAT",
       "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" }
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
       },
       "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" },
-        "4:2": { "resolvedValue": 4, "alias": "VariableID:4:217", "aliasName": "space/scale/4" }
+        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
+        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
       },
       "scopes": ["ALL_SCOPES"],
       "hiddenFromPublishing": false,
@@ -1791,8 +1605,8 @@
     },
     {
       "id": "VariableID:539:137216",
-      "name": "space/component/gap/overlay-anchor/xy",
-      "description": "",
+      "name": "space/component/gap/overlay-anchor/md",
+      "description": "[L2] 기준점과 오버레이 요소가 클러스터 형태로 대응할 때의 배치 간격(드롭다운, 팝오버, 데이트피커, 셀렉트 \n드롭다운)",
       "type": "FLOAT",
       "valuesByMode": {
         "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
@@ -1859,7 +1673,7 @@
     },
     {
       "id": "VariableID:605:31464",
-      "name": "space/component/inset/field-multiline/y",
+      "name": "space/component/inset/input-multiline/y",
       "description": "텍스트에어리어(여러 줄 입력), 리치 텍스트 에디터: 툴바가 위에 붙고 문단 단위로 쓰는 글쓰기 영역.\n제목(Title) 같이 길게 쓰는 단일행 필드: 한 줄이지만 크고 여유 있는 시각 밸런스가 필요할 때(목차/헤더 역할).\n초집중 입력 구간: 모달/작성 페이지의 주요 입력으로 시선을 오래 머무는 필드.",
       "type": "FLOAT",
       "valuesByMode": {
@@ -1890,7 +1704,7 @@
     },
     {
       "id": "VariableID:605:49996",
-      "name": "space/component/inset/field-editor/y",
+      "name": "space/component/inset/input-editor/y",
       "description": "",
       "type": "FLOAT",
       "valuesByMode": {
@@ -1906,59 +1720,8 @@
       "codeSyntax": {}
     },
     {
-      "id": "VariableID:637:36402",
-      "name": "space/component/gap/section/y",
-      "description": "섹션과 섹션 사이 수직 간격",
-      "type": "FLOAT",
-      "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" }
-      },
-      "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" },
-        "4:2": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" }
-      },
-      "scopes": ["ALL_SCOPES"],
-      "hiddenFromPublishing": false,
-      "codeSyntax": {}
-    },
-    {
-      "id": "VariableID:637:36403",
-      "name": "space/component/gap/section/x",
-      "description": "섹션과 섹션 사이 수평 간격",
-      "type": "FLOAT",
-      "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" }
-      },
-      "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" },
-        "4:2": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" }
-      },
-      "scopes": ["ALL_SCOPES"],
-      "hiddenFromPublishing": false,
-      "codeSyntax": {}
-    },
-    {
-      "id": "VariableID:653:12037",
-      "name": "space/component/gap/header/y",
-      "description": "헤더 아이템 사이의 수직 간격",
-      "type": "FLOAT",
-      "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
-      },
-      "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
-        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
-      },
-      "scopes": ["ALL_SCOPES"],
-      "hiddenFromPublishing": false,
-      "codeSyntax": {}
-    },
-    {
       "id": "VariableID:659:12564",
-      "name": "space/component/inset/field-editor/x",
+      "name": "space/component/inset/input-editor/x",
       "description": "",
       "type": "FLOAT",
       "valuesByMode": {
@@ -1968,40 +1731,6 @@
       "resolvedValuesByMode": {
         "4:1": { "resolvedValue": 32, "alias": "VariableID:4:224", "aliasName": "space/scale/32" },
         "4:2": { "resolvedValue": 32, "alias": "VariableID:4:224", "aliasName": "space/scale/32" }
-      },
-      "scopes": ["ALL_SCOPES"],
-      "hiddenFromPublishing": false,
-      "codeSyntax": {}
-    },
-    {
-      "id": "VariableID:692:57626",
-      "name": "space/component/gap/speeddial/items/y",
-      "description": "",
-      "type": "FLOAT",
-      "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
-      },
-      "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
-        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
-      },
-      "scopes": ["ALL_SCOPES"],
-      "hiddenFromPublishing": false,
-      "codeSyntax": {}
-    },
-    {
-      "id": "VariableID:775:15421",
-      "name": "space/component/gap/field/prefix-lable/x",
-      "description": "",
-      "type": "FLOAT",
-      "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
-      },
-      "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
-        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
       },
       "scopes": ["ALL_SCOPES"],
       "hiddenFromPublishing": false,
@@ -2112,15 +1841,15 @@
     {
       "id": "VariableID:1038:19108",
       "name": "space/layout/stack/lg2",
-      "description": "",
+      "description": "24값을 갖는 수직 레이아웃 간격",
       "type": "FLOAT",
       "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:222" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:222" }
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" }
       },
       "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 20, "alias": "VariableID:4:222", "aliasName": "space/scale/20" },
-        "4:2": { "resolvedValue": 20, "alias": "VariableID:4:222", "aliasName": "space/scale/20" }
+        "4:1": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" },
+        "4:2": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" }
       },
       "scopes": ["ALL_SCOPES"],
       "hiddenFromPublishing": false,
@@ -2129,15 +1858,15 @@
     {
       "id": "VariableID:1038:19109",
       "name": "space/layout/inline/xl2",
-      "description": "",
+      "description": "24값을 갖는 수평 레이아웃 간격",
       "type": "FLOAT",
       "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:222" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:222" }
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" }
       },
       "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 20, "alias": "VariableID:4:222", "aliasName": "space/scale/20" },
-        "4:2": { "resolvedValue": 20, "alias": "VariableID:4:222", "aliasName": "space/scale/20" }
+        "4:1": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" },
+        "4:2": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" }
       },
       "scopes": ["ALL_SCOPES"],
       "hiddenFromPublishing": false,
@@ -2257,176 +1986,6 @@
       "codeSyntax": {}
     },
     {
-      "id": "VariableID:1238:20131",
-      "name": "space/component/gap/form/fields-inter/x/lg",
-      "description": "",
-      "type": "FLOAT",
-      "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" }
-      },
-      "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" },
-        "4:2": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" }
-      },
-      "scopes": ["ALL_SCOPES"],
-      "hiddenFromPublishing": false,
-      "codeSyntax": {}
-    },
-    {
-      "id": "VariableID:1238:20132",
-      "name": "space/component/gap/form/fields-inter/x/sm",
-      "description": "",
-      "type": "FLOAT",
-      "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
-      },
-      "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
-        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
-      },
-      "scopes": ["ALL_SCOPES"],
-      "hiddenFromPublishing": false,
-      "codeSyntax": {}
-    },
-    {
-      "id": "VariableID:1238:20158",
-      "name": "space/component/gap/form/fields-inter/y/lg",
-      "description": "",
-      "type": "FLOAT",
-      "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:140:6218" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:140:6218" }
-      },
-      "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 10, "alias": "VariableID:140:6218", "aliasName": "space/scale/10" },
-        "4:2": { "resolvedValue": 10, "alias": "VariableID:140:6218", "aliasName": "space/scale/10" }
-      },
-      "scopes": ["ALL_SCOPES"],
-      "hiddenFromPublishing": false,
-      "codeSyntax": {}
-    },
-    {
-      "id": "VariableID:1238:20159",
-      "name": "space/component/gap/form/fields-inter/y/sm",
-      "description": "",
-      "type": "FLOAT",
-      "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" }
-      },
-      "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" },
-        "4:2": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" }
-      },
-      "scopes": ["ALL_SCOPES"],
-      "hiddenFromPublishing": false,
-      "codeSyntax": {}
-    },
-    {
-      "id": "VariableID:1248:18053",
-      "name": "space/component/gap/form/fields-intra/x/lg",
-      "description": "",
-      "type": "FLOAT",
-      "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:140:6218" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:140:6218" }
-      },
-      "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 10, "alias": "VariableID:140:6218", "aliasName": "space/scale/10" },
-        "4:2": { "resolvedValue": 10, "alias": "VariableID:140:6218", "aliasName": "space/scale/10" }
-      },
-      "scopes": ["ALL_SCOPES"],
-      "hiddenFromPublishing": false,
-      "codeSyntax": {}
-    },
-    {
-      "id": "VariableID:1248:18054",
-      "name": "space/component/gap/form/fields-intra/x/md",
-      "description": "2열 폼의 가로 간격",
-      "type": "FLOAT",
-      "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
-      },
-      "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" },
-        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
-      },
-      "scopes": ["GAP"],
-      "hiddenFromPublishing": false,
-      "codeSyntax": {}
-    },
-    {
-      "id": "VariableID:1248:18055",
-      "name": "space/component/gap/form/fields-intra/x/sm",
-      "description": "",
-      "type": "FLOAT",
-      "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" }
-      },
-      "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" },
-        "4:2": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" }
-      },
-      "scopes": ["ALL_SCOPES"],
-      "hiddenFromPublishing": false,
-      "codeSyntax": {}
-    },
-    {
-      "id": "VariableID:1248:18056",
-      "name": "space/component/gap/form/fields-intra/y/lg",
-      "description": "",
-      "type": "FLOAT",
-      "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" }
-      },
-      "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" },
-        "4:2": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" }
-      },
-      "scopes": ["ALL_SCOPES"],
-      "hiddenFromPublishing": false,
-      "codeSyntax": {}
-    },
-    {
-      "id": "VariableID:1248:18057",
-      "name": "space/component/gap/form/fields-intra/y/md",
-      "description": "폼 필드 세로 간격",
-      "type": "FLOAT",
-      "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" }
-      },
-      "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 4, "alias": "VariableID:4:217", "aliasName": "space/scale/4" },
-        "4:2": { "resolvedValue": 4, "alias": "VariableID:4:217", "aliasName": "space/scale/4" }
-      },
-      "scopes": ["GAP"],
-      "hiddenFromPublishing": false,
-      "codeSyntax": {}
-    },
-    {
-      "id": "VariableID:1248:18058",
-      "name": "space/component/gap/form/fields-intra/y/sm",
-      "description": "",
-      "type": "FLOAT",
-      "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" }
-      },
-      "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 4, "alias": "VariableID:4:217", "aliasName": "space/scale/4" },
-        "4:2": { "resolvedValue": 4, "alias": "VariableID:4:217", "aliasName": "space/scale/4" }
-      },
-      "scopes": ["ALL_SCOPES"],
-      "hiddenFromPublishing": false,
-      "codeSyntax": {}
-    },
-    {
       "id": "VariableID:1321:16410",
       "name": "space/component/inset/popover/x",
       "description": "팝오버의 좌우 여백",
@@ -2496,8 +2055,8 @@
     },
     {
       "id": "VariableID:1865:31733",
-      "name": "space/component/gap/post-paragraph/y",
-      "description": "게시글 내의 문단사이의 수직 간격 (줄바꿈과 다름)",
+      "name": "space/component/gap/article/items/sm",
+      "description": "[L1] 게시글 내 문단들 사이의 배치 간격",
       "type": "FLOAT",
       "valuesByMode": {
         "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
@@ -2513,8 +2072,8 @@
     },
     {
       "id": "VariableID:1865:31734",
-      "name": "space/component/gap/post-block/y",
-      "description": "게시글 내의 문단과 단일 블록 요소 (이미지, 표 등)사이의 수직 간격",
+      "name": "space/component/gap/article/items/md",
+      "description": "[L1] 게시글 내 문단과 블록 요소(이미지, 표 등) 사이의 배치 간격",
       "type": "FLOAT",
       "valuesByMode": {
         "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" },
@@ -2523,6 +2082,159 @@
       "resolvedValuesByMode": {
         "4:1": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" },
         "4:2": { "resolvedValue": 20, "alias": "VariableID:4:222", "aliasName": "space/scale/20" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:2842:48258",
+      "name": "space/component/gap/tab-group",
+      "description": "[L2] 여러 탭 아이템들이 클러스터 형태로 모여 탭 바를 구성할 때의 배치 간격",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
+        "4:2": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:3058:253426",
+      "name": "space/component/gap/overlay-anchor/sm",
+      "description": "[L2] 기준점과 오버레이 요소가 클러스터 형태로 대응할 때의 배치 간격(툴팁, 팝컨펌, 플로팅 툴바, 슬라이더 \n핸들)",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:217" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 4, "alias": "VariableID:4:217", "aliasName": "space/scale/4" },
+        "4:2": { "resolvedValue": 4, "alias": "VariableID:4:217", "aliasName": "space/scale/4" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:3318:531122",
+      "name": "space/layout/stack/md2",
+      "description": "16값을 갖는 수직 레이아웃 간격",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" },
+        "4:2": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:3318:531123",
+      "name": "space/layout/inline/lg2",
+      "description": "16값을 갖는 수평 레이아웃 간격",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" },
+        "4:2": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:3370:542476",
+      "name": "space/component/gap/content/xl",
+      "description": "[L3] 제목, 본문 등 콘텐츠 요소들의 해부학적 결합에 쓰이는 공용 배치 간격",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" },
+        "4:2": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:3590:657314",
+      "name": "space/component/gap/field-group/x",
+      "description": "[L2] 폼 필드들이 그리드 형태로 나열될 때의 수평 간격",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" },
+        "4:2": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:3590:657316",
+      "name": "space/component/gap/input-group",
+      "description": "[L2] 인풋 조각들이 하나의 정보를 위해 클러스터 형태로 모일 때의 배치 간격",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" },
+        "4:2": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:3621:1302496",
+      "name": "space/component/gap/dialog/items",
+      "description": "[L1] 다이얼로그 바디 내부에 배치되는 요소들 사이의 배치 간격",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" },
+        "4:2": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:3795:2687291",
+      "name": "space/component/gap/filterbar/items",
+      "description": "[L1] 필터바 내부에 나열되는 아이템들 사이의 배치 간격",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
+        "4:2": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" }
       },
       "scopes": ["ALL_SCOPES"],
       "hiddenFromPublishing": false,

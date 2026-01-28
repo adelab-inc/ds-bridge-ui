@@ -34,20 +34,16 @@ const TanStackRouterDecorator = (Story: React.ComponentType) => {
   return <RouterProvider router={router} />;
 };
 
-// Go 템플릿 파싱 오류를 피하기 위해 스타일 객체를 변수로 분리
-const wrapperStyle = { color: 'red', fontSize: '24px' };
-const StyleWrapper = ({ children }: { children: React.ReactNode }) => (
-  <div style={wrapperStyle}>
-    {children}
-  </div>
-);
-
 const meta: Meta<typeof Link> = {
   title: 'UI/Link',
   component: Link,
   tags: ['autodocs'],
   decorators: [TanStackRouterDecorator],
   argTypes: {
+    children: {
+      control: 'text',
+      description: 'Link 내부 텍스트',
+    },
     variant: {
       control: 'select',
       options: [
@@ -58,97 +54,31 @@ const meta: Meta<typeof Link> = {
         'none-link',
         'none-inherit',
       ],
+      description: 'Link 스타일 variant',
     },
     size: {
       control: 'select',
       options: ['lg', 'md', 'sm'],
+      description: 'Link 크기',
     },
-    children: {
-      control: 'text',
-    },
+    to: { table: { disable: true } },
+    href: { table: { disable: true } },
+    className: { table: { disable: true } },
+    hash: { table: { disable: true } },
+    state: { table: { disable: true } },
+    from: { table: { disable: true } },
+    _unsafe_ignoreRelative: { table: { disable: true } },
   },
 };
 
 export default meta;
 type Story = StoryObj<typeof Link>;
 
-export const OnHoverLink: Story = {
-  name: 'on-hover-link',
+export const Default: Story = {
   args: {
     to: '/',
     children: 'Link',
     variant: 'on-hover-link',
-    size: 'md',
-  },
-};
-
-export const OnHoverInherit: Story = {
-  name: 'on-hover-inherit',
-  decorators: [
-    Story => (
-      <StyleWrapper>
-        <Story />
-      </StyleWrapper>
-    ),
-  ],
-  args: {
-    to: '/',
-    children: 'Link',
-    variant: 'on-hover-inherit',
-    size: 'md',
-  },
-};
-
-export const AlwaysLink: Story = {
-  name: 'always-link',
-  args: {
-    to: '/about',
-    children: 'Link',
-    variant: 'always-link',
-    size: 'md',
-  },
-};
-
-export const AlwaysInherit: Story = {
-  name: 'always-inherit',
-  decorators: [
-    Story => (
-      <StyleWrapper>
-        <Story />
-      </StyleWrapper>
-    ),
-  ],
-  args: {
-    to: '/',
-    children: 'Link',
-    variant: 'always-inherit',
-    size: 'md',
-  },
-};
-
-export const NoneLink: Story = {
-  name: 'none-link',
-  args: {
-    to: '/',
-    children: 'Link',
-    variant: 'none-link',
-    size: 'md',
-  },
-};
-
-export const NoneInherit: Story = {
-  name: 'none-inherit',
-  decorators: [
-    Story => (
-      <StyleWrapper>
-        <Story />
-      </StyleWrapper>
-    ),
-  ],
-  args: {
-    to: '/',
-    children: 'Link',
-    variant: 'none-inherit',
     size: 'md',
   },
 };

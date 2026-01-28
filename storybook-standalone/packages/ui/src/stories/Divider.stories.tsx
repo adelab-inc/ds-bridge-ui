@@ -11,12 +11,14 @@ const meta = {
   tags: ["autodocs"],
   argTypes: {
     orientation: {
-      control: "radio",
+      control: { type: "select" },
       options: ["horizontal", "vertical"],
+      description: "Divider의 방향을 선택합니다.",
     },
     color: {
-      control: "radio",
+      control: { type: "select" },
       options: ["default", "subtle", "strong"],
+      description: "Divider의 색상을 선택합니다.",
     },
   },
 } satisfies Meta<typeof Divider>;
@@ -24,7 +26,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Horizontal: Story = {
+export const Default: Story = {
   args: {
     orientation: "horizontal",
     color: "default",
@@ -38,49 +40,6 @@ export const Horizontal: Story = {
       `}
     >
       <p className="text-sm">Container</p>
-      <Divider {...args} />
-    </div>
-  ),
-};
-
-export const Vertical: Story = {
-  args: {
-    orientation: "vertical",
-    color: "default",
-  },
-  render: (args: React.ComponentProps<typeof Divider>) => (
-    <div
-      className={`
-        w-[200px] h-[200px] p-4 border rounded-md
-        flex justify-center items-center
-        ${args.orientation === 'horizontal' ? 'flex-col gap-2' : 'flex-row gap-2'}
-      `}
-    >
-      <p className="text-sm">Container</p>
-      <Divider {...args} />
-    </div>
-  ),
-};
-
-export const Subtle: Story = {
-  args: {
-    orientation: "horizontal",
-    color: "subtle",
-  },
-  render: (args: React.ComponentProps<typeof Divider>) => (
-    <div className="w-[200px] h-[200px] p-4 border rounded-md">
-      <Divider {...args} />
-    </div>
-  ),
-};
-
-export const Strong: Story = {
-  args: {
-    orientation: "horizontal",
-    color: "strong",
-  },
-  render: (args: React.ComponentProps<typeof Divider>) => (
-    <div className="w-[200px] h-[200px] p-4 border rounded-md">
       <Divider {...args} />
     </div>
   ),

@@ -17,6 +17,113 @@
   /* Custom utility styles if needed */
 }
 
+/* Toast 애니메이션 */
+@keyframes slide-in-top {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+@keyframes slide-in-bottom {
+  0% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+@keyframes slide-in-left {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+@keyframes slide-in-right {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+@keyframes slide-out-top {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+}
+@keyframes slide-out-bottom {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+@keyframes slide-out-left {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+}
+@keyframes slide-out-right {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.animate-slide-in-top {
+  animation: slide-in-top 0.3s ease-out;
+}
+.animate-slide-in-bottom {
+  animation: slide-in-bottom 0.3s ease-out;
+}
+.animate-slide-in-left {
+  animation: slide-in-left 0.3s ease-out;
+}
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}
+.animate-slide-out-top {
+  animation: slide-out-top 0.3s ease-in;
+}
+.animate-slide-out-bottom {
+  animation: slide-out-bottom 0.3s ease-in;
+}
+.animate-slide-out-left {
+  animation: slide-out-left 0.3s ease-in;
+}
+.animate-slide-out-right {
+  animation: slide-out-right 0.3s ease-in;
+}
+
 /* Menu 컴포넌트 스크롤바 스타일 */
 .menu-scroll-container {
   position: relative;
@@ -25,7 +132,6 @@
 
 .menu-scroll-inner {
   overflow-y: auto;
-  /* overflow-x 제거 - 하위 메뉴가 밖에서 렌더링되므로 불필요 */
 
   /* 스크롤바 완전히 숨김 (공간도 차지하지 않음) */
   scrollbar-width: none; /* Firefox */

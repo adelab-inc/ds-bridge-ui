@@ -29,11 +29,15 @@ export interface NumberButtonProps
 const NumberButton = React.forwardRef<
   HTMLButtonElement,
   NumberButtonProps
->(({ className, variant, children, ...props }, ref) => {
+>(({ className, variant, children, disabled, ...props }, ref) => {
   return (
     <button
-      className={cn(numberButtonVariants({ variant, className }))}
+      className={cn(
+        numberButtonVariants({ variant, className }),
+        disabled && 'pointer-events-none opacity-50'
+      )}
       ref={ref}
+      disabled={disabled}
       {...props}
     >
       {children}
