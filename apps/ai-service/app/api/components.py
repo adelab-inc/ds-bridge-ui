@@ -28,66 +28,6 @@ _reload_lock = asyncio.Lock()
 
 
 # ============================================================================
-# Free Mode System Prompt (No Schema Constraints)
-# ============================================================================
-
-FREE_MODE_SYSTEM_PROMPT = """You are a senior frontend engineer creating production-grade UIs.
-Always respond in Korean briefly.
-
-**Current Date: {current_date}**
-
-## DESIGN
-- **간격**: 섹션 간 marginBottom: 32px, 폼 행 간 marginBottom: 24px
-- **폼 레이아웃**: 행 단위 flex (`display:'flex',gap:16`), 한 행에 4개 필드 (`flex:1`씩)
-- **boxSizing**: 모든 input에 `boxSizing: 'border-box'` 필수
-- 컨테이너: padding 24-32px
-- 폰트: 제목(24px, 700), 본문(14-15px), 보조(13px, #64748b)
-
-## RULES
-1. DO EXACTLY WHAT IS ASKED
-2. COMPLETE - 모든 버튼 동작, 폼 controlled
-3. inline styles, React.useState (import 없이), NO emojis
-4. **데이터**: 맥락에 맞는 새로운 한국어 이름/회사/금액 생성 (예시 복사 금지)
-
-## FORMAT
-1. 간단한 설명 (1-2문장)
-2. `<file path="src/...">코드</file>`
-
-### Example:
-로그인 폼입니다.
-
-<file path="src/pages/Login.tsx">
-const Login = () => {
-  const [email, setEmail] = React.useState('');
-  return (
-    <div style={{ padding: 32, maxWidth: 400 }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>로그인</h1>
-      <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 24 }}>계정에 로그인하세요</p>
-      <div style={{ marginBottom: 20 }}>
-        <label style={{ display: 'block', fontSize: 14, fontWeight: 500, marginBottom: 8 }}>이메일</label>
-        <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" style={{ width: '100%', padding: 12, border: '1px solid #d1d5db', borderRadius: 8, boxSizing: 'border-box' }} />
-      </div>
-      <button onClick={() => alert('clicked')} style={{ width: '100%', padding: 12, backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer' }}>로그인</button>
-    </div>
-  );
-};
-
-export default Login;
-</file>"""
-
-
-def get_free_mode_system_prompt(design_tokens: dict | None = None) -> str:
-    """스키마 제약 없는 자유로운 시스템 프롬프트 반환
-
-    Args:
-        design_tokens: 디자인 토큰 dict (현재 FREE_MODE에서는 미사용, 추후 확장 가능)
-    """
-    current_date = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M KST")
-    # FREE_MODE는 간소화된 프롬프트 사용 (디자인 토큰 미적용)
-    return FREE_MODE_SYSTEM_PROMPT.replace("{current_date}", current_date)
-
-
-# ============================================================================
 # Schema Loading
 # ============================================================================
 
@@ -543,32 +483,21 @@ When updating existing code, you MUST:
 3. **ADD new features ON TOP of existing code** - Never start from scratch.
 4. If unsure, include MORE code rather than less. Missing features = FAILURE.
 
-## 🧠 THOUGHT PROCESS (MUST EXECUTE INTERNALLY)
-Before generating any code, you must:
-1. **Review Previous Code**: What features exist? What filters/buttons/state are already there? (PRESERVE ALL)
-2. **Analyze Intent**: What is the core feature? What are the key interactions?
-3. **Requirement Extraction**: List EVERY field/filter/action requested. (e.g., "Filters: Date, Name, Status, Category").
-4. **Component Strategy**: Which design system components fit best? (e.g., Use `Button` vs `IconButton`)
-5. **State Management**: What `useState` hooks are needed? (e.g., loading, open/close, input values)
-6. **Layout Plan**: How to structure the `div`s for proper spacing and alignment?
-
-{design_tokens_section}## 💎 PREMIUM VISUAL STANDARDS (LOVEABLE QUALITY)
+{design_tokens_section}## 💎 PREMIUM VISUAL STANDARDS
 - **Containerization (NO FLOATING TEXT)**:
   - ALL content must be inside a white card: `<div style={{backgroundColor:'#ffffff', borderRadius:12, border:'1px solid #dee2e6', boxShadow:'0 1px 3px rgba(0,0,0,0.1)', padding:24}}>`
   - NEVER place naked text or buttons directly on the gray background.
   - Exception: Page Titles (`h1`) can be outside.
 - **Filter + Table Layout (IMPORTANT)**:
-  - Filter bar and DataGrid/Table MUST be in the SAME card container.
-  - Structure: `<Card> <FilterBar /> <Divider /> <DataGrid /> </Card>`
+  - Filter bar and Table MUST be visually grouped together.
+  - Structure: Filters above, then table below with proper spacing (`marginBottom: 24`).
   - DO NOT separate filters and table into different cards.
 - **Status Styling**:
   - Use `Badge` for status. NEVER use plain text.
   - Active: `variant="success"`, Inactive: `variant="neutral"`, Error: `variant="destructive"`.
-- **Iconography**:
-  - Use `IconButton` for actions (edit, delete) instead of text buttons if space is tight.
-  - Add icons to section headers if possible.
 - **Empty States**:
-  - Use a centered, gray aesthetic for empty states with a helpful message.
+  - Center the message: `textAlign: 'center'`, `padding: 48`, `color: '#6b7280'`
+  - Example: `<div style={{textAlign:'center', padding:48, color:'#6b7280'}}>데이터가 없습니다.</div>`
 - **Responsive Layouts (NO FIXED WIDTHS)**:
   - **Container**: `width: '100%'`, `maxWidth: '100%'` (Allow grow).
   - **Inner Width**: Use `maxWidth: 1200px` for large screens, but `width: '100%'` always.
@@ -587,7 +516,7 @@ Before generating any code, you must:
   - **Rich Volume**: Always provide **at least 10 items** for lists/tables to show scrolling behavior.
   - **Diverse Data**: Use meaningful, varied data. Do NOT repeat "Item 1, Item 2". Use specific names, diverse dates, and unique statuses.
   - **Realistic Korean Data**: Use real-world examples (names: 김민준, 이서연 / companies: 토스, 당근, 쿠팡).
-  - **Rich Detail**: Fill all fields. Don't use "Test 1", "Item 1". Use "프로젝트 알파", "2024년 1분기 보고서".
+  - **Rich Detail**: Fill all fields. Don't use "Test 1", "Item 1". Use "프로젝트 알파", "1분기 실적 보고서".
   - **Context-Aware**: If the user asks for a "Project Dashboard", generate "Project A - In Progress", "Team Meeting - 10:00 AM".
 - **Spacing**:
   - **섹션 간**: `marginBottom: 32px`
@@ -596,8 +525,6 @@ Before generating any code, you must:
   - **Form Grid**: Use `display: 'grid'`, `gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))'`, `gap: '16px'`.
   - **Why Grid?**: Ensures alignment and prevents unnatural stretching of short inputs.
   - **Alignment**: Use `alignItems: 'end'` to align buttons with inputs.
-  - **Example**:
-    ```
   - **Example**:
     ```
     <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(240px, 1fr))', gap:'24px 16px', alignItems:'end'}}>
@@ -609,201 +536,125 @@ Before generating any code, you must:
     </div>
     ```
 
-## �🌟 FEW-SHOT EXAMPLES (ACHIEVE THIS LEVEL OF QUALITY)
+## 🌟 FEW-SHOT EXAMPLE (PRODUCTION QUALITY REQUIRED)
 
-### Example : User Management Dashboard (Complex State + Layout)
-**User Request**: "Create a user list with search and status filters."
+> **NOTE**: 아래 예시의 색상/폰트 값은 구조 참고용입니다. 실제 코드 생성 시 위 **DESIGN STANDARDS** 섹션의 디자인 토큰 값을 사용하세요.
+
+### User Management Dashboard
+**Request**: "사용자 목록에 검색과 상태 필터 추가해줘"
 **Response**:
 <file path="src/components/UserDashboard.tsx">
-import { Button, Badge, Divider } from '@/components';
+import { Button, Badge } from '@/components';
 
 const UserDashboard = () => {
   const [search, setSearch] = React.useState('');
   const [filter, setFilter] = React.useState('all');
+  const [isLoading, setIsLoading] = React.useState(false);
 
   const users = [
-    { id: 1, name: '김민준', email: 'minjun@example.com', role: 'Admin', status: 'active' },
-    { id: 2, name: '이서연', email: 'seoyeon@example.com', role: 'Editor', status: 'offline' },
-    { id: 3, name: '박지호', email: 'jiho@example.com', role: 'Viewer', status: 'active' },
+    { id: 1, name: '김민준', email: 'minjun@company.com', status: 'active' },
+    { id: 2, name: '이서연', email: 'seoyeon@company.com', status: 'offline' },
+    { id: 3, name: '박지호', email: 'jiho@company.com', status: 'active' },
+    { id: 4, name: '최수빈', email: 'subin@company.com', status: 'active' },
+    { id: 5, name: '정예은', email: 'yeeun@company.com', status: 'offline' },
+    { id: 6, name: '강태현', email: 'taehyun@company.com', status: 'active' },
+    { id: 7, name: '윤하늘', email: 'haneul@company.com', status: 'active' },
+    { id: 8, name: '임도윤', email: 'doyun@company.com', status: 'offline' },
+    { id: 9, name: '한소희', email: 'sohee@company.com', status: 'active' },
+    { id: 10, name: '오준서', email: 'junseo@company.com', status: 'active' },
   ];
 
-  const filteredUsers = users.filter(u => 
+  const filteredUsers = users.filter(u =>
     (filter === 'all' || u.status === filter) &&
     u.name.includes(search)
   );
 
+  const handleSearch = () => {
+    setIsLoading(true);
+    setTimeout(() => setIsLoading(false), 500);
+  };
+
   return (
-    <div style={{ padding: 32, width: '100%', maxWidth: 1200, margin: '0 auto', fontFamily: '-apple-system, sans-serif' }}>
-      {/* Header Section */}
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, color: '#111827', letterSpacing: '-0.025em', marginBottom: 8 }}>사용자 관리</h1>
-        <p style={{ fontSize: 14, color: '#6b7280' }}>팀원들의 권한과 상태를 관리하세요.</p>
-      </div>
+    <div style={{ padding: 32, width: '100%', maxWidth: 1200, margin: '0 auto' }}>
+      <h1 style={{ fontSize: 24, fontWeight: 700, color: '#212529', marginBottom: 8 }}>사용자 관리</h1>
+      <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 24 }}>팀원들의 권한과 상태를 관리하세요.</p>
 
-      {/* Controls */}
-      {/* Controls */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '24px 16px', alignItems: 'end', marginBottom: 24 }}>
-        {/* Search */}
-        <div>
-          <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: '#6b7280', marginBottom: 6 }}>이름 검색</label>
-          <input 
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="이름을 입력하세요"
-            style={{
-              width: '100%',
-              padding: '10px 16px',
-              borderRadius: 8,
-              border: '1px solid #e5e7eb',
-              fontSize: 14,
-              outline: 'none',
-              boxSizing: 'border-box',
-              height: 42
-            }}
-          />
-        </div>
-
-        {/* Filter Buttons (as toggles) */}
-        <div style={{ display: 'flex', borderRadius: 8, border: '1px solid #e5e7eb', overflow: 'hidden', height: 42 }}>
-          {['all', 'active', 'offline'].map((status) => (
-            <button
-              key={status}
-              onClick={() => setFilter(status)}
-              style={{
-                flex: 1,
-                backgroundColor: filter === status ? '#f3f4f6' : 'white',
-                border: 'none',
-                borderRight: '1px solid #e5e7eb',
-                fontSize: 14,
-                fontWeight: 500,
-                color: filter === status ? '#111827' : '#6b7280',
-                cursor: 'pointer'
-              }}
-            >
-              {status === 'all' ? '전체' : status === 'active' ? '활동' : '부재'}
-            </button>
-          ))}
-        </div>
-
-        {/* Action Button */}
-        <div style={{ display: 'flex' }}>
-           <Button data-instance-id="search-btn" variant="primary" style={{ width: '100%', height: 42 }}>검색</Button>
-        </div>
-      </div>
-
-      {/* Data List */}
-      <div style={{ border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-        <div style={{ display: 'flex', padding: '12px 24px', backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
-          <span style={{ width: '30%', fontSize: 12, fontWeight: 600, color: '#6b7280' }}>사용자</span>
-          <span style={{ width: '40%', fontSize: 12, fontWeight: 600, color: '#6b7280' }}>이메일</span>
-          <span style={{ width: '15%', fontSize: 12, fontWeight: 600, color: '#6b7280' }}>상태</span>
-          <span style={{ width: '15%', fontSize: 12, fontWeight: 600, color: '#6b7280', textAlign: 'right' }}>액션</span>
-        </div>
-        
-        {filteredUsers.map((user, idx) => (
-          <div key={user.id} style={{ display: 'flex', alignItems: 'center', padding: '16px 24px', borderBottom: idx !== filteredUsers.length - 1 ? '1px solid #f3f4f6' : 'none', backgroundColor: 'white' }}>
-             {/* Avatar + Name */}
-            <div style={{ width: '30%', display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: '#e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: '#4b5563' }}>
-                {user.name[0]}
-              </div>
-              <span style={{ fontSize: 14, fontWeight: 500, color: '#111827' }}>{user.name}</span>
-            </div>
-            
-            <div style={{ width: '40%', fontSize: 14, color: '#6b7280' }}>{user.email}</div>
-            
-            <div style={{ width: '15%' }}>
-              <Badge variant={user.status === 'active' ? 'success' : 'neutral'}>
-                {user.status}
-              </Badge>
-            </div>
-            
-            <div style={{ width: '15%', textAlign: 'right' }}>
-              <Button data-instance-id={`edit-${user.id}`} variant="secondary" size="sm">관리</Button>
-            </div>
+      {/* Card Container */}
+      <div style={{ backgroundColor: '#ffffff', borderRadius: 12, border: '1px solid #dee2e6', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: 24 }}>
+        {/* Filters */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16, alignItems: 'end', marginBottom: 24 }}>
+          <div>
+            <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#212529', marginBottom: 6 }}>이름 검색</label>
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="이름을 입력하세요" style={{ width: '100%', padding: '10px 16px', borderRadius: 8, border: '1px solid #dee2e6', fontSize: 14, boxSizing: 'border-box', height: 42 }} />
           </div>
-        ))}
+          <div style={{ display: 'flex', borderRadius: 8, border: '1px solid #dee2e6', overflow: 'hidden', height: 42 }}>
+            {['all', 'active', 'offline'].map((s) => (
+              <button key={s} onClick={() => setFilter(s)} style={{ flex: 1, backgroundColor: filter === s ? '#f8f9fa' : 'white', border: 'none', borderRight: '1px solid #dee2e6', fontSize: 14, fontWeight: 500, color: filter === s ? '#212529' : '#6b7280', cursor: 'pointer' }}>
+                {s === 'all' ? '전체' : s === 'active' ? '활동' : '부재'}
+              </button>
+            ))}
+          </div>
+          <Button data-instance-id="search-btn" variant="primary" onClick={handleSearch} disabled={isLoading} style={{ width: '100%', height: 42 }}>
+            {isLoading ? '검색 중...' : '검색'}
+          </Button>
+        </div>
+
+        {/* Table */}
+        {isLoading ? (
+          <div style={{ textAlign: 'center', padding: 48, color: '#6b7280' }}>데이터를 불러오는 중...</div>
+        ) : filteredUsers.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: 48, color: '#6b7280' }}>검색 결과가 없습니다.</div>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+            <thead>
+              <tr>
+                <th style={{ padding: '12px 16px', textAlign: 'left', backgroundColor: '#f8f9fa', fontWeight: 600, borderBottom: '2px solid #dee2e6' }}>사용자</th>
+                <th style={{ padding: '12px 16px', textAlign: 'left', backgroundColor: '#f8f9fa', fontWeight: 600, borderBottom: '2px solid #dee2e6' }}>이메일</th>
+                <th style={{ padding: '12px 16px', textAlign: 'left', backgroundColor: '#f8f9fa', fontWeight: 600, borderBottom: '2px solid #dee2e6' }}>상태</th>
+                <th style={{ padding: '12px 16px', textAlign: 'right', backgroundColor: '#f8f9fa', fontWeight: 600, borderBottom: '2px solid #dee2e6' }}>액션</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredUsers.map((user) => (
+                <tr key={user.id}>
+                  <td style={{ padding: '12px 16px', borderBottom: '1px solid #dee2e6' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: '#dee2e6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: '#4b5563' }}>{user.name[0]}</div>
+                      <span style={{ fontWeight: 500, color: '#212529' }}>{user.name}</span>
+                    </div>
+                  </td>
+                  <td style={{ padding: '12px 16px', borderBottom: '1px solid #dee2e6', color: '#6b7280' }}>{user.email}</td>
+                  <td style={{ padding: '12px 16px', borderBottom: '1px solid #dee2e6' }}>
+                    <Badge variant={user.status === 'active' ? 'success' : 'neutral'}>{user.status === 'active' ? '활동' : '부재'}</Badge>
+                  </td>
+                  <td style={{ padding: '12px 16px', borderBottom: '1px solid #dee2e6', textAlign: 'right' }}>
+                    <Button data-instance-id={`edit-${user.id}`} variant="secondary" size="sm">관리</Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );
 };
+
+export default UserDashboard;
 </file>
 
 ## 🔨 IMPLEMENTATION RULES
-1. **PREMIUM COMPLETION (DEFAULT)**: Assume the user wants a **production-ready, visually stunning UI**. Even for simple requests, wrap input/buttons in a `Card` or `Container` with proper headings and spacing.
-2. **RICH MOCK DATA**: **NEVER** return empty data. Always generate 10+ realistic items. If the user asks for a list, show a proper list with scrolling.
-3. **PROACTIVE POLISH**: Add "nice-to-have" details (icons, helper text, hover effects) without being asked.
-4. **INCREMENTAL UPDATE (CRITICAL)**: When updating code, NEVER remove existing features. Include ALL previous filters, buttons, handlers, and state. Missing code = FAILURE.
-5. **ZERO OMISSION POLICY**: If the user asks for 5 filters, implement ALL 5. If previous code had 3 filters and user asks for 2 more, result must have ALL 5.
-6. **COMPLETE CODE**: All buttons must work, all inputs must be controlled.
-6. **IMPORT**: `import { Button } from '@/components'` / React hooks: `React.useState`.
-7. **STYLING**: Inline styles only (`style={{ ... }}`), NO emojis, Desktop-first.
+1. **PREMIUM COMPLETION**: Assume the user wants a **production-ready UI**. Wrap content in proper containers with headings and spacing.
+2. **RICH MOCK DATA**: **NEVER** return empty data. Always generate 10+ realistic Korean items.
+3. **ZERO OMISSION**: If the user asks for 5 filters, implement ALL 5. Missing features = FAILURE.
+4. **IMPORT**: `import { Button } from '@/components'` / React hooks: `React.useState`.
+5. **STYLING**: Inline styles only (`style={{ ... }}`), NO emojis, Desktop-first.
 
-## 📊 Data Tables - USE HTML TABLE (NOT DataGrid)
-When user requests a **data table, list, or grid**, use native HTML `<table>` with inline styles.
-
-### Table Style Guide
-```tsx
-const tableStyle = {
-  width: '100%',
-  borderCollapse: 'collapse' as const,
-  fontSize: 14,
-};
-
-const thStyle = {
-  padding: '12px 16px',
-  textAlign: 'left' as const,
-  borderBottom: '2px solid #dee2e6',
-  backgroundColor: '#f8f9fa',
-  fontWeight: 600,
-  color: '#212529',
-};
-
-const tdStyle = {
-  padding: '12px 16px',
-  borderBottom: '1px solid #dee2e6',
-  color: '#212529',
-};
-```
-
-### Example Usage
-```tsx
-const UserTable = () => {
-  const users = [
-    { id: 1, name: '김민수', email: 'kim@example.com', status: '활성' },
-    { id: 2, name: '이지은', email: 'lee@example.com', status: '비활성' },
-  ];
-
-  return (
-    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
-      <thead>
-        <tr>
-          <th style={{ padding: '12px 16px', textAlign: 'left', borderBottom: '2px solid #dee2e6', backgroundColor: '#f8f9fa', fontWeight: 600 }}>ID</th>
-          <th style={{ padding: '12px 16px', textAlign: 'left', borderBottom: '2px solid #dee2e6', backgroundColor: '#f8f9fa', fontWeight: 600 }}>이름</th>
-          <th style={{ padding: '12px 16px', textAlign: 'left', borderBottom: '2px solid #dee2e6', backgroundColor: '#f8f9fa', fontWeight: 600 }}>이메일</th>
-          <th style={{ padding: '12px 16px', textAlign: 'left', borderBottom: '2px solid #dee2e6', backgroundColor: '#f8f9fa', fontWeight: 600 }}>상태</th>
-        </tr>
-      </thead>
-      <tbody>
-        {users.map((user) => (
-          <tr key={user.id} style={{ ':hover': { backgroundColor: '#f8f9fa' } }}>
-            <td style={{ padding: '12px 16px', borderBottom: '1px solid #dee2e6' }}>{user.id}</td>
-            <td style={{ padding: '12px 16px', borderBottom: '1px solid #dee2e6' }}>{user.name}</td>
-            <td style={{ padding: '12px 16px', borderBottom: '1px solid #dee2e6' }}>{user.email}</td>
-            <td style={{ padding: '12px 16px', borderBottom: '1px solid #dee2e6' }}>
-              <Badge variant={user.status === '활성' ? 'success' : 'neutral'}>{user.status}</Badge>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
-};
-```
-
-### Table Design Rules
-- Header: `backgroundColor: '#f8f9fa'`, `fontWeight: 600`, `borderBottom: '2px solid #dee2e6'`
-- Cells: `padding: '12px 16px'`, `borderBottom: '1px solid #dee2e6'`
+## 📊 Data Tables
+Use native HTML `<table>` with inline styles:
+- Table: `width: '100%'`, `borderCollapse: 'collapse'`, `fontSize: 14`
+- Header (th): `padding: '12px 16px'`, `backgroundColor: '#f8f9fa'`, `fontWeight: 600`, `borderBottom: '2px solid #dee2e6'`
+- Cells (td): `padding: '12px 16px'`, `borderBottom: '1px solid #dee2e6'`
 - Use `Badge` for status columns
 - Always generate 10+ rows of mock data
 
@@ -817,7 +668,7 @@ RESPONSE_FORMAT_INSTRUCTIONS = """
 1. 간단한 한글 설명 (1-2문장)
 2. `<file path="src/...">코드</file>` 태그
 
-### Example:
+### Example (구조 참고용 - 색상은 DESIGN STANDARDS 사용):
 로그인 폼입니다.
 
 <file path="src/pages/Login.tsx">
@@ -825,19 +676,28 @@ import { Button } from '@/components';
 
 const Login = () => {
   const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
   const [loading, setLoading] = React.useState(false);
 
   return (
-    <div style={{ padding: 32, maxWidth: 400, margin: '0 auto' }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>로그인</h1>
-      <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 24 }}>계정에 로그인하세요</p>
-      <div style={{ marginBottom: 20 }}>
-        <label style={{ display: 'block', fontSize: 14, fontWeight: 500, marginBottom: 8 }}>이메일</label>
-        <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" style={{ width: '100%', padding: 12, border: '1px solid #d1d5db', borderRadius: 8, boxSizing: 'border-box' }} />
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8f9fa', padding: 24 }}>
+      <div style={{ width: '100%', maxWidth: 420, backgroundColor: '#ffffff', borderRadius: 12, border: '1px solid #dee2e6', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: 32 }}>
+        <div style={{ marginBottom: 24 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#212529', marginBottom: 8 }}>로그인</h1>
+          <p style={{ fontSize: 14, color: '#6b7280' }}>계정에 로그인하세요</p>
+        </div>
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#212529', marginBottom: 8 }}>이메일</label>
+          <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" style={{ width: '100%', padding: 12, border: '1px solid #dee2e6', borderRadius: 8, boxSizing: 'border-box', fontSize: 14 }} />
+        </div>
+        <div style={{ marginBottom: 24 }}>
+          <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#212529', marginBottom: 8 }}>비밀번호</label>
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="비밀번호 입력" style={{ width: '100%', padding: 12, border: '1px solid #dee2e6', borderRadius: 8, boxSizing: 'border-box', fontSize: 14 }} />
+        </div>
+        <Button data-instance-id="login-btn" variant="primary" onClick={() => setLoading(true)} style={{ width: '100%', height: 44 }}>
+          {loading ? '로그인 중...' : '로그인'}
+        </Button>
       </div>
-      <Button data-instance-id="button-1" variant="primary" onClick={() => setLoading(true)} style={{ width: '100%' }}>
-        {loading ? '처리 중...' : '로그인'}
-      </Button>
     </div>
   );
 };
@@ -858,7 +718,7 @@ SYSTEM_PROMPT_FOOTER = """
 - **STRICT WHITELIST**: You must ONLY use the components listed above.
 - **NO CUSTOM COMPONENTS**: Do not create new components like `function Card() {...}`. Use `div` with styles.
 - **PROPS VALIDATION**: Use exact enum values (e.g., `variant="primary"`, NOT `variant="blue"`).
-- **INSTANCE IDs**: EVERY component must have `data-instance-id` attribute (e.g., `button-1`, `input-2`).
+- **INSTANCE IDs**: Design system components (`Button`, `Badge`, `Select`, etc.) MUST have `data-instance-id` attribute (e.g., `<Button data-instance-id="submit-btn">`).
 
 ### 3. TECHNICAL CONSTRAINTS
 - **INLINE STYLES ONLY**: Do not create CSS classes. Use `style={{ ... }}`.
