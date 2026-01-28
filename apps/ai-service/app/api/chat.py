@@ -17,7 +17,13 @@ from app.schemas.chat import (
     ParsedResponse,
 )
 from app.services.ai_provider import get_ai_provider
-from app.services.firebase_storage import fetch_schema_from_storage
+from app.services.firebase_storage import (
+    DEFAULT_AG_GRID_SCHEMA_KEY,
+    DEFAULT_AG_GRID_TOKENS_KEY,
+    fetch_ag_grid_tokens_from_storage,
+    fetch_design_tokens_from_storage,
+    fetch_schema_from_storage,
+)
 from app.services.firestore import (
     FirestoreError,
     RoomNotFoundError,
@@ -120,16 +126,30 @@ async def resolve_system_prompt(
     Returns:
         시스템 프롬프트 문자열
     """
+    # 디자인 토큰 로드 (실패 시 기본값 사용)
+    design_tokens = await fetch_design_tokens_from_storage()
+
+    # AG Grid 스키마 및 토큰 로드 (실패 시 None, 프롬프트에서 생략됨)
+    ag_grid_schema = None
+    ag_grid_tokens = None
+    try:
+        ag_grid_schema = await fetch_schema_from_storage(DEFAULT_AG_GRID_SCHEMA_KEY)
+        ag_grid_tokens = await fetch_ag_grid_tokens_from_storage()
+    except Exception as e:
+        logger.warning("AG Grid data not loaded: %s", str(e))
+
     # 기본 프롬프트 생성
     if not schema_key:
-        base_prompt = get_free_mode_system_prompt()
+        base_prompt = get_free_mode_system_prompt(design_tokens)
     else:
         try:
             schema = await fetch_schema_from_storage(schema_key)
-            base_prompt = generate_system_prompt(schema)
+            base_prompt = generate_system_prompt(
+                schema, design_tokens, ag_grid_schema, ag_grid_tokens
+            )
         except FileNotFoundError:
             logger.warning("Schema not found: %s, using free mode", schema_key)
-            base_prompt = get_free_mode_system_prompt()
+            base_prompt = get_free_mode_system_prompt(design_tokens)
         except Exception as e:
             logger.error("Failed to fetch schema: %s - %s", schema_key, str(e), exc_info=True)
             raise HTTPException(

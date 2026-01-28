@@ -169,6 +169,114 @@ async def fetch_schema_from_storage(schema_key: str, use_cache: bool = True) -> 
         raise
 
 
+# ============================================================================
+# Design Tokens
+# ============================================================================
+
+DEFAULT_DESIGN_TOKENS_KEY = "exports/design-tokens.json"
+DEFAULT_AG_GRID_SCHEMA_KEY = "exports/ag-grid-component.storybook.json"
+DEFAULT_AG_GRID_TOKENS_KEY = "exports/ag-grid-tokens.json"
+
+_design_tokens_cache: dict | None = None
+_ag_grid_tokens_cache: dict | None = None
+
+
+async def fetch_design_tokens_from_storage(
+    tokens_key: str = DEFAULT_DESIGN_TOKENS_KEY,
+) -> dict | None:
+    """
+    Firebase Storage에서 디자인 토큰 다운로드
+
+    Args:
+        tokens_key: Storage 내 파일 경로 (기본: "exports/design-tokens.json")
+
+    Returns:
+        파싱된 디자인 토큰 dict 또는 None (파일이 없는 경우)
+    """
+    global _design_tokens_cache
+
+    # 캐시 확인
+    if _design_tokens_cache is not None:
+        logger.debug("Design tokens cache hit")
+        return _design_tokens_cache
+
+    # Firebase 초기화
+    init_firebase()
+
+    try:
+        bucket = storage.bucket()
+        blob = bucket.blob(tokens_key)
+
+        if not blob.exists():
+            logger.warning("Design tokens not found in storage: %s", tokens_key)
+            return None
+
+        # 다운로드 및 파싱
+        content = blob.download_as_string()
+        tokens = json.loads(content.decode("utf-8"))
+
+        # 캐시 저장
+        _design_tokens_cache = tokens
+        logger.info("Design tokens loaded and cached from: %s", tokens_key)
+
+        return tokens
+
+    except json.JSONDecodeError as e:
+        logger.error("Invalid JSON in design tokens: %s - %s", tokens_key, str(e))
+        return None
+    except Exception as e:
+        logger.error("Failed to fetch design tokens: %s - %s", tokens_key, str(e))
+        return None
+
+
+async def fetch_ag_grid_tokens_from_storage(
+    tokens_key: str = DEFAULT_AG_GRID_TOKENS_KEY,
+) -> dict | None:
+    """
+    Firebase Storage에서 AG Grid 토큰 다운로드
+
+    Args:
+        tokens_key: Storage 내 파일 경로 (기본: "exports/ag-grid-tokens.json")
+
+    Returns:
+        파싱된 AG Grid 토큰 dict 또는 None (파일이 없는 경우)
+    """
+    global _ag_grid_tokens_cache
+
+    # 캐시 확인
+    if _ag_grid_tokens_cache is not None:
+        logger.debug("AG Grid tokens cache hit")
+        return _ag_grid_tokens_cache
+
+    # Firebase 초기화
+    init_firebase()
+
+    try:
+        bucket = storage.bucket()
+        blob = bucket.blob(tokens_key)
+
+        if not blob.exists():
+            logger.warning("AG Grid tokens not found in storage: %s", tokens_key)
+            return None
+
+        # 다운로드 및 파싱
+        content = blob.download_as_string()
+        tokens = json.loads(content.decode("utf-8"))
+
+        # 캐시 저장
+        _ag_grid_tokens_cache = tokens
+        logger.info("AG Grid tokens loaded and cached from: %s", tokens_key)
+
+        return tokens
+
+    except json.JSONDecodeError as e:
+        logger.error("Invalid JSON in AG Grid tokens: %s - %s", tokens_key, str(e))
+        return None
+    except Exception as e:
+        logger.error("Failed to fetch AG Grid tokens: %s - %s", tokens_key, str(e))
+        return None
+
+
 async def upload_schema_to_storage(schema_key: str, schema_data: dict) -> str:
     """
     Firebase Storage에 스키마 업로드
