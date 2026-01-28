@@ -322,6 +322,7 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
 
     Args:
         schema: AG Grid 컴포넌트 스키마 dict 또는 None
+                (단일 컴포넌트 구조: componentName, props 등이 최상위에 있음)
 
     Returns:
         포맷팅된 AG Grid 컴포넌트 문서 문자열
@@ -329,55 +330,105 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     if not schema:
         return ""
 
-    lines = ["## 📊 AG Grid Component (DataGrid)"]
-    lines.append("")
-    lines.append("Use `DataGrid` for advanced data tables with sorting, filtering, and pagination.")
-    lines.append("")
+    # AG Grid 스키마는 단일 컴포넌트 구조
+    comp_name = schema.get("componentName") or schema.get("displayName", "DataGrid")
+    description = schema.get("description", "")
+    props = schema.get("props", {})
+    required_imports = schema.get("requiredImports", [])
+    theme_config = schema.get("themeConfig", {})
 
-    components = schema.get("components", {})
-    if not components:
+    if not props:
         return ""
 
-    for comp_name, comp_data in components.items():
-        props = comp_data.get("props", {})
-        description = comp_data.get("description", "")
+    lines = ["## 📊 AG Grid Component (DataGrid)"]
+    lines.append("")
+    lines.append(f"**{comp_name}** - {description}" if description else f"**{comp_name}**")
+    lines.append("")
 
-        # 컴포넌트 헤더
-        header = f"**{comp_name}**"
-        if description and len(description) < 80:
-            header += f" - {description}"
-        lines.append(header)
-
-        # props 포맷팅
-        prop_lines = []
-        for prop_name, prop_info in props.items():
-            if prop_name == "children":
-                continue
-
-            prop_type = prop_info.get("type", "any")
-            required = prop_info.get("required", False)
-            default = prop_info.get("defaultValue")
-
-            type_str = format_prop_type(prop_type)
-            line = f"  ├─ {prop_name}: {type_str}"
-
-            if required:
-                line += " [required]"
-            elif default is not None:
-                if isinstance(default, str):
-                    line += f' (= "{default}")'
-                elif isinstance(default, bool):
-                    line += f" (= {str(default).lower()})"
-                else:
-                    line += f" (= {default})"
-
-            prop_lines.append(line)
-
-        if prop_lines:
-            prop_lines[-1] = prop_lines[-1].replace("├─", "└─")
-            lines.extend(prop_lines)
-
+    # Import 가이드
+    if required_imports:
+        lines.append("### Required Imports")
+        lines.append("```tsx")
+        for imp in required_imports:
+            imp_name = imp.get("name", "")
+            imp_from = imp.get("from", "")
+            is_type = imp.get("isTypeOnly", False)
+            if is_type:
+                lines.append(f"import type {{ {imp_name} }} from '{imp_from}';")
+            else:
+                lines.append(f"import {{ {imp_name} }} from '{imp_from}';")
+        lines.append("```")
         lines.append("")
+
+    # 테마 설정
+    if theme_config:
+        lines.append("### Theme Configuration")
+        lines.append(f"- Always use `theme={{dsRuntimeTheme}}` prop")
+        lines.append(f"- Import theme from `{theme_config.get('themeFile', '@/themes/agGridTheme')}`")
+        lines.append("")
+
+    # Props 문서
+    lines.append("### Props")
+    prop_lines = []
+    for prop_name, prop_info in props.items():
+        prop_type = prop_info.get("type", "any")
+        required = prop_info.get("required", False)
+        default = prop_info.get("default")
+        prop_desc = prop_info.get("description", "")
+
+        type_str = format_prop_type(prop_type)
+        line = f"  ├─ {prop_name}: {type_str}"
+
+        if required:
+            line += " [required]"
+        elif default is not None:
+            if isinstance(default, str):
+                line += f' (= "{default}")'
+            elif isinstance(default, bool):
+                line += f" (= {str(default).lower()})"
+            else:
+                line += f" (= {default})"
+
+        if prop_desc:
+            line += f" - {prop_desc[:50]}"
+
+        prop_lines.append(line)
+
+    if prop_lines:
+        prop_lines[-1] = prop_lines[-1].replace("├─", "└─")
+        lines.extend(prop_lines)
+
+    lines.append("")
+
+    # 사용 예시
+    lines.append("### Usage Example")
+    lines.append("```tsx")
+    lines.append("import { AgGridReact } from 'ag-grid-react';")
+    lines.append("import { dsRuntimeTheme } from '@/themes/agGridTheme';")
+    lines.append("import type { ColDef } from 'ag-grid-community';")
+    lines.append("")
+    lines.append("const columnDefs: ColDef[] = [")
+    lines.append("  { field: 'name', headerName: '이름', flex: 1 },")
+    lines.append("  { field: 'email', headerName: '이메일', flex: 2 },")
+    lines.append("  { field: 'status', headerName: '상태', width: 100 },")
+    lines.append("];")
+    lines.append("")
+    lines.append("const rowData = [")
+    lines.append("  { name: '김민수', email: 'kim@example.com', status: '활성' },")
+    lines.append("  { name: '이지은', email: 'lee@example.com', status: '비활성' },")
+    lines.append("];")
+    lines.append("")
+    lines.append("<div style={{ height: 400 }}>")
+    lines.append("  <AgGridReact")
+    lines.append("    theme={dsRuntimeTheme}")
+    lines.append("    rowData={rowData}")
+    lines.append("    columnDefs={columnDefs}")
+    lines.append("    pagination={true}")
+    lines.append("    paginationPageSize={10}")
+    lines.append("  />")
+    lines.append("</div>")
+    lines.append("```")
+    lines.append("")
 
     return "\n".join(lines)
 
@@ -388,6 +439,7 @@ def format_ag_grid_tokens(tokens: dict | None) -> str:
 
     Args:
         tokens: AG Grid 토큰 dict 또는 None
+                구조: { "agGrid": { "colors": { "accent": { "value": "#xxx" }, ... } } }
 
     Returns:
         포맷팅된 AG Grid 토큰 문자열
@@ -395,34 +447,53 @@ def format_ag_grid_tokens(tokens: dict | None) -> str:
     if not tokens:
         return ""
 
-    lines = ["## 📊 AG Grid Styling Tokens"]
+    # agGrid 키 아래에 토큰이 있음
+    grid_tokens = tokens.get("agGrid", tokens)
+    if not grid_tokens:
+        return ""
+
+    lines = ["### AG Grid Styling Tokens"]
     lines.append("")
 
-    # 토큰 구조에 따라 포맷팅 (실제 구조에 맞게 조정 필요)
-    grid_tokens = tokens.get("agGridTokens", tokens)
+    def extract_value(token_data):
+        """토큰 데이터에서 값 추출 (nested 구조 처리)"""
+        if isinstance(token_data, dict):
+            if "value" in token_data:
+                return token_data["value"]
+            # nested 객체는 첫 번째 레벨만 처리
+            return {k: v.get("value", v) if isinstance(v, dict) else v for k, v in token_data.items()}
+        return token_data
 
     # 색상 토큰
     colors = grid_tokens.get("colors", {})
     if colors:
         lines.append("**Colors:**")
-        for key, value in list(colors.items())[:10]:  # 상위 10개만
-            lines.append(f"  - {key}: `{value}`")
+        for key, value in list(colors.items())[:8]:
+            extracted = extract_value(value)
+            if isinstance(extracted, str):
+                lines.append(f"  - {key}: `{extracted}`")
+            elif isinstance(extracted, dict):
+                # nested (e.g., background.chrome)
+                for sub_key, sub_val in list(extracted.items())[:3]:
+                    lines.append(f"  - {key}.{sub_key}: `{sub_val}`")
         lines.append("")
 
-    # 크기/간격 토큰
-    sizing = grid_tokens.get("sizing", grid_tokens.get("spacing", {}))
-    if sizing:
-        lines.append("**Sizing:**")
-        for key, value in list(sizing.items())[:10]:
-            lines.append(f"  - {key}: `{value}`")
+    # 간격/크기 토큰
+    spacing = grid_tokens.get("spacing", {})
+    if spacing:
+        lines.append("**Spacing:**")
+        for key, value in list(spacing.items())[:6]:
+            extracted = extract_value(value)
+            lines.append(f"  - {key}: `{extracted}`")
         lines.append("")
 
     # 폰트 토큰
-    typography = grid_tokens.get("typography", grid_tokens.get("font", {}))
-    if typography:
-        lines.append("**Typography:**")
-        for key, value in list(typography.items())[:10]:
-            lines.append(f"  - {key}: `{value}`")
+    font = grid_tokens.get("font", {})
+    if font:
+        lines.append("**Font:**")
+        for key, value in list(font.items())[:6]:
+            extracted = extract_value(value)
+            lines.append(f"  - {key}: `{extracted}`")
         lines.append("")
 
     return "\n".join(lines) if len(lines) > 2 else ""
