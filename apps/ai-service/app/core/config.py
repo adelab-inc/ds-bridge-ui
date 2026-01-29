@@ -37,6 +37,15 @@ class Settings(BaseSettings):
     firebase_project_id: str = ""
     firebase_storage_bucket: str = ""
 
+    # Chat Settings
+    max_history_count: int = 10  # 대화 컨텍스트에 포함할 최대 메시지 수
+    max_image_size_mb: int = 10  # 이미지 업로드 최대 크기 (MB)
+
+    @property
+    def max_image_size_bytes(self) -> int:
+        """이미지 최대 크기를 바이트로 반환"""
+        return self.max_image_size_mb * 1024 * 1024
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",")]

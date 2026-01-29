@@ -6,6 +6,7 @@ from zoneinfo import ZoneInfo
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 
 from app.core.auth import verify_api_key
+from app.core.config import get_settings
 from app.schemas.chat import (
     CreateRoomRequest,
     ImageUploadResponse,
@@ -20,6 +21,7 @@ from app.services.firebase_storage import (
 )
 from app.services.firestore import (
     FirestoreError,
+    RoomData,
     RoomNotFoundError,
     create_chat_room,
     get_chat_room,
@@ -29,6 +31,29 @@ from app.services.firestore import (
 
 router = APIRouter(dependencies=[Depends(verify_api_key)])
 logger = logging.getLogger(__name__)
+
+
+# ============================================================================
+# Dependencies
+# ============================================================================
+
+
+async def get_room_or_404(room_id: str) -> RoomData:
+    """
+    채팅방 조회 Dependency - 없으면 404 반환
+
+    Usage:
+        @router.get("/{room_id}/something")
+        async def endpoint(room: RoomData = Depends(get_room_or_404)):
+            ...
+    """
+    room = await get_chat_room(room_id)
+    if room is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Room not found: {room_id}",
+        )
+    return room
 
 
 @router.post(
@@ -212,7 +237,7 @@ Firebase Storage에 이미지를 업로드하고 URL을 반환합니다.
 
 ## 지원 형식
 - image/jpeg, image/png, image/gif, image/webp
-- 최대 10MB
+- 최대 크기는 서버 설정에 따름
 """,
     responses={
         201: {"description": "업로드 성공"},
@@ -243,19 +268,14 @@ Firebase Storage에 이미지를 업로드하고 URL을 반환합니다.
 async def upload_room_image(
     room_id: str,
     file: UploadFile = File(...),
+    _room: RoomData = Depends(get_room_or_404),  # room 존재 확인
 ) -> ImageUploadResponse:
     """
     채팅용 이미지를 Firebase Storage에 업로드합니다.
     """
-    # 1. room 존재 확인
-    room = await get_chat_room(room_id)
-    if room is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"채팅방을 찾을 수 없습니다: {room_id}",
-        )
+    settings = get_settings()
 
-    # 2. 파일 검증
+    # 파일 검증
     if not file.filename:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -270,17 +290,17 @@ async def upload_room_image(
             detail=f"이미지 파일만 업로드 가능합니다. (받은 타입: {content_type})",
         )
 
-    # 3. 파일 읽기 (최대 10MB)
-    MAX_SIZE = 10 * 1024 * 1024  # 10MB
+    # 파일 읽기
     image_data = await file.read()
+    max_size = settings.max_image_size_bytes
 
-    if len(image_data) > MAX_SIZE:
+    if len(image_data) > max_size:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"파일 크기가 10MB를 초과합니다. ({len(image_data) / 1024 / 1024:.1f}MB)",
+            detail=f"파일 크기가 {settings.max_image_size_mb}MB를 초과합니다. ({len(image_data) / 1024 / 1024:.1f}MB)",
         )
 
-    # 4. Firebase Storage 업로드
+    # Firebase Storage 업로드
     try:
         public_url, storage_path = await upload_image_to_storage(
             room_id=room_id,
@@ -358,6 +378,7 @@ class SchemaResponse(BaseModel):
 async def create_room_schema(
     room_id: str,
     request: CreateSchemaRequest,
+    _room: RoomData = Depends(get_room_or_404),  # room 존재 확인
 ) -> CreateSchemaResponse:
     """채팅방의 컴포넌트 스키마 생성"""
     try:
@@ -365,14 +386,6 @@ async def create_room_schema(
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Schema must contain 'components' field",
-            )
-
-        # Room 존재 여부 먼저 확인
-        room = await get_chat_room(room_id)
-        if room is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Room not found: {room_id}",
             )
 
         # room_id 기반 schema_key 생성
@@ -420,17 +433,12 @@ async def create_room_schema(
         404: {"description": "채팅방 또는 스키마를 찾을 수 없음"},
     },
 )
-async def get_room_schema(room_id: str) -> SchemaResponse:
+async def get_room_schema(
+    room_id: str,
+    room: RoomData = Depends(get_room_or_404),
+) -> SchemaResponse:
     """채팅방의 컴포넌트 스키마 조회"""
     try:
-        # Room 조회
-        room = await get_chat_room(room_id)
-        if room is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Room not found: {room_id}",
-            )
-
         schema_key = room.get("schema_key")
         if not schema_key:
             raise HTTPException(
@@ -490,17 +498,10 @@ async def get_room_messages(
     limit: int = Query(20, ge=1, le=100, description="페이지당 메시지 수"),
     cursor: int | None = Query(None, description="페이지네이션 커서 (answer_created_at)"),
     order: str = Query("desc", pattern="^(asc|desc)$", description="정렬 순서"),
+    _room: RoomData = Depends(get_room_or_404),  # room 존재 확인
 ) -> PaginatedMessagesResponse:
     """채팅방 메시지 히스토리 페이지네이션 조회"""
     try:
-        # Room 존재 확인
-        room = await get_chat_room(room_id)
-        if room is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Room not found: {room_id}",
-            )
-
         result = await get_messages_paginated(
             room_id=room_id,
             limit=limit,

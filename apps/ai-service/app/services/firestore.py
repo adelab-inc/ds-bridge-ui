@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import time
 import uuid
@@ -9,7 +10,7 @@ from typing import Any, Literal, ParamSpec, TypedDict, TypeVar
 # 메시지 상태 타입
 MessageStatus = Literal["GENERATING", "DONE", "ERROR"]
 
-from google.cloud.firestore import AsyncClient
+from google.cloud.firestore import AsyncClient, Query
 from google.cloud.firestore_v1.base_query import FieldFilter
 from google.oauth2 import service_account
 
@@ -433,12 +434,16 @@ async def get_messages_until(
     return [doc.to_dict() async for doc in docs]  # type: ignore[misc]
 
 
+# 정렬 순서 타입
+SortOrder = Literal["asc", "desc"]
+
+
 @handle_firestore_error("메시지 페이지네이션 조회 실패")
 async def get_messages_paginated(
     room_id: str,
     limit: int = 20,
     cursor: int | None = None,
-    order: str = "desc",
+    order: SortOrder = "desc",
 ) -> PaginatedMessages:
     """
     채팅방의 메시지 목록 페이지네이션 조회
@@ -452,18 +457,12 @@ async def get_messages_paginated(
     Returns:
         PaginatedMessages: 메시지 목록, 다음 커서, 더 있는지 여부, 총 개수
     """
-    from google.cloud.firestore import Query
-
     limit = min(limit, 100)  # 최대 100개로 제한
-
-    # 총 개수 조회 (Firestore count aggregation - 문서를 가져오지 않고 개수만 조회)
-    count_result = await _messages_by_room_query(room_id).count().get()
-    total_count = count_result[0][0].value if count_result else 0
 
     # 정렬 방향 설정
     direction = Query.DESCENDING if order == "desc" else Query.ASCENDING
 
-    # 기본 쿼리
+    # 기본 쿼리 구성
     query = _messages_by_room_query(room_id).order_by("answer_created_at", direction=direction)
 
     # 커서가 있으면 해당 시점 이후부터 조회
@@ -476,7 +475,16 @@ async def get_messages_paginated(
     # limit + 1로 조회하여 다음 페이지 존재 여부 확인
     query = query.limit(limit + 1)
 
-    docs = [doc.to_dict() async for doc in query.stream()]
+    # 병렬 실행: count 쿼리와 데이터 쿼리를 동시에
+    async def get_count():
+        result = await _messages_by_room_query(room_id).count().get()
+        return result[0][0].value if result else 0
+
+    async def get_docs():
+        return [doc.to_dict() async for doc in query.stream()]
+
+    total_count, docs = await asyncio.gather(get_count(), get_docs())
+
     has_more = len(docs) > limit
     messages = docs[:limit]  # 실제 반환할 메시지
 

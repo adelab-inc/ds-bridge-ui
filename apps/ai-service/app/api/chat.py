@@ -12,6 +12,7 @@ from app.api.components import (
     get_vision_system_prompt,
 )
 from app.core.auth import verify_api_key
+from app.core.config import get_settings
 from app.schemas.chat import (
     ChatRequest,
     ChatResponse,
@@ -189,9 +190,6 @@ async def resolve_system_prompt(
     return base_prompt
 
 
-MAX_HISTORY_COUNT = 10  # 최근 N개 대화만 포함
-
-
 async def build_conversation_history(
     room_id: str,
     system_prompt: str,
@@ -210,6 +208,9 @@ async def build_conversation_history(
     Returns:
         AI에 전달할 메시지 리스트
     """
+    settings = get_settings()
+    max_history = settings.max_history_count
+
     messages = [Message(role="system", content=system_prompt)]
 
     # 이전 메시지 조회
@@ -218,7 +219,7 @@ async def build_conversation_history(
         previous_messages = await get_messages_until(
             room_id=room_id,
             until_message_id=from_message_id,
-            limit=MAX_HISTORY_COUNT,
+            limit=max_history,
         )
         logger.info(
             "Rollback mode: building context until message %s (%d messages)",
@@ -228,7 +229,7 @@ async def build_conversation_history(
     else:
         # 일반 모드: 최근 N개 조회
         previous_messages = await get_messages_by_room(room_id)
-        previous_messages = previous_messages[-MAX_HISTORY_COUNT:]
+        previous_messages = previous_messages[-max_history:]
 
     for msg in previous_messages:
         # 사용자 질문
