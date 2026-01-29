@@ -9,16 +9,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from app.core.auth import verify_api_key
-from app.schemas.chat import ReloadResponse
 from app.services.firebase_storage import (
     DEFAULT_AG_GRID_SCHEMA_KEY,
     DEFAULT_AG_GRID_TOKENS_KEY,
     fetch_ag_grid_tokens_from_storage,
     fetch_design_tokens_from_storage,
     fetch_schema_from_storage,
-    upload_schema_to_storage,
 )
-from app.services.firestore import RoomNotFoundError, get_chat_room, update_chat_room
 
 router = APIRouter(dependencies=[Depends(verify_api_key)])
 logger = logging.getLogger(__name__)
@@ -797,238 +794,87 @@ def get_schema() -> dict | None:
 
 
 # ============================================================================
-# API Endpoints
+# Vision (Image-to-Code) System Prompts
 # ============================================================================
 
+VISION_SYSTEM_PROMPT_HEADER = """You are a premium UI/UX expert AI specializing in converting design images to React code.
+Always respond in Korean.
 
-@router.get(
-    "",
-    summary="컴포넌트 스키마 조회",
-    description="현재 로드된 디자인 시스템 컴포넌트 스키마를 반환합니다.",
-    response_description="컴포넌트 스키마 JSON",
-    responses={
-        200: {
-            "description": "스키마 조회 성공",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "version": "1.0.0",
-                        "generatedAt": "2026-01-09T10:00:00.000Z",
-                        "components": {
-                            "Button": {
-                                "displayName": "Button",
-                                "category": "UI",
-                                "props": {
-                                    "variant": {
-                                        "type": ["primary", "secondary"],
-                                        "required": False,
-                                    }
-                                },
-                            }
-                        },
-                    }
-                }
-            },
-        },
-        404: {"description": "스키마 파일을 찾을 수 없음"},
-    },
-)
-async def get_components():
+**Current Date: {current_date}**
+
+## Your Task
+Analyze the provided UI design image(s) and generate production-ready React + TypeScript code.
+
+## Image Analysis Guidelines
+When analyzing the image, identify:
+1. **Layout Structure**: Flex/Grid containers, spacing, alignment, responsive breakpoints
+2. **Components**: Map visual elements to available design system components
+3. **Colors**: Extract color palette and map to design tokens if available
+4. **Typography**: Font sizes, weights, line heights
+5. **Spacing**: Margins, paddings, gaps (use consistent scale)
+6. **States**: Hover, active, disabled states if visible
+7. **Interactions**: Buttons, inputs, clickable areas
+
+## Code Generation Rules
+- Use TypeScript with proper type annotations
+- Use inline styles (style={{ ... }})
+- Import components from @/components
+- Use <file path="...">...</file> tags for code output
+- Generate complete, runnable code (no placeholders)
+- Follow React best practices (hooks, functional components)
+- Use React.useState, React.useEffect directly (no imports)
+- Add data-instance-id to every component
+
+{design_tokens_section}
+"""
+
+async def get_vision_system_prompt(schema_key: str | None) -> str:
     """
-    컴포넌트 스키마 조회
+    Vision 모드용 시스템 프롬프트 생성
 
-    `component-schema.json` 파일에서 로드된 컴포넌트 정의를 반환합니다.
-    이 스키마는 AI가 코드 생성 시 참조하는 컴포넌트 목록입니다.
+    Args:
+        schema_key: Firebase Storage 스키마 경로 (None이면 기본 컴포넌트만)
+
+    Returns:
+        Vision 시스템 프롬프트 문자열
     """
-    schema, error = load_component_schema()
-    if error:
-        raise HTTPException(status_code=404, detail=error)
-    return schema
+    current_date = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M KST")
 
+    # 디자인 토큰 로드
+    design_tokens = await fetch_design_tokens_from_storage()
+    design_tokens_section = format_design_tokens(design_tokens)
 
-@router.post(
-    "/reload",
-    summary="컴포넌트 스키마 리로드",
-    description="component-schema.json 파일을 다시 로드하여 시스템 프롬프트를 갱신합니다.",
-    response_model=ReloadResponse,
-    response_description="리로드 결과",
-    responses={
-        200: {"description": "리로드 성공"},
-        500: {"description": "스키마 파일 로드 실패"},
-    },
-)
-async def reload_components() -> ReloadResponse:
-    """
-    컴포넌트 스키마 리로드
+    # 컴포넌트 스키마 로드
+    if schema_key:
+        try:
+            schema = await fetch_schema_from_storage(schema_key)
+            component_docs = format_component_docs(schema)
+            available_note = get_available_components_note(schema)
+        except Exception:
+            component_docs = ""
+            available_note = "Use standard React components with inline styles."
+    else:
+        component_docs = ""
+        available_note = "Use standard React components with inline styles."
 
-    서버 재시작 없이 component-schema.json을 다시 로드합니다.
-    디자인 시스템 컴포넌트가 추가/변경된 경우 이 엔드포인트를 호출하세요.
-    """
-    global _schema, _error, COMPONENT_DOCS, AVAILABLE_COMPONENTS, SYSTEM_PROMPT
+    # 기본 헤더 구성
+    base_prompt = VISION_SYSTEM_PROMPT_HEADER.replace(
+        "{current_date}", current_date
+    ).replace("{design_tokens_section}", design_tokens_section)
 
-    async with _reload_lock:
-        _schema, _error = load_component_schema()
-        if _error:
-            raise HTTPException(status_code=500, detail=_error)
-
-        COMPONENT_DOCS = format_component_docs(_schema)
-        AVAILABLE_COMPONENTS = get_available_components_note(_schema)
-        SYSTEM_PROMPT = (
-            SYSTEM_PROMPT_HEADER
-            + AVAILABLE_COMPONENTS
-            + COMPONENT_DOCS
-            + RESPONSE_FORMAT_INSTRUCTIONS
-            + SYSTEM_PROMPT_FOOTER
-        )
-
-        return ReloadResponse(
-            message="Schema reloaded successfully",
-            component_count=len(_schema.get("components", {})),
-        )
-
-
-# ============================================================================
-# Schema Upload/Download (Firebase Storage)
-# ============================================================================
-
-
-class UploadSchemaRequest(BaseModel):
-    """스키마 업로드 요청"""
-
-    room_id: str = Field(
-        ...,
-        description="채팅방 ID",
-    )
-    data: dict = Field(
-        ...,
-        description="컴포넌트 스키마 JSON",
+    return (
+        base_prompt
+        + "\n## Available Components\n"
+        + available_note
+        + "\n"
+        + component_docs
+        + "\n"
+        + RESPONSE_FORMAT_INSTRUCTIONS
+        + "\n"
+        + SYSTEM_PROMPT_FOOTER
     )
 
 
-class UploadSchemaResponse(BaseModel):
-    """스키마 업로드 응답"""
-
-    schema_key: str = Field(description="Firebase Storage 경로")
-    component_count: int = Field(description="업로드된 컴포넌트 수")
-    uploaded_at: str = Field(description="업로드 시각 (ISO 8601)")
+# ============================================================================
 
 
-class SchemaResponse(BaseModel):
-    """스키마 조회 응답"""
-
-    schema_key: str
-    data: dict
-
-
-@router.post(
-    "/upload",
-    response_model=UploadSchemaResponse,
-    status_code=status.HTTP_201_CREATED,
-    summary="스키마 업로드",
-    description="""
-클라이언트가 추출한 컴포넌트 스키마를 Firebase Storage에 업로드합니다.
-
-## 사용 흐름
-1. `POST /rooms`로 채팅방 생성 → room_id 획득
-2. 클라이언트에서 react-docgen-typescript로 스키마 추출
-3. 이 API로 스키마 업로드 (room_id 필수)
-
-## 저장 경로
-`exports/{room_id}/component-schema.json`
-""",
-    responses={
-        201: {"description": "업로드 성공"},
-        400: {"description": "잘못된 요청"},
-        500: {"description": "서버 오류"},
-    },
-)
-async def upload_schema(request: UploadSchemaRequest) -> UploadSchemaResponse:
-    """컴포넌트 스키마 업로드"""
-    try:
-        if not request.data.get("components"):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Schema must contain 'components' field",
-            )
-
-        # Room 존재 여부 먼저 확인 (Storage 업로드 전에 검증)
-        room = await get_chat_room(request.room_id)
-        if room is None:
-            raise RoomNotFoundError(f"채팅방을 찾을 수 없습니다: {request.room_id}")
-
-        # room_id 기반 schema_key 생성
-        schema_key = f"exports/{request.room_id}/component-schema.json"
-
-        # Storage에 업로드
-        await upload_schema_to_storage(schema_key, request.data)
-
-        # Room의 schema_key 자동 업데이트 (내부에서 room 존재 여부 검증)
-        await update_chat_room(room_id=request.room_id, schema_key=schema_key)
-
-        component_count = len(request.data.get("components", {}))
-        uploaded_at = datetime.now(ZoneInfo("Asia/Seoul")).isoformat()
-
-        logger.info(
-            "Schema uploaded and room updated: %s (%d components)",
-            schema_key,
-            component_count,
-        )
-
-        return UploadSchemaResponse(
-            schema_key=schema_key,
-            component_count=component_count,
-            uploaded_at=uploaded_at,
-        )
-
-    except HTTPException:
-        raise
-    except RoomNotFoundError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Room not found: {request.room_id}",
-        ) from e
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        ) from e
-    except Exception as e:
-        logger.error("Failed to upload schema: %s", str(e), exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to upload schema. Please try again.",
-        ) from e
-
-
-@router.get(
-    "/storage/{schema_key:path}",
-    response_model=SchemaResponse,
-    summary="Storage 스키마 조회",
-    description="Firebase Storage에서 스키마를 조회합니다.",
-    responses={
-        200: {"description": "조회 성공"},
-        404: {"description": "스키마를 찾을 수 없음"},
-    },
-)
-async def get_storage_schema(schema_key: str) -> SchemaResponse:
-    """Storage 스키마 조회"""
-    try:
-        schema = await fetch_schema_from_storage(schema_key)
-        return SchemaResponse(schema_key=schema_key, data=schema)
-
-    except FileNotFoundError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Schema not found: {schema_key}",
-        ) from e
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        ) from e
-    except Exception as e:
-        logger.error("Failed to get schema: %s", str(e), exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to get schema. Please try again.",
-        ) from e

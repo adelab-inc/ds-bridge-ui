@@ -7,7 +7,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
 from app.api.chat import router as chat_router
-from app.api.components import router as components_router
 from app.api.rooms import router as rooms_router
 from app.core.config import get_settings
 from app.services.firebase_storage import cleanup_firebase
@@ -46,15 +45,11 @@ tags_metadata = [
     },
     {
         "name": "rooms",
-        "description": "채팅방 관리 API",
+        "description": "채팅방 관리 API (이미지/스키마 업로드 포함)",
     },
     {
         "name": "chat",
         "description": "AI 채팅 API - 디자인 시스템 컴포넌트 기반 React UI 코드 생성",
-    },
-    {
-        "name": "components",
-        "description": "컴포넌트 스키마 관리 API",
     },
 ]
 
@@ -123,7 +118,6 @@ app.add_middleware(
 
 app.include_router(rooms_router, prefix="/rooms", tags=["rooms"])
 app.include_router(chat_router, prefix="/chat", tags=["chat"])
-app.include_router(components_router, prefix="/components", tags=["components"])
 
 
 # ============================================================================
@@ -192,6 +186,12 @@ def custom_openapi():
         for method in methods.values():
             if isinstance(method, dict):
                 method["security"] = [{"X-API-Key": []}]
+
+    # Body_ prefix 스키마 제거 (파일 업로드용 자동 생성 스키마)
+    schemas = openapi_schema.get("components", {}).get("schemas", {})
+    schemas_to_remove = [name for name in schemas if name.startswith("Body_")]
+    for name in schemas_to_remove:
+        del schemas[name]
 
     app.openapi_schema = openapi_schema
     return app.openapi_schema

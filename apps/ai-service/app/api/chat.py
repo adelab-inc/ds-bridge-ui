@@ -3,16 +3,21 @@ import logging
 import re
 from collections.abc import AsyncGenerator
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 
-from app.api.components import generate_system_prompt, get_schema
+from app.api.components import (
+    generate_system_prompt,
+    get_schema,
+    get_vision_system_prompt,
+)
 from app.core.auth import verify_api_key
 from app.schemas.chat import (
     ChatRequest,
     ChatResponse,
     CurrentComposition,
     FileContent,
+    ImageContent,
     Message,
     ParsedResponse,
 )
@@ -22,6 +27,7 @@ from app.services.firebase_storage import (
     DEFAULT_AG_GRID_TOKENS_KEY,
     fetch_ag_grid_tokens_from_storage,
     fetch_design_tokens_from_storage,
+    fetch_image_as_base64,
     fetch_schema_from_storage,
 )
 from app.services.firestore import (
@@ -460,12 +466,26 @@ async def chat(request: ChatRequest) -> ChatResponse:
     summary="AI 채팅 (Streaming)",
     description="""
 SSE(Server-Sent Events)를 통해 실시간 스트리밍 응답을 받습니다.
+이미지가 포함되면 Vision 모드로 동작합니다.
 
-## 요청 예시
+## 요청 예시 (텍스트만)
 ```json
 {
   "message": "로그인 페이지 만들어줘",
   "room_id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+## 요청 예시 (이미지 포함 - Vision 모드)
+먼저 `/chat/images`로 이미지를 업로드한 후 URL을 사용합니다.
+
+```json
+{
+  "message": "이 디자인을 React 코드로 만들어줘",
+  "room_id": "550e8400-e29b-41d4-a716-446655440000",
+  "image_urls": [
+    "https://storage.googleapis.com/bucket/user_uploads/room-id/1234_uuid.png"
+  ]
 }
 ```
 
@@ -489,8 +509,9 @@ data: {"type": "code", "path": "src/pages/Login.tsx", "content": "import..."}
 data: {"type": "done"}
 ```
 
-## room_id
-채팅방 ID (필수). 스트리밍 완료 후 메시지가 해당 채팅방에 저장됩니다.
+## 제한 (Vision 모드)
+- 최대 5개 이미지
+- 지원 형식: JPEG, PNG, GIF, WebP
 """,
     response_description="SSE 스트림",
     responses={
@@ -512,10 +533,30 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
 
     - 대화 텍스트는 실시간으로 스트리밍됩니다 (타이핑 효과)
     - 코드 파일은 완성된 후 한 번에 전송됩니다 (파싱 안정성)
+    - 이미지가 포함되면 Vision 모드로 동작합니다
 
     채팅방의 schema_key가 설정되어 있으면 Firebase Storage에서 스키마를 로드합니다.
     """
     try:
+        # Vision 모드 여부 판단
+        is_vision_mode = bool(request.image_urls and len(request.image_urls) > 0)
+
+        # 이미지 URL에서 base64로 변환 (Vision 모드인 경우)
+        images: list[ImageContent] = []
+        if is_vision_mode:
+            for url in request.image_urls:  # type: ignore
+                try:
+                    base64_data, media_type = await fetch_image_as_base64(url)
+                    images.append(ImageContent(media_type=media_type, data=base64_data))
+                except Exception as e:
+                    logger.warning("Failed to fetch image from URL %s: %s", url, str(e))
+                    # 실패한 이미지는 건너뛰고 계속 진행
+
+            # 모든 이미지 로드 실패 시 일반 모드로 전환
+            if not images:
+                is_vision_mode = False
+                logger.warning("All images failed to load, falling back to normal mode")
+
         # 1. room 조회 및 검증
         room = await get_chat_room(request.room_id)
         if room is None:
@@ -524,9 +565,13 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
         question_created_at = get_timestamp_ms()
 
         # 2. GENERATING 상태로 메시지 먼저 생성
+        question_text = request.message
+        if is_vision_mode:
+            question_text = f"[이미지 {len(images)}개] {request.message}"
+
         message_data = await create_chat_message(
             room_id=request.room_id,
-            question=request.message,
+            question=question_text,
             question_created_at=question_created_at,
             status="GENERATING",
         )
@@ -535,12 +580,17 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
         # 3. AI Provider 초기화
         provider = get_ai_provider()
 
-        # 4. 시스템 프롬프트 생성 (Firebase Storage에서 스키마 로드 포함)
-        system_prompt = await resolve_system_prompt(
-            schema_key=room.get("schema_key"),
-            current_composition=request.current_composition,
-            selected_instance_id=request.selected_instance_id,
-        )
+        # 4. 시스템 프롬프트 생성 (Vision/일반 모드에 따라 분기)
+        if is_vision_mode:
+            system_prompt = await get_vision_system_prompt(
+                schema_key=room.get("schema_key"),
+            )
+        else:
+            system_prompt = await resolve_system_prompt(
+                schema_key=room.get("schema_key"),
+                current_composition=request.current_composition,
+                selected_instance_id=request.selected_instance_id,
+            )
 
         # 5. 이전 대화 내역 포함하여 메시지 빌드
         messages = await build_conversation_history(
@@ -555,7 +605,13 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
             collected_files: list[dict] = []
 
             try:
-                async for chunk in provider.chat_stream(messages):
+                # Vision/일반 모드에 따라 스트리밍 호출
+                if is_vision_mode:
+                    stream = provider.chat_vision_stream(messages, images)
+                else:
+                    stream = provider.chat_stream(messages)
+
+                async for chunk in stream:
                     events = parser.process_chunk(chunk)
                     for event in events:
                         # 이벤트 수집
@@ -585,6 +641,15 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
 
                 yield f"data: {json.dumps({'type': 'done'})}\n\n"
 
+            except NotImplementedError:
+                # Vision 미지원 Provider
+                logger.error("Vision not supported by current AI provider")
+                await update_chat_message(message_id=message_id, status="ERROR")
+                error_event = {
+                    "type": "error",
+                    "error": "현재 AI 프로바이더는 Vision 기능을 지원하지 않습니다.",
+                }
+                yield f"data: {json.dumps(error_event, ensure_ascii=False)}\n\n"
             except Exception as e:
                 # 에러 시 ERROR로 업데이트
                 logger.error("Streaming error: %s", str(e), exc_info=True)
@@ -614,3 +679,5 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
         raise HTTPException(
             status_code=500, detail="An unexpected error occurred. Please try again."
         ) from e
+
+
