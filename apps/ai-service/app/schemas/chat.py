@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -490,3 +490,32 @@ class PaginatedMessagesResponse(BaseModel):
     next_cursor: int | None = Field(None, description="다음 페이지 커서 (answer_created_at)")
     has_more: bool = Field(..., description="다음 페이지 존재 여부")
     total_count: int = Field(..., description="총 메시지 수")
+
+
+# ============================================================================
+# Schema Management Schemas
+# ============================================================================
+
+
+class CreateSchemaRequest(BaseModel):
+    """스키마 생성 요청"""
+
+    data: dict[str, Any] = Field(
+        ...,
+        description="컴포넌트 스키마 JSON",
+    )
+
+
+class CreateSchemaResponse(BaseModel):
+    """스키마 생성 응답"""
+
+    schema_key: str = Field(description="Firebase Storage 경로")
+    component_count: int = Field(description="업로드된 컴포넌트 수")
+    uploaded_at: str = Field(description="업로드 시각 (ISO 8601)")
+
+
+class SchemaResponse(BaseModel):
+    """스키마 조회 응답"""
+
+    schema_key: str
+    data: dict[str, Any]

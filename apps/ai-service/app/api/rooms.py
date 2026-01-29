@@ -1,6 +1,5 @@
 import logging
 from datetime import datetime
-from typing import Any
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
@@ -9,9 +8,12 @@ from app.core.auth import verify_api_key
 from app.core.config import get_settings
 from app.schemas.chat import (
     CreateRoomRequest,
+    CreateSchemaRequest,
+    CreateSchemaResponse,
     ImageUploadResponse,
     PaginatedMessagesResponse,
     RoomResponse,
+    SchemaResponse,
     UpdateRoomRequest,
 )
 from app.services.firebase_storage import (
@@ -323,32 +325,6 @@ async def upload_room_image(
 # ============================================================================
 # Schema Endpoints
 # ============================================================================
-
-from pydantic import BaseModel, Field
-
-
-class CreateSchemaRequest(BaseModel):
-    """스키마 생성 요청"""
-
-    data: dict[str, Any] = Field(
-        ...,
-        description="컴포넌트 스키마 JSON",
-    )
-
-
-class CreateSchemaResponse(BaseModel):
-    """스키마 생성 응답"""
-
-    schema_key: str = Field(description="Firebase Storage 경로")
-    component_count: int = Field(description="업로드된 컴포넌트 수")
-    uploaded_at: str = Field(description="업로드 시각 (ISO 8601)")
-
-
-class SchemaResponse(BaseModel):
-    """스키마 조회 응답"""
-
-    schema_key: str
-    data: dict[str, Any]
 
 
 @router.post(
