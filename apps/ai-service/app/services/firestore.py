@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, ParamSpec, TypedDict, TypeVar
 
 from google.cloud.firestore import AsyncClient
+from google.cloud.firestore_v1.base_query import FieldFilter
 from google.oauth2 import service_account
 
 from app.core.config import get_settings
@@ -376,7 +377,7 @@ async def get_messages_by_room(room_id: str, limit: int = 100) -> list[MessageDa
     db = get_firestore_client()
     query = (
         db.collection(CHAT_MESSAGES_COLLECTION)
-        .where("room_id", "==", room_id)
+        .where(filter=FieldFilter("room_id", "==", room_id))
         .order_by("answer_created_at")
         .limit(limit)
     )
@@ -435,8 +436,8 @@ async def get_messages_until(
     db = get_firestore_client()
     query = (
         db.collection(CHAT_MESSAGES_COLLECTION)
-        .where("room_id", "==", room_id)
-        .where("answer_created_at", "<=", target_timestamp)
+        .where(filter=FieldFilter("room_id", "==", room_id))
+        .where(filter=FieldFilter("answer_created_at", "<=", target_timestamp))
         .order_by("answer_created_at")
         .limit(limit)
     )
@@ -470,7 +471,9 @@ async def get_messages_paginated(
     limit = min(limit, 100)  # 최대 100개로 제한
 
     # 총 개수 조회 (Firestore count aggregation - 문서를 가져오지 않고 개수만 조회)
-    count_query = db.collection(CHAT_MESSAGES_COLLECTION).where("room_id", "==", room_id)
+    count_query = db.collection(CHAT_MESSAGES_COLLECTION).where(
+        filter=FieldFilter("room_id", "==", room_id)
+    )
     count_result = await count_query.count().get()
     total_count = count_result[0][0].value if count_result else 0
 
@@ -480,16 +483,16 @@ async def get_messages_paginated(
     # 기본 쿼리
     query = (
         db.collection(CHAT_MESSAGES_COLLECTION)
-        .where("room_id", "==", room_id)
+        .where(filter=FieldFilter("room_id", "==", room_id))
         .order_by("answer_created_at", direction=direction)
     )
 
     # 커서가 있으면 해당 시점 이후부터 조회
     if cursor is not None:
         if order == "desc":
-            query = query.where("answer_created_at", "<", cursor)
+            query = query.where(filter=FieldFilter("answer_created_at", "<", cursor))
         else:
-            query = query.where("answer_created_at", ">", cursor)
+            query = query.where(filter=FieldFilter("answer_created_at", ">", cursor))
 
     # limit + 1로 조회하여 다음 페이지 존재 여부 확인
     query = query.limit(limit + 1)
