@@ -468,9 +468,15 @@ class MessageDocument(BaseModel):
         description="파일 경로",
     )
     room_id: str = Field(..., description="채팅방 ID")
-    question_created_at: str = Field(..., description="질문 생성 시간 (ms timestamp)")
-    answer_created_at: str = Field(..., description="응답 생성 시간 (ms timestamp)")
+    question_created_at: int = Field(..., description="질문 생성 시간 (ms timestamp)")
+    answer_created_at: int = Field(..., description="응답 생성 시간 (ms timestamp)")
     status: Literal["GENERATING", "DONE", "ERROR"] = Field(..., description="응답 상태")
 
 
+class PaginatedMessagesResponse(BaseModel):
+    """페이지네이션된 메시지 응답"""
 
+    messages: list[MessageDocument] = Field(..., description="메시지 목록")
+    next_cursor: int | None = Field(None, description="다음 페이지 커서 (answer_created_at)")
+    has_more: bool = Field(..., description="다음 페이지 존재 여부")
+    total_count: int = Field(..., description="총 메시지 수")

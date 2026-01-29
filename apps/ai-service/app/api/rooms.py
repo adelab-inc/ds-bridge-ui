@@ -3,12 +3,13 @@ from datetime import datetime
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 
 from app.core.auth import verify_api_key
 from app.schemas.chat import (
     CreateRoomRequest,
     ImageUploadResponse,
+    PaginatedMessagesResponse,
     RoomResponse,
     UpdateRoomRequest,
 )
@@ -22,6 +23,7 @@ from app.services.firestore import (
     RoomNotFoundError,
     create_chat_room,
     get_chat_room,
+    get_messages_paginated,
     update_chat_room,
 )
 
@@ -69,7 +71,7 @@ async def create_room(request: CreateRoomRequest) -> RoomResponse:
     """
     새 채팅방 생성
 
-    생성 시 schema_key는 null이며, POST /components/schemas로 스키마를 생성하면
+    생성 시 schema_key는 null이며, POST /rooms/{room_id}/schemas로 스키마를 생성하면
     자동으로 schema_key가 설정됩니다.
     """
     try:
@@ -185,6 +187,11 @@ async def update_room(room_id: str, request: UpdateRoomRequest) -> RoomResponse:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred. Please try again.",
         ) from e
+
+
+# ============================================================================
+# Image Endpoints
+# ============================================================================
 
 
 @router.post(
@@ -447,4 +454,78 @@ async def get_room_schema(room_id: str) -> SchemaResponse:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get schema. Please try again.",
+        ) from e
+
+
+# ============================================================================
+# Messages Endpoints
+# ============================================================================
+
+
+@router.get(
+    "/{room_id}/messages",
+    response_model=PaginatedMessagesResponse,
+    operation_id="getRoomMessages",
+    summary="채팅 히스토리 조회",
+    description="""
+채팅방의 메시지 히스토리를 페이지네이션하여 조회합니다.
+
+## Query Parameters
+- `limit`: 페이지당 메시지 수 (기본 20, 최대 100)
+- `cursor`: 페이지네이션 커서 (이전 응답의 next_cursor 값)
+- `order`: 정렬 순서 (desc: 최신순, asc: 오래된순)
+
+## 페이지네이션
+첫 요청 시 cursor 없이 호출하고, 다음 페이지는 응답의 `next_cursor` 값을 cursor로 전달합니다.
+`has_more`가 false면 마지막 페이지입니다.
+""",
+    responses={
+        200: {"description": "조회 성공"},
+        404: {"description": "채팅방을 찾을 수 없음"},
+        500: {"description": "서버 오류"},
+    },
+)
+async def get_room_messages(
+    room_id: str,
+    limit: int = Query(20, ge=1, le=100, description="페이지당 메시지 수"),
+    cursor: int | None = Query(None, description="페이지네이션 커서 (answer_created_at)"),
+    order: str = Query("desc", pattern="^(asc|desc)$", description="정렬 순서"),
+) -> PaginatedMessagesResponse:
+    """채팅방 메시지 히스토리 페이지네이션 조회"""
+    try:
+        # Room 존재 확인
+        room = await get_chat_room(room_id)
+        if room is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Room not found: {room_id}",
+            )
+
+        result = await get_messages_paginated(
+            room_id=room_id,
+            limit=limit,
+            cursor=cursor,
+            order=order,
+        )
+
+        return PaginatedMessagesResponse(
+            messages=result["messages"],  # type: ignore[arg-type]
+            next_cursor=result["next_cursor"],
+            has_more=result["has_more"],
+            total_count=result["total_count"],
+        )
+
+    except HTTPException:
+        raise
+    except FirestoreError as e:
+        logger.error("Failed to get messages for room %s: %s", room_id, str(e), exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database error. Please try again.",
+        ) from e
+    except Exception as e:
+        logger.error("Failed to get messages for room %s: %s", room_id, str(e), exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred. Please try again.",
         ) from e

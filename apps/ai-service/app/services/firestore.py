@@ -46,6 +46,15 @@ class MessageData(TypedDict):
     status: str
 
 
+class PaginatedMessages(TypedDict):
+    """페이지네이션된 메시지 응답"""
+
+    messages: list[MessageData]
+    next_cursor: int | None
+    has_more: bool
+    total_count: int
+
+
 # 로컬 개발용 서비스 계정 키 경로
 SERVICE_ACCOUNT_KEY_PATH = Path(__file__).parent.parent.parent / "service-account-key.json"
 
@@ -374,6 +383,72 @@ async def get_messages_by_room(room_id: str, limit: int = 100) -> list[MessageDa
 
     docs = query.stream()
     return [doc.to_dict() async for doc in docs]  # type: ignore[misc]
+
+
+@handle_firestore_error("메시지 페이지네이션 조회 실패")
+async def get_messages_paginated(
+    room_id: str,
+    limit: int = 20,
+    cursor: int | None = None,
+    order: str = "desc",
+) -> PaginatedMessages:
+    """
+    채팅방의 메시지 목록 페이지네이션 조회
+
+    Args:
+        room_id: 채팅방 ID
+        limit: 페이지당 메시지 수 (기본 20, 최대 100)
+        cursor: 페이지네이션 커서 (answer_created_at timestamp)
+        order: 정렬 순서 ("asc" 또는 "desc", 기본 "desc" - 최신순)
+
+    Returns:
+        PaginatedMessages: 메시지 목록, 다음 커서, 더 있는지 여부, 총 개수
+    """
+    from google.cloud.firestore import Query
+
+    db = get_firestore_client()
+    limit = min(limit, 100)  # 최대 100개로 제한
+
+    # 총 개수 조회
+    count_query = db.collection(CHAT_MESSAGES_COLLECTION).where("room_id", "==", room_id)
+    count_docs = [doc async for doc in count_query.stream()]
+    total_count = len(count_docs)
+
+    # 정렬 방향 설정
+    direction = Query.DESCENDING if order == "desc" else Query.ASCENDING
+
+    # 기본 쿼리
+    query = (
+        db.collection(CHAT_MESSAGES_COLLECTION)
+        .where("room_id", "==", room_id)
+        .order_by("answer_created_at", direction=direction)
+    )
+
+    # 커서가 있으면 해당 시점 이후부터 조회
+    if cursor is not None:
+        if order == "desc":
+            query = query.where("answer_created_at", "<", cursor)
+        else:
+            query = query.where("answer_created_at", ">", cursor)
+
+    # limit + 1로 조회하여 다음 페이지 존재 여부 확인
+    query = query.limit(limit + 1)
+
+    docs = [doc.to_dict() async for doc in query.stream()]
+    has_more = len(docs) > limit
+    messages = docs[:limit]  # 실제 반환할 메시지
+
+    # 다음 커서 설정
+    next_cursor = None
+    if has_more and messages:
+        next_cursor = messages[-1]["answer_created_at"]
+
+    return PaginatedMessages(
+        messages=messages,  # type: ignore[typeddict-item]
+        next_cursor=next_cursor,
+        has_more=has_more,
+        total_count=total_count,
+    )
 
 
 @handle_firestore_error("메시지 업데이트 실패")
