@@ -124,6 +124,19 @@ class CurrentComposition(BaseModel):
     )
 
 
+class ImageContent(BaseModel):
+    """Base64 인코딩된 이미지 (내부 처리용)"""
+
+    media_type: str = Field(
+        ...,
+        description="이미지 MIME 타입 (image/jpeg, image/png 등)",
+    )
+    data: str = Field(
+        ...,
+        description="Base64 인코딩된 이미지 데이터",
+    )
+
+
 class ChatRequest(BaseModel):
     """채팅 요청"""
 
@@ -138,6 +151,12 @@ class ChatRequest(BaseModel):
         ...,
         description="채팅방 ID",
         json_schema_extra={"example": "550e8400-e29b-41d4-a716-446655440000"},
+    )
+    image_urls: list[str] | None = Field(
+        default=None,
+        max_length=5,
+        description="Firebase Storage 이미지 URL 목록 (최대 5개) - Vision 모드 활성화",
+        json_schema_extra={"example": ["https://storage.googleapis.com/bucket/user_uploads/room-id/1234_uuid.png"]},
     )
     stream: bool = Field(
         default=False,
@@ -326,6 +345,21 @@ class ReloadResponse(BaseModel):
     model_config = {"populate_by_name": True}
 
 
+class ImageUploadResponse(BaseModel):
+    """이미지 업로드 응답"""
+
+    url: str = Field(
+        ...,
+        description="업로드된 이미지의 Firebase Storage URL",
+        json_schema_extra={"example": "https://storage.googleapis.com/bucket/user_uploads/room-id/1234_uuid.png"},
+    )
+    path: str = Field(
+        ...,
+        description="Storage 내 파일 경로",
+        json_schema_extra={"example": "user_uploads/room-id/1234_uuid.png"},
+    )
+
+
 # ============================================================================
 # Chat Room Schemas
 # ============================================================================
@@ -437,3 +471,6 @@ class MessageDocument(BaseModel):
     question_created_at: str = Field(..., description="질문 생성 시간 (ms timestamp)")
     answer_created_at: str = Field(..., description="응답 생성 시간 (ms timestamp)")
     status: Literal["GENERATING", "DONE", "ERROR"] = Field(..., description="응답 상태")
+
+
+

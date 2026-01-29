@@ -797,6 +797,88 @@ def get_schema() -> dict | None:
 
 
 # ============================================================================
+# Vision (Image-to-Code) System Prompts
+# ============================================================================
+
+VISION_SYSTEM_PROMPT_HEADER = """You are a premium UI/UX expert AI specializing in converting design images to React code.
+Always respond in Korean.
+
+**Current Date: {current_date}**
+
+## Your Task
+Analyze the provided UI design image(s) and generate production-ready React + TypeScript code.
+
+## Image Analysis Guidelines
+When analyzing the image, identify:
+1. **Layout Structure**: Flex/Grid containers, spacing, alignment, responsive breakpoints
+2. **Components**: Map visual elements to available design system components
+3. **Colors**: Extract color palette and map to design tokens if available
+4. **Typography**: Font sizes, weights, line heights
+5. **Spacing**: Margins, paddings, gaps (use consistent scale)
+6. **States**: Hover, active, disabled states if visible
+7. **Interactions**: Buttons, inputs, clickable areas
+
+## Code Generation Rules
+- Use TypeScript with proper type annotations
+- Use inline styles (style={{ ... }})
+- Import components from @/components
+- Use <file path="...">...</file> tags for code output
+- Generate complete, runnable code (no placeholders)
+- Follow React best practices (hooks, functional components)
+- Use React.useState, React.useEffect directly (no imports)
+- Add data-instance-id to every component
+
+{design_tokens_section}
+"""
+
+async def get_vision_system_prompt(schema_key: str | None) -> str:
+    """
+    Vision 모드용 시스템 프롬프트 생성
+
+    Args:
+        schema_key: Firebase Storage 스키마 경로 (None이면 기본 컴포넌트만)
+
+    Returns:
+        Vision 시스템 프롬프트 문자열
+    """
+    current_date = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M KST")
+
+    # 디자인 토큰 로드
+    design_tokens = await fetch_design_tokens_from_storage()
+    design_tokens_section = format_design_tokens(design_tokens)
+
+    # 컴포넌트 스키마 로드
+    if schema_key:
+        try:
+            schema = await fetch_schema_from_storage(schema_key)
+            component_docs = format_component_docs(schema)
+            available_note = get_available_components_note(schema)
+        except Exception:
+            component_docs = ""
+            available_note = "Use standard React components with inline styles."
+    else:
+        component_docs = ""
+        available_note = "Use standard React components with inline styles."
+
+    # 기본 헤더 구성
+    base_prompt = VISION_SYSTEM_PROMPT_HEADER.replace(
+        "{current_date}", current_date
+    ).replace("{design_tokens_section}", design_tokens_section)
+
+    return (
+        base_prompt
+        + "\n## Available Components\n"
+        + available_note
+        + "\n"
+        + component_docs
+        + "\n"
+        + RESPONSE_FORMAT_INSTRUCTIONS
+        + "\n"
+        + SYSTEM_PROMPT_FOOTER
+    )
+
+
+# ============================================================================
 # API Endpoints
 # ============================================================================
 
@@ -846,18 +928,18 @@ async def get_components():
     return schema
 
 
-@router.post(
-    "/reload",
-    summary="컴포넌트 스키마 리로드",
-    description="component-schema.json 파일을 다시 로드하여 시스템 프롬프트를 갱신합니다.",
+@router.delete(
+    "/cache",
+    summary="컴포넌트 캐시 초기화",
+    description="캐시된 component-schema.json을 초기화하고 다시 로드하여 시스템 프롬프트를 갱신합니다.",
     response_model=ReloadResponse,
-    response_description="리로드 결과",
+    response_description="초기화 결과",
     responses={
-        200: {"description": "리로드 성공"},
+        200: {"description": "캐시 초기화 성공"},
         500: {"description": "스키마 파일 로드 실패"},
     },
 )
-async def reload_components() -> ReloadResponse:
+async def clear_components_cache() -> ReloadResponse:
     """
     컴포넌트 스키마 리로드
 
@@ -921,28 +1003,29 @@ class SchemaResponse(BaseModel):
 
 
 @router.post(
-    "/upload",
+    "/schemas",
     response_model=UploadSchemaResponse,
     status_code=status.HTTP_201_CREATED,
-    summary="스키마 업로드",
+    summary="컴포넌트 스키마 생성",
     description="""
 클라이언트가 추출한 컴포넌트 스키마를 Firebase Storage에 업로드합니다.
 
 ## 사용 흐름
 1. `POST /rooms`로 채팅방 생성 → room_id 획득
 2. 클라이언트에서 react-docgen-typescript로 스키마 추출
-3. 이 API로 스키마 업로드 (room_id 필수)
+3. 이 API로 스키마 생성 (room_id 필수)
 
 ## 저장 경로
 `exports/{room_id}/component-schema.json`
 """,
     responses={
-        201: {"description": "업로드 성공"},
+        201: {"description": "생성 성공"},
         400: {"description": "잘못된 요청"},
+        404: {"description": "채팅방을 찾을 수 없음"},
         500: {"description": "서버 오류"},
     },
 )
-async def upload_schema(request: UploadSchemaRequest) -> UploadSchemaResponse:
+async def create_schema(request: UploadSchemaRequest) -> UploadSchemaResponse:
     """컴포넌트 스키마 업로드"""
     try:
         if not request.data.get("components"):
@@ -1001,16 +1084,16 @@ async def upload_schema(request: UploadSchemaRequest) -> UploadSchemaResponse:
 
 
 @router.get(
-    "/storage/{schema_key:path}",
+    "/schemas/{schema_key:path}",
     response_model=SchemaResponse,
-    summary="Storage 스키마 조회",
+    summary="컴포넌트 스키마 조회",
     description="Firebase Storage에서 스키마를 조회합니다.",
     responses={
         200: {"description": "조회 성공"},
         404: {"description": "스키마를 찾을 수 없음"},
     },
 )
-async def get_storage_schema(schema_key: str) -> SchemaResponse:
+async def get_schema_by_key(schema_key: str) -> SchemaResponse:
     """Storage 스키마 조회"""
     try:
         schema = await fetch_schema_from_storage(schema_key)

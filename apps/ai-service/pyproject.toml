@@ -16,6 +16,7 @@ dependencies = [
     "python-dotenv>=1.0.1",
     "httpx>=0.28.0",
     "firebase-admin>=6.6.0",
+    "python-multipart>=0.0.22",
 ]
 
 [project.optional-dependencies]

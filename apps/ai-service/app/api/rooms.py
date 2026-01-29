@@ -39,12 +39,12 @@ logger = logging.getLogger(__name__)
 ## 응답
 - `id`: 생성된 채팅방 UUID
 - `storybook_url`: Storybook URL
-- `schema_key`: 스키마 경로 (초기값: null, POST /components/upload로 설정 가능)
+- `schema_key`: 스키마 경로 (초기값: null, POST /components/schemas로 설정 가능)
 - `user_id`: 사용자 ID
 - `created_at`: 생성 시간 (ms timestamp)
 
 ## 스키마 설정 방법
-채팅방 생성 후 `POST /components/upload`로 스키마를 업로드하면 자동으로 `schema_key`가 설정됩니다.
+채팅방 생성 후 `POST /components/schemas`로 스키마를 생성하면 자동으로 `schema_key`가 설정됩니다.
 """,
     responses={
         201: {"description": "채팅방 생성 성공"},
@@ -55,7 +55,7 @@ async def create_room(request: CreateRoomRequest) -> RoomResponse:
     """
     새 채팅방 생성
 
-    생성 시 schema_key는 null이며, POST /components/upload로 스키마를 업로드하면
+    생성 시 schema_key는 null이며, POST /components/schemas로 스키마를 생성하면
     자동으로 schema_key가 설정됩니다.
     """
     try:
