@@ -3,7 +3,7 @@ import logging
 import re
 from collections.abc import AsyncGenerator
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 
 from app.api.components import (
@@ -18,7 +18,6 @@ from app.schemas.chat import (
     CurrentComposition,
     FileContent,
     ImageContent,
-    ImageUploadResponse,
     Message,
     ParsedResponse,
 )
@@ -30,7 +29,6 @@ from app.services.firebase_storage import (
     fetch_design_tokens_from_storage,
     fetch_image_as_base64,
     fetch_schema_from_storage,
-    upload_image_to_storage,
 )
 from app.services.firestore import (
     FirestoreError,
@@ -351,97 +349,6 @@ class StreamingParser:
         if remaining and not self.inside_file:
             events.append({"type": "chat", "text": remaining})
         return events
-
-
-# ============================================================================
-# Image Upload Endpoint
-# ============================================================================
-
-
-@router.post(
-    "/images",
-    response_model=ImageUploadResponse,
-    status_code=status.HTTP_201_CREATED,
-    summary="채팅 이미지 업로드",
-    description="""
-Firebase Storage에 이미지를 업로드하고 URL을 반환합니다.
-
-## 사용 흐름
-1. 이 API로 이미지 업로드 → URL 획득
-2. `/chat/stream`에 `image_urls` 파라미터로 전달
-
-## 저장 경로
-`user_uploads/{room_id}/{timestamp}_{uuid}.{ext}`
-
-## 지원 형식
-- image/jpeg, image/png, image/gif, image/webp
-- 최대 10MB
-""",
-    responses={
-        201: {"description": "업로드 성공"},
-        400: {"description": "잘못된 요청 (room_id 없음, 파일 없음 등)"},
-        404: {"description": "채팅방을 찾을 수 없음"},
-        413: {"description": "파일 크기 초과"},
-    },
-)
-async def upload_chat_image(
-    room_id: str,
-    file: UploadFile,
-) -> ImageUploadResponse:
-    """
-    채팅용 이미지를 Firebase Storage에 업로드합니다.
-    """
-    # 1. room 존재 확인
-    room = await get_chat_room(room_id)
-    if room is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"채팅방을 찾을 수 없습니다: {room_id}",
-        )
-
-    # 2. 파일 검증
-    if not file.filename:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="파일이 없습니다.",
-        )
-
-    # Content-Type 검증
-    content_type = file.content_type or ""
-    if not content_type.startswith("image/"):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"이미지 파일만 업로드 가능합니다. (받은 타입: {content_type})",
-        )
-
-    # 3. 파일 읽기 (최대 10MB)
-    MAX_SIZE = 10 * 1024 * 1024  # 10MB
-    image_data = await file.read()
-
-    if len(image_data) > MAX_SIZE:
-        raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"파일 크기가 10MB를 초과합니다. ({len(image_data) / 1024 / 1024:.1f}MB)",
-        )
-
-    # 4. Firebase Storage 업로드
-    try:
-        public_url, storage_path = await upload_image_to_storage(
-            room_id=room_id,
-            image_data=image_data,
-            media_type=content_type if content_type.startswith("image/") else None,
-        )
-
-        logger.info("Image uploaded for room %s: %s", room_id, storage_path)
-
-        return ImageUploadResponse(url=public_url, path=storage_path)
-
-    except Exception as e:
-        logger.error("Failed to upload image: %s", str(e), exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="이미지 업로드에 실패했습니다.",
-        ) from e
 
 
 # ============================================================================
