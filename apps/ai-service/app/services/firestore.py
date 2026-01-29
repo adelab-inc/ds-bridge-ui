@@ -4,7 +4,10 @@ import uuid
 from collections.abc import Callable, Coroutine
 from functools import wraps
 from pathlib import Path
-from typing import Any, ParamSpec, TypedDict, TypeVar
+from typing import Any, Literal, ParamSpec, TypedDict, TypeVar
+
+# 메시지 상태 타입
+MessageStatus = Literal["GENERATING", "DONE", "ERROR"]
 
 from google.cloud.firestore import AsyncClient
 from google.cloud.firestore_v1.base_query import FieldFilter
@@ -176,6 +179,19 @@ CHAT_MESSAGES_COLLECTION = "chat_messages"
 
 
 # ============================================================================
+# Query Helpers
+# ============================================================================
+
+
+def _messages_by_room_query(room_id: str):
+    """room_id로 메시지 필터링하는 기본 쿼리 반환"""
+    db = get_firestore_client()
+    return db.collection(CHAT_MESSAGES_COLLECTION).where(
+        filter=FieldFilter("room_id", "==", room_id)
+    )
+
+
+# ============================================================================
 # Chat Rooms Operations
 # ============================================================================
 
@@ -241,26 +257,6 @@ async def get_chat_room(room_id: str) -> RoomData | None:
     return None
 
 
-async def verify_room_exists(room_id: str) -> bool:
-    """
-    채팅방 존재 여부 확인
-
-    Args:
-        room_id: 채팅방 ID
-
-    Returns:
-        존재 여부
-
-    Raises:
-        RoomNotFoundError: 채팅방을 찾을 수 없음
-        FirestoreError: Firestore 작업 실패
-    """
-    room = await get_chat_room(room_id)
-    if room is None:
-        raise RoomNotFoundError(f"채팅방을 찾을 수 없습니다: {room_id}")
-    return True
-
-
 @handle_firestore_error("채팅방 업데이트 실패")
 async def update_chat_room(
     room_id: str,
@@ -317,7 +313,7 @@ async def create_chat_message(
     content: str = "",
     path: str = "",
     question_created_at: int | None = None,
-    status: str = "DONE",
+    status: MessageStatus = "DONE",
 ) -> MessageData:
     """
     새 채팅 메시지 생성
@@ -374,14 +370,7 @@ async def get_messages_by_room(room_id: str, limit: int = 100) -> list[MessageDa
     Raises:
         FirestoreError: Firestore 작업 실패
     """
-    db = get_firestore_client()
-    query = (
-        db.collection(CHAT_MESSAGES_COLLECTION)
-        .where(filter=FieldFilter("room_id", "==", room_id))
-        .order_by("answer_created_at")
-        .limit(limit)
-    )
-
+    query = _messages_by_room_query(room_id).order_by("answer_created_at").limit(limit)
     docs = query.stream()
     return [doc.to_dict() async for doc in docs]  # type: ignore[misc]
 
@@ -433,10 +422,8 @@ async def get_messages_until(
 
     target_timestamp = target_message.get("answer_created_at")
 
-    db = get_firestore_client()
     query = (
-        db.collection(CHAT_MESSAGES_COLLECTION)
-        .where(filter=FieldFilter("room_id", "==", room_id))
+        _messages_by_room_query(room_id)
         .where(filter=FieldFilter("answer_created_at", "<=", target_timestamp))
         .order_by("answer_created_at")
         .limit(limit)
@@ -467,25 +454,17 @@ async def get_messages_paginated(
     """
     from google.cloud.firestore import Query
 
-    db = get_firestore_client()
     limit = min(limit, 100)  # 최대 100개로 제한
 
     # 총 개수 조회 (Firestore count aggregation - 문서를 가져오지 않고 개수만 조회)
-    count_query = db.collection(CHAT_MESSAGES_COLLECTION).where(
-        filter=FieldFilter("room_id", "==", room_id)
-    )
-    count_result = await count_query.count().get()
+    count_result = await _messages_by_room_query(room_id).count().get()
     total_count = count_result[0][0].value if count_result else 0
 
     # 정렬 방향 설정
     direction = Query.DESCENDING if order == "desc" else Query.ASCENDING
 
     # 기본 쿼리
-    query = (
-        db.collection(CHAT_MESSAGES_COLLECTION)
-        .where(filter=FieldFilter("room_id", "==", room_id))
-        .order_by("answer_created_at", direction=direction)
-    )
+    query = _messages_by_room_query(room_id).order_by("answer_created_at", direction=direction)
 
     # 커서가 있으면 해당 시점 이후부터 조회
     if cursor is not None:
@@ -520,7 +499,7 @@ async def update_chat_message(
     text: str | None = None,
     content: str | None = None,
     path: str | None = None,
-    status: str | None = None,
+    status: MessageStatus | None = None,
 ) -> None:
     """
     채팅 메시지 업데이트
