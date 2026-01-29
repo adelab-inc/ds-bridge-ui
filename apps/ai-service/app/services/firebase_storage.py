@@ -420,13 +420,23 @@ async def fetch_image_from_url(url: str) -> tuple[bytes, str]:
             response.raise_for_status()
 
             image_data = response.content
-            media_type = response.headers.get("content-type", "")
+            content_type = response.headers.get("content-type", "")
+
+            # Content-Type에서 media_type만 추출 (charset 등 제거)
+            # 예: "image/png; charset=utf-8" → "image/png"
+            media_type = content_type.split(";")[0].strip()
 
             # Content-Type이 없거나 불명확하면 자동 감지
             if not media_type or not media_type.startswith("image/"):
                 media_type = _detect_media_type(image_data)
 
-            logger.debug("Image fetched from URL: %s (%s, %d bytes)", url, media_type, len(image_data))
+            # 지원하는 이미지 타입 확인
+            supported_types = {"image/jpeg", "image/png", "image/gif", "image/webp"}
+            if media_type not in supported_types:
+                # 바이트 시그니처로 재감지
+                media_type = _detect_media_type(image_data)
+
+            logger.info("Image fetched from URL: %s (%s, %d bytes)", url, media_type, len(image_data))
 
             return image_data, media_type
 
