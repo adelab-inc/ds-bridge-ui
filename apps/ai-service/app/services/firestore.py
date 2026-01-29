@@ -119,7 +119,7 @@ def handle_firestore_error(
             except FirestoreError:
                 raise
             except Exception as e:
-                logger.error("%s: %s", error_message, str(e))
+                logger.error(error_message, extra={"error": str(e)})
                 raise FirestoreError(f"{error_message}: {str(e)}") from e
 
         return wrapper
@@ -150,12 +150,12 @@ def get_firestore_client() -> AsyncClient:
                     str(SERVICE_ACCOUNT_KEY_PATH)
                 )
                 _firestore_client = AsyncClient(credentials=cred, project=project_id)
-                logger.info("Firestore AsyncClient initialized with service account key")
+                logger.info("Firestore initialized", extra={"auth": "service_account", "project": project_id})
             else:
                 _firestore_client = AsyncClient(project=project_id)
-                logger.info("Firestore AsyncClient initialized with default credentials")
+                logger.info("Firestore initialized", extra={"auth": "default_credentials", "project": project_id})
         except Exception as e:
-            logger.error("Failed to initialize Firestore client: %s", str(e))
+            logger.error("Firestore initialization failed", extra={"error": str(e)})
             raise FirestoreError(f"Firestore 초기화 실패: {str(e)}") from e
 
     return _firestore_client
@@ -168,7 +168,7 @@ async def close_firestore_client() -> None:
     if _firestore_client is not None:
         _firestore_client.close()
         _firestore_client = None
-        logger.info("Firestore AsyncClient closed")
+        logger.info("Firestore client closed")
 
 
 # ============================================================================
@@ -227,7 +227,7 @@ async def create_chat_room(
     }
 
     await db.collection(CHAT_ROOMS_COLLECTION).document(room_id).set(room_data)
-    logger.info("Chat room created: %s", room_id)
+    logger.info("Chat room created", extra={"room_id": room_id, "user_id": user_id})
 
     return room_data
 
@@ -294,7 +294,7 @@ async def update_chat_room(
 
     if update_data:
         await db.collection(CHAT_ROOMS_COLLECTION).document(room_id).update(update_data)
-        logger.info("Chat room updated: %s", room_id)
+        logger.info("Chat room updated", extra={"room_id": room_id, "fields": list(update_data.keys())})
 
     # 업데이트된 문서 반환
     updated_room = await get_chat_room(room_id)
@@ -351,7 +351,7 @@ async def create_chat_message(
     }
 
     await db.collection(CHAT_MESSAGES_COLLECTION).document(message_id).set(message_data)
-    logger.debug("Chat message created: %s", message_id)
+    logger.debug("Chat message created", extra={"message_id": message_id, "room_id": room_id})
 
     return message_data
 
@@ -535,4 +535,4 @@ async def update_chat_message(
         update_data["status"] = status
 
     await db.collection(CHAT_MESSAGES_COLLECTION).document(message_id).update(update_data)
-    logger.debug("Chat message updated: %s", message_id)
+    logger.debug("Chat message updated", extra={"message_id": message_id, "fields": list(update_data.keys())})

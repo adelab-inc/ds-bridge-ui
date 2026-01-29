@@ -144,7 +144,7 @@ async def resolve_system_prompt(
         ag_grid_schema = await fetch_schema_from_storage(DEFAULT_AG_GRID_SCHEMA_KEY)
         ag_grid_tokens = await fetch_ag_grid_tokens_from_storage()
     except Exception as e:
-        logger.warning("AG Grid data not loaded: %s", str(e))
+        logger.warning("AG Grid data not loaded", extra={"error": str(e)})
 
     # 기본 프롬프트 생성
     if not schema_key:
@@ -164,7 +164,7 @@ async def resolve_system_prompt(
                 schema, design_tokens, ag_grid_schema, ag_grid_tokens
             )
         except FileNotFoundError:
-            logger.warning("Schema not found: %s, using local schema", schema_key)
+            logger.warning("Schema not found, using local", extra={"schema_key": schema_key})
             local_schema = get_schema()
             if not local_schema:
                 raise HTTPException(
@@ -174,7 +174,7 @@ async def resolve_system_prompt(
                 local_schema, design_tokens, ag_grid_schema, ag_grid_tokens
             )
         except Exception as e:
-            logger.error("Failed to fetch schema: %s - %s", schema_key, str(e), exc_info=True)
+            logger.error("Failed to fetch schema", extra={"schema_key": schema_key, "error": str(e)})
             raise HTTPException(
                 status_code=500, detail="Failed to load schema from storage. Please try again."
             ) from e
@@ -222,9 +222,8 @@ async def build_conversation_history(
             limit=max_history,
         )
         logger.info(
-            "Rollback mode: building context until message %s (%d messages)",
-            from_message_id,
-            len(previous_messages),
+            "Rollback mode enabled",
+            extra={"room_id": room_id, "from_message_id": from_message_id, "message_count": len(previous_messages)},
         )
     else:
         # 일반 모드: 최근 N개 조회
@@ -473,10 +472,10 @@ async def chat(request: ChatRequest) -> ChatResponse:
     except RoomNotFoundError as e:
         raise HTTPException(status_code=404, detail="Chat room not found.") from e
     except FirestoreError as e:
-        logger.error("Firestore error in chat: %s", str(e), exc_info=True)
+        logger.error("Firestore error in chat", extra={"room_id": request.room_id, "error": str(e)})
         raise HTTPException(status_code=500, detail="Database error. Please try again.") from e
     except Exception as e:
-        logger.error("Unexpected error in chat: %s", str(e), exc_info=True)
+        logger.error("Unexpected error in chat", extra={"room_id": request.room_id, "error": str(e)})
         raise HTTPException(
             status_code=500, detail="An unexpected error occurred. Please try again."
         ) from e
@@ -570,13 +569,13 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
                     base64_data, media_type = await fetch_image_as_base64(url)
                     images.append(ImageContent(media_type=media_type, data=base64_data))
                 except Exception as e:
-                    logger.warning("Failed to fetch image from URL %s: %s", url, str(e))
+                    logger.warning("Failed to fetch image", extra={"url": url, "error": str(e)})
                     # 실패한 이미지는 건너뛰고 계속 진행
 
             # 모든 이미지 로드 실패 시 일반 모드로 전환
             if not images:
                 is_vision_mode = False
-                logger.warning("All images failed to load, falling back to normal mode")
+                logger.warning("All images failed, falling back to normal mode", extra={"room_id": request.room_id})
 
         # 1. room 조회 및 검증
         room = await get_chat_room(request.room_id)
@@ -665,7 +664,7 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
 
             except NotImplementedError:
                 # Vision 미지원 Provider
-                logger.error("Vision not supported by current AI provider")
+                logger.error("Vision not supported", extra={"room_id": request.room_id, "provider": settings.ai_provider})
                 await update_chat_message(message_id=message_id, status="ERROR")
                 error_event = {
                     "type": "error",
@@ -674,7 +673,7 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
                 yield f"data: {json.dumps(error_event, ensure_ascii=False)}\n\n"
             except Exception as e:
                 # 에러 시 ERROR로 업데이트
-                logger.error("Streaming error: %s", str(e), exc_info=True)
+                logger.error("Streaming error", extra={"room_id": request.room_id, "message_id": message_id, "error": str(e)})
                 await update_chat_message(message_id=message_id, status="ERROR")
                 error_event = {
                     "type": "error",
@@ -694,10 +693,10 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
     except RoomNotFoundError as e:
         raise HTTPException(status_code=404, detail="Chat room not found.") from e
     except FirestoreError as e:
-        logger.error("Firestore error in chat_stream: %s", str(e), exc_info=True)
+        logger.error("Firestore error in chat_stream", extra={"room_id": request.room_id, "error": str(e)})
         raise HTTPException(status_code=500, detail="Database error. Please try again.") from e
     except Exception as e:
-        logger.error("Unexpected error in chat_stream: %s", str(e), exc_info=True)
+        logger.error("Unexpected error in chat_stream", extra={"room_id": request.room_id, "error": str(e)})
         raise HTTPException(
             status_code=500, detail="An unexpected error occurred. Please try again."
         ) from e

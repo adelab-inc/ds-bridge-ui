@@ -109,13 +109,13 @@ async def create_room(request: CreateRoomRequest) -> RoomResponse:
 
         return RoomResponse(**room_data)
     except FirestoreError as e:
-        logger.error("Failed to create room: %s", str(e), exc_info=True)
+        logger.error("Failed to create room", extra={"error": str(e), "user_id": request.user_id})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Database error. Please try again.",
         ) from e
     except Exception as e:
-        logger.error("Failed to create room: %s", str(e), exc_info=True)
+        logger.error("Unexpected error creating room", extra={"error": str(e), "user_id": request.user_id})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred. Please try again.",
@@ -149,13 +149,13 @@ async def get_room(room_id: str) -> RoomResponse:
     except HTTPException:
         raise
     except FirestoreError as e:
-        logger.error("Failed to get room %s: %s", room_id, str(e), exc_info=True)
+        logger.error("Failed to get room", extra={"room_id": room_id, "error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Database error. Please try again.",
         ) from e
     except Exception as e:
-        logger.error("Failed to get room %s: %s", room_id, str(e), exc_info=True)
+        logger.error("Unexpected error getting room", extra={"room_id": room_id, "error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred. Please try again.",
@@ -203,13 +203,13 @@ async def update_room(room_id: str, request: UpdateRoomRequest) -> RoomResponse:
             detail="Room not found.",
         ) from e
     except FirestoreError as e:
-        logger.error("Failed to update room %s: %s", room_id, str(e), exc_info=True)
+        logger.error("Failed to update room", extra={"room_id": room_id, "error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Database error. Please try again.",
         ) from e
     except Exception as e:
-        logger.error("Failed to update room %s: %s", room_id, str(e), exc_info=True)
+        logger.error("Unexpected error updating room", extra={"room_id": room_id, "error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred. Please try again.",
@@ -310,12 +310,12 @@ async def upload_room_image(
             media_type=content_type if content_type.startswith("image/") else None,
         )
 
-        logger.info("Image uploaded for room %s: %s", room_id, storage_path)
+        logger.info("Image uploaded", extra={"room_id": room_id, "storage_path": storage_path})
 
         return ImageUploadResponse(url=public_url, path=storage_path)
 
     except Exception as e:
-        logger.error("Failed to upload image: %s", str(e), exc_info=True)
+        logger.error("Failed to upload image", extra={"room_id": room_id, "error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="이미지 업로드에 실패했습니다.",
@@ -377,9 +377,8 @@ async def create_room_schema(
         uploaded_at = datetime.now(ZoneInfo("Asia/Seoul")).isoformat()
 
         logger.info(
-            "Schema uploaded and room updated: %s (%d components)",
-            schema_key,
-            component_count,
+            "Schema uploaded",
+            extra={"room_id": room_id, "schema_key": schema_key, "component_count": component_count},
         )
 
         return CreateSchemaResponse(
@@ -391,7 +390,7 @@ async def create_room_schema(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error("Failed to upload schema: %s", str(e), exc_info=True)
+        logger.error("Failed to upload schema", extra={"room_id": room_id, "error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to upload schema. Please try again.",
@@ -434,7 +433,7 @@ async def get_room_schema(
             detail=f"Schema file not found: {room_id}",
         ) from e
     except Exception as e:
-        logger.error("Failed to get schema: %s", str(e), exc_info=True)
+        logger.error("Failed to get schema", extra={"room_id": room_id, "error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get schema. Please try again.",
@@ -495,13 +494,13 @@ async def get_room_messages(
     except HTTPException:
         raise
     except FirestoreError as e:
-        logger.error("Failed to get messages for room %s: %s", room_id, str(e), exc_info=True)
+        logger.error("Failed to get messages", extra={"room_id": room_id, "error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Database error. Please try again.",
         ) from e
     except Exception as e:
-        logger.error("Failed to get messages for room %s: %s", room_id, str(e), exc_info=True)
+        logger.error("Unexpected error getting messages", extra={"room_id": room_id, "error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred. Please try again.",
