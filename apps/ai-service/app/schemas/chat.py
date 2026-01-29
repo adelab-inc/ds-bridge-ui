@@ -125,32 +125,16 @@ class CurrentComposition(BaseModel):
 
 
 class ImageContent(BaseModel):
-    """Base64 인코딩된 이미지"""
+    """Base64 인코딩된 이미지 (내부 처리용)"""
 
-    type: Literal["image"] = Field(
-        default="image",
-        description="컨텐츠 타입",
-    )
-    media_type: Literal["image/jpeg", "image/png", "image/gif", "image/webp"] = Field(
+    media_type: str = Field(
         ...,
-        description="이미지 MIME 타입",
+        description="이미지 MIME 타입 (image/jpeg, image/png 등)",
     )
     data: str = Field(
         ...,
-        description="Base64 인코딩된 이미지 데이터 (data: prefix 제외)",
+        description="Base64 인코딩된 이미지 데이터",
     )
-
-    model_config = {
-        "json_schema_extra": {
-            "examples": [
-                {
-                    "type": "image",
-                    "media_type": "image/png",
-                    "data": "iVBORw0KGgoAAAANSUhEUgAAAAUA...",
-                }
-            ]
-        }
-    }
 
 
 class ChatRequest(BaseModel):
@@ -168,10 +152,11 @@ class ChatRequest(BaseModel):
         description="채팅방 ID",
         json_schema_extra={"example": "550e8400-e29b-41d4-a716-446655440000"},
     )
-    images: list[ImageContent] | None = Field(
+    image_urls: list[str] | None = Field(
         default=None,
         max_length=5,
-        description="이미지 목록 (최대 5개) - Vision 모드 활성화",
+        description="Firebase Storage 이미지 URL 목록 (최대 5개) - Vision 모드 활성화",
+        json_schema_extra={"example": ["https://storage.googleapis.com/bucket/user_uploads/room-id/1234_uuid.png"]},
     )
     stream: bool = Field(
         default=False,
@@ -358,6 +343,21 @@ class ReloadResponse(BaseModel):
     )
 
     model_config = {"populate_by_name": True}
+
+
+class ImageUploadResponse(BaseModel):
+    """이미지 업로드 응답"""
+
+    url: str = Field(
+        ...,
+        description="업로드된 이미지의 Firebase Storage URL",
+        json_schema_extra={"example": "https://storage.googleapis.com/bucket/user_uploads/room-id/1234_uuid.png"},
+    )
+    path: str = Field(
+        ...,
+        description="Storage 내 파일 경로",
+        json_schema_extra={"example": "user_uploads/room-id/1234_uuid.png"},
+    )
 
 
 # ============================================================================

@@ -318,6 +318,144 @@ async def upload_schema_to_storage(schema_key: str, schema_data: dict) -> str:
         raise
 
 
+# ============================================================================
+# Image Upload/Fetch Operations
+# ============================================================================
+
+USER_UPLOADS_PATH = "user_uploads"
+
+
+def _detect_media_type(data: bytes) -> str:
+    """바이트 데이터에서 이미지 타입 자동 감지"""
+    if data[:8] == b'\x89PNG\r\n\x1a\n':
+        return "image/png"
+    elif data[:3] == b'\xff\xd8\xff':
+        return "image/jpeg"
+    elif data[:6] in (b'GIF87a', b'GIF89a'):
+        return "image/gif"
+    elif data[:4] == b'RIFF' and data[8:12] == b'WEBP':
+        return "image/webp"
+    else:
+        return "image/png"  # 기본값
+
+
+def _get_extension_from_media_type(media_type: str) -> str:
+    """MIME 타입에서 파일 확장자 반환"""
+    extensions = {
+        "image/png": "png",
+        "image/jpeg": "jpg",
+        "image/gif": "gif",
+        "image/webp": "webp",
+    }
+    return extensions.get(media_type, "png")
+
+
+async def upload_image_to_storage(
+    room_id: str,
+    image_data: bytes,
+    media_type: str | None = None,
+) -> tuple[str, str]:
+    """
+    Firebase Storage에 이미지 업로드
+
+    Args:
+        room_id: 채팅방 ID
+        image_data: 이미지 바이트 데이터
+        media_type: MIME 타입 (None이면 자동 감지)
+
+    Returns:
+        (public_url, storage_path) 튜플
+    """
+    import time
+    import uuid
+
+    # Firebase 초기화
+    init_firebase()
+
+    # 미디어 타입 자동 감지
+    if media_type is None:
+        media_type = _detect_media_type(image_data)
+
+    # 파일 경로 생성: user_uploads/{room_id}/{timestamp}_{uuid}.{ext}
+    timestamp = int(time.time() * 1000)
+    file_uuid = uuid.uuid4().hex[:8]
+    extension = _get_extension_from_media_type(media_type)
+    storage_path = f"{USER_UPLOADS_PATH}/{room_id}/{timestamp}_{file_uuid}.{extension}"
+
+    try:
+        bucket = storage.bucket()
+        blob = bucket.blob(storage_path)
+
+        # 업로드
+        blob.upload_from_string(image_data, content_type=media_type)
+
+        # Public URL 생성
+        blob.make_public()
+        public_url = blob.public_url
+
+        logger.info("Image uploaded: %s (%s)", storage_path, media_type)
+
+        return public_url, storage_path
+
+    except Exception as e:
+        logger.error("Failed to upload image: %s - %s", storage_path, str(e))
+        raise
+
+
+async def fetch_image_from_url(url: str) -> tuple[bytes, str]:
+    """
+    URL에서 이미지 다운로드
+
+    Args:
+        url: 이미지 URL (Firebase Storage 또는 외부 URL)
+
+    Returns:
+        (image_bytes, media_type) 튜플
+    """
+    import httpx
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(url)
+            response.raise_for_status()
+
+            image_data = response.content
+            media_type = response.headers.get("content-type", "")
+
+            # Content-Type이 없거나 불명확하면 자동 감지
+            if not media_type or not media_type.startswith("image/"):
+                media_type = _detect_media_type(image_data)
+
+            logger.debug("Image fetched from URL: %s (%s, %d bytes)", url, media_type, len(image_data))
+
+            return image_data, media_type
+
+    except httpx.HTTPStatusError as e:
+        logger.error("Failed to fetch image (HTTP %d): %s", e.response.status_code, url)
+        raise
+    except Exception as e:
+        logger.error("Failed to fetch image: %s - %s", url, str(e))
+        raise
+
+
+async def fetch_image_as_base64(url: str) -> tuple[str, str]:
+    """
+    URL에서 이미지를 가져와 base64로 변환
+
+    Args:
+        url: 이미지 URL
+
+    Returns:
+        (base64_data, media_type) 튜플
+    """
+    import base64
+
+    image_data, media_type = await fetch_image_from_url(url)
+    base64_data = base64.b64encode(image_data).decode("utf-8")
+
+    return base64_data, media_type
+
+
 @lru_cache(maxsize=20)
 def get_cached_schema_sync(schema_key: str) -> dict:
     """

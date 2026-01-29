@@ -3,7 +3,7 @@ import logging
 import re
 from collections.abc import AsyncGenerator
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 from fastapi.responses import StreamingResponse
 
 from app.api.components import (
@@ -17,6 +17,8 @@ from app.schemas.chat import (
     ChatResponse,
     CurrentComposition,
     FileContent,
+    ImageContent,
+    ImageUploadResponse,
     Message,
     ParsedResponse,
 )
@@ -26,7 +28,9 @@ from app.services.firebase_storage import (
     DEFAULT_AG_GRID_TOKENS_KEY,
     fetch_ag_grid_tokens_from_storage,
     fetch_design_tokens_from_storage,
+    fetch_image_as_base64,
     fetch_schema_from_storage,
+    upload_image_to_storage,
 )
 from app.services.firestore import (
     FirestoreError,
@@ -350,6 +354,97 @@ class StreamingParser:
 
 
 # ============================================================================
+# Image Upload Endpoint
+# ============================================================================
+
+
+@router.post(
+    "/images",
+    response_model=ImageUploadResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="채팅 이미지 업로드",
+    description="""
+Firebase Storage에 이미지를 업로드하고 URL을 반환합니다.
+
+## 사용 흐름
+1. 이 API로 이미지 업로드 → URL 획득
+2. `/chat/stream`에 `image_urls` 파라미터로 전달
+
+## 저장 경로
+`user_uploads/{room_id}/{timestamp}_{uuid}.{ext}`
+
+## 지원 형식
+- image/jpeg, image/png, image/gif, image/webp
+- 최대 10MB
+""",
+    responses={
+        201: {"description": "업로드 성공"},
+        400: {"description": "잘못된 요청 (room_id 없음, 파일 없음 등)"},
+        404: {"description": "채팅방을 찾을 수 없음"},
+        413: {"description": "파일 크기 초과"},
+    },
+)
+async def upload_chat_image(
+    room_id: str,
+    file: UploadFile,
+) -> ImageUploadResponse:
+    """
+    채팅용 이미지를 Firebase Storage에 업로드합니다.
+    """
+    # 1. room 존재 확인
+    room = await get_chat_room(room_id)
+    if room is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"채팅방을 찾을 수 없습니다: {room_id}",
+        )
+
+    # 2. 파일 검증
+    if not file.filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="파일이 없습니다.",
+        )
+
+    # Content-Type 검증
+    content_type = file.content_type or ""
+    if not content_type.startswith("image/"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"이미지 파일만 업로드 가능합니다. (받은 타입: {content_type})",
+        )
+
+    # 3. 파일 읽기 (최대 10MB)
+    MAX_SIZE = 10 * 1024 * 1024  # 10MB
+    image_data = await file.read()
+
+    if len(image_data) > MAX_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"파일 크기가 10MB를 초과합니다. ({len(image_data) / 1024 / 1024:.1f}MB)",
+        )
+
+    # 4. Firebase Storage 업로드
+    try:
+        public_url, storage_path = await upload_image_to_storage(
+            room_id=room_id,
+            image_data=image_data,
+            media_type=content_type if content_type.startswith("image/") else None,
+        )
+
+        logger.info("Image uploaded for room %s: %s", room_id, storage_path)
+
+        return ImageUploadResponse(url=public_url, path=storage_path)
+
+    except Exception as e:
+        logger.error("Failed to upload image: %s", str(e), exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="이미지 업로드에 실패했습니다.",
+        ) from e
+
+
+# ============================================================================
 # API Endpoints
 # ============================================================================
 
@@ -475,16 +570,14 @@ SSE(Server-Sent Events)를 통해 실시간 스트리밍 응답을 받습니다.
 ```
 
 ## 요청 예시 (이미지 포함 - Vision 모드)
+먼저 `/chat/images`로 이미지를 업로드한 후 URL을 사용합니다.
+
 ```json
 {
   "message": "이 디자인을 React 코드로 만들어줘",
   "room_id": "550e8400-e29b-41d4-a716-446655440000",
-  "images": [
-    {
-      "type": "image",
-      "media_type": "image/png",
-      "data": "iVBORw0KGgo..."
-    }
+  "image_urls": [
+    "https://storage.googleapis.com/bucket/user_uploads/room-id/1234_uuid.png"
   ]
 }
 ```
@@ -539,7 +632,23 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
     """
     try:
         # Vision 모드 여부 판단
-        is_vision_mode = bool(request.images and len(request.images) > 0)
+        is_vision_mode = bool(request.image_urls and len(request.image_urls) > 0)
+
+        # 이미지 URL에서 base64로 변환 (Vision 모드인 경우)
+        images: list[ImageContent] = []
+        if is_vision_mode:
+            for url in request.image_urls:  # type: ignore
+                try:
+                    base64_data, media_type = await fetch_image_as_base64(url)
+                    images.append(ImageContent(media_type=media_type, data=base64_data))
+                except Exception as e:
+                    logger.warning("Failed to fetch image from URL %s: %s", url, str(e))
+                    # 실패한 이미지는 건너뛰고 계속 진행
+
+            # 모든 이미지 로드 실패 시 일반 모드로 전환
+            if not images:
+                is_vision_mode = False
+                logger.warning("All images failed to load, falling back to normal mode")
 
         # 1. room 조회 및 검증
         room = await get_chat_room(request.room_id)
@@ -551,7 +660,7 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
         # 2. GENERATING 상태로 메시지 먼저 생성
         question_text = request.message
         if is_vision_mode:
-            question_text = f"[이미지 {len(request.images)}개] {request.message}"
+            question_text = f"[이미지 {len(images)}개] {request.message}"
 
         message_data = await create_chat_message(
             room_id=request.room_id,
@@ -591,7 +700,7 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
             try:
                 # Vision/일반 모드에 따라 스트리밍 호출
                 if is_vision_mode:
-                    stream = provider.chat_vision_stream(messages, request.images)
+                    stream = provider.chat_vision_stream(messages, images)
                 else:
                     stream = provider.chat_stream(messages)
 
