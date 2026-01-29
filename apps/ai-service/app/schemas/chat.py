@@ -171,6 +171,11 @@ class ChatRequest(BaseModel):
         description="사용자가 선택한 컴포넌트 인스턴스 ID (예: button-1)",
         json_schema_extra={"example": "button-1"},
     )
+    from_message_id: str | None = Field(
+        default=None,
+        description="특정 메시지 시점으로 롤백하여 재요청 (해당 메시지까지의 컨텍스트만 사용)",
+        json_schema_extra={"example": "886e7406-55f7-4582-9f4b-7a56ec4562d8"},
+    )
 
     model_config = {
         "json_schema_extra": {
@@ -192,6 +197,11 @@ class ChatRequest(BaseModel):
                         ]
                     },
                     "selected_instance_id": "button-1",
+                },
+                {
+                    "message": "버튼을 빨간색으로 바꿔줘",
+                    "room_id": "550e8400-e29b-41d4-a716-446655440000",
+                    "from_message_id": "886e7406-55f7-4582-9f4b-7a56ec4562d8",
                 },
             ]
         }

@@ -385,6 +385,66 @@ async def get_messages_by_room(room_id: str, limit: int = 100) -> list[MessageDa
     return [doc.to_dict() async for doc in docs]  # type: ignore[misc]
 
 
+@handle_firestore_error("메시지 조회 실패")
+async def get_message_by_id(message_id: str) -> MessageData | None:
+    """
+    메시지 ID로 단일 메시지 조회
+
+    Args:
+        message_id: 메시지 ID
+
+    Returns:
+        메시지 데이터 또는 None
+    """
+    db = get_firestore_client()
+    doc = await db.collection(CHAT_MESSAGES_COLLECTION).document(message_id).get()
+
+    if doc.exists:
+        return doc.to_dict()  # type: ignore[return-value]
+    return None
+
+
+@handle_firestore_error("메시지 조회 실패")
+async def get_messages_until(
+    room_id: str,
+    until_message_id: str,
+    limit: int = 50,
+) -> list[MessageData]:
+    """
+    특정 메시지까지의 히스토리 조회 (롤백 기능용)
+
+    Args:
+        room_id: 채팅방 ID
+        until_message_id: 이 메시지까지 조회 (포함)
+        limit: 최대 조회 개수
+
+    Returns:
+        메시지 목록 (오래된 순)
+    """
+    # 먼저 타겟 메시지 조회
+    target_message = await get_message_by_id(until_message_id)
+    if target_message is None:
+        return []
+
+    # room_id 검증
+    if target_message.get("room_id") != room_id:
+        return []
+
+    target_timestamp = target_message.get("answer_created_at")
+
+    db = get_firestore_client()
+    query = (
+        db.collection(CHAT_MESSAGES_COLLECTION)
+        .where("room_id", "==", room_id)
+        .where("answer_created_at", "<=", target_timestamp)
+        .order_by("answer_created_at")
+        .limit(limit)
+    )
+
+    docs = query.stream()
+    return [doc.to_dict() async for doc in docs]  # type: ignore[misc]
+
+
 @handle_firestore_error("메시지 페이지네이션 조회 실패")
 async def get_messages_paginated(
     room_id: str,
@@ -409,10 +469,10 @@ async def get_messages_paginated(
     db = get_firestore_client()
     limit = min(limit, 100)  # 최대 100개로 제한
 
-    # 총 개수 조회
+    # 총 개수 조회 (Firestore count aggregation - 문서를 가져오지 않고 개수만 조회)
     count_query = db.collection(CHAT_MESSAGES_COLLECTION).where("room_id", "==", room_id)
-    count_docs = [doc async for doc in count_query.stream()]
-    total_count = len(count_docs)
+    count_result = await count_query.count().get()
+    total_count = count_result[0][0].value if count_result else 0
 
     # 정렬 방향 설정
     direction = Query.DESCENDING if order == "desc" else Query.ASCENDING

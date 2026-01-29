@@ -36,6 +36,7 @@ from app.services.firestore import (
     create_chat_message,
     get_chat_room,
     get_messages_by_room,
+    get_messages_until,
     get_timestamp_ms,
     update_chat_message,
 )
@@ -192,7 +193,10 @@ MAX_HISTORY_COUNT = 10  # 최근 N개 대화만 포함
 
 
 async def build_conversation_history(
-    room_id: str, system_prompt: str, current_message: str
+    room_id: str,
+    system_prompt: str,
+    current_message: str,
+    from_message_id: str | None = None,
 ) -> list[Message]:
     """
     이전 대화 내역을 포함한 메시지 리스트 생성
@@ -201,15 +205,30 @@ async def build_conversation_history(
         room_id: 채팅방 ID
         system_prompt: 시스템 프롬프트
         current_message: 현재 사용자 메시지
+        from_message_id: 특정 메시지 시점까지만 컨텍스트 포함 (롤백 기능)
 
     Returns:
         AI에 전달할 메시지 리스트
     """
     messages = [Message(role="system", content=system_prompt)]
 
-    # 이전 메시지 조회 (최근 N개만)
-    previous_messages = await get_messages_by_room(room_id)
-    previous_messages = previous_messages[-MAX_HISTORY_COUNT:]
+    # 이전 메시지 조회
+    if from_message_id:
+        # 롤백 모드: 특정 메시지까지만 조회
+        previous_messages = await get_messages_until(
+            room_id=room_id,
+            until_message_id=from_message_id,
+            limit=MAX_HISTORY_COUNT,
+        )
+        logger.info(
+            "Rollback mode: building context until message %s (%d messages)",
+            from_message_id,
+            len(previous_messages),
+        )
+    else:
+        # 일반 모드: 최근 N개 조회
+        previous_messages = await get_messages_by_room(room_id)
+        previous_messages = previous_messages[-MAX_HISTORY_COUNT:]
 
     for msg in previous_messages:
         # 사용자 질문
@@ -429,6 +448,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
             room_id=request.room_id,
             system_prompt=system_prompt,
             current_message=request.message,
+            from_message_id=request.from_message_id,
         )
 
         response_message, usage = await provider.chat(messages)
@@ -597,6 +617,7 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
             room_id=request.room_id,
             system_prompt=system_prompt,
             current_message=request.message,
+            from_message_id=request.from_message_id,
         )
 
         async def generate() -> AsyncGenerator[str, None]:
