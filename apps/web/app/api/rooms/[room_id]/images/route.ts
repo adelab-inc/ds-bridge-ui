@@ -5,18 +5,18 @@ const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ roomId: string }> }
+  { params }: { params: Promise<{ room_id: string }> }
 ) {
   try {
-    const { roomId } = await params;
+    const { room_id } = await params;
 
-    if (!roomId) {
+    if (!room_id) {
       return NextResponse.json(
         {
           detail: [
             {
-              loc: ['path', 'roomId'],
-              msg: 'roomId is required',
+              loc: ['path', 'room_id'],
+              msg: 'room_id is required',
               type: 'value_error.missing',
             },
           ],
@@ -113,7 +113,7 @@ export async function POST(
     const proxyFormData = new FormData();
     proxyFormData.append('file', file);
 
-    const aiResponse = await fetch(`${aiServerUrl}/rooms/${roomId}/images`, {
+    const aiResponse = await fetch(`${aiServerUrl}/rooms/${room_id}/images`, {
       method: 'POST',
       headers: {
         'X-API-Key': xApiKey,
