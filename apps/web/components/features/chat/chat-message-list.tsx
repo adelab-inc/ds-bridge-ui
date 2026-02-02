@@ -9,10 +9,16 @@ import { ChatMessage as ChatMessageType } from '@/hooks/firebase/messageUtils';
 
 interface ChatMessageListProps extends React.ComponentProps<'div'> {
   messages?: ChatMessageType[];
+  /** 현재 선택된 메시지 ID */
+  selectedMessageId?: string;
+  /** 메시지 클릭 핸들러 (content가 있는 메시지만 호출됨) */
+  onMessageClick?: (message: ChatMessageType) => void;
 }
 
 function ChatMessageList({
   messages = [],
+  selectedMessageId,
+  onMessageClick,
   className,
   ...props
 }: ChatMessageListProps) {
@@ -48,20 +54,28 @@ function ChatMessageList({
       className={cn('flex-1', className)}
       {...props}
     >
-      {messages.map((message) => (
-        <div key={message.id} className="flex flex-col gap-2">
-          <ChatMessage
-            text={message.question}
-            timestamp={message.question_created_at}
-            className="justify-end"
-          />
-          <ChatMessage
-            text={message.text}
-            timestamp={message.answer_created_at}
-            isGenerating={message.status === 'GENERATING'}
-          />
-        </div>
-      ))}
+      {messages.map((message) => {
+        const hasContent = !!(message.content && message.content.trim());
+        return (
+          <div key={message.id} className="flex flex-col gap-2">
+            <ChatMessage
+              text={message.question}
+              timestamp={message.question_created_at}
+              className="justify-end"
+            />
+            <ChatMessage
+              text={message.text}
+              timestamp={message.answer_created_at}
+              isGenerating={message.status === 'GENERATING'}
+              hasContent={hasContent}
+              isSelected={selectedMessageId === message.id}
+              onClick={
+                hasContent ? () => onMessageClick?.(message) : undefined
+              }
+            />
+          </div>
+        );
+      })}
     </ScrollArea>
   );
 }

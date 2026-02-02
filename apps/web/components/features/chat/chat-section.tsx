@@ -41,6 +41,9 @@ function ChatSection({
   });
 
   const [messages, setMessages] = React.useState<ChatMessage[]>([]);
+  const [selectedMessageId, setSelectedMessageId] = React.useState<
+    string | null
+  >(null);
   const currentMessageIdRef = React.useRef<string | null>(null);
 
   const { sendMessage, isLoading, error, accumulatedText, generatedFiles } =
@@ -67,6 +70,8 @@ function ChatSection({
                 : msg
             )
           );
+          // 현재 스트리밍 중인 메시지를 선택 상태로 설정
+          setSelectedMessageId(currentMessageIdRef.current);
         }
         // 부모 컴포넌트에 코드 생성 알림
         onCodeGenerated?.(code);
@@ -116,6 +121,21 @@ function ChatSection({
       },
     });
 
+  // 메시지 클릭 시 해당 메시지의 content를 미리보기에 표시
+  const handleMessageClick = React.useCallback(
+    (message: ChatMessage) => {
+      if (message.content && message.content.trim()) {
+        setSelectedMessageId(message.id);
+        onCodeGenerated?.({
+          type: 'code',
+          content: message.content,
+          path: message.path,
+        });
+      }
+    },
+    [onCodeGenerated]
+  );
+
   const handleSend = async (message: string) => {
     const messageId = Date.now().toString();
 
@@ -162,6 +182,7 @@ function ChatSection({
       .find((msg) => msg.content && msg.content.trim());
 
     if (latestWithContent) {
+      setSelectedMessageId(latestWithContent.id);
       onCodeGenerated?.({
         type: 'code',
         content: latestWithContent.content,
@@ -186,6 +207,7 @@ function ChatSection({
     ) {
       const lastMessage = firebaseMessages[firebaseMessages.length - 1];
       if (lastMessage.content) {
+        setSelectedMessageId(lastMessage.id);
         onCodeGenerated?.({
           type: 'code',
           content: lastMessage.content,
@@ -221,6 +243,8 @@ function ChatSection({
       {/* Messages */}
       <ChatMessageList
         messages={displayMessages}
+        selectedMessageId={selectedMessageId ?? undefined}
+        onMessageClick={handleMessageClick}
         className="min-h-0 flex-1 overflow-y-auto"
       />
 
