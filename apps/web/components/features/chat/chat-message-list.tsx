@@ -51,7 +51,7 @@ function ChatMessageList({
     <ScrollArea
       ref={scrollRef}
       data-slot="chat-message-list"
-      className={cn('flex-1', className)}
+      className={cn('flex-1 px-1', className)}
       {...props}
     >
       {messages.map((message) => {
@@ -67,11 +67,10 @@ function ChatMessageList({
               text={message.text}
               timestamp={message.answer_created_at}
               isGenerating={message.status === 'GENERATING'}
+              content={message.content}
               hasContent={hasContent}
               isSelected={selectedMessageId === message.id}
-              onClick={
-                hasContent ? () => onMessageClick?.(message) : undefined
-              }
+              onClick={hasContent ? () => onMessageClick?.(message) : undefined}
             />
           </div>
         );
