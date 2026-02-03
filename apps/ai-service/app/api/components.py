@@ -772,11 +772,47 @@ def get_system_prompt() -> str:
     return SYSTEM_PROMPT.replace("{current_date}", current_date)
 
 
+def format_layouts(layouts: list[dict]) -> str:
+    """
+    레이아웃 JSON 리스트를 프롬프트용 문자열로 포맷팅
+
+    Args:
+        layouts: Figma에서 추출한 레이아웃 JSON 리스트
+
+    Returns:
+        포맷팅된 레이아웃 섹션 문자열
+    """
+    if not layouts:
+        return ""
+
+    import json
+
+    section = """
+
+## Reference Layouts (Figma Extracted)
+
+Below are reference layouts extracted from Figma. Use these as structural guides when generating similar pages.
+- Follow the layout hierarchy (FRAME, INSTANCE, etc.)
+- Respect the layoutMode (VERTICAL, HORIZONTAL)
+- Use similar spacing (itemSpacing, padding)
+- Match the component structure
+
+"""
+    for i, layout in enumerate(layouts, 1):
+        name = layout.get("layout", {}).get("name", f"Layout {i}")
+        # JSON을 compact하게 변환 (indent 없이)
+        layout_json = json.dumps(layout, ensure_ascii=False, separators=(",", ":"))
+        section += f"### {name}\n```json\n{layout_json}\n```\n\n"
+
+    return section
+
+
 def generate_system_prompt(
     schema: dict,
     design_tokens: dict | None = None,
     ag_grid_schema: dict | None = None,
     ag_grid_tokens: dict | None = None,
+    layouts: list[dict] | None = None,
 ) -> str:
     """
     주어진 스키마로 시스템 프롬프트 동적 생성
@@ -786,6 +822,7 @@ def generate_system_prompt(
         design_tokens: 디자인 토큰 dict (Firebase에서 로드, None이면 기본값 사용)
         ag_grid_schema: AG Grid 컴포넌트 스키마 dict (Firebase에서 로드, None이면 미포함)
         ag_grid_tokens: AG Grid 토큰 dict (Firebase에서 로드, None이면 미포함)
+        layouts: Figma 레이아웃 JSON 리스트 (Firebase에서 로드, None이면 미포함)
 
     Returns:
         생성된 시스템 프롬프트 문자열 (현재 날짜 포함)
@@ -802,6 +839,9 @@ def generate_system_prompt(
     if ag_grid_tokens:
         ag_grid_section += format_ag_grid_tokens(ag_grid_tokens)
 
+    # 레이아웃 섹션
+    layouts_section = format_layouts(layouts) if layouts else ""
+
     return (
         SYSTEM_PROMPT_HEADER.replace("{current_date}", current_date).replace(
             "{design_tokens_section}", design_tokens_section
@@ -809,6 +849,7 @@ def generate_system_prompt(
         + available_components
         + component_docs
         + ag_grid_section
+        + layouts_section
         + RESPONSE_FORMAT_INSTRUCTIONS
         + SYSTEM_PROMPT_FOOTER
     )

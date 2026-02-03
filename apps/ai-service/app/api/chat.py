@@ -27,6 +27,7 @@ from app.services.firebase_storage import (
     DEFAULT_AG_GRID_SCHEMA_KEY,
     DEFAULT_AG_GRID_TOKENS_KEY,
     fetch_ag_grid_tokens_from_storage,
+    fetch_all_layouts_from_storage,
     fetch_design_tokens_from_storage,
     fetch_image_as_base64,
     fetch_schema_from_storage,
@@ -147,6 +148,15 @@ async def resolve_system_prompt(
     except Exception as e:
         logger.warning("AG Grid data not loaded", extra={"error": str(e)})
 
+    # 레이아웃 로드 (실패 시 빈 리스트, 프롬프트에서 생략됨)
+    layouts: list[dict] = []
+    try:
+        layouts = await fetch_all_layouts_from_storage()
+        if layouts:
+            logger.info("Layouts loaded", extra={"count": len(layouts)})
+    except Exception as e:
+        logger.warning("Layouts not loaded", extra={"error": str(e)})
+
     # 기본 프롬프트 생성
     if not schema_key:
         # 로컬 스키마 사용
@@ -156,13 +166,13 @@ async def resolve_system_prompt(
                 status_code=500, detail="No schema available. Please upload a schema first."
             )
         base_prompt = generate_system_prompt(
-            local_schema, design_tokens, ag_grid_schema, ag_grid_tokens
+            local_schema, design_tokens, ag_grid_schema, ag_grid_tokens, layouts
         )
     else:
         try:
             schema = await fetch_schema_from_storage(schema_key)
             base_prompt = generate_system_prompt(
-                schema, design_tokens, ag_grid_schema, ag_grid_tokens
+                schema, design_tokens, ag_grid_schema, ag_grid_tokens, layouts
             )
         except FileNotFoundError:
             logger.warning("Schema not found, using local", extra={"schema_key": schema_key})
@@ -172,7 +182,7 @@ async def resolve_system_prompt(
                     status_code=404, detail=f"Schema not found: {schema_key}"
                 )
             base_prompt = generate_system_prompt(
-                local_schema, design_tokens, ag_grid_schema, ag_grid_tokens
+                local_schema, design_tokens, ag_grid_schema, ag_grid_tokens, layouts
             )
         except Exception as e:
             logger.error("Failed to fetch schema", extra={"schema_key": schema_key, "error": str(e)})
