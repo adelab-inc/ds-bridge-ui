@@ -3,7 +3,7 @@ import logging
 import re
 from collections.abc import AsyncGenerator
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
 from app.api.components import (
@@ -25,7 +25,6 @@ from app.schemas.chat import (
 from app.services.ai_provider import get_ai_provider
 from app.services.firebase_storage import (
     DEFAULT_AG_GRID_SCHEMA_KEY,
-    DEFAULT_AG_GRID_TOKENS_KEY,
     fetch_ag_grid_tokens_from_storage,
     fetch_all_layouts_from_storage,
     fetch_design_tokens_from_storage,
@@ -722,7 +721,7 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
 
             except NotImplementedError:
                 # Vision 미지원 Provider
-                logger.error("Vision not supported", extra={"room_id": request.room_id, "provider": settings.ai_provider})
+                logger.error("Vision not supported", extra={"room_id": request.room_id, "provider": get_settings().ai_provider})
                 await update_chat_message(message_id=message_id, status="ERROR")
                 error_event = {
                     "type": "error",
