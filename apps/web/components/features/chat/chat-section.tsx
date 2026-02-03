@@ -48,6 +48,18 @@ function ChatSection({
 
   const { sendMessage, isLoading, error, accumulatedText, generatedFiles } =
     useChatStream({
+      onStart: (messageId) => {
+        // 서버에서 실제 message_id를 받으면 임시 ID를 교체
+        const tempId = currentMessageIdRef.current;
+        if (tempId) {
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === tempId ? { ...msg, id: messageId } : msg
+            )
+          );
+          currentMessageIdRef.current = messageId;
+        }
+      },
       onChat: (text) => {
         // 스트리밍 중 현재 메시지의 text 업데이트
         if (currentMessageIdRef.current) {
@@ -76,14 +88,14 @@ function ChatSection({
         // 부모 컴포넌트에 코드 생성 알림
         onCodeGenerated?.(code);
       },
-      onDone: () => {
-        const messageId = currentMessageIdRef.current;
+      onDone: (messageId) => {
         // 스트리밍 완료 시 status를 DONE으로 변경
-        if (messageId) {
+        const finalId = messageId || currentMessageIdRef.current;
+        if (finalId) {
           const now = Date.now();
           setMessages((prev) =>
             prev.map((msg) =>
-              msg.id === messageId
+              msg.id === finalId
                 ? {
                     ...msg,
                     status: 'DONE' as const,
@@ -137,7 +149,7 @@ function ChatSection({
   );
 
   const handleSend = async (message: string) => {
-    const messageId = Date.now().toString();
+    const messageId = crypto.randomUUID();
 
     // 새 메시지 생성 (질문과 빈 답변)
     const newMessage: ChatMessage = {
@@ -158,11 +170,12 @@ function ChatSection({
     // 부모 컴포넌트에 스트리밍 시작 알림
     onStreamStart?.();
 
-    // AI에게 메시지 전송
+    // AI에게 메시지 전송 (선택된 메시지가 있으면 해당 코드 기준으로 수정)
     await sendMessage({
       message,
       room_id: roomId,
       stream: true,
+      from_message_id: selectedMessageId ?? undefined,
     });
   };
 

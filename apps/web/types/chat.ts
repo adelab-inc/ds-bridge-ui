@@ -22,7 +22,12 @@ export type Message = components['schemas']['Message'];
 export type RoomResponse = components['schemas']['RoomResponse'];
 
 // SSE 이벤트 타입 (OpenAPI 스펙에 없으므로 수동 정의)
-export type SSEEventType = 'chat' | 'code' | 'done' | 'error';
+export type SSEEventType = 'start' | 'chat' | 'code' | 'done' | 'error';
+
+export interface StartEvent {
+  type: 'start';
+  message_id: string;
+}
 
 export interface ChatEvent {
   type: 'chat';
@@ -37,6 +42,7 @@ export interface CodeEvent {
 
 export interface DoneEvent {
   type: 'done';
+  message_id: string;
 }
 
 export interface ErrorEvent {
@@ -44,4 +50,9 @@ export interface ErrorEvent {
   error: string;
 }
 
-export type SSEEvent = ChatEvent | CodeEvent | DoneEvent | ErrorEvent;
+export type SSEEvent =
+  | StartEvent
+  | ChatEvent
+  | CodeEvent
+  | DoneEvent
+  | ErrorEvent;
