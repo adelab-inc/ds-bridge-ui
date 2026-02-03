@@ -400,6 +400,9 @@ export interface LayoutNode {
 
   /** 컴포넌트 속성 (인스턴스인 경우) */
   componentProps?: Record<string, string>;
+
+  /** 깊이 초과 시 자식 요약 (compact 모드) */
+  summary?: string;
 }
 
 /**
@@ -514,8 +517,15 @@ export interface FigmaExtractSuccessResponse {
   /** 추출된 레이아웃 스키마 */
   data: LayoutSchema;
 
-  /** 저장된 정적 파일 경로 (예: /figma-nodes/3254-320754.layout.json) */
-  savedPath: string;
+  /** 저장된 정적 파일 경로 (full, clean, compact 3가지 버전) */
+  savedPath: {
+    /** 전체 노드 (원본) */
+    full: string;
+    /** 노이즈 제거 (VECTOR/shape 제거, INSTANCE children 생략) */
+    clean: string;
+    /** LLM 최적 (노이즈 제거 + depth 5 제한) */
+    compact: string;
+  };
 }
 
 /**

@@ -594,3 +594,128 @@ function generateTypographyName(info: TypographyInfo): string {
 
   return `body-${fontSize}`;
 }
+
+// =============================================================================
+// 트리 후처리 (노이즈 제거 / depth 제한)
+// =============================================================================
+
+/** 레이아웃에 무관한 shape 노드 타입 */
+const NOISE_NODE_TYPES = new Set([
+  'VECTOR',
+  'BOOLEAN_OPERATION',
+  'ELLIPSE',
+  'LINE',
+  'RECTANGLE',
+  'STAR',
+]);
+
+/**
+ * clean 버전 생성: shape 노이즈 제거 + INSTANCE children 생략
+ *
+ * @param schema - 원본 layout-schema
+ * @returns 노이즈가 제거된 layout-schema
+ */
+export function createCleanSchema(schema: LayoutSchema): LayoutSchema {
+  return {
+    ...schema,
+    layout: cleanNode(schema.layout),
+  };
+}
+
+/**
+ * compact 버전 생성: clean + depth 제한 (summary 포함)
+ *
+ * @param schema - 원본 layout-schema
+ * @param maxDepth - 최대 깊이 (기본: 5)
+ * @returns LLM 최적화된 layout-schema
+ */
+export function createCompactSchema(
+  schema: LayoutSchema,
+  maxDepth: number = 5
+): LayoutSchema {
+  return {
+    ...schema,
+    layout: compactNode(schema.layout, 0, maxDepth),
+  };
+}
+
+/**
+ * 노이즈 노드 제거 + INSTANCE children 생략
+ */
+function cleanNode(node: LayoutNode): LayoutNode {
+  const result: LayoutNode = { ...node };
+
+  // INSTANCE 노드: children 제거 (componentName만 유지)
+  if (node.type === 'INSTANCE') {
+    delete result.children;
+    return result;
+  }
+
+  // children 재귀 처리 (shape 노드 필터링)
+  if (node.children) {
+    const filtered = node.children
+      .filter((child) => !NOISE_NODE_TYPES.has(child.type))
+      .map((child) => cleanNode(child));
+
+    if (filtered.length > 0) {
+      result.children = filtered;
+    } else {
+      delete result.children;
+    }
+  }
+
+  return result;
+}
+
+/**
+ * clean + depth 제한 (summary 포함)
+ */
+function compactNode(
+  node: LayoutNode,
+  depth: number,
+  maxDepth: number
+): LayoutNode {
+  const result: LayoutNode = { ...node };
+
+  // INSTANCE 노드: children 제거
+  if (node.type === 'INSTANCE') {
+    delete result.children;
+    return result;
+  }
+
+  if (!node.children) {
+    return result;
+  }
+
+  // shape 노이즈 필터링
+  const meaningful = node.children.filter(
+    (child) => !NOISE_NODE_TYPES.has(child.type)
+  );
+
+  // depth 초과 시 summary 생성
+  if (depth >= maxDepth) {
+    if (meaningful.length > 0) {
+      const typeCounts: Record<string, number> = {};
+      for (const child of meaningful) {
+        typeCounts[child.type] = (typeCounts[child.type] || 0) + 1;
+      }
+      const breakdown = Object.entries(typeCounts)
+        .map(([t, c]) => `${c} ${t}`)
+        .join(', ');
+      result.summary = `${meaningful.length} children (${breakdown})`;
+    }
+    delete result.children;
+    return result;
+  }
+
+  // 재귀
+  if (meaningful.length > 0) {
+    result.children = meaningful.map((child) =>
+      compactNode(child, depth + 1, maxDepth)
+    );
+  } else {
+    delete result.children;
+  }
+
+  return result;
+}

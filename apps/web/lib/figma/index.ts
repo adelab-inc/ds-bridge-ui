@@ -6,4 +6,4 @@
 
 export { parseFigmaUrl } from './parse-url';
 export { fetchFigmaNodes, FigmaApiError } from './api';
-export { extractLayoutSchema } from './extract-layout';
+export { extractLayoutSchema, createCleanSchema, createCompactSchema } from './extract-layout';

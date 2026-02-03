@@ -10,7 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
-import { parseFigmaUrl, fetchFigmaNodes, extractLayoutSchema, FigmaApiError } from '@/lib/figma';
+import { parseFigmaUrl, fetchFigmaNodes, extractLayoutSchema, createCleanSchema, createCompactSchema, FigmaApiError } from '@/lib/figma';
 import type { FigmaExtractRequest, LayoutSchema } from '@/types/layout-schema';
 
 const FIGMA_NODES_DIR = path.join(process.cwd(), 'public', 'figma-nodes');
@@ -20,15 +20,20 @@ const FIGMA_NODES_DIR = path.join(process.cwd(), 'public', 'figma-nodes');
  *
  * @param data - 레이아웃 스키마 데이터
  * @param nodeId - Figma 노드 ID
- * @returns 정적 파일 URL 경로 (예: /figma-nodes/3254-320754.layout.json)
+ * @param suffix - 파일 접미사 (full, clean, compact)
+ * @returns 정적 파일 URL 경로 (예: /figma-nodes/3254-320754.full.json)
  */
-async function saveLayoutToFile(data: LayoutSchema, nodeId: string): Promise<string> {
+async function saveLayoutToFile(
+  data: LayoutSchema,
+  nodeId: string,
+  suffix: 'full' | 'clean' | 'compact'
+): Promise<string> {
   if (!existsSync(FIGMA_NODES_DIR)) {
     await mkdir(FIGMA_NODES_DIR, { recursive: true });
   }
 
   const safeNodeId = nodeId.replace(/:/g, '-');
-  const fileName = `${safeNodeId}.layout.json`;
+  const fileName = `${safeNodeId}.${suffix}.json`;
   const filePath = path.join(FIGMA_NODES_DIR, fileName);
 
   await writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
@@ -139,15 +144,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 7. 파일 저장
-    const savedPath = await saveLayoutToFile(layoutSchema, urlInfo.nodeId);
-    console.log(`[Figma Extract] Layout saved to: ${savedPath}`);
+    // 7. 3가지 버전 생성 및 저장
+    const cleanSchema = createCleanSchema(layoutSchema);
+    const compactSchema = createCompactSchema(layoutSchema);
 
-    // 8. 성공 응답
+    const [fullPath, cleanPath, compactPath] = await Promise.all([
+      saveLayoutToFile(layoutSchema, urlInfo.nodeId, 'full'),
+      saveLayoutToFile(cleanSchema, urlInfo.nodeId, 'clean'),
+      saveLayoutToFile(compactSchema, urlInfo.nodeId, 'compact'),
+    ]);
+
+    console.log(`[Figma Extract] Saved: ${fullPath}, ${cleanPath}, ${compactPath}`);
+
+    // 8. 성공 응답 (compact 버전을 기본 data로 반환)
     return NextResponse.json({
       success: true,
-      data: layoutSchema,
-      savedPath,
+      data: compactSchema,
+      savedPath: {
+        full: fullPath,
+        clean: cleanPath,
+        compact: compactPath,
+      },
     });
 
   } catch (error) {
