@@ -173,8 +173,8 @@ async def fetch_schema_from_storage(schema_key: str, use_cache: bool = True) -> 
 # ============================================================================
 
 DEFAULT_DESIGN_TOKENS_KEY = "exports/default/design-tokens.json"
-DEFAULT_AG_GRID_SCHEMA_KEY = "exports/default/ag-grid-component.storybook.json"
-DEFAULT_AG_GRID_TOKENS_KEY = "exports/default/ag-grid-tokens.json"
+DEFAULT_AG_GRID_SCHEMA_KEY = "exports/default/ag-grid/ag-grid-component.storybook.json"
+DEFAULT_AG_GRID_TOKENS_KEY = "exports/default/ag-grid/ag-grid-tokens.json"
 
 _design_tokens_cache: dict | None = None
 _ag_grid_tokens_cache: dict | None = None
@@ -463,6 +463,77 @@ async def fetch_image_as_base64(url: str) -> tuple[str, str]:
     base64_data = base64.b64encode(image_data).decode("utf-8")
 
     return base64_data, media_type
+
+
+# ============================================================================
+# Layout Operations
+# ============================================================================
+
+DEFAULT_LAYOUT_FOLDER = "exports/default/layout"
+_layouts_cache: list[dict] | None = None
+
+
+async def fetch_all_layouts_from_storage(
+    folder_path: str = DEFAULT_LAYOUT_FOLDER,
+    use_cache: bool = True,
+) -> list[dict]:
+    """
+    Firebase Storage 폴더에서 모든 레이아웃 JSON 파일 다운로드
+
+    Args:
+        folder_path: Storage 내 폴더 경로 (기본: "exports/default/layout")
+        use_cache: 캐시 사용 여부
+
+    Returns:
+        레이아웃 JSON 리스트
+    """
+    global _layouts_cache
+
+    # 캐시 확인
+    if use_cache and _layouts_cache is not None:
+        logger.debug("Layouts cache hit")
+        return _layouts_cache
+
+    # Firebase 초기화
+    init_firebase()
+
+    layouts: list[dict] = []
+
+    try:
+        bucket = storage.bucket()
+        blobs = bucket.list_blobs(prefix=folder_path)
+
+        for blob in blobs:
+            # .json 파일만 처리
+            if not blob.name.endswith(".json"):
+                continue
+
+            try:
+                content = blob.download_as_string()
+                layout = json.loads(content.decode("utf-8"))
+                layouts.append(layout)
+                logger.debug("Layout loaded", extra={"path": blob.name})
+            except json.JSONDecodeError as e:
+                logger.warning("Invalid JSON in layout", extra={"path": blob.name, "error": str(e)})
+                continue
+
+        # 캐시 저장
+        if use_cache:
+            _layouts_cache = layouts
+            logger.info("Layouts cached", extra={"count": len(layouts)})
+
+        return layouts
+
+    except Exception as e:
+        logger.error("Failed to fetch layouts", extra={"folder_path": folder_path, "error": str(e)})
+        return []
+
+
+def clear_layouts_cache() -> None:
+    """레이아웃 캐시 초기화"""
+    global _layouts_cache
+    _layouts_cache = None
+    logger.info("Layouts cache cleared")
 
 
 @lru_cache(maxsize=20)

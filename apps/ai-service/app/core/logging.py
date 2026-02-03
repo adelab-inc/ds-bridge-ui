@@ -66,3 +66,9 @@ def setup_logging(level: str = "INFO") -> None:
     logging.getLogger("httpcore").setLevel(logging.WARNING)
     logging.getLogger("google").setLevel(logging.WARNING)
     logging.getLogger("urllib3").setLevel(logging.WARNING)
+
+    # uvicorn 로거도 JSON 포맷터 적용
+    for uvicorn_logger_name in ["uvicorn", "uvicorn.error", "uvicorn.access"]:
+        uvicorn_logger = logging.getLogger(uvicorn_logger_name)
+        uvicorn_logger.handlers = []
+        uvicorn_logger.addHandler(handler)

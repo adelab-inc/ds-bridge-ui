@@ -3,7 +3,7 @@ import logging
 import re
 from collections.abc import AsyncGenerator
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
 from app.api.components import (
@@ -25,8 +25,8 @@ from app.schemas.chat import (
 from app.services.ai_provider import get_ai_provider
 from app.services.firebase_storage import (
     DEFAULT_AG_GRID_SCHEMA_KEY,
-    DEFAULT_AG_GRID_TOKENS_KEY,
     fetch_ag_grid_tokens_from_storage,
+    fetch_all_layouts_from_storage,
     fetch_design_tokens_from_storage,
     fetch_image_as_base64,
     fetch_schema_from_storage,
@@ -147,6 +147,15 @@ async def resolve_system_prompt(
     except Exception as e:
         logger.warning("AG Grid data not loaded", extra={"error": str(e)})
 
+    # 레이아웃 로드 (실패 시 빈 리스트, 프롬프트에서 생략됨)
+    layouts: list[dict] = []
+    try:
+        layouts = await fetch_all_layouts_from_storage()
+        if layouts:
+            logger.info("Layouts loaded", extra={"count": len(layouts)})
+    except Exception as e:
+        logger.warning("Layouts not loaded", extra={"error": str(e)})
+
     # 기본 프롬프트 생성
     if not schema_key:
         # 로컬 스키마 사용
@@ -156,13 +165,13 @@ async def resolve_system_prompt(
                 status_code=500, detail="No schema available. Please upload a schema first."
             )
         base_prompt = generate_system_prompt(
-            local_schema, design_tokens, ag_grid_schema, ag_grid_tokens
+            local_schema, design_tokens, ag_grid_schema, ag_grid_tokens, layouts
         )
     else:
         try:
             schema = await fetch_schema_from_storage(schema_key)
             base_prompt = generate_system_prompt(
-                schema, design_tokens, ag_grid_schema, ag_grid_tokens
+                schema, design_tokens, ag_grid_schema, ag_grid_tokens, layouts
             )
         except FileNotFoundError:
             logger.warning("Schema not found, using local", extra={"schema_key": schema_key})
@@ -172,7 +181,7 @@ async def resolve_system_prompt(
                     status_code=404, detail=f"Schema not found: {schema_key}"
                 )
             base_prompt = generate_system_prompt(
-                local_schema, design_tokens, ag_grid_schema, ag_grid_tokens
+                local_schema, design_tokens, ag_grid_schema, ag_grid_tokens, layouts
             )
         except Exception as e:
             logger.error("Failed to fetch schema", extra={"schema_key": schema_key, "error": str(e)})
@@ -545,20 +554,23 @@ SSE(Server-Sent Events)를 통해 실시간 스트리밍 응답을 받습니다.
 
 | 타입 | 설명 | 필드 |
 |------|------|------|
+| `start` | 스트리밍 시작 | `message_id` |
 | `chat` | 대화 텍스트 (실시간) | `text` |
 | `code` | 코드 파일 (완성 후) | `path`, `content` |
-| `done` | 스트리밍 완료 | - |
+| `done` | 스트리밍 완료 | `message_id` |
 | `error` | 오류 발생 | `error` |
 
 ## SSE 응답 예시
 ```
+data: {"type": "start", "message_id": "abc-123-def"}
+
 data: {"type": "chat", "text": "모던한 "}
 
 data: {"type": "chat", "text": "로그인 페이지입니다."}
 
 data: {"type": "code", "path": "src/pages/Login.tsx", "content": "import..."}
 
-data: {"type": "done"}
+data: {"type": "done", "message_id": "abc-123-def"}
 ```
 
 ## 제한 (Vision 모드)
@@ -667,6 +679,9 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
             collected_text = ""
             collected_files: list[dict] = []
 
+            # 스트리밍 시작 시 message_id 전송
+            yield f"data: {json.dumps({'type': 'start', 'message_id': message_id}, ensure_ascii=False)}\n\n"
+
             try:
                 # Vision/일반 모드에 따라 스트리밍 호출
                 if is_vision_mode:
@@ -702,11 +717,11 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
                     status="DONE",
                 )
 
-                yield f"data: {json.dumps({'type': 'done'})}\n\n"
+                yield f"data: {json.dumps({'type': 'done', 'message_id': message_id}, ensure_ascii=False)}\n\n"
 
             except NotImplementedError:
                 # Vision 미지원 Provider
-                logger.error("Vision not supported", extra={"room_id": request.room_id, "provider": settings.ai_provider})
+                logger.error("Vision not supported", extra={"room_id": request.room_id, "provider": get_settings().ai_provider})
                 await update_chat_message(message_id=message_id, status="ERROR")
                 error_event = {
                     "type": "error",
