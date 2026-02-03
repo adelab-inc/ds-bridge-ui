@@ -91,6 +91,7 @@ service-account-key.json
 # Claude Code
 # ================================
 .claude/
+.omc/
 
 # ================================
 # Misc

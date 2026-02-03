@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { ChatMessageList } from './chat-message-list';
 import { ChatInput } from './chat-input';
 import { useChatStream } from '@/hooks/useChatStream';
+import { useImageUpload } from '@/hooks/useImageUpload';
 import type { CodeEvent } from '@/types/chat';
 import { useGetPaginatedFbMessages } from '@/hooks/firebase/useGetPaginatedFbMessages';
 import type { ChatMessage } from '@/hooks/firebase/messageUtils';
@@ -45,6 +46,16 @@ function ChatSection({
     string | null
   >(null);
   const currentMessageIdRef = React.useRef<string | null>(null);
+
+  const {
+    images,
+    addImages,
+    removeImage,
+    clearImages,
+    isUploading,
+    uploadedUrls,
+  } = useImageUpload(roomId);
+
   const { sendMessage, isLoading, error, accumulatedText, generatedFiles } =
     useChatStream({
       onStart: (messageId) => {
@@ -150,10 +161,15 @@ function ChatSection({
   const handleSend = async (message: string) => {
     const messageId = crypto.randomUUID();
 
+    // 업로드 완료된 이미지 URL 캡처
+    const imageUrls = uploadedUrls.length > 0 ? [...uploadedUrls] : undefined;
+
     // 새 메시지 생성 (질문과 빈 답변)
     const newMessage: ChatMessage = {
       id: messageId,
-      question: message,
+      question: imageUrls
+        ? `[이미지 ${imageUrls.length}개] ${message}`
+        : message,
       text: '',
       content: '',
       path: '',
@@ -166,15 +182,19 @@ function ChatSection({
     setMessages((prev) => [...prev, newMessage]);
     currentMessageIdRef.current = messageId;
 
+    // 이미지 초기화 (전송 후)
+    clearImages();
+
     // 부모 컴포넌트에 스트리밍 시작 알림
     onStreamStart?.();
 
-    // AI에게 메시지 전송 (선택된 메시지가 있으면 해당 코드 기준으로 수정)
+    // AI에게 메시지 전송 (선택된 메시지가 있으면 해당 코드 기준으로 수정, 이미지 URL 포함)
     await sendMessage({
       message,
       room_id: roomId,
       stream: true,
       from_message_id: selectedMessageId ?? undefined,
+      image_urls: imageUrls,
     });
   };
 
@@ -261,7 +281,14 @@ function ChatSection({
       />
 
       {/* Input */}
-      <ChatInput onSend={handleSend} disabled={isLoading} />
+      <ChatInput
+        onSend={handleSend}
+        disabled={isLoading}
+        images={images}
+        onAddImages={addImages}
+        onRemoveImage={removeImage}
+        isUploading={isUploading}
+      />
     </section>
   );
 }

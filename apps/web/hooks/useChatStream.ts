@@ -1,9 +1,5 @@
 import { useCallback, useState, useRef, useEffect } from 'react';
-import type { paths } from '@ds-hub/shared-types/typescript/api/schema';
-import { SSEEvent, CodeEvent } from '@/types/chat';
-
-type ChatStreamRequest =
-  paths['/chat/stream']['post']['requestBody']['content']['application/json'];
+import { ChatStreamRequestWithImages, SSEEvent, CodeEvent } from '@/types/chat';
 
 interface UseChatStreamOptions {
   onStart?: (messageId: string) => void;
@@ -25,99 +21,102 @@ export function useChatStream(options: UseChatStreamOptions = {}) {
     optionsRef.current = options;
   });
 
-  const sendMessage = useCallback(async (request: ChatStreamRequest) => {
-    setIsLoading(true);
-    setError(null);
-    setAccumulatedText('');
-    setGeneratedFiles([]);
+  const sendMessage = useCallback(
+    async (request: ChatStreamRequestWithImages) => {
+      setIsLoading(true);
+      setError(null);
+      setAccumulatedText('');
+      setGeneratedFiles([]);
 
-    try {
-      const response = await fetch('/api/chat/stream', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(request),
-      });
+      try {
+        const response = await fetch('/api/chat/stream', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(request),
+        });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
 
-      if (!reader) {
-        throw new Error('Response body is not readable');
-      }
+        if (!reader) {
+          throw new Error('Response body is not readable');
+        }
 
-      let buffer = '';
+        let buffer = '';
 
-      const processLine = (line: string) => {
-        if (line.startsWith('data: ')) {
-          try {
-            const event: SSEEvent = JSON.parse(line.slice(6));
+        const processLine = (line: string) => {
+          if (line.startsWith('data: ')) {
+            try {
+              const event: SSEEvent = JSON.parse(line.slice(6));
 
-            switch (event.type) {
-              case 'start':
-                optionsRef.current.onStart?.(event.message_id);
-                break;
+              switch (event.type) {
+                case 'start':
+                  optionsRef.current.onStart?.(event.message_id);
+                  break;
 
-              case 'chat':
-                setAccumulatedText((prev) => prev + event.text);
-                optionsRef.current.onChat?.(event.text);
-                break;
+                case 'chat':
+                  setAccumulatedText((prev) => prev + event.text);
+                  optionsRef.current.onChat?.(event.text);
+                  break;
 
-              case 'code':
-                setGeneratedFiles((prev) => [...prev, event]);
-                optionsRef.current.onCode?.(event);
-                break;
+                case 'code':
+                  setGeneratedFiles((prev) => [...prev, event]);
+                  optionsRef.current.onCode?.(event);
+                  break;
 
-              case 'done':
-                optionsRef.current.onDone?.(event.message_id);
-                break;
+                case 'done':
+                  optionsRef.current.onDone?.(event.message_id);
+                  break;
 
-              case 'error':
-                setError(event.error);
-                optionsRef.current.onError?.(event.error);
-                break;
+                case 'error':
+                  setError(event.error);
+                  optionsRef.current.onError?.(event.error);
+                  break;
+              }
+            } catch (parseError) {
+              console.error('Failed to parse SSE event:', parseError);
             }
-          } catch (parseError) {
-            console.error('Failed to parse SSE event:', parseError);
+          }
+        };
+
+        while (true) {
+          const { done, value } = await reader.read();
+
+          if (done) {
+            // 스트림 종료 시 남은 버퍼 처리
+            if (buffer.trim()) {
+              processLine(buffer);
+            }
+            break;
+          }
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n\n');
+
+          // 마지막 줄은 불완전할 수 있으므로 버퍼에 유지
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            processLine(line);
           }
         }
-      };
-
-      while (true) {
-        const { done, value } = await reader.read();
-
-        if (done) {
-          // 스트림 종료 시 남은 버퍼 처리
-          if (buffer.trim()) {
-            processLine(buffer);
-          }
-          break;
-        }
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n\n');
-
-        // 마지막 줄은 불완전할 수 있으므로 버퍼에 유지
-        buffer = lines.pop() || '';
-
-        for (const line of lines) {
-          processLine(line);
-        }
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'Unknown error occurred';
+        setError(errorMessage);
+        optionsRef.current.onError?.(errorMessage);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : 'Unknown error occurred';
-      setError(errorMessage);
-      optionsRef.current.onError?.(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    },
+    []
+  );
 
   const reset = useCallback(() => {
     setAccumulatedText('');
