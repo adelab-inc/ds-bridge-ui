@@ -513,6 +513,9 @@ export interface FigmaExtractSuccessResponse {
 
   /** 추출된 레이아웃 스키마 */
   data: LayoutSchema;
+
+  /** 저장된 정적 파일 경로 (예: /figma-nodes/3254-320754.layout.json) */
+  savedPath: string;
 }
 
 /**

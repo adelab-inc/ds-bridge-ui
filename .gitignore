@@ -131,3 +131,6 @@ PROJECT_GUIDE.md
 
 # component-schema.json
 component-schema.json
+
+# Figma extracted layouts
+apps/web/public/figma-nodes/

@@ -7,8 +7,34 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { writeFile, mkdir } from 'fs/promises';
+import { existsSync } from 'fs';
+import path from 'path';
 import { parseFigmaUrl, fetchFigmaNodes, extractLayoutSchema, FigmaApiError } from '@/lib/figma';
-import type { FigmaExtractRequest } from '@/types/layout-schema';
+import type { FigmaExtractRequest, LayoutSchema } from '@/types/layout-schema';
+
+const FIGMA_NODES_DIR = path.join(process.cwd(), 'public', 'figma-nodes');
+
+/**
+ * layout-schema를 public/figma-nodes/에 JSON 파일로 저장
+ *
+ * @param data - 레이아웃 스키마 데이터
+ * @param nodeId - Figma 노드 ID
+ * @returns 정적 파일 URL 경로 (예: /figma-nodes/3254-320754.layout.json)
+ */
+async function saveLayoutToFile(data: LayoutSchema, nodeId: string): Promise<string> {
+  if (!existsSync(FIGMA_NODES_DIR)) {
+    await mkdir(FIGMA_NODES_DIR, { recursive: true });
+  }
+
+  const safeNodeId = nodeId.replace(/:/g, '-');
+  const fileName = `${safeNodeId}.layout.json`;
+  const filePath = path.join(FIGMA_NODES_DIR, fileName);
+
+  await writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
+
+  return `/figma-nodes/${fileName}`;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -113,10 +139,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 7. 성공 응답
+    // 7. 파일 저장
+    const savedPath = await saveLayoutToFile(layoutSchema, urlInfo.nodeId);
+    console.log(`[Figma Extract] Layout saved to: ${savedPath}`);
+
+    // 8. 성공 응답
     return NextResponse.json({
       success: true,
       data: layoutSchema,
+      savedPath,
     });
 
   } catch (error) {
