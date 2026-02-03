@@ -36,6 +36,7 @@ from app.services.firestore import (
     RoomNotFoundError,
     create_chat_message,
     get_chat_room,
+    get_message_by_id,
     get_messages_by_room,
     get_messages_until,
     get_timestamp_ms,
@@ -203,7 +204,7 @@ async def build_conversation_history(
         room_id: 채팅방 ID
         system_prompt: 시스템 프롬프트
         current_message: 현재 사용자 메시지
-        from_message_id: 특정 메시지 시점까지만 컨텍스트 포함 (롤백 기능)
+        from_message_id: 특정 메시지의 코드를 기준으로 수정 + 해당 시점까지 컨텍스트 포함
 
     Returns:
         AI에 전달할 메시지 리스트
@@ -212,6 +213,9 @@ async def build_conversation_history(
     max_history = settings.max_history_count
 
     messages = [Message(role="system", content=system_prompt)]
+
+    # 기준 코드 컨텍스트 (from_message_id가 있을 때)
+    base_code_context = ""
 
     # 이전 메시지 조회
     if from_message_id:
@@ -222,9 +226,21 @@ async def build_conversation_history(
             limit=max_history,
         )
         logger.info(
-            "Rollback mode enabled",
+            "Base code edit mode enabled",
             extra={"room_id": room_id, "from_message_id": from_message_id, "message_count": len(previous_messages)},
         )
+
+        # 기준 메시지의 코드 가져오기
+        base_message = await get_message_by_id(from_message_id)
+        if base_message and base_message.get("content"):
+            base_code_context = f'''현재 코드 (이 코드를 기반으로 수정해주세요):
+<file path="{base_message.get("path", "src/Component.tsx")}">{base_message["content"]}</file>
+
+요청: '''
+            logger.info(
+                "Base code context added",
+                extra={"from_message_id": from_message_id, "path": base_message.get("path")},
+            )
     else:
         # 일반 모드: 최근 N개 조회
         previous_messages = await get_messages_by_room(room_id)
@@ -243,8 +259,9 @@ async def build_conversation_history(
         if assistant_content.strip():
             messages.append(Message(role="assistant", content=assistant_content.strip()))
 
-    # 현재 사용자 메시지 추가
-    messages.append(Message(role="user", content=current_message))
+    # 현재 사용자 메시지 추가 (기준 코드 컨텍스트 포함)
+    final_message = base_code_context + current_message
+    messages.append(Message(role="user", content=final_message))
 
     return messages
 
@@ -402,6 +419,16 @@ class StreamingParser:
 ## 스키마 모드
 채팅방의 schema_key가 설정되어 있으면 Firebase Storage에서 컴포넌트 스키마를 로드합니다.
 없으면 자유 모드(React + Tailwind CSS)로 동작합니다.
+
+## from_message_id (선택)
+특정 메시지의 코드를 기준으로 수정합니다. 해당 메시지까지의 컨텍스트를 사용하고, 그 메시지의 코드를 기반으로 AI가 수정합니다.
+```json
+{
+  "message": "버튼을 빨간색으로 바꿔줘",
+  "room_id": "550e8400-e29b-41d4-a716-446655440000",
+  "from_message_id": "886e7406-55f7-4582-9f4b-7a56ec4562d8"
+}
+```
 """,
     response_description="AI 응답 및 파싱된 결과",
     responses={
@@ -532,6 +559,16 @@ data: {"type": "done"}
 ## 제한 (Vision 모드)
 - 최대 5개 이미지
 - 지원 형식: JPEG, PNG, GIF, WebP
+
+## from_message_id (선택)
+특정 메시지의 코드를 기준으로 수정합니다. 해당 메시지까지의 컨텍스트를 사용하고, 그 메시지의 코드를 기반으로 AI가 수정합니다.
+```json
+{
+  "message": "버튼을 빨간색으로 바꿔줘",
+  "room_id": "550e8400-e29b-41d4-a716-446655440000",
+  "from_message_id": "886e7406-55f7-4582-9f4b-7a56ec4562d8"
+}
+```
 """,
     response_description="SSE 스트림",
     responses={

@@ -173,7 +173,7 @@ class ChatRequest(BaseModel):
     )
     from_message_id: str | None = Field(
         default=None,
-        description="특정 메시지 시점으로 롤백하여 재요청 (해당 메시지까지의 컨텍스트만 사용)",
+        description="특정 메시지의 코드를 기준으로 수정 (해당 메시지까지의 컨텍스트 + 코드 기반 수정)",
         json_schema_extra={"example": "886e7406-55f7-4582-9f4b-7a56ec4562d8"},
     )
 
