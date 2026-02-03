@@ -505,6 +505,24 @@ When updating existing code, you MUST:
   - **Override Defaults**: The `Select` component has a fixed `240px` width by default. You **MUST** override this:
     - ✅ `<Select style={{ width: '100%' }} ... />` (Allows shrinking/growing)
     - ❌ `<Select ... />` (Causes overflow/overlap)
+  - **CRITICAL - Default Values for Form Controls**:
+    - **Select/Dropdown Placeholder State**: When showing "선택하세요", "선택", "Select...", or any placeholder text, do NOT set value or defaultValue:
+      - ✅ `<Select placeholder="선택하세요" options={...} />` (No value, shows placeholder)
+      - ❌ `<Select value="선택하세요" options={...} />` (WRONG - treats placeholder as selected value)
+      - ❌ `<Select defaultValue="선택하세요" options={...} />` (WRONG)
+    - **Select/Dropdown with Default Selection**: When selected option is "전체", "기본", "All", "Default", or starts with "전체 " (e.g., "전체 지역", "전체 직무"), use `defaultValue`:
+      - ✅ `<Select defaultValue="전체 지역" options={...} />`
+      - ✅ `<Select defaultValue="전체" options={...} />`
+      - ❌ `<Select value="전체" options={...} />` (WRONG - requires onChange handler)
+    - **Radio**: When first option or "전체/기본" is selected, use `defaultValue`:
+      - ✅ `<Radio.Group defaultValue="all">`
+      - ❌ `<Radio.Group value="all">`
+    - **Tab**: When first tab is selected, use `defaultValue`:
+      - ✅ `<Tabs defaultValue="tab1">`
+      - ❌ `<Tabs value="tab1">`
+    - **ToggleSwitch/Checkbox**: Use `defaultChecked` for initial state:
+      - ✅ `<ToggleSwitch defaultChecked={true} />`
+      - ❌ `<ToggleSwitch checked={true} />`
   - **Inputs**: internal inputs MUST be `width: '100%'`. NEVER use fixed pixels like `width: 300px` inside a grid.
   - **Z-Index**: Dropdowns/Modals must have `zIndex: 50` or higher to float above content.
 
@@ -794,6 +812,11 @@ def format_layouts(layouts: list[dict]) -> str:
 Below are reference layouts extracted from Figma. Use these as structural guides when generating similar pages.
 - Follow the layout hierarchy (FRAME, INSTANCE, etc.)
 - Respect the layoutMode (VERTICAL, HORIZONTAL)
+
+**CRITICAL - Figma State to React Props Mapping:**
+- Figma `Selected=True`, `State=Selected` → React `defaultValue` (NOT `value` or `selected`)
+- Figma placeholder text like "선택하세요", "전체 지역" in Select → React `placeholder` prop or `defaultValue`
+- Do NOT use `value` prop for initial states - always use `defaultValue` or `defaultChecked`
 - Use similar spacing (itemSpacing, padding)
 - Match the component structure
 
