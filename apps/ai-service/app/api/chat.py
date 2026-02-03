@@ -232,7 +232,10 @@ async def build_conversation_history(
 
         # 기준 메시지의 코드 가져오기
         base_message = await get_message_by_id(from_message_id)
-        if base_message and base_message.get("content"):
+        if base_message is None:
+            raise ValueError(f"Message not found: {from_message_id}")
+
+        if base_message.get("content"):
             base_code_context = f'''현재 코드 (이 코드를 기반으로 수정해주세요):
 <file path="{base_message.get("path", "src/Component.tsx")}">{base_message["content"]}</file>
 
@@ -498,6 +501,8 @@ async def chat(request: ChatRequest) -> ChatResponse:
         raise
     except RoomNotFoundError as e:
         raise HTTPException(status_code=404, detail="Chat room not found.") from e
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
     except FirestoreError as e:
         logger.error("Firestore error in chat", extra={"room_id": request.room_id, "error": str(e)})
         raise HTTPException(status_code=500, detail="Database error. Please try again.") from e
@@ -729,6 +734,8 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
         )
     except RoomNotFoundError as e:
         raise HTTPException(status_code=404, detail="Chat room not found.") from e
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
     except FirestoreError as e:
         logger.error("Firestore error in chat_stream", extra={"room_id": request.room_id, "error": str(e)})
         raise HTTPException(status_code=500, detail="Database error. Please try again.") from e
