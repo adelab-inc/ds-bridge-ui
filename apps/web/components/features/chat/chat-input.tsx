@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { SentIcon } from '@hugeicons/core-free-icons';
+import { SentIcon, InformationCircleIcon } from '@hugeicons/core-free-icons';
 
 import { cn } from '@/lib/utils';
 import type { AttachedImage } from '@/types/chat';
@@ -13,6 +13,11 @@ import {
   InputGroupTextarea,
 } from '@/components/ui/input-group';
 import { ImagePreview } from '@/components/features/chat/image-preview';
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from '@/components/ui/tooltip';
 
 interface ChatInputProps extends React.ComponentProps<'div'> {
   placeholder?: string;
@@ -153,9 +158,39 @@ function ChatInput({
             </InputGroupButton>
           </InputGroupAddon>
         </InputGroup>
-        <p className="text-muted-foreground mt-1.5 text-xs">
+        <p className="text-muted-foreground mt-1.5 flex items-center gap-0.5 text-xs">
           Enter로 전송, Shift+Enter로 줄바꿈
-          {onAddImages && ' · Ctrl+V로 이미지 붙여넣기'}
+          {onAddImages && (
+            <>
+              {' · Ctrl+V로 이미지 붙여넣기'}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className="text-muted-foreground/60 hover:text-muted-foreground inline-flex cursor-help items-center transition-colors"
+                    aria-label="이미지 업로드 안내"
+                  >
+                    <HugeiconsIcon
+                      icon={InformationCircleIcon}
+                      strokeWidth={2}
+                      className="size-3.5"
+                    />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" align="start" className="max-w-56 space-y-2 bg-popover text-popover-foreground border border-border shadow-md px-3 py-2.5 [&>:last-child]:bg-popover">
+                  <p className="text-sm font-semibold border-b border-border pb-1.5">이미지 업로드 안내</p>
+                  <div className="space-y-1">
+                    <p className="text-muted-foreground text-[11px]">지원 형식</p>
+                    <p>JPG, PNG, GIF, WebP</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-muted-foreground text-[11px]">파일 크기</p>
+                    <p>최대 10MB까지 첨부할 수 있어요</p>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </>
+          )}
         </p>
       </div>
     </div>
