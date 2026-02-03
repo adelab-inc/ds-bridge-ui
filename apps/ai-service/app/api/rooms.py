@@ -1,15 +1,19 @@
 import logging
 from datetime import datetime
-from typing import Any
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 
 from app.core.auth import verify_api_key
+from app.core.config import get_settings
 from app.schemas.chat import (
     CreateRoomRequest,
+    CreateSchemaRequest,
+    CreateSchemaResponse,
     ImageUploadResponse,
+    PaginatedMessagesResponse,
     RoomResponse,
+    SchemaResponse,
     UpdateRoomRequest,
 )
 from app.services.firebase_storage import (
@@ -19,14 +23,39 @@ from app.services.firebase_storage import (
 )
 from app.services.firestore import (
     FirestoreError,
+    RoomData,
     RoomNotFoundError,
     create_chat_room,
     get_chat_room,
+    get_messages_paginated,
     update_chat_room,
 )
 
 router = APIRouter(dependencies=[Depends(verify_api_key)])
 logger = logging.getLogger(__name__)
+
+
+# ============================================================================
+# Dependencies
+# ============================================================================
+
+
+async def get_room_or_404(room_id: str) -> RoomData:
+    """
+    채팅방 조회 Dependency - 없으면 404 반환
+
+    Usage:
+        @router.get("/{room_id}/something")
+        async def endpoint(room: RoomData = Depends(get_room_or_404)):
+            ...
+    """
+    room = await get_chat_room(room_id)
+    if room is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Room not found: {room_id}",
+        )
+    return room
 
 
 @router.post(
@@ -69,7 +98,7 @@ async def create_room(request: CreateRoomRequest) -> RoomResponse:
     """
     새 채팅방 생성
 
-    생성 시 schema_key는 null이며, POST /components/schemas로 스키마를 생성하면
+    생성 시 schema_key는 null이며, POST /rooms/{room_id}/schemas로 스키마를 생성하면
     자동으로 schema_key가 설정됩니다.
     """
     try:
@@ -80,13 +109,13 @@ async def create_room(request: CreateRoomRequest) -> RoomResponse:
 
         return RoomResponse(**room_data)
     except FirestoreError as e:
-        logger.error("Failed to create room: %s", str(e), exc_info=True)
+        logger.error("Failed to create room", extra={"error": str(e), "user_id": request.user_id})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Database error. Please try again.",
         ) from e
     except Exception as e:
-        logger.error("Failed to create room: %s", str(e), exc_info=True)
+        logger.error("Unexpected error creating room", extra={"error": str(e), "user_id": request.user_id})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred. Please try again.",
@@ -120,13 +149,13 @@ async def get_room(room_id: str) -> RoomResponse:
     except HTTPException:
         raise
     except FirestoreError as e:
-        logger.error("Failed to get room %s: %s", room_id, str(e), exc_info=True)
+        logger.error("Failed to get room", extra={"room_id": room_id, "error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Database error. Please try again.",
         ) from e
     except Exception as e:
-        logger.error("Failed to get room %s: %s", room_id, str(e), exc_info=True)
+        logger.error("Unexpected error getting room", extra={"room_id": room_id, "error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred. Please try again.",
@@ -174,17 +203,22 @@ async def update_room(room_id: str, request: UpdateRoomRequest) -> RoomResponse:
             detail="Room not found.",
         ) from e
     except FirestoreError as e:
-        logger.error("Failed to update room %s: %s", room_id, str(e), exc_info=True)
+        logger.error("Failed to update room", extra={"room_id": room_id, "error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Database error. Please try again.",
         ) from e
     except Exception as e:
-        logger.error("Failed to update room %s: %s", room_id, str(e), exc_info=True)
+        logger.error("Unexpected error updating room", extra={"room_id": room_id, "error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred. Please try again.",
         ) from e
+
+
+# ============================================================================
+# Image Endpoints
+# ============================================================================
 
 
 @router.post(
@@ -205,7 +239,7 @@ Firebase Storage에 이미지를 업로드하고 URL을 반환합니다.
 
 ## 지원 형식
 - image/jpeg, image/png, image/gif, image/webp
-- 최대 10MB
+- 최대 크기는 서버 설정에 따름
 """,
     responses={
         201: {"description": "업로드 성공"},
@@ -236,19 +270,14 @@ Firebase Storage에 이미지를 업로드하고 URL을 반환합니다.
 async def upload_room_image(
     room_id: str,
     file: UploadFile = File(...),
+    _room: RoomData = Depends(get_room_or_404),  # room 존재 확인
 ) -> ImageUploadResponse:
     """
     채팅용 이미지를 Firebase Storage에 업로드합니다.
     """
-    # 1. room 존재 확인
-    room = await get_chat_room(room_id)
-    if room is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"채팅방을 찾을 수 없습니다: {room_id}",
-        )
+    settings = get_settings()
 
-    # 2. 파일 검증
+    # 파일 검증
     if not file.filename:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -263,17 +292,17 @@ async def upload_room_image(
             detail=f"이미지 파일만 업로드 가능합니다. (받은 타입: {content_type})",
         )
 
-    # 3. 파일 읽기 (최대 10MB)
-    MAX_SIZE = 10 * 1024 * 1024  # 10MB
+    # 파일 읽기
     image_data = await file.read()
+    max_size = settings.max_image_size_bytes
 
-    if len(image_data) > MAX_SIZE:
+    if len(image_data) > max_size:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"파일 크기가 10MB를 초과합니다. ({len(image_data) / 1024 / 1024:.1f}MB)",
+            detail=f"파일 크기가 {settings.max_image_size_mb}MB를 초과합니다. ({len(image_data) / 1024 / 1024:.1f}MB)",
         )
 
-    # 4. Firebase Storage 업로드
+    # Firebase Storage 업로드
     try:
         public_url, storage_path = await upload_image_to_storage(
             room_id=room_id,
@@ -281,12 +310,12 @@ async def upload_room_image(
             media_type=content_type if content_type.startswith("image/") else None,
         )
 
-        logger.info("Image uploaded for room %s: %s", room_id, storage_path)
+        logger.info("Image uploaded", extra={"room_id": room_id, "storage_path": storage_path})
 
         return ImageUploadResponse(url=public_url, path=storage_path)
 
     except Exception as e:
-        logger.error("Failed to upload image: %s", str(e), exc_info=True)
+        logger.error("Failed to upload image", extra={"room_id": room_id, "error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="이미지 업로드에 실패했습니다.",
@@ -296,32 +325,6 @@ async def upload_room_image(
 # ============================================================================
 # Schema Endpoints
 # ============================================================================
-
-from pydantic import BaseModel, Field
-
-
-class CreateSchemaRequest(BaseModel):
-    """스키마 생성 요청"""
-
-    data: dict[str, Any] = Field(
-        ...,
-        description="컴포넌트 스키마 JSON",
-    )
-
-
-class CreateSchemaResponse(BaseModel):
-    """스키마 생성 응답"""
-
-    schema_key: str = Field(description="Firebase Storage 경로")
-    component_count: int = Field(description="업로드된 컴포넌트 수")
-    uploaded_at: str = Field(description="업로드 시각 (ISO 8601)")
-
-
-class SchemaResponse(BaseModel):
-    """스키마 조회 응답"""
-
-    schema_key: str
-    data: dict[str, Any]
 
 
 @router.post(
@@ -351,6 +354,7 @@ class SchemaResponse(BaseModel):
 async def create_room_schema(
     room_id: str,
     request: CreateSchemaRequest,
+    _room: RoomData = Depends(get_room_or_404),  # room 존재 확인
 ) -> CreateSchemaResponse:
     """채팅방의 컴포넌트 스키마 생성"""
     try:
@@ -358,14 +362,6 @@ async def create_room_schema(
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Schema must contain 'components' field",
-            )
-
-        # Room 존재 여부 먼저 확인
-        room = await get_chat_room(room_id)
-        if room is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Room not found: {room_id}",
             )
 
         # room_id 기반 schema_key 생성
@@ -381,9 +377,8 @@ async def create_room_schema(
         uploaded_at = datetime.now(ZoneInfo("Asia/Seoul")).isoformat()
 
         logger.info(
-            "Schema uploaded and room updated: %s (%d components)",
-            schema_key,
-            component_count,
+            "Schema uploaded",
+            extra={"room_id": room_id, "schema_key": schema_key, "component_count": component_count},
         )
 
         return CreateSchemaResponse(
@@ -395,7 +390,7 @@ async def create_room_schema(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error("Failed to upload schema: %s", str(e), exc_info=True)
+        logger.error("Failed to upload schema", extra={"room_id": room_id, "error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to upload schema. Please try again.",
@@ -413,17 +408,12 @@ async def create_room_schema(
         404: {"description": "채팅방 또는 스키마를 찾을 수 없음"},
     },
 )
-async def get_room_schema(room_id: str) -> SchemaResponse:
+async def get_room_schema(
+    room_id: str,
+    room: RoomData = Depends(get_room_or_404),
+) -> SchemaResponse:
     """채팅방의 컴포넌트 스키마 조회"""
     try:
-        # Room 조회
-        room = await get_chat_room(room_id)
-        if room is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Room not found: {room_id}",
-            )
-
         schema_key = room.get("schema_key")
         if not schema_key:
             raise HTTPException(
@@ -443,8 +433,75 @@ async def get_room_schema(room_id: str) -> SchemaResponse:
             detail=f"Schema file not found: {room_id}",
         ) from e
     except Exception as e:
-        logger.error("Failed to get schema: %s", str(e), exc_info=True)
+        logger.error("Failed to get schema", extra={"room_id": room_id, "error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get schema. Please try again.",
+        ) from e
+
+
+# ============================================================================
+# Messages Endpoints
+# ============================================================================
+
+
+@router.get(
+    "/{room_id}/messages",
+    response_model=PaginatedMessagesResponse,
+    operation_id="getRoomMessages",
+    summary="채팅 히스토리 조회",
+    description="""
+채팅방의 메시지 히스토리를 페이지네이션하여 조회합니다.
+
+## Query Parameters
+- `limit`: 페이지당 메시지 수 (기본 20, 최대 100)
+- `cursor`: 페이지네이션 커서 (이전 응답의 next_cursor 값)
+- `order`: 정렬 순서 (desc: 최신순, asc: 오래된순)
+
+## 페이지네이션
+첫 요청 시 cursor 없이 호출하고, 다음 페이지는 응답의 `next_cursor` 값을 cursor로 전달합니다.
+`has_more`가 false면 마지막 페이지입니다.
+""",
+    responses={
+        200: {"description": "조회 성공"},
+        404: {"description": "채팅방을 찾을 수 없음"},
+        500: {"description": "서버 오류"},
+    },
+)
+async def get_room_messages(
+    room_id: str,
+    limit: int = Query(20, ge=1, le=100, description="페이지당 메시지 수"),
+    cursor: int | None = Query(None, description="페이지네이션 커서 (answer_created_at)"),
+    order: str = Query("desc", pattern="^(asc|desc)$", description="정렬 순서"),
+    _room: RoomData = Depends(get_room_or_404),  # room 존재 확인
+) -> PaginatedMessagesResponse:
+    """채팅방 메시지 히스토리 페이지네이션 조회"""
+    try:
+        result = await get_messages_paginated(
+            room_id=room_id,
+            limit=limit,
+            cursor=cursor,
+            order=order,
+        )
+
+        return PaginatedMessagesResponse(
+            messages=result["messages"],  # type: ignore[arg-type]
+            next_cursor=result["next_cursor"],
+            has_more=result["has_more"],
+            total_count=result["total_count"],
+        )
+
+    except HTTPException:
+        raise
+    except FirestoreError as e:
+        logger.error("Failed to get messages", extra={"room_id": room_id, "error": str(e)})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database error. Please try again.",
+        ) from e
+    except Exception as e:
+        logger.error("Unexpected error getting messages", extra={"room_id": room_id, "error": str(e)})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred. Please try again.",
         ) from e

@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -171,6 +171,11 @@ class ChatRequest(BaseModel):
         description="사용자가 선택한 컴포넌트 인스턴스 ID (예: button-1)",
         json_schema_extra={"example": "button-1"},
     )
+    from_message_id: str | None = Field(
+        default=None,
+        description="특정 메시지의 코드를 기준으로 수정 (해당 메시지까지의 컨텍스트 + 코드 기반 수정)",
+        json_schema_extra={"example": "886e7406-55f7-4582-9f4b-7a56ec4562d8"},
+    )
 
     model_config = {
         "json_schema_extra": {
@@ -192,6 +197,11 @@ class ChatRequest(BaseModel):
                         ]
                     },
                     "selected_instance_id": "button-1",
+                },
+                {
+                    "message": "버튼을 빨간색으로 바꿔줘",
+                    "room_id": "550e8400-e29b-41d4-a716-446655440000",
+                    "from_message_id": "886e7406-55f7-4582-9f4b-7a56ec4562d8",
                 },
             ]
         }
@@ -468,9 +478,44 @@ class MessageDocument(BaseModel):
         description="파일 경로",
     )
     room_id: str = Field(..., description="채팅방 ID")
-    question_created_at: str = Field(..., description="질문 생성 시간 (ms timestamp)")
-    answer_created_at: str = Field(..., description="응답 생성 시간 (ms timestamp)")
+    question_created_at: int = Field(..., description="질문 생성 시간 (ms timestamp)")
+    answer_created_at: int = Field(..., description="응답 생성 시간 (ms timestamp)")
     status: Literal["GENERATING", "DONE", "ERROR"] = Field(..., description="응답 상태")
 
 
+class PaginatedMessagesResponse(BaseModel):
+    """페이지네이션된 메시지 응답"""
 
+    messages: list[MessageDocument] = Field(..., description="메시지 목록")
+    next_cursor: int | None = Field(None, description="다음 페이지 커서 (answer_created_at)")
+    has_more: bool = Field(..., description="다음 페이지 존재 여부")
+    total_count: int = Field(..., description="총 메시지 수")
+
+
+# ============================================================================
+# Schema Management Schemas
+# ============================================================================
+
+
+class CreateSchemaRequest(BaseModel):
+    """스키마 생성 요청"""
+
+    data: dict[str, Any] = Field(
+        ...,
+        description="컴포넌트 스키마 JSON",
+    )
+
+
+class CreateSchemaResponse(BaseModel):
+    """스키마 생성 응답"""
+
+    schema_key: str = Field(description="Firebase Storage 경로")
+    component_count: int = Field(description="업로드된 컴포넌트 수")
+    uploaded_at: str = Field(description="업로드 시각 (ISO 8601)")
+
+
+class SchemaResponse(BaseModel):
+    """스키마 조회 응답"""
+
+    schema_key: str
+    data: dict[str, Any]

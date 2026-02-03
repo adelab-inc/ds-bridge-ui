@@ -515,6 +515,29 @@ When updating existing code, you MUST:
   - **Realistic Korean Data**: Use real-world examples (names: 김민준, 이서연 / companies: 토스, 당근, 쿠팡).
   - **Rich Detail**: Fill all fields. Don't use "Test 1", "Item 1". Use "프로젝트 알파", "1분기 실적 보고서".
   - **Context-Aware**: If the user asks for a "Project Dashboard", generate "Project A - In Progress", "Team Meeting - 10:00 AM".
+- **Profile Images (INITIAL AVATAR - NO EMOJI)**:
+  - NEVER use emoji (👤, 🧑, 👨) for profile images.
+  - Use **Initial Avatar**: A colored circle with the first character of the name.
+  - Color palette: `['#4F46E5', '#7C3AED', '#EC4899', '#F59E0B', '#10B981', '#3B82F6', '#EF4444', '#8B5CF6']`
+  - Pick color by `name.charCodeAt(0) % colors.length` for consistency.
+  - Example:
+    ```tsx
+    const getInitialAvatar = (name: string) => {
+      const colors = ['#4F46E5', '#7C3AED', '#EC4899', '#F59E0B', '#10B981', '#3B82F6', '#EF4444', '#8B5CF6'];
+      const color = colors[name.charCodeAt(0) % colors.length];
+      return (
+        <div style={{
+          width: 40, height: 40, borderRadius: '50%',
+          backgroundColor: color, color: 'white',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontWeight: 600, fontSize: 14
+        }}>
+          {name.charAt(0)}
+        </div>
+      );
+    };
+    ```
+  - Use this for: user lists, comments, chat, team members, assignees.
 - **Spacing**:
   - **섹션 간**: `marginBottom: 32px`
   - **폼 행 간**: `marginBottom: 24px`
@@ -547,6 +570,9 @@ const UserDashboard = () => {
   const [search, setSearch] = React.useState('');
   const [filter, setFilter] = React.useState('all');
   const [isLoading, setIsLoading] = React.useState(false);
+
+  const avatarColors = ['#4F46E5', '#7C3AED', '#EC4899', '#F59E0B', '#10B981', '#3B82F6', '#EF4444', '#8B5CF6'];
+  const getAvatarColor = (name: string) => avatarColors[name.charCodeAt(0) % avatarColors.length];
 
   const users = [
     { id: 1, name: '김민준', email: 'minjun@company.com', status: 'active' },
@@ -616,7 +642,7 @@ const UserDashboard = () => {
                 <tr key={user.id}>
                   <td style={{ padding: '12px 16px', borderBottom: '1px solid #dee2e6' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: '#dee2e6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: '#4b5563' }}>{user.name[0]}</div>
+                      <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: getAvatarColor(user.name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: '#ffffff' }}>{user.name[0]}</div>
                       <span style={{ fontWeight: 500, color: '#212529' }}>{user.name}</span>
                     </div>
                   </td>

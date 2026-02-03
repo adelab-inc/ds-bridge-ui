@@ -9,8 +9,12 @@ from fastapi.openapi.utils import get_openapi
 from app.api.chat import router as chat_router
 from app.api.rooms import router as rooms_router
 from app.core.config import get_settings
+from app.core.logging import setup_logging
 from app.services.firebase_storage import cleanup_firebase
 from app.services.firestore import close_firestore_client
+
+# JSON 로깅 초기화 (모듈 로드 시 즉시 실행)
+setup_logging()
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
