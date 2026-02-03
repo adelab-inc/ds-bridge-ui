@@ -42,13 +42,12 @@ def init_firebase() -> None:
     if SERVICE_ACCOUNT_KEY_PATH.exists():
         cred = credentials.Certificate(str(SERVICE_ACCOUNT_KEY_PATH))
         firebase_admin.initialize_app(cred, {"storageBucket": settings.firebase_storage_bucket})
-        logger.info("Firebase initialized with service account key")
+        logger.info("Firebase initialized", extra={"auth": "service_account", "bucket": settings.firebase_storage_bucket})
     else:
         firebase_admin.initialize_app(options={"storageBucket": settings.firebase_storage_bucket})
-        logger.info("Firebase initialized with default credentials (Cloud Run)")
+        logger.info("Firebase initialized", extra={"auth": "default_credentials", "bucket": settings.firebase_storage_bucket})
 
     _firebase_initialized = True
-    logger.info("Firebase initialized with bucket: %s", settings.firebase_storage_bucket)
 
 
 # ============================================================================
@@ -71,7 +70,7 @@ def _evict_oldest_cache() -> None:
     while len(_schema_cache) >= MAX_CACHE_SIZE:
         oldest_key = next(iter(_schema_cache))
         del _schema_cache[oldest_key]
-        logger.debug("Cache evicted: %s", oldest_key)
+        logger.debug("Cache evicted", extra={"key": oldest_key})
 
 
 def cleanup_firebase() -> None:
@@ -86,7 +85,7 @@ def cleanup_firebase() -> None:
 
     _firebase_initialized = False
     _schema_cache = {}
-    logger.info("Firebase resources cleaned up")
+    logger.info("Firebase cleanup completed")
 
 
 # ============================================================================
@@ -137,7 +136,7 @@ async def fetch_schema_from_storage(schema_key: str, use_cache: bool = True) -> 
 
     # 캐시 확인
     if use_cache and schema_key in _schema_cache:
-        logger.debug("Schema cache hit: %s", schema_key)
+        logger.debug("Schema cache hit", extra={"schema_key": schema_key})
         return _schema_cache[schema_key]
 
     # Firebase 초기화
@@ -158,14 +157,14 @@ async def fetch_schema_from_storage(schema_key: str, use_cache: bool = True) -> 
         if use_cache:
             _evict_oldest_cache()
             _schema_cache[schema_key] = schema
-            logger.info("Schema cached: %s (cache size: %d)", schema_key, len(_schema_cache))
+            logger.info("Schema cached", extra={"schema_key": schema_key, "cache_size": len(_schema_cache)})
 
         return schema
 
     except json.JSONDecodeError as e:
         raise ValueError(f"Invalid JSON in schema: {schema_key}") from e
     except Exception as e:
-        logger.error("Failed to fetch schema from storage: %s - %s", schema_key, str(e))
+        logger.error("Failed to fetch schema", extra={"schema_key": schema_key, "error": str(e)})
         raise
 
 
@@ -208,7 +207,7 @@ async def fetch_design_tokens_from_storage(
         blob = bucket.blob(tokens_key)
 
         if not blob.exists():
-            logger.warning("Design tokens not found in storage: %s", tokens_key)
+            logger.warning("Design tokens not found", extra={"tokens_key": tokens_key})
             return None
 
         # 다운로드 및 파싱
@@ -217,15 +216,15 @@ async def fetch_design_tokens_from_storage(
 
         # 캐시 저장
         _design_tokens_cache = tokens
-        logger.info("Design tokens loaded and cached from: %s", tokens_key)
+        logger.info("Design tokens loaded", extra={"tokens_key": tokens_key})
 
         return tokens
 
     except json.JSONDecodeError as e:
-        logger.error("Invalid JSON in design tokens: %s - %s", tokens_key, str(e))
+        logger.error("Invalid JSON in design tokens", extra={"tokens_key": tokens_key, "error": str(e)})
         return None
     except Exception as e:
-        logger.error("Failed to fetch design tokens: %s - %s", tokens_key, str(e))
+        logger.error("Failed to fetch design tokens", extra={"tokens_key": tokens_key, "error": str(e)})
         return None
 
 
@@ -256,7 +255,7 @@ async def fetch_ag_grid_tokens_from_storage(
         blob = bucket.blob(tokens_key)
 
         if not blob.exists():
-            logger.warning("AG Grid tokens not found in storage: %s", tokens_key)
+            logger.warning("AG Grid tokens not found", extra={"tokens_key": tokens_key})
             return None
 
         # 다운로드 및 파싱
@@ -265,15 +264,15 @@ async def fetch_ag_grid_tokens_from_storage(
 
         # 캐시 저장
         _ag_grid_tokens_cache = tokens
-        logger.info("AG Grid tokens loaded and cached from: %s", tokens_key)
+        logger.info("AG Grid tokens loaded", extra={"tokens_key": tokens_key})
 
         return tokens
 
     except json.JSONDecodeError as e:
-        logger.error("Invalid JSON in AG Grid tokens: %s - %s", tokens_key, str(e))
+        logger.error("Invalid JSON in AG Grid tokens", extra={"tokens_key": tokens_key, "error": str(e)})
         return None
     except Exception as e:
-        logger.error("Failed to fetch AG Grid tokens: %s - %s", tokens_key, str(e))
+        logger.error("Failed to fetch AG Grid tokens", extra={"tokens_key": tokens_key, "error": str(e)})
         return None
 
 
@@ -305,7 +304,7 @@ async def upload_schema_to_storage(schema_key: str, schema_data: dict) -> str:
         content = json.dumps(schema_data, ensure_ascii=False, indent=2)
         blob.upload_from_string(content, content_type="application/json")
 
-        logger.info("Schema uploaded: %s", schema_key)
+        logger.info("Schema uploaded", extra={"schema_key": schema_key})
 
         # 캐시 업데이트
         _evict_oldest_cache()
@@ -314,7 +313,7 @@ async def upload_schema_to_storage(schema_key: str, schema_data: dict) -> str:
         return schema_key
 
     except Exception as e:
-        logger.error("Failed to upload schema to storage: %s - %s", schema_key, str(e))
+        logger.error("Failed to upload schema", extra={"schema_key": schema_key, "error": str(e)})
         raise
 
 
@@ -393,12 +392,12 @@ async def upload_image_to_storage(
         blob.make_public()
         public_url = blob.public_url
 
-        logger.info("Image uploaded: %s (%s)", storage_path, media_type)
+        logger.info("Image uploaded", extra={"storage_path": storage_path, "media_type": media_type, "room_id": room_id})
 
         return public_url, storage_path
 
     except Exception as e:
-        logger.error("Failed to upload image: %s - %s", storage_path, str(e))
+        logger.error("Failed to upload image", extra={"storage_path": storage_path, "error": str(e)})
         raise
 
 
@@ -436,15 +435,15 @@ async def fetch_image_from_url(url: str) -> tuple[bytes, str]:
                 # 바이트 시그니처로 재감지
                 media_type = _detect_media_type(image_data)
 
-            logger.info("Image fetched from URL: %s (%s, %d bytes)", url, media_type, len(image_data))
+            logger.info("Image fetched", extra={"url": url, "media_type": media_type, "size_bytes": len(image_data)})
 
             return image_data, media_type
 
     except httpx.HTTPStatusError as e:
-        logger.error("Failed to fetch image (HTTP %d): %s", e.response.status_code, url)
+        logger.error("Failed to fetch image", extra={"url": url, "status_code": e.response.status_code})
         raise
     except Exception as e:
-        logger.error("Failed to fetch image: %s - %s", url, str(e))
+        logger.error("Failed to fetch image", extra={"url": url, "error": str(e)})
         raise
 
 

@@ -1,12 +1,17 @@
+import asyncio
 import logging
 import time
 import uuid
 from collections.abc import Callable, Coroutine
 from functools import wraps
 from pathlib import Path
-from typing import Any, ParamSpec, TypedDict, TypeVar
+from typing import Any, Literal, ParamSpec, TypedDict, TypeVar
 
-from google.cloud.firestore import AsyncClient
+# 메시지 상태 타입
+MessageStatus = Literal["GENERATING", "DONE", "ERROR"]
+
+from google.cloud.firestore import AsyncClient, Query
+from google.cloud.firestore_v1.base_query import FieldFilter
 from google.oauth2 import service_account
 
 from app.core.config import get_settings
@@ -44,6 +49,15 @@ class MessageData(TypedDict):
     question_created_at: int
     answer_created_at: int
     status: str
+
+
+class PaginatedMessages(TypedDict):
+    """페이지네이션된 메시지 응답"""
+
+    messages: list[MessageData]
+    next_cursor: int | None
+    has_more: bool
+    total_count: int
 
 
 # 로컬 개발용 서비스 계정 키 경로
@@ -105,7 +119,7 @@ def handle_firestore_error(
             except FirestoreError:
                 raise
             except Exception as e:
-                logger.error("%s: %s", error_message, str(e))
+                logger.error(error_message, extra={"error": str(e)})
                 raise FirestoreError(f"{error_message}: {str(e)}") from e
 
         return wrapper
@@ -136,12 +150,12 @@ def get_firestore_client() -> AsyncClient:
                     str(SERVICE_ACCOUNT_KEY_PATH)
                 )
                 _firestore_client = AsyncClient(credentials=cred, project=project_id)
-                logger.info("Firestore AsyncClient initialized with service account key")
+                logger.info("Firestore initialized", extra={"auth": "service_account", "project": project_id})
             else:
                 _firestore_client = AsyncClient(project=project_id)
-                logger.info("Firestore AsyncClient initialized with default credentials")
+                logger.info("Firestore initialized", extra={"auth": "default_credentials", "project": project_id})
         except Exception as e:
-            logger.error("Failed to initialize Firestore client: %s", str(e))
+            logger.error("Firestore initialization failed", extra={"error": str(e)})
             raise FirestoreError(f"Firestore 초기화 실패: {str(e)}") from e
 
     return _firestore_client
@@ -154,7 +168,7 @@ async def close_firestore_client() -> None:
     if _firestore_client is not None:
         _firestore_client.close()
         _firestore_client = None
-        logger.info("Firestore AsyncClient closed")
+        logger.info("Firestore client closed")
 
 
 # ============================================================================
@@ -163,6 +177,19 @@ async def close_firestore_client() -> None:
 
 CHAT_ROOMS_COLLECTION = "chat_rooms"
 CHAT_MESSAGES_COLLECTION = "chat_messages"
+
+
+# ============================================================================
+# Query Helpers
+# ============================================================================
+
+
+def _messages_by_room_query(room_id: str):
+    """room_id로 메시지 필터링하는 기본 쿼리 반환"""
+    db = get_firestore_client()
+    return db.collection(CHAT_MESSAGES_COLLECTION).where(
+        filter=FieldFilter("room_id", "==", room_id)
+    )
 
 
 # ============================================================================
@@ -200,7 +227,7 @@ async def create_chat_room(
     }
 
     await db.collection(CHAT_ROOMS_COLLECTION).document(room_id).set(room_data)
-    logger.info("Chat room created: %s", room_id)
+    logger.info("Chat room created", extra={"room_id": room_id, "user_id": user_id})
 
     return room_data
 
@@ -229,26 +256,6 @@ async def get_chat_room(room_id: str) -> RoomData | None:
             room_data["schema_key"] = DEFAULT_SCHEMA_KEY
         return room_data
     return None
-
-
-async def verify_room_exists(room_id: str) -> bool:
-    """
-    채팅방 존재 여부 확인
-
-    Args:
-        room_id: 채팅방 ID
-
-    Returns:
-        존재 여부
-
-    Raises:
-        RoomNotFoundError: 채팅방을 찾을 수 없음
-        FirestoreError: Firestore 작업 실패
-    """
-    room = await get_chat_room(room_id)
-    if room is None:
-        raise RoomNotFoundError(f"채팅방을 찾을 수 없습니다: {room_id}")
-    return True
 
 
 @handle_firestore_error("채팅방 업데이트 실패")
@@ -287,7 +294,7 @@ async def update_chat_room(
 
     if update_data:
         await db.collection(CHAT_ROOMS_COLLECTION).document(room_id).update(update_data)
-        logger.info("Chat room updated: %s", room_id)
+        logger.info("Chat room updated", extra={"room_id": room_id, "fields": list(update_data.keys())})
 
     # 업데이트된 문서 반환
     updated_room = await get_chat_room(room_id)
@@ -307,7 +314,7 @@ async def create_chat_message(
     content: str = "",
     path: str = "",
     question_created_at: int | None = None,
-    status: str = "DONE",
+    status: MessageStatus = "DONE",
 ) -> MessageData:
     """
     새 채팅 메시지 생성
@@ -344,7 +351,7 @@ async def create_chat_message(
     }
 
     await db.collection(CHAT_MESSAGES_COLLECTION).document(message_id).set(message_data)
-    logger.debug("Chat message created: %s", message_id)
+    logger.debug("Chat message created", extra={"message_id": message_id, "room_id": room_id})
 
     return message_data
 
@@ -364,10 +371,61 @@ async def get_messages_by_room(room_id: str, limit: int = 100) -> list[MessageDa
     Raises:
         FirestoreError: Firestore 작업 실패
     """
+    query = _messages_by_room_query(room_id).order_by("answer_created_at").limit(limit)
+    docs = query.stream()
+    return [doc.to_dict() async for doc in docs]  # type: ignore[misc]
+
+
+@handle_firestore_error("메시지 조회 실패")
+async def get_message_by_id(message_id: str) -> MessageData | None:
+    """
+    메시지 ID로 단일 메시지 조회
+
+    Args:
+        message_id: 메시지 ID
+
+    Returns:
+        메시지 데이터 또는 None
+    """
     db = get_firestore_client()
+    doc = await db.collection(CHAT_MESSAGES_COLLECTION).document(message_id).get()
+
+    if doc.exists:
+        return doc.to_dict()  # type: ignore[return-value]
+    return None
+
+
+@handle_firestore_error("메시지 조회 실패")
+async def get_messages_until(
+    room_id: str,
+    until_message_id: str,
+    limit: int = 50,
+) -> list[MessageData]:
+    """
+    특정 메시지까지의 히스토리 조회 (롤백 기능용)
+
+    Args:
+        room_id: 채팅방 ID
+        until_message_id: 이 메시지까지 조회 (포함)
+        limit: 최대 조회 개수
+
+    Returns:
+        메시지 목록 (오래된 순)
+    """
+    # 먼저 타겟 메시지 조회
+    target_message = await get_message_by_id(until_message_id)
+    if target_message is None:
+        return []
+
+    # room_id 검증
+    if target_message.get("room_id") != room_id:
+        return []
+
+    target_timestamp = target_message.get("answer_created_at")
+
     query = (
-        db.collection(CHAT_MESSAGES_COLLECTION)
-        .where("room_id", "==", room_id)
+        _messages_by_room_query(room_id)
+        .where(filter=FieldFilter("answer_created_at", "<=", target_timestamp))
         .order_by("answer_created_at")
         .limit(limit)
     )
@@ -376,13 +434,80 @@ async def get_messages_by_room(room_id: str, limit: int = 100) -> list[MessageDa
     return [doc.to_dict() async for doc in docs]  # type: ignore[misc]
 
 
+# 정렬 순서 타입
+SortOrder = Literal["asc", "desc"]
+
+
+@handle_firestore_error("메시지 페이지네이션 조회 실패")
+async def get_messages_paginated(
+    room_id: str,
+    limit: int = 20,
+    cursor: int | None = None,
+    order: SortOrder = "desc",
+) -> PaginatedMessages:
+    """
+    채팅방의 메시지 목록 페이지네이션 조회
+
+    Args:
+        room_id: 채팅방 ID
+        limit: 페이지당 메시지 수 (기본 20, 최대 100)
+        cursor: 페이지네이션 커서 (answer_created_at timestamp)
+        order: 정렬 순서 ("asc" 또는 "desc", 기본 "desc" - 최신순)
+
+    Returns:
+        PaginatedMessages: 메시지 목록, 다음 커서, 더 있는지 여부, 총 개수
+    """
+    limit = min(limit, 100)  # 최대 100개로 제한
+
+    # 정렬 방향 설정
+    direction = Query.DESCENDING if order == "desc" else Query.ASCENDING
+
+    # 기본 쿼리 구성
+    query = _messages_by_room_query(room_id).order_by("answer_created_at", direction=direction)
+
+    # 커서가 있으면 해당 시점 이후부터 조회
+    if cursor is not None:
+        if order == "desc":
+            query = query.where(filter=FieldFilter("answer_created_at", "<", cursor))
+        else:
+            query = query.where(filter=FieldFilter("answer_created_at", ">", cursor))
+
+    # limit + 1로 조회하여 다음 페이지 존재 여부 확인
+    query = query.limit(limit + 1)
+
+    # 병렬 실행: count 쿼리와 데이터 쿼리를 동시에
+    async def get_count():
+        result = await _messages_by_room_query(room_id).count().get()
+        return result[0][0].value if result else 0
+
+    async def get_docs():
+        return [doc.to_dict() async for doc in query.stream()]
+
+    total_count, docs = await asyncio.gather(get_count(), get_docs())
+
+    has_more = len(docs) > limit
+    messages = docs[:limit]  # 실제 반환할 메시지
+
+    # 다음 커서 설정
+    next_cursor = None
+    if has_more and messages:
+        next_cursor = messages[-1]["answer_created_at"]
+
+    return PaginatedMessages(
+        messages=messages,  # type: ignore[typeddict-item]
+        next_cursor=next_cursor,
+        has_more=has_more,
+        total_count=total_count,
+    )
+
+
 @handle_firestore_error("메시지 업데이트 실패")
 async def update_chat_message(
     message_id: str,
     text: str | None = None,
     content: str | None = None,
     path: str | None = None,
-    status: str | None = None,
+    status: MessageStatus | None = None,
 ) -> None:
     """
     채팅 메시지 업데이트
@@ -410,4 +535,4 @@ async def update_chat_message(
         update_data["status"] = status
 
     await db.collection(CHAT_MESSAGES_COLLECTION).document(message_id).update(update_data)
-    logger.debug("Chat message updated: %s", message_id)
+    logger.debug("Chat message updated", extra={"message_id": message_id, "fields": list(update_data.keys())})

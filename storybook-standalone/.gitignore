@@ -17,7 +17,8 @@ yarn.lock
 # ========================================
 # Build outputs
 # ========================================
-dist/
+dist/*
+!dist/component-schema.json
 dist-ssr/
 build/
 out/

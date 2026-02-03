@@ -10,6 +10,9 @@ node_modules/
 .next/
 out/
 dist/
+!storybook-standalone/dist/
+storybook-standalone/dist/*
+!storybook-standalone/dist/component-schema.json
 build/
 storybook-static/
 
@@ -129,5 +132,6 @@ PROJECT_GUIDE.md
 .github/commands
 .github/.gitmessage.txt
 
-# component-schema.json
-component-schema.json
+# Figma extracted layouts (full/clean만 제외, compact는 커밋)
+apps/web/public/figma-nodes/*.full.json
+apps/web/public/figma-nodes/*.clean.json

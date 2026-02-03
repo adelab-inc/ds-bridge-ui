@@ -12,6 +12,7 @@ from app.api.components import (
     get_vision_system_prompt,
 )
 from app.core.auth import verify_api_key
+from app.core.config import get_settings
 from app.schemas.chat import (
     ChatRequest,
     ChatResponse,
@@ -35,7 +36,9 @@ from app.services.firestore import (
     RoomNotFoundError,
     create_chat_message,
     get_chat_room,
+    get_message_by_id,
     get_messages_by_room,
+    get_messages_until,
     get_timestamp_ms,
     update_chat_message,
 )
@@ -142,7 +145,7 @@ async def resolve_system_prompt(
         ag_grid_schema = await fetch_schema_from_storage(DEFAULT_AG_GRID_SCHEMA_KEY)
         ag_grid_tokens = await fetch_ag_grid_tokens_from_storage()
     except Exception as e:
-        logger.warning("AG Grid data not loaded: %s", str(e))
+        logger.warning("AG Grid data not loaded", extra={"error": str(e)})
 
     # 기본 프롬프트 생성
     if not schema_key:
@@ -162,7 +165,7 @@ async def resolve_system_prompt(
                 schema, design_tokens, ag_grid_schema, ag_grid_tokens
             )
         except FileNotFoundError:
-            logger.warning("Schema not found: %s, using local schema", schema_key)
+            logger.warning("Schema not found, using local", extra={"schema_key": schema_key})
             local_schema = get_schema()
             if not local_schema:
                 raise HTTPException(
@@ -172,7 +175,7 @@ async def resolve_system_prompt(
                 local_schema, design_tokens, ag_grid_schema, ag_grid_tokens
             )
         except Exception as e:
-            logger.error("Failed to fetch schema: %s - %s", schema_key, str(e), exc_info=True)
+            logger.error("Failed to fetch schema", extra={"schema_key": schema_key, "error": str(e)})
             raise HTTPException(
                 status_code=500, detail="Failed to load schema from storage. Please try again."
             ) from e
@@ -188,11 +191,11 @@ async def resolve_system_prompt(
     return base_prompt
 
 
-MAX_HISTORY_COUNT = 10  # 최근 N개 대화만 포함
-
-
 async def build_conversation_history(
-    room_id: str, system_prompt: str, current_message: str
+    room_id: str,
+    system_prompt: str,
+    current_message: str,
+    from_message_id: str | None = None,
 ) -> list[Message]:
     """
     이전 대화 내역을 포함한 메시지 리스트 생성
@@ -201,15 +204,50 @@ async def build_conversation_history(
         room_id: 채팅방 ID
         system_prompt: 시스템 프롬프트
         current_message: 현재 사용자 메시지
+        from_message_id: 특정 메시지의 코드를 기준으로 수정 + 해당 시점까지 컨텍스트 포함
 
     Returns:
         AI에 전달할 메시지 리스트
     """
+    settings = get_settings()
+    max_history = settings.max_history_count
+
     messages = [Message(role="system", content=system_prompt)]
 
-    # 이전 메시지 조회 (최근 N개만)
-    previous_messages = await get_messages_by_room(room_id)
-    previous_messages = previous_messages[-MAX_HISTORY_COUNT:]
+    # 기준 코드 컨텍스트 (from_message_id가 있을 때)
+    base_code_context = ""
+
+    # 이전 메시지 조회
+    if from_message_id:
+        # 롤백 모드: 특정 메시지까지만 조회
+        previous_messages = await get_messages_until(
+            room_id=room_id,
+            until_message_id=from_message_id,
+            limit=max_history,
+        )
+        logger.info(
+            "Base code edit mode enabled",
+            extra={"room_id": room_id, "from_message_id": from_message_id, "message_count": len(previous_messages)},
+        )
+
+        # 기준 메시지의 코드 가져오기
+        base_message = await get_message_by_id(from_message_id)
+        if base_message is None:
+            raise ValueError(f"Message not found: {from_message_id}")
+
+        if base_message.get("content"):
+            base_code_context = f'''현재 코드 (이 코드를 기반으로 수정해주세요):
+<file path="{base_message.get("path", "src/Component.tsx")}">{base_message["content"]}</file>
+
+요청: '''
+            logger.info(
+                "Base code context added",
+                extra={"from_message_id": from_message_id, "path": base_message.get("path")},
+            )
+    else:
+        # 일반 모드: 최근 N개 조회
+        previous_messages = await get_messages_by_room(room_id)
+        previous_messages = previous_messages[-max_history:]
 
     for msg in previous_messages:
         # 사용자 질문
@@ -224,8 +262,9 @@ async def build_conversation_history(
         if assistant_content.strip():
             messages.append(Message(role="assistant", content=assistant_content.strip()))
 
-    # 현재 사용자 메시지 추가
-    messages.append(Message(role="user", content=current_message))
+    # 현재 사용자 메시지 추가 (기준 코드 컨텍스트 포함)
+    final_message = base_code_context + current_message
+    messages.append(Message(role="user", content=final_message))
 
     return messages
 
@@ -383,6 +422,16 @@ class StreamingParser:
 ## 스키마 모드
 채팅방의 schema_key가 설정되어 있으면 Firebase Storage에서 컴포넌트 스키마를 로드합니다.
 없으면 자유 모드(React + Tailwind CSS)로 동작합니다.
+
+## from_message_id (선택)
+특정 메시지의 코드를 기준으로 수정합니다. 해당 메시지까지의 컨텍스트를 사용하고, 그 메시지의 코드를 기반으로 AI가 수정합니다.
+```json
+{
+  "message": "버튼을 빨간색으로 바꿔줘",
+  "room_id": "550e8400-e29b-41d4-a716-446655440000",
+  "from_message_id": "886e7406-55f7-4582-9f4b-7a56ec4562d8"
+}
+```
 """,
     response_description="AI 응답 및 파싱된 결과",
     responses={
@@ -429,6 +478,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
             room_id=request.room_id,
             system_prompt=system_prompt,
             current_message=request.message,
+            from_message_id=request.from_message_id,
         )
 
         response_message, usage = await provider.chat(messages)
@@ -451,11 +501,13 @@ async def chat(request: ChatRequest) -> ChatResponse:
         raise
     except RoomNotFoundError as e:
         raise HTTPException(status_code=404, detail="Chat room not found.") from e
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
     except FirestoreError as e:
-        logger.error("Firestore error in chat: %s", str(e), exc_info=True)
+        logger.error("Firestore error in chat", extra={"room_id": request.room_id, "error": str(e)})
         raise HTTPException(status_code=500, detail="Database error. Please try again.") from e
     except Exception as e:
-        logger.error("Unexpected error in chat: %s", str(e), exc_info=True)
+        logger.error("Unexpected error in chat", extra={"room_id": request.room_id, "error": str(e)})
         raise HTTPException(
             status_code=500, detail="An unexpected error occurred. Please try again."
         ) from e
@@ -512,6 +564,16 @@ data: {"type": "done"}
 ## 제한 (Vision 모드)
 - 최대 5개 이미지
 - 지원 형식: JPEG, PNG, GIF, WebP
+
+## from_message_id (선택)
+특정 메시지의 코드를 기준으로 수정합니다. 해당 메시지까지의 컨텍스트를 사용하고, 그 메시지의 코드를 기반으로 AI가 수정합니다.
+```json
+{
+  "message": "버튼을 빨간색으로 바꿔줘",
+  "room_id": "550e8400-e29b-41d4-a716-446655440000",
+  "from_message_id": "886e7406-55f7-4582-9f4b-7a56ec4562d8"
+}
+```
 """,
     response_description="SSE 스트림",
     responses={
@@ -549,13 +611,13 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
                     base64_data, media_type = await fetch_image_as_base64(url)
                     images.append(ImageContent(media_type=media_type, data=base64_data))
                 except Exception as e:
-                    logger.warning("Failed to fetch image from URL %s: %s", url, str(e))
+                    logger.warning("Failed to fetch image", extra={"url": url, "error": str(e)})
                     # 실패한 이미지는 건너뛰고 계속 진행
 
             # 모든 이미지 로드 실패 시 일반 모드로 전환
             if not images:
                 is_vision_mode = False
-                logger.warning("All images failed to load, falling back to normal mode")
+                logger.warning("All images failed, falling back to normal mode", extra={"room_id": request.room_id})
 
         # 1. room 조회 및 검증
         room = await get_chat_room(request.room_id)
@@ -597,6 +659,7 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
             room_id=request.room_id,
             system_prompt=system_prompt,
             current_message=request.message,
+            from_message_id=request.from_message_id,
         )
 
         async def generate() -> AsyncGenerator[str, None]:
@@ -643,7 +706,7 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
 
             except NotImplementedError:
                 # Vision 미지원 Provider
-                logger.error("Vision not supported by current AI provider")
+                logger.error("Vision not supported", extra={"room_id": request.room_id, "provider": settings.ai_provider})
                 await update_chat_message(message_id=message_id, status="ERROR")
                 error_event = {
                     "type": "error",
@@ -652,7 +715,7 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
                 yield f"data: {json.dumps(error_event, ensure_ascii=False)}\n\n"
             except Exception as e:
                 # 에러 시 ERROR로 업데이트
-                logger.error("Streaming error: %s", str(e), exc_info=True)
+                logger.error("Streaming error", extra={"room_id": request.room_id, "message_id": message_id, "error": str(e)})
                 await update_chat_message(message_id=message_id, status="ERROR")
                 error_event = {
                     "type": "error",
@@ -671,11 +734,13 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
         )
     except RoomNotFoundError as e:
         raise HTTPException(status_code=404, detail="Chat room not found.") from e
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
     except FirestoreError as e:
-        logger.error("Firestore error in chat_stream: %s", str(e), exc_info=True)
+        logger.error("Firestore error in chat_stream", extra={"room_id": request.room_id, "error": str(e)})
         raise HTTPException(status_code=500, detail="Database error. Please try again.") from e
     except Exception as e:
-        logger.error("Unexpected error in chat_stream: %s", str(e), exc_info=True)
+        logger.error("Unexpected error in chat_stream", extra={"room_id": request.room_id, "error": str(e)})
         raise HTTPException(
             status_code=500, detail="An unexpected error occurred. Please try again."
         ) from e
