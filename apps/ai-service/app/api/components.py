@@ -533,12 +533,10 @@ When updating existing code, you MUST:
       - ✅ `<Select defaultValue="all_region" options={[{ label: '전체 지역', value: 'all_region' }, ...]} />`
       - ❌ `<Select defaultValue="전체" options={[{ label: '전체', value: 'all' }, ...]} />` (WRONG - using label instead of value)
       - ❌ `<Select value="all" options={...} />` (WRONG - requires onChange handler)
-    - **Radio**: Use `defaultChecked` for initially selected radio:
-      - ✅ `<Radio defaultChecked={true} />` (for initial selection)
-      - ❌ `<Radio checked={true} />` (WRONG - requires onChange handler)
-    - **ToggleSwitch/Checkbox**: Use `defaultChecked` for initial state:
-      - ✅ `<ToggleSwitch defaultChecked={true} />`
-      - ❌ `<ToggleSwitch checked={true} />`
+    - **Radio/Checkbox/ToggleSwitch**: Use `checked` with `onChange` handler for controlled state:
+      - ✅ `<Radio checked={isSelected} onChange={handleChange} />`
+      - ✅ `<Checkbox checked={isChecked} onChange={handleChange} />`
+      - ✅ `<ToggleSwitch checked={isOn} onChange={handleToggle} />`
   - **Inputs**: internal inputs MUST be `width: '100%'`. NEVER use fixed pixels like `width: 300px` inside a grid.
   - **Z-Index**: Dropdowns/Modals must have `zIndex: 50` or higher to float above content.
 
@@ -673,7 +671,7 @@ const UserDashboard = () => {
             <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#212529', marginBottom: 6 }}>상태</label>
             <Select style={{ width: '100%' }} placeholder="전체" options={[{ label: '전체', value: 'all' }, { label: '활동', value: 'active' }, { label: '부재', value: 'offline' }]} onChange={(v) => setFilter(v || 'all')} />
           </div>
-          <Button data-instance-id="search-btn" variant="primary" onClick={handleSearch} disabled={isLoading} style={{ width: '100%', height: 42 }}>
+          <Button data-instance-id="search-btn" variant="primary" onClick={handleSearch} isDisabled={isLoading} style={{ width: '100%', height: 42 }}>
             {isLoading ? '검색 중...' : '검색'}
           </Button>
         </div>
@@ -852,9 +850,9 @@ Below are reference layouts extracted from Figma. Use these as structural guides
 - Respect the layoutMode (VERTICAL, HORIZONTAL)
 
 **CRITICAL - Figma State to React Props Mapping:**
-- Figma `Selected=True`, `State=Selected` → React `defaultValue` (NOT `value` or `selected`)
-- Figma placeholder text like "선택하세요", "전체 지역" in Select → React `placeholder` prop or `defaultValue`
-- Do NOT use `value` prop for initial states - always use `defaultValue` or `defaultChecked`
+- Figma `Selected=True`, `State=Selected` in Select → React `defaultValue` (NOT `value` or `selected`)
+- Figma placeholder text like "선택하세요", "전체 지역" in Select → React `placeholder` prop
+- Figma `Checked=True` in Checkbox/Radio/ToggleSwitch → React `checked` with `onChange` handler
 - Use similar spacing (itemSpacing, padding)
 - Match the component structure
 
