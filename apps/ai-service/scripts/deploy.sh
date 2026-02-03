@@ -145,7 +145,7 @@ deploy() {
         --memory 512Mi \
         --cpu 1 \
         --min-instances 0 \
-        --max-instances 10 \
+        --max-instances 3 \
         --timeout 300 \
 
     log_info "Deployment complete!"
