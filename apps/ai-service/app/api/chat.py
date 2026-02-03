@@ -555,20 +555,23 @@ SSE(Server-Sent Events)를 통해 실시간 스트리밍 응답을 받습니다.
 
 | 타입 | 설명 | 필드 |
 |------|------|------|
+| `start` | 스트리밍 시작 | `message_id` |
 | `chat` | 대화 텍스트 (실시간) | `text` |
 | `code` | 코드 파일 (완성 후) | `path`, `content` |
-| `done` | 스트리밍 완료 | - |
+| `done` | 스트리밍 완료 | `message_id` |
 | `error` | 오류 발생 | `error` |
 
 ## SSE 응답 예시
 ```
+data: {"type": "start", "message_id": "abc-123-def"}
+
 data: {"type": "chat", "text": "모던한 "}
 
 data: {"type": "chat", "text": "로그인 페이지입니다."}
 
 data: {"type": "code", "path": "src/pages/Login.tsx", "content": "import..."}
 
-data: {"type": "done"}
+data: {"type": "done", "message_id": "abc-123-def"}
 ```
 
 ## 제한 (Vision 모드)
@@ -677,6 +680,9 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
             collected_text = ""
             collected_files: list[dict] = []
 
+            # 스트리밍 시작 시 message_id 전송
+            yield f"data: {json.dumps({'type': 'start', 'message_id': message_id}, ensure_ascii=False)}\n\n"
+
             try:
                 # Vision/일반 모드에 따라 스트리밍 호출
                 if is_vision_mode:
@@ -712,7 +718,7 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
                     status="DONE",
                 )
 
-                yield f"data: {json.dumps({'type': 'done'})}\n\n"
+                yield f"data: {json.dumps({'type': 'done', 'message_id': message_id}, ensure_ascii=False)}\n\n"
 
             except NotImplementedError:
                 # Vision 미지원 Provider
