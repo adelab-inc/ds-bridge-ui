@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { HealthResponse } from '@/types/health';
+import type { paths } from '@ds-hub/shared-types/typescript/api/schema';
+
+type HealthResponse =
+  paths['/health']['get']['responses']['200']['content']['application/json'];
 
 export async function GET(request: NextRequest) {
   try {

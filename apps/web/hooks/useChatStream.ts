@@ -1,5 +1,9 @@
 import { useCallback, useState, useRef, useEffect } from 'react';
-import { ChatStreamRequest, SSEEvent, CodeEvent } from '@/types/chat';
+import type { paths } from '@ds-hub/shared-types/typescript/api/schema';
+import { SSEEvent, CodeEvent } from '@/types/chat';
+
+type ChatStreamRequest =
+  paths['/chat/stream']['post']['requestBody']['content']['application/json'];
 
 interface UseChatStreamOptions {
   onStart?: (messageId: string) => void;

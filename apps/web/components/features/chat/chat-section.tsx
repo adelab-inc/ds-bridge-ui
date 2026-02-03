@@ -45,7 +45,6 @@ function ChatSection({
     string | null
   >(null);
   const currentMessageIdRef = React.useRef<string | null>(null);
-
   const { sendMessage, isLoading, error, accumulatedText, generatedFiles } =
     useChatStream({
       onStart: (messageId) => {

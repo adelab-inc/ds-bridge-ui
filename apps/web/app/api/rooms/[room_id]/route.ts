@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GetRoomResponse } from '@/types/room';
+import type { paths } from '@ds-hub/shared-types/typescript/api/schema';
+
+type GetRoomResponse =
+  paths['/rooms/{room_id}']['get']['responses']['200']['content']['application/json'];
 
 export async function GET(
   request: NextRequest,

@@ -1,9 +1,14 @@
-import { CreateRoomRequest, CreateRoomResponse } from '@/types/room';
 import {
   useMutation,
   UseMutationOptions,
   useQueryClient,
 } from '@tanstack/react-query';
+import type { paths } from '@ds-hub/shared-types/typescript/api/schema';
+
+type CreateRoomRequest =
+  paths['/rooms']['post']['requestBody']['content']['application/json'];
+type CreateRoomResponse =
+  paths['/rooms']['post']['responses']['201']['content']['application/json'];
 
 export const roomKeys = {
   all: ['rooms'] as const,

@@ -1,8 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useGetRoom } from '@/hooks/api/useRoomQuery';
-import type { RoomResponse } from '@/types/room';
+import type { components } from '@ds-hub/shared-types/typescript/api/schema';
 import { useCreateRoom } from './api/useCreateRoom';
+
+type RoomResponse = components['schemas']['RoomResponse'];
 
 interface UseRoomOptions {
   storybookUrl?: string;
