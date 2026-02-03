@@ -506,8 +506,10 @@ When updating existing code, you MUST:
   - Structure: Filters above, then table below with proper spacing (`marginBottom: 24`).
   - DO NOT separate filters and table into different cards.
 - **Status Styling**:
-  - Use `Badge` for status. NEVER use plain text.
-  - Active: `variant="success"`, Inactive: `variant="neutral"`, Error: `variant="destructive"`.
+  - Use `Badge` with `type="status"` for status display. NEVER use plain text.
+  - Use `statusVariant` prop: `success`, `info`, `warning`, `error`
+  - Active/정상: `statusVariant="success"`, Inactive/대기: `statusVariant="info"`, Warning/심사중: `statusVariant="warning"`, Error/해지: `statusVariant="error"`
+  - Example: `<Badge type="status" statusVariant="success">정상</Badge>`
 - **Empty States**:
   - Center the message: `textAlign: 'center'`, `padding: 48`, `color: '#6b7280'`
   - Example: `<div style={{textAlign:'center', padding:48, color:'#6b7280'}}>데이터가 없습니다.</div>`
@@ -531,12 +533,9 @@ When updating existing code, you MUST:
       - ✅ `<Select defaultValue="all_region" options={[{ label: '전체 지역', value: 'all_region' }, ...]} />`
       - ❌ `<Select defaultValue="전체" options={[{ label: '전체', value: 'all' }, ...]} />` (WRONG - using label instead of value)
       - ❌ `<Select value="all" options={...} />` (WRONG - requires onChange handler)
-    - **Radio**: When first option or "전체/기본" is selected, use `defaultValue`:
-      - ✅ `<Radio.Group defaultValue="all">`
-      - ❌ `<Radio.Group value="all">`
-    - **Tab**: When first tab is selected, use `defaultValue`:
-      - ✅ `<Tabs defaultValue="tab1">`
-      - ❌ `<Tabs value="tab1">`
+    - **Radio**: Use `defaultChecked` for initially selected radio:
+      - ✅ `<Radio defaultChecked={true} />` (for initial selection)
+      - ❌ `<Radio checked={true} />` (WRONG - requires onChange handler)
     - **ToggleSwitch/Checkbox**: Use `defaultChecked` for initial state:
       - ✅ `<ToggleSwitch defaultChecked={true} />`
       - ❌ `<ToggleSwitch checked={true} />`
@@ -672,7 +671,7 @@ const UserDashboard = () => {
           </div>
           <div>
             <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#212529', marginBottom: 6 }}>상태</label>
-            <Select style={{ width: '100%' }} defaultValue="all" options={[{ label: '전체', value: 'all' }, { label: '활동', value: 'active' }, { label: '부재', value: 'offline' }]} onChange={(v) => setFilter(v)} />
+            <Select style={{ width: '100%' }} placeholder="전체" options={[{ label: '전체', value: 'all' }, { label: '활동', value: 'active' }, { label: '부재', value: 'offline' }]} onChange={(v) => setFilter(v || 'all')} />
           </div>
           <Button data-instance-id="search-btn" variant="primary" onClick={handleSearch} disabled={isLoading} style={{ width: '100%', height: 42 }}>
             {isLoading ? '검색 중...' : '검색'}
@@ -705,7 +704,7 @@ const UserDashboard = () => {
                   </td>
                   <td style={{ padding: '12px 16px', borderBottom: '1px solid #dee2e6', color: '#6b7280' }}>{user.email}</td>
                   <td style={{ padding: '12px 16px', borderBottom: '1px solid #dee2e6' }}>
-                    <Badge variant={user.status === 'active' ? 'success' : 'neutral'}>{user.status === 'active' ? '활동' : '부재'}</Badge>
+                    <Badge type="status" statusVariant={user.status === 'active' ? 'success' : 'info'}>{user.status === 'active' ? '활동' : '부재'}</Badge>
                   </td>
                   <td style={{ padding: '12px 16px', borderBottom: '1px solid #dee2e6', textAlign: 'right' }}>
                     <Button data-instance-id={`edit-${user.id}`} variant="secondary" size="sm">관리</Button>
