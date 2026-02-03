@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { CreateRoomRequest, CreateRoomResponse } from '@/types/room';
+import type { paths } from '@ds-hub/shared-types/typescript/api/schema';
+
+type CreateRoomRequest =
+  paths['/rooms']['post']['requestBody']['content']['application/json'];
+type CreateRoomResponse =
+  paths['/rooms']['post']['responses']['201']['content']['application/json'];
 
 export async function POST(request: NextRequest) {
   try {

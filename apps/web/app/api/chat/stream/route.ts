@@ -1,5 +1,8 @@
 import { NextRequest } from 'next/server';
-import { ChatStreamRequest } from '@/types/chat';
+import type { paths } from '@ds-hub/shared-types/typescript/api/schema';
+
+type ChatStreamRequest =
+  paths['/chat/stream']['post']['requestBody']['content']['application/json'];
 
 export async function POST(request: NextRequest) {
   try {

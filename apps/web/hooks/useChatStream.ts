@@ -1,11 +1,16 @@
 import { useCallback, useState, useRef, useEffect } from 'react';
-import { ChatStreamRequest, SSEEvent, CodeEvent } from '@/types/chat';
+import type { paths } from '@ds-hub/shared-types/typescript/api/schema';
+import { SSEEvent, CodeEvent } from '@/types/chat';
+
+type ChatStreamRequest =
+  paths['/chat/stream']['post']['requestBody']['content']['application/json'];
 
 interface UseChatStreamOptions {
+  onStart?: (messageId: string) => void;
   onChat?: (text: string) => void;
   onCode?: (code: CodeEvent) => void;
   onError?: (error: string) => void;
-  onDone?: () => void;
+  onDone?: (messageId: string) => void;
 }
 
 export function useChatStream(options: UseChatStreamOptions = {}) {
@@ -54,6 +59,10 @@ export function useChatStream(options: UseChatStreamOptions = {}) {
             const event: SSEEvent = JSON.parse(line.slice(6));
 
             switch (event.type) {
+              case 'start':
+                optionsRef.current.onStart?.(event.message_id);
+                break;
+
               case 'chat':
                 setAccumulatedText((prev) => prev + event.text);
                 optionsRef.current.onChat?.(event.text);
@@ -65,7 +74,7 @@ export function useChatStream(options: UseChatStreamOptions = {}) {
                 break;
 
               case 'done':
-                optionsRef.current.onDone?.();
+                optionsRef.current.onDone?.(event.message_id);
                 break;
 
               case 'error':

@@ -56,20 +56,14 @@ export type FigmaNodeType =
  *
  * Auto Layout의 방향성을 나타냄
  */
-export type FigmaLayoutMode =
-  | 'NONE'
-  | 'HORIZONTAL'
-  | 'VERTICAL';
+export type FigmaLayoutMode = 'NONE' | 'HORIZONTAL' | 'VERTICAL';
 
 /**
  * Figma 사이징 모드
  *
  * Auto Layout에서 자식 요소의 크기 조정 방식
  */
-export type FigmaSizingMode =
-  | 'FIXED'
-  | 'HUG'
-  | 'FILL';
+export type FigmaSizingMode = 'FIXED' | 'HUG' | 'FILL';
 
 /**
  * Figma 바운딩 박스

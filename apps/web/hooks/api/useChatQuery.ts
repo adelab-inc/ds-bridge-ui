@@ -1,5 +1,10 @@
 import { useMutation } from '@tanstack/react-query';
-import type { ChatSendRequest, ChatSendResponse } from '@/types/chat';
+import type { paths } from '@ds-hub/shared-types/typescript/api/schema';
+
+type ChatSendRequest =
+  paths['/chat']['post']['requestBody']['content']['application/json'];
+type ChatSendResponse =
+  paths['/chat']['post']['responses']['200']['content']['application/json'];
 
 // ============================================================================
 // Query Keys
