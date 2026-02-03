@@ -44,7 +44,8 @@ def load_component_schema() -> tuple[dict | None, str | None]:
 # ============================================================================
 
 # WHITELIST: Intersection of AI schema (component-schema.json) and UMD bundle exports
-# Only these 19 components are both in schema AND available at runtime
+# Only these 17 components are both in schema AND available at runtime
+# NOTE: Option/OptionGroup removed - Select uses `options` prop internally (no separate import needed)
 AVAILABLE_COMPONENTS_WHITELIST = {
     # Basic
     "Button",
@@ -61,10 +62,8 @@ AVAILABLE_COMPONENTS_WHITELIST = {
     # Form
     "Checkbox",
     "Field",
-    "Option",
-    "OptionGroup",
     "Radio",
-    "Select",
+    "Select",  # Use options prop: options={[{label, value}]} - do NOT import Option/OptionGroup
     "ToggleSwitch",
     # Layout
     "Scrollbar",
@@ -480,6 +479,23 @@ When updating existing code, you MUST:
 3. **ADD new features ON TOP of existing code** - Never start from scratch.
 4. If unsure, include MORE code rather than less. Missing features = FAILURE.
 
+## 🚫 IMPORT RULES (CRITICAL - PREVENTS RUNTIME ERRORS)
+⚠️ **VIOLATION = IMMEDIATE CRASH (React Error #130)**
+
+**RULE: Import ONLY components you ACTUALLY USE in JSX**
+1. Before writing import statement, scan your entire JSX code
+2. List every component tag used: `<Button>`, `<Select>`, `<Badge>` etc.
+3. Import ONLY those components - nothing else
+
+**Common Mistakes to AVOID:**
+- ❌ `import { Button, Select, OptionGroup, Option } from '@/components'` → using only Button, Select (OptionGroup, Option unused = CRASH)
+- ❌ Importing Option/OptionGroup when using Select with `options` prop (Select handles options internally)
+- ❌ Importing components "just in case" or for future use
+
+**Correct Pattern:**
+- ✅ `import { Button, Select } from '@/components'` (import matches usage exactly)
+- ✅ Check your JSX: `<Button>`, `<Select>` → import Button, Select only
+
 {design_tokens_section}## 💎 PREMIUM VISUAL STANDARDS
 - **Containerization (NO FLOATING TEXT)**:
   - ALL content must be inside a white card: `<div style={{backgroundColor:'#ffffff', borderRadius:12, border:'1px solid #dee2e6', boxShadow:'0 1px 3px rgba(0,0,0,0.1)', padding:24}}>`
@@ -510,10 +526,11 @@ When updating existing code, you MUST:
       - ✅ `<Select placeholder="선택하세요" options={...} />` (No value, shows placeholder)
       - ❌ `<Select value="선택하세요" options={...} />` (WRONG - treats placeholder as selected value)
       - ❌ `<Select defaultValue="선택하세요" options={...} />` (WRONG)
-    - **Select/Dropdown with Default Selection**: When selected option is "전체", "기본", "All", "Default", or starts with "전체 " (e.g., "전체 지역", "전체 직무"), use `defaultValue`:
-      - ✅ `<Select defaultValue="전체 지역" options={...} />`
-      - ✅ `<Select defaultValue="전체" options={...} />`
-      - ❌ `<Select value="전체" options={...} />` (WRONG - requires onChange handler)
+    - **Select/Dropdown with Default Selection**: Use option's `value` (NOT `label`) for `defaultValue`:
+      - ✅ `<Select defaultValue="all" options={[{ label: '전체', value: 'all' }, ...]} />` (value matches option.value)
+      - ✅ `<Select defaultValue="all_region" options={[{ label: '전체 지역', value: 'all_region' }, ...]} />`
+      - ❌ `<Select defaultValue="전체" options={[{ label: '전체', value: 'all' }, ...]} />` (WRONG - using label instead of value)
+      - ❌ `<Select value="all" options={...} />` (WRONG - requires onChange handler)
     - **Radio**: When first option or "전체/기본" is selected, use `defaultValue`:
       - ✅ `<Radio.Group defaultValue="all">`
       - ❌ `<Radio.Group value="all">`
@@ -533,6 +550,26 @@ When updating existing code, you MUST:
   - **Realistic Korean Data**: Use real-world examples (names: 김민준, 이서연 / companies: 토스, 당근, 쿠팡).
   - **Rich Detail**: Fill all fields. Don't use "Test 1", "Item 1". Use "프로젝트 알파", "1분기 실적 보고서".
   - **Context-Aware**: If the user asks for a "Project Dashboard", generate "Project A - In Progress", "Team Meeting - 10:00 AM".
+  - **Select/Dropdown Options (CRITICAL)**: ALWAYS populate Select options with **at least 4-6 realistic choices** based on the field context:
+    - ❌ `options={[{ label: '전체', value: 'all' }]}` (only 1 option - WRONG)
+    - ✅ Populate with context-appropriate data:
+      - 상태 필터 → `전체, 정상, 심사중, 해지, 미납`
+      - 지역 필터 → `전체, 서울, 경기, 인천, 부산, 대구`
+      - 부서 필터 → `전체, 영업부, 마케팅부, 개발부, 인사부`
+      - 기간 필터 → `전체, 1개월, 3개월, 6개월, 1년`
+    - NEVER copy examples blindly - always match the field label/context.
+  - **Filter Select MUST use placeholder + "전체" option (CRITICAL)**: ALL filter dropdowns MUST:
+    - Use `placeholder="전체"` for initial display (shows as placeholder style - lighter color)
+    - Include "전체" as the FIRST option in options array (so user can re-select it later)
+    - Do NOT use `defaultValue` (start in placeholder state, not selected state)
+    - ✅ `<Select placeholder="전체" options={[{ label: '전체', value: 'all' }, { label: '완료', value: 'completed' }, { label: '미완료', value: 'incomplete' }]} />`
+    - ❌ `<Select defaultValue="all" options={[...]} />` (WRONG - shows as selected, not placeholder)
+    - ❌ `<Select options={[{ label: '완료', value: 'completed' }, ...]} />` (WRONG - missing "전체" option)
+    - In filter logic: treat empty/undefined value as "all" (show all data)
+  - **Filter-Table Data Consistency (CRITICAL)**: Filter options MUST match the data in the table:
+    - If table has 보험사 column with "삼성생명, 한화손보, DB손보" → 보험사 filter must include these options
+    - If table has 상태 column with "정상, 심사중, 해지" → 상태 filter must include these options
+    - Extract unique values from table data and use them as filter options (plus "전체" as first option)
 - **Profile Images (INITIAL AVATAR - NO EMOJI)**:
   - NEVER use emoji (👤, 🧑, 👨) for profile images.
   - Use **Initial Avatar**: A colored circle with the first character of the name.
@@ -563,6 +600,11 @@ When updating existing code, you MUST:
   - **Form Grid**: Use `display: 'grid'`, `gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))'`, `gap: '16px'`.
   - **Why Grid?**: Ensures alignment and prevents unnatural stretching of short inputs.
   - **Alignment**: Use `alignItems: 'end'` to align buttons with inputs.
+  - **CRITICAL - Grid Span Values**: `gridColumn: 'span X'` must use INTEGER values only:
+    - ✅ `gridColumn: 'span 2'` (integer - works)
+    - ✅ `gridColumn: 'span 3'` (integer - works)
+    - ❌ `gridColumn: 'span 1.5'` (decimal - DOES NOT WORK)
+    - ❌ `gridColumn: 'span 2.5'` (decimal - DOES NOT WORK)
   - **Example**:
     ```
     <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(240px, 1fr))', gap:'24px 16px', alignItems:'end'}}>
@@ -582,7 +624,7 @@ When updating existing code, you MUST:
 **Request**: "사용자 목록에 검색과 상태 필터 추가해줘"
 **Response**:
 <file path="src/components/UserDashboard.tsx">
-import { Button, Badge } from '@/components';
+import { Button, Badge, Select } from '@/components';
 
 const UserDashboard = () => {
   const [search, setSearch] = React.useState('');
@@ -622,18 +664,15 @@ const UserDashboard = () => {
 
       {/* Card Container */}
       <div style={{ backgroundColor: '#ffffff', borderRadius: 12, border: '1px solid #dee2e6', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: 24 }}>
-        {/* Filters */}
+        {/* Filters - NOTE: Select uses defaultValue with option's VALUE (not label) */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16, alignItems: 'end', marginBottom: 24 }}>
           <div>
             <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#212529', marginBottom: 6 }}>이름 검색</label>
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="이름을 입력하세요" style={{ width: '100%', padding: '10px 16px', borderRadius: 8, border: '1px solid #dee2e6', fontSize: 14, boxSizing: 'border-box', height: 42 }} />
           </div>
-          <div style={{ display: 'flex', borderRadius: 8, border: '1px solid #dee2e6', overflow: 'hidden', height: 42 }}>
-            {['all', 'active', 'offline'].map((s) => (
-              <button key={s} onClick={() => setFilter(s)} style={{ flex: 1, backgroundColor: filter === s ? '#f8f9fa' : 'white', border: 'none', borderRight: '1px solid #dee2e6', fontSize: 14, fontWeight: 500, color: filter === s ? '#212529' : '#6b7280', cursor: 'pointer' }}>
-                {s === 'all' ? '전체' : s === 'active' ? '활동' : '부재'}
-              </button>
-            ))}
+          <div>
+            <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#212529', marginBottom: 6 }}>상태</label>
+            <Select style={{ width: '100%' }} defaultValue="all" options={[{ label: '전체', value: 'all' }, { label: '활동', value: 'active' }, { label: '부재', value: 'offline' }]} onChange={(v) => setFilter(v)} />
           </div>
           <Button data-instance-id="search-btn" variant="primary" onClick={handleSearch} disabled={isLoading} style={{ width: '100%', height: 42 }}>
             {isLoading ? '검색 중...' : '검색'}
