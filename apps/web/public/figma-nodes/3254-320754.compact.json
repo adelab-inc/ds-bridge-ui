@@ -1,0 +1,1177 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-02-03T00:42:21.434Z",
+  "sourceUrl": "https://www.figma.com/design/ElOd5qtARQ92pMiUKJHq21/WSR-Design-System?node-id=3254-320754",
+  "layout": {
+    "name": "$최종 적용본/신계약리스트",
+    "type": "FRAME",
+    "size": {
+      "width": 1920,
+      "height": 1080
+    },
+    "children": [
+      {
+        "name": "page",
+        "type": "FRAME",
+        "layoutMode": "VERTICAL",
+        "size": {
+          "width": 1920,
+          "height": 1148
+        },
+        "itemSpacing": 20,
+        "children": [
+          {
+            "name": "header",
+            "type": "FRAME",
+            "layoutMode": "VERTICAL",
+            "size": {
+              "width": "FILL",
+              "height": 140
+            },
+            "children": [
+              {
+                "name": "header",
+                "type": "INSTANCE",
+                "componentName": "header",
+                "size": {
+                  "width": 1920,
+                  "height": 104
+                }
+              },
+              {
+                "name": "tab_floor1",
+                "type": "FRAME",
+                "layoutMode": "HORIZONTAL",
+                "size": {
+                  "width": 1920,
+                  "height": "FILL"
+                },
+                "children": [
+                  {
+                    "name": "tab_floor2",
+                    "type": "FRAME",
+                    "layoutMode": "HORIZONTAL",
+                    "size": {
+                      "width": "FILL",
+                      "height": "FILL"
+                    },
+                    "itemSpacing": 6,
+                    "children": [
+                      {
+                        "name": "tabbox",
+                        "type": "FRAME",
+                        "layoutMode": "HORIZONTAL",
+                        "size": {
+                          "width": "FILL",
+                          "height": "FILL"
+                        },
+                        "summary": "4 children (4 INSTANCE)"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "Body",
+            "type": "FRAME",
+            "layoutMode": "VERTICAL",
+            "size": {
+              "width": "FILL",
+              "height": 988
+            },
+            "itemSpacing": 20,
+            "children": [
+              {
+                "name": "Title",
+                "type": "FRAME",
+                "layoutMode": "HORIZONTAL",
+                "size": {
+                  "width": 1920,
+                  "height": "FILL"
+                },
+                "padding": {
+                  "top": 0,
+                  "right": 24,
+                  "bottom": 0,
+                  "left": 24
+                },
+                "itemSpacing": 20,
+                "children": [
+                  {
+                    "name": "title",
+                    "type": "INSTANCE",
+                    "componentName": "title",
+                    "componentProps": {
+                      "Menu1#4030:1": "신계약관리",
+                      "Show Breadcrumb#4147:42": true,
+                      "Show Menu4#4147:44": false,
+                      "Show Menu2#4104:1": true,
+                      "Show Menu3#4104:0": true,
+                      "Menu4#4147:43": "Menu4",
+                      "Menu3#4030:3": "신계약리스트",
+                      "Menu2#4030:2": "신계약관리",
+                      "Title#4030:0": "신계약리스트"
+                    },
+                    "size": {
+                      "width": 412,
+                      "height": 32
+                    }
+                  },
+                  {
+                    "name": "Frame 35415",
+                    "type": "FRAME",
+                    "layoutMode": "HORIZONTAL",
+                    "size": {
+                      "width": 833,
+                      "height": 32
+                    },
+                    "itemSpacing": 8,
+                    "children": [
+                      {
+                        "name": "Button",
+                        "type": "INSTANCE",
+                        "componentName": "Size=sm, Type=tertiary, Disabled=False, Focus=False, Interaction=default",
+                        "componentProps": {
+                          "End icon(16)#93:381": "5:2693",
+                          "End icon(20)#93:254": "5:2643",
+                          "Start icon(16)#93:127": "168:3005",
+                          "Label#307:254": "신계약등록2",
+                          "Start icon(20)#93:0": "5:2643",
+                          "Show start icon#307:0": false,
+                          "Show end icon#307:127": false,
+                          "Size": "sm",
+                          "Type": "tertiary",
+                          "Disabled": "False",
+                          "Focus": "False",
+                          "Interaction": "default"
+                        },
+                        "size": {
+                          "width": 93,
+                          "height": 32
+                        }
+                      },
+                      {
+                        "name": "Button",
+                        "type": "INSTANCE",
+                        "componentName": "Size=sm, Type=tertiary, Disabled=False, Focus=False, Interaction=default",
+                        "componentProps": {
+                          "End icon(16)#93:381": "5:2693",
+                          "End icon(20)#93:254": "5:2643",
+                          "Start icon(16)#93:127": "168:3005",
+                          "Label#307:254": "신계약등록3",
+                          "Start icon(20)#93:0": "5:2643",
+                          "Show start icon#307:0": false,
+                          "Show end icon#307:127": false,
+                          "Size": "sm",
+                          "Type": "tertiary",
+                          "Disabled": "False",
+                          "Focus": "False",
+                          "Interaction": "default"
+                        },
+                        "size": {
+                          "width": 94,
+                          "height": 32
+                        }
+                      },
+                      {
+                        "name": "Button",
+                        "type": "INSTANCE",
+                        "componentName": "Size=sm, Type=secondary, Disabled=False, Focus=False, Interaction=default",
+                        "componentProps": {
+                          "End icon(20)#93:254": "5:2643",
+                          "Start icon(20)#93:0": "5:2643",
+                          "Label#307:254": "이미지시스템",
+                          "Show start icon#307:0": false,
+                          "End icon(16)#93:381": "220:5521",
+                          "Show end icon#307:127": true,
+                          "Start icon(16)#93:127": "220:5521",
+                          "Size": "sm",
+                          "Type": "secondary",
+                          "Disabled": "False",
+                          "Focus": "False",
+                          "Interaction": "default"
+                        },
+                        "size": {
+                          "width": 119,
+                          "height": 32
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "section+margin",
+                "type": "FRAME",
+                "layoutMode": "VERTICAL",
+                "size": {
+                  "width": "FILL",
+                  "height": 936
+                },
+                "padding": {
+                  "top": 0,
+                  "right": 24,
+                  "bottom": 0,
+                  "left": 24
+                },
+                "children": [
+                  {
+                    "name": "Section",
+                    "type": "FRAME",
+                    "layoutMode": "VERTICAL",
+                    "size": {
+                      "width": "FILL",
+                      "height": 936
+                    },
+                    "padding": {
+                      "top": 20,
+                      "right": 24,
+                      "bottom": 20,
+                      "left": 24
+                    },
+                    "itemSpacing": 20,
+                    "children": [
+                      {
+                        "name": "filter bar",
+                        "type": "FRAME",
+                        "layoutMode": "GRID",
+                        "size": {
+                          "width": 1824,
+                          "height": 236
+                        },
+                        "padding": {
+                          "top": 16,
+                          "right": 16,
+                          "bottom": 16,
+                          "left": 16
+                        },
+                        "summary": "29 children (25 INSTANCE, 4 FRAME)"
+                      },
+                      {
+                        "name": "Frame 35372",
+                        "type": "FRAME",
+                        "layoutMode": "VERTICAL",
+                        "size": {
+                          "width": "FILL",
+                          "height": 640
+                        },
+                        "itemSpacing": 12,
+                        "summary": "3 children (2 INSTANCE, 1 FRAME)"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "extractedComponents": [
+    {
+      "name": "small-down-theme-alpine",
+      "instances": 709,
+      "variants": []
+    },
+    {
+      "name": "State=On",
+      "instances": 548,
+      "variants": [
+        "On"
+      ]
+    },
+    {
+      "name": "Grid-Parts/slot",
+      "instances": 518,
+      "variants": []
+    },
+    {
+      "name": "icon-checkbox",
+      "instances": 358,
+      "variants": []
+    },
+    {
+      "name": "tick-theme-quartz",
+      "instances": 339,
+      "variants": []
+    },
+    {
+      "name": "tick-theme-alpine",
+      "instances": 339,
+      "variants": []
+    },
+    {
+      "name": "icon-tick",
+      "instances": 339,
+      "variants": []
+    },
+    {
+      "name": "grip-theme-quartz",
+      "instances": 315,
+      "variants": []
+    },
+    {
+      "name": "grip-handle-theme-alpine",
+      "instances": 315,
+      "variants": []
+    },
+    {
+      "name": "icon-gripper",
+      "instances": 315,
+      "variants": []
+    },
+    {
+      "name": "tree-closed-theme-quartz",
+      "instances": 306,
+      "variants": []
+    },
+    {
+      "name": "tree-closed-theme-alpine",
+      "instances": 306,
+      "variants": []
+    },
+    {
+      "name": "icon-tree-closed",
+      "instances": 306,
+      "variants": []
+    },
+    {
+      "name": "State=Focused",
+      "instances": 287,
+      "variants": [
+        "Focused"
+      ]
+    },
+    {
+      "name": "_Checkbox-theme-quartz/Off",
+      "instances": 168,
+      "variants": []
+    },
+    {
+      "name": "State=Default, Focus=Off, Number=False",
+      "instances": 166,
+      "variants": [
+        "Default",
+        "False",
+        "Off"
+      ]
+    },
+    {
+      "name": "State=Default, Focus=Off, Number=True",
+      "instances": 121,
+      "variants": [
+        "Default",
+        "Off",
+        "True"
+      ]
+    },
+    {
+      "name": ".Resize-Handle",
+      "instances": 104,
+      "variants": []
+    },
+    {
+      "name": "small-down-theme-quartz",
+      "instances": 81,
+      "variants": []
+    },
+    {
+      "name": "icon-small-down",
+      "instances": 81,
+      "variants": []
+    },
+    {
+      "name": "icon-menu-alt",
+      "instances": 76,
+      "variants": []
+    },
+    {
+      "name": ".shim",
+      "instances": 76,
+      "variants": []
+    },
+    {
+      "name": "Drag Indicator/Grid-Parts/Tab/Indent",
+      "instances": 76,
+      "variants": []
+    },
+    {
+      "name": "star-theme-quartz",
+      "instances": 70,
+      "variants": []
+    },
+    {
+      "name": "star-theme-alpine",
+      "instances": 70,
+      "variants": []
+    },
+    {
+      "name": "icon-star",
+      "instances": 70,
+      "variants": []
+    },
+    {
+      "name": "icon-chevron-down-16",
+      "instances": 69,
+      "variants": []
+    },
+    {
+      "name": "icon-blank-16",
+      "instances": 63,
+      "variants": []
+    },
+    {
+      "name": "asc-theme-quartz",
+      "instances": 61,
+      "variants": []
+    },
+    {
+      "name": "asc-theme-alpine",
+      "instances": 61,
+      "variants": []
+    },
+    {
+      "name": "icon-asc",
+      "instances": 61,
+      "variants": []
+    },
+    {
+      "name": "Type=Ascending",
+      "instances": 61,
+      "variants": [
+        "Ascending"
+      ]
+    },
+    {
+      "name": "State=Active",
+      "instances": 53,
+      "variants": [
+        "Active"
+      ]
+    },
+    {
+      "name": "chart-theme-alpine",
+      "instances": 35,
+      "variants": []
+    },
+    {
+      "name": "State=Default",
+      "instances": 29,
+      "variants": [
+        "Default"
+      ]
+    },
+    {
+      "name": "Right-Align=Left",
+      "instances": 28,
+      "variants": [
+        "Left"
+      ]
+    },
+    {
+      "name": "search-theme-quartz",
+      "instances": 26,
+      "variants": []
+    },
+    {
+      "name": "search-theme-alpine",
+      "instances": 26,
+      "variants": []
+    },
+    {
+      "name": "search",
+      "instances": 26,
+      "variants": []
+    },
+    {
+      "name": "chart-theme-quartz",
+      "instances": 26,
+      "variants": []
+    },
+    {
+      "name": "icon-chart",
+      "instances": 26,
+      "variants": []
+    },
+    {
+      "name": "Size=sm, Interaction=default, Focus=False, Disabled=False",
+      "instances": 25,
+      "variants": [
+        "False",
+        "default",
+        "sm"
+      ]
+    },
+    {
+      "name": "Right-Align=Center",
+      "instances": 24,
+      "variants": [
+        "Center"
+      ]
+    },
+    {
+      "name": "Size=sm, Type=tertiary, Disabled=False, Focus=False, Interaction=default",
+      "instances": 22,
+      "variants": [
+        "False",
+        "default",
+        "sm",
+        "tertiary"
+      ]
+    },
+    {
+      "name": "Row Number",
+      "instances": 21,
+      "variants": []
+    },
+    {
+      "name": "Grid-Parts/Button",
+      "instances": 21,
+      "variants": []
+    },
+    {
+      "name": ".slot-frame",
+      "instances": 19,
+      "variants": []
+    },
+    {
+      "name": "Filter List Item",
+      "instances": 19,
+      "variants": []
+    },
+    {
+      "name": "Stars=5",
+      "instances": 14,
+      "variants": [
+        "5"
+      ]
+    },
+    {
+      "name": "Height=20, Value=unchecked, Disabled=False, Interaction=default, Focus=False",
+      "instances": 12,
+      "variants": [
+        "20",
+        "False",
+        "default",
+        "unchecked"
+      ]
+    },
+    {
+      "name": "Size=sm, Value=unchecked, Disabled=False",
+      "instances": 12,
+      "variants": [
+        "False",
+        "sm",
+        "unchecked"
+      ]
+    },
+    {
+      "name": "Height=20, value=unchecked, disabled=False, Interaction=default, Focus=False",
+      "instances": 11,
+      "variants": [
+        "20",
+        "False",
+        "default",
+        "unchecked"
+      ]
+    },
+    {
+      "name": "Size=sm, Value=unchecked, Disabled=True",
+      "instances": 11,
+      "variants": [
+        "True",
+        "sm",
+        "unchecked"
+      ]
+    },
+    {
+      "name": "filter-theme-quartz",
+      "instances": 10,
+      "variants": []
+    },
+    {
+      "name": "cancel-theme-quartz",
+      "instances": 9,
+      "variants": []
+    },
+    {
+      "name": "icon-cancel",
+      "instances": 9,
+      "variants": []
+    },
+    {
+      "name": "Chip",
+      "instances": 9,
+      "variants": []
+    },
+    {
+      "name": "filter-theme-alpine",
+      "instances": 9,
+      "variants": []
+    },
+    {
+      "name": "icon-filter",
+      "instances": 9,
+      "variants": []
+    },
+    {
+      "name": "Flag=Sweden",
+      "instances": 8,
+      "variants": [
+        "Sweden"
+      ]
+    },
+    {
+      "name": "Right-Align=False",
+      "instances": 7,
+      "variants": [
+        "False"
+      ]
+    },
+    {
+      "name": "icon-chevron-down-20",
+      "instances": 6,
+      "variants": []
+    },
+    {
+      "name": "icon-search-16",
+      "instances": 6,
+      "variants": []
+    },
+    {
+      "name": "icon-calendar-16",
+      "instances": 6,
+      "variants": []
+    },
+    {
+      "name": "icon-edit-16",
+      "instances": 5,
+      "variants": []
+    },
+    {
+      "name": "Flag=France",
+      "instances": 5,
+      "variants": [
+        "France"
+      ]
+    },
+    {
+      "name": "group-theme-quartz",
+      "instances": 4,
+      "variants": []
+    },
+    {
+      "name": "group-theme-alpine",
+      "instances": 4,
+      "variants": []
+    },
+    {
+      "name": "icon-group",
+      "instances": 4,
+      "variants": []
+    },
+    {
+      "name": "Flag=Italy",
+      "instances": 4,
+      "variants": [
+        "Italy"
+      ]
+    },
+    {
+      "name": "Flag=Uruguay",
+      "instances": 4,
+      "variants": [
+        "Uruguay"
+      ]
+    },
+    {
+      "name": "속성 1=Default",
+      "instances": 3,
+      "variants": [
+        "Default"
+      ]
+    },
+    {
+      "name": "icon-close-20",
+      "instances": 3,
+      "variants": []
+    },
+    {
+      "name": "Interaction=Default",
+      "instances": 3,
+      "variants": [
+        "Default"
+      ]
+    },
+    {
+      "name": "Type=default, Selected=False",
+      "instances": 3,
+      "variants": [
+        "False",
+        "default"
+      ]
+    },
+    {
+      "name": "icon-keyboard-arrow-right-20",
+      "instances": 3,
+      "variants": []
+    },
+    {
+      "name": "Size=sm, Interaction=default, Disabled=False, Focus=False, Display=False",
+      "instances": 3,
+      "variants": [
+        "False",
+        "default",
+        "sm"
+      ]
+    },
+    {
+      "name": "Size=sm, Type=outline-destructive, Disabled=False, Focus=False, Interaction=default",
+      "instances": 3,
+      "variants": [
+        "False",
+        "default",
+        "outline-destructive",
+        "sm"
+      ]
+    },
+    {
+      "name": "Size=md, Interaction=default, Focus=False, Disabled=False",
+      "instances": 2,
+      "variants": [
+        "False",
+        "default",
+        "md"
+      ]
+    },
+    {
+      "name": "icon-external-16",
+      "instances": 2,
+      "variants": []
+    },
+    {
+      "name": "Size=sm, Type=secondary, Disabled=False, Focus=False, Interaction=default",
+      "instances": 2,
+      "variants": [
+        "False",
+        "default",
+        "secondary",
+        "sm"
+      ]
+    },
+    {
+      "name": "Size=sm, Orientation=horizontal",
+      "instances": 2,
+      "variants": [
+        "horizontal",
+        "sm"
+      ]
+    },
+    {
+      "name": "icon-add-16",
+      "instances": 2,
+      "variants": []
+    },
+    {
+      "name": "Size=sm, Interaction=value, Disabled=False, Focus=False, Display=False",
+      "instances": 2,
+      "variants": [
+        "False",
+        "sm",
+        "value"
+      ]
+    },
+    {
+      "name": "Horizontal=True, Position=Start",
+      "instances": 2,
+      "variants": [
+        "Start",
+        "True"
+      ]
+    },
+    {
+      "name": ".Panel Category Title",
+      "instances": 2,
+      "variants": []
+    },
+    {
+      "name": ".Drag Drop Panel",
+      "instances": 2,
+      "variants": []
+    },
+    {
+      "name": "columns-theme-quartz",
+      "instances": 2,
+      "variants": []
+    },
+    {
+      "name": "columns-theme-alpine",
+      "instances": 2,
+      "variants": []
+    },
+    {
+      "name": "icon-column",
+      "instances": 2,
+      "variants": []
+    },
+    {
+      "name": "icon-search-20",
+      "instances": 1,
+      "variants": []
+    },
+    {
+      "name": "focus=False, Interaction=default",
+      "instances": 1,
+      "variants": [
+        "False",
+        "default"
+      ]
+    },
+    {
+      "name": "icon-widgets-20",
+      "instances": 1,
+      "variants": []
+    },
+    {
+      "name": "Size=xs, Type=default",
+      "instances": 1,
+      "variants": [
+        "default",
+        "xs"
+      ]
+    },
+    {
+      "name": "header1",
+      "instances": 1,
+      "variants": []
+    },
+    {
+      "name": "icon-dehaze-24",
+      "instances": 1,
+      "variants": []
+    },
+    {
+      "name": "Interaction=default",
+      "instances": 1,
+      "variants": [
+        "default"
+      ]
+    },
+    {
+      "name": "Property 1=Vertical, Tone=Default",
+      "instances": 1,
+      "variants": [
+        "Default",
+        "Vertical"
+      ]
+    },
+    {
+      "name": "속성 1=기본",
+      "instances": 1,
+      "variants": [
+        "기본"
+      ]
+    },
+    {
+      "name": "header",
+      "instances": 1,
+      "variants": []
+    },
+    {
+      "name": "Type=Main, Selected=True",
+      "instances": 1,
+      "variants": [
+        "Main",
+        "True"
+      ]
+    },
+    {
+      "name": "icon-star-line-24",
+      "instances": 1,
+      "variants": []
+    },
+    {
+      "name": "title",
+      "instances": 1,
+      "variants": []
+    },
+    {
+      "name": "Height=20, value=checked, disabled=False, Interaction=default, Focus=False",
+      "instances": 1,
+      "variants": [
+        "20",
+        "False",
+        "checked",
+        "default"
+      ]
+    },
+    {
+      "name": "Size=sm, Value=checked, Disabled=True",
+      "instances": 1,
+      "variants": [
+        "True",
+        "checked",
+        "sm"
+      ]
+    },
+    {
+      "name": "Size=sm, Type=outline, Disabled=False, Focus=False, Interaction=default",
+      "instances": 1,
+      "variants": [
+        "False",
+        "default",
+        "outline",
+        "sm"
+      ]
+    },
+    {
+      "name": "Size=sm, Type=primary, Disabled=False, Focus=False, Interaction=default",
+      "instances": 1,
+      "variants": [
+        "False",
+        "default",
+        "primary",
+        "sm"
+      ]
+    },
+    {
+      "name": "AG Grid (summary bar)",
+      "instances": 1,
+      "variants": []
+    },
+    {
+      "name": "Grouping Panel",
+      "instances": 1,
+      "variants": []
+    },
+    {
+      "name": "Grid-Parts/.Advanced Filter",
+      "instances": 1,
+      "variants": []
+    },
+    {
+      "name": "Grid-Parts/Advanced Filter Bar",
+      "instances": 1,
+      "variants": []
+    },
+    {
+      "name": "Horizontal=False, Position=Start",
+      "instances": 1,
+      "variants": [
+        "False",
+        "Start"
+      ]
+    },
+    {
+      "name": "State=Default, On=False",
+      "instances": 1,
+      "variants": [
+        "Default",
+        "False"
+      ]
+    },
+    {
+      "name": "pivot-mode-select",
+      "instances": 1,
+      "variants": []
+    },
+    {
+      "name": "State=Selected",
+      "instances": 1,
+      "variants": [
+        "Selected"
+      ]
+    },
+    {
+      "name": "sideButtonBar",
+      "instances": 1,
+      "variants": []
+    },
+    {
+      "name": "Type=Columns",
+      "instances": 1,
+      "variants": [
+        "Columns"
+      ]
+    },
+    {
+      "name": "first-theme-quartz",
+      "instances": 1,
+      "variants": []
+    },
+    {
+      "name": "first-theme-alpine",
+      "instances": 1,
+      "variants": []
+    },
+    {
+      "name": "icon-first",
+      "instances": 1,
+      "variants": []
+    },
+    {
+      "name": "expanded-theme-quartz",
+      "instances": 1,
+      "variants": []
+    },
+    {
+      "name": "expanded-theme-alpine",
+      "instances": 1,
+      "variants": []
+    },
+    {
+      "name": "icon-expanded",
+      "instances": 1,
+      "variants": []
+    },
+    {
+      "name": "contracted-theme-quartz",
+      "instances": 1,
+      "variants": []
+    },
+    {
+      "name": "contracted-theme-alpine",
+      "instances": 1,
+      "variants": []
+    },
+    {
+      "name": "icon-contracted",
+      "instances": 1,
+      "variants": []
+    },
+    {
+      "name": "last-theme-quartz",
+      "instances": 1,
+      "variants": []
+    },
+    {
+      "name": "last-theme-alpine",
+      "instances": 1,
+      "variants": []
+    },
+    {
+      "name": "icon-last",
+      "instances": 1,
+      "variants": []
+    },
+    {
+      "name": "Pagination",
+      "instances": 1,
+      "variants": []
+    },
+    {
+      "name": "Status Bar",
+      "instances": 1,
+      "variants": []
+    },
+    {
+      "name": "Row Line=True",
+      "instances": 1,
+      "variants": [
+        "True"
+      ]
+    }
+  ],
+  "styles": {
+    "colors": [
+      "#000000",
+      "#0033A0",
+      "#1A47B8",
+      "#1C1B1F",
+      "#212529",
+      "#249F58",
+      "#3A99FF",
+      "#495057",
+      "#6C757D",
+      "#98B3EE",
+      "#B9B443",
+      "#CA9090",
+      "#CED4DA",
+      "#D32F2F",
+      "#D4AF2C",
+      "#D9D9D9",
+      "#D9E2F5",
+      "#ECEFF3",
+      "#F2FF58",
+      "#F4F6F8",
+      "#F93939",
+      "#F9FAFB",
+      "#FAFBFB",
+      "#FFDA2C",
+      "#FFFFFF"
+    ],
+    "spacing": [
+      2,
+      4,
+      6,
+      8,
+      10,
+      12,
+      16,
+      20,
+      24,
+      38,
+      261
+    ],
+    "typography": {
+      "subtitle-16": {
+        "fontSize": 16,
+        "fontWeight": 400,
+        "fontFamily": "Pretendard"
+      },
+      "subtitle-16-500": {
+        "fontSize": 16,
+        "fontWeight": 500,
+        "fontFamily": "Pretendard"
+      },
+      "body-14": {
+        "fontSize": 14,
+        "fontWeight": 400,
+        "fontFamily": "Pretendard"
+      },
+      "body-14-500": {
+        "fontSize": 14,
+        "fontWeight": 500,
+        "fontFamily": "Pretendard"
+      },
+      "heading-24": {
+        "fontSize": 24,
+        "fontWeight": 700,
+        "fontFamily": "Pretendard"
+      },
+      "body-12": {
+        "fontSize": 12,
+        "fontWeight": 400,
+        "fontFamily": "Pretendard"
+      },
+      "body-14-600": {
+        "fontSize": 14,
+        "fontWeight": 600,
+        "fontFamily": "Pretendard"
+      },
+      "body-14-700": {
+        "fontSize": 14,
+        "fontWeight": 700,
+        "fontFamily": "Pretendard"
+      },
+      "body-13": {
+        "fontSize": 13,
+        "fontWeight": 400,
+        "fontFamily": "Pretendard"
+      },
+      "body-13-700": {
+        "fontSize": 13,
+        "fontWeight": 700,
+        "fontFamily": "Pretendard"
+      },
+      "body-13-400": {
+        "fontSize": 13,
+        "fontWeight": 400,
+        "fontFamily": "Roboto"
+      }
+    }
+  }
+}
