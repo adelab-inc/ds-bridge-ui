@@ -588,6 +588,17 @@ When updating existing code, you MUST:
     ```
   - **For icons**: Use text symbols or the design system's icon component (if available), NOT image files.
   - **Exception**: Only use `<img>` if the user explicitly provides a real image URL.
+- **HTML Void Elements (SELF-CLOSING - CRITICAL)**:
+  - These elements MUST be self-closing and CANNOT have children:
+    - ✅ `<input />` or `<input style={{...}} />`
+    - ✅ `<br />`, `<hr />`, `<img />`, `<meta />`, `<link />`
+    - ❌ `<input>text</input>` (CAUSES REACT ERROR #137)
+    - ❌ `<br>content</br>` (INVALID)
+  - If you need a text label near an input, use a separate `<label>` element:
+    ```tsx
+    <label>이름</label>
+    <input style={{width: '100%'}} />
+    ```
 - **Spacing**:
   - **섹션 간**: `marginBottom: 32px`
   - **폼 행 간**: `marginBottom: 24px`
