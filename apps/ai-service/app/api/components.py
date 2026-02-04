@@ -73,16 +73,12 @@ AVAILABLE_COMPONENTS_WHITELIST = {
 }
 
 
-def format_prop_type(prop_type: list | str, max_values: int = 5) -> str:
+def format_prop_type(prop_type: list | str) -> str:
     """
     prop 타입을 문자열로 포맷
-    - list인 경우 enum 값들을 | 로 연결
-    - 값이 많으면 축약
+    - list인 경우 enum 값들을 | 로 연결 (전체 표시)
     """
     if isinstance(prop_type, list):
-        if len(prop_type) > max_values:
-            values = " | ".join(f'"{v}"' for v in prop_type[: max_values - 1])
-            return f"{values} | ... ({len(prop_type)} options)"
         return " | ".join(f'"{v}"' for v in prop_type)
     return str(prop_type)
 
@@ -196,7 +192,7 @@ def format_design_tokens(tokens: dict | None) -> str:
     font_size = design_tokens.get("fontSize", {})
     font_weight = design_tokens.get("fontWeight", {})
 
-    # 주요 색상 추출
+    # 주요 색상 추출 (자주 사용되는 것들)
     text_primary = colors.get("text-primary", "#212529")
     text_secondary = colors.get("text-secondary", "#495057")
     text_tertiary = colors.get("text-tertiary", "#6c757d")
@@ -205,6 +201,9 @@ def format_design_tokens(tokens: dict | None) -> str:
     bg_surface = colors.get("bg-surface", "#ffffff")
     bg_canvas = colors.get("bg-canvas", "#f4f6f8")
     bg_selection = colors.get("bg-selection", "#ecf0fa")
+
+    # 전체 색상 토큰 JSON (사용자가 토큰 이름으로 요청 시 참조용)
+    all_colors_json = json.dumps(colors, ensure_ascii=False, indent=2)
 
     # 폰트 크기/두께 추출 (Mapping to smaller tokens for better density)
     # Page Title (h1) -> Use Heading LG token
@@ -248,6 +247,13 @@ def format_design_tokens(tokens: dict | None) -> str:
   - **Shadows**: `boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)'`
   - **Borders**: `border: '1px solid {border_default}'`
   - **Radius**: `borderRadius: 8px` (inputs, buttons), `12px` (cards)
+
+## 📋 ALL COLOR TOKENS (REFERENCE)
+When user requests a specific token (e.g., "hue-green-500"), look up the EXACT value below. NEVER guess hex values.
+
+```json
+{all_colors_json}
+```
 
 """
 
@@ -371,11 +377,10 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
 
 def format_ag_grid_tokens(tokens: dict | None) -> str:
     """
-    AG Grid 토큰을 시스템 프롬프트용 문자열로 포맷팅
+    AG Grid 토큰을 시스템 프롬프트용 문자열로 포맷팅 (전체 JSON 포함)
 
     Args:
         tokens: AG Grid 토큰 dict 또는 None
-                구조: { "agGrid": { "colors": { "accent": { "value": "#xxx" }, ... } } }
 
     Returns:
         포맷팅된 AG Grid 토큰 문자열
@@ -388,51 +393,18 @@ def format_ag_grid_tokens(tokens: dict | None) -> str:
     if not grid_tokens:
         return ""
 
-    lines = ["### AG Grid Styling Tokens"]
-    lines.append("")
+    # 전체 토큰을 JSON으로 포함
+    tokens_json = json.dumps(grid_tokens, ensure_ascii=False, indent=2)
 
-    def extract_value(token_data):
-        """토큰 데이터에서 값 추출 (nested 구조 처리)"""
-        if isinstance(token_data, dict):
-            if "value" in token_data:
-                return token_data["value"]
-            # nested 객체는 첫 번째 레벨만 처리
-            return {k: v.get("value", v) if isinstance(v, dict) else v for k, v in token_data.items()}
-        return token_data
+    return f"""### AG Grid Styling Tokens
 
-    # 색상 토큰
-    colors = grid_tokens.get("colors", {})
-    if colors:
-        lines.append("**Colors:**")
-        for key, value in list(colors.items())[:8]:
-            extracted = extract_value(value)
-            if isinstance(extracted, str):
-                lines.append(f"  - {key}: `{extracted}`")
-            elif isinstance(extracted, dict):
-                # nested (e.g., background.chrome)
-                for sub_key, sub_val in list(extracted.items())[:3]:
-                    lines.append(f"  - {key}.{sub_key}: `{sub_val}`")
-        lines.append("")
+When user requests a specific AG Grid token, look up the EXACT value below.
 
-    # 간격/크기 토큰
-    spacing = grid_tokens.get("spacing", {})
-    if spacing:
-        lines.append("**Spacing:**")
-        for key, value in list(spacing.items())[:6]:
-            extracted = extract_value(value)
-            lines.append(f"  - {key}: `{extracted}`")
-        lines.append("")
+```json
+{tokens_json}
+```
 
-    # 폰트 토큰
-    font = grid_tokens.get("font", {})
-    if font:
-        lines.append("**Font:**")
-        for key, value in list(font.items())[:6]:
-            extracted = extract_value(value)
-            lines.append(f"  - {key}: `{extracted}`")
-        lines.append("")
-
-    return "\n".join(lines) if len(lines) > 2 else ""
+"""
 
 
 # 디자인 토큰을 로드하지 못했을 때 사용할 기본값
@@ -505,9 +477,19 @@ When updating existing code, you MUST:
   - Filter bar and Table MUST be visually grouped together.
   - Structure: Filters above, then table below with proper spacing (`marginBottom: 24`).
   - DO NOT separate filters and table into different cards.
-- **Status Styling**:
-  - Use `Badge` for status. NEVER use plain text.
-  - Active: `variant="success"`, Inactive: `variant="neutral"`, Error: `variant="destructive"`.
+- **Status Styling (USE COMPONENT PROPS - NO CUSTOM COLORS)**:
+  - Use `Badge` with `type="status"` for status display. NEVER use plain text.
+  - Use `statusVariant` prop: `success`, `info`, `warning`, `error`
+  - **NEVER use custom hex colors for status** - the component handles colors internally:
+    - ❌ `style={{ backgroundColor: '#10B981' }}` (WRONG - custom color)
+    - ❌ `style={{ color: '#22C55E' }}` (WRONG - custom color)
+    - ✅ `<Badge type="status" statusVariant="success">` (CORRECT - uses design system colors)
+  - Status mapping:
+    - Active/정상/완료: `statusVariant="success"`
+    - Inactive/대기/진행중: `statusVariant="info"`
+    - Warning/심사중/주의: `statusVariant="warning"`
+    - Error/해지/실패: `statusVariant="error"`
+  - Example: `<Badge type="status" statusVariant="success">정상</Badge>`
 - **Empty States**:
   - Center the message: `textAlign: 'center'`, `padding: 48`, `color: '#6b7280'`
   - Example: `<div style={{textAlign:'center', padding:48, color:'#6b7280'}}>데이터가 없습니다.</div>`
@@ -531,15 +513,10 @@ When updating existing code, you MUST:
       - ✅ `<Select defaultValue="all_region" options={[{ label: '전체 지역', value: 'all_region' }, ...]} />`
       - ❌ `<Select defaultValue="전체" options={[{ label: '전체', value: 'all' }, ...]} />` (WRONG - using label instead of value)
       - ❌ `<Select value="all" options={...} />` (WRONG - requires onChange handler)
-    - **Radio**: When first option or "전체/기본" is selected, use `defaultValue`:
-      - ✅ `<Radio.Group defaultValue="all">`
-      - ❌ `<Radio.Group value="all">`
-    - **Tab**: When first tab is selected, use `defaultValue`:
-      - ✅ `<Tabs defaultValue="tab1">`
-      - ❌ `<Tabs value="tab1">`
-    - **ToggleSwitch/Checkbox**: Use `defaultChecked` for initial state:
-      - ✅ `<ToggleSwitch defaultChecked={true} />`
-      - ❌ `<ToggleSwitch checked={true} />`
+    - **Radio/Checkbox/ToggleSwitch**: Use `checked` with `onChange` handler for controlled state:
+      - ✅ `<Radio checked={isSelected} onChange={handleChange} />`
+      - ✅ `<Checkbox checked={isChecked} onChange={handleChange} />`
+      - ✅ `<ToggleSwitch checked={isOn} onChange={handleToggle} />`
   - **Inputs**: internal inputs MUST be `width: '100%'`. NEVER use fixed pixels like `width: 300px` inside a grid.
   - **Z-Index**: Dropdowns/Modals must have `zIndex: 50` or higher to float above content.
 
@@ -593,6 +570,35 @@ When updating existing code, you MUST:
     };
     ```
   - Use this for: user lists, comments, chat, team members, assignees.
+- **Images (NO BROKEN IMAGES - CRITICAL)**:
+  - **NEVER use `<img>` tag with placeholder URLs** - these will show as broken images (X-box):
+    - ❌ `<img src="/placeholder.png" />` (file doesn't exist)
+    - ❌ `<img src="https://via.placeholder.com/..." />` (external placeholder service)
+    - ❌ `<img src="/images/product.jpg" />` (assumed path that doesn't exist)
+  - **For thumbnails/product images**: Use a colored placeholder div with an icon or text:
+    ```tsx
+    <div style={{
+      width: 80, height: 80, borderRadius: 8,
+      backgroundColor: '#f1f3f5', color: '#adb5bd',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: 12
+    }}>
+      이미지
+    </div>
+    ```
+  - **For icons**: Use text symbols or the design system's icon component (if available), NOT image files.
+  - **Exception**: Only use `<img>` if the user explicitly provides a real image URL.
+- **HTML Void Elements (SELF-CLOSING - CRITICAL)**:
+  - These elements MUST be self-closing and CANNOT have children:
+    - ✅ `<input />` or `<input style={{...}} />`
+    - ✅ `<br />`, `<hr />`, `<img />`, `<meta />`, `<link />`
+    - ❌ `<input>text</input>` (CAUSES REACT ERROR #137)
+    - ❌ `<br>content</br>` (INVALID)
+  - If you need a text label near an input, use a separate `<label>` element:
+    ```tsx
+    <label>이름</label>
+    <input style={{width: '100%'}} />
+    ```
 - **Spacing**:
   - **섹션 간**: `marginBottom: 32px`
   - **폼 행 간**: `marginBottom: 24px`
@@ -616,117 +622,27 @@ When updating existing code, you MUST:
     </div>
     ```
 
-## 🌟 FEW-SHOT EXAMPLE (PRODUCTION QUALITY REQUIRED)
+## 🎯 UI GENERATION PRINCIPLE (CRITICAL)
 
-> **NOTE**: 아래 예시의 색상/폰트 값은 구조 참고용입니다. 실제 코드 생성 시 위 **DESIGN STANDARDS** 섹션의 디자인 토큰 값을 사용하세요.
+**Generate UI that EXACTLY matches the user's request.** Do NOT default to dashboard/table layouts.
 
-### User Management Dashboard
-**Request**: "사용자 목록에 검색과 상태 필터 추가해줘"
-**Response**:
-<file path="src/components/UserDashboard.tsx">
-import { Button, Badge, Select } from '@/components';
+- User asks for "로그인 페이지" → Generate a login form (centered, inputs, button)
+- User asks for "상품 목록" → Generate product cards or list
+- User asks for "설정 페이지" → Generate settings form with sections
+- User asks for "프로필 페이지" → Generate profile view with user info
+- User asks for "대시보드" → ONLY THEN generate dashboard with tables/charts
 
-const UserDashboard = () => {
-  const [search, setSearch] = React.useState('');
-  const [filter, setFilter] = React.useState('all');
-  const [isLoading, setIsLoading] = React.useState(false);
-
-  const avatarColors = ['#4F46E5', '#7C3AED', '#EC4899', '#F59E0B', '#10B981', '#3B82F6', '#EF4444', '#8B5CF6'];
-  const getAvatarColor = (name: string) => avatarColors[name.charCodeAt(0) % avatarColors.length];
-
-  const users = [
-    { id: 1, name: '김민준', email: 'minjun@company.com', status: 'active' },
-    { id: 2, name: '이서연', email: 'seoyeon@company.com', status: 'offline' },
-    { id: 3, name: '박지호', email: 'jiho@company.com', status: 'active' },
-    { id: 4, name: '최수빈', email: 'subin@company.com', status: 'active' },
-    { id: 5, name: '정예은', email: 'yeeun@company.com', status: 'offline' },
-    { id: 6, name: '강태현', email: 'taehyun@company.com', status: 'active' },
-    { id: 7, name: '윤하늘', email: 'haneul@company.com', status: 'active' },
-    { id: 8, name: '임도윤', email: 'doyun@company.com', status: 'offline' },
-    { id: 9, name: '한소희', email: 'sohee@company.com', status: 'active' },
-    { id: 10, name: '오준서', email: 'junseo@company.com', status: 'active' },
-  ];
-
-  const filteredUsers = users.filter(u =>
-    (filter === 'all' || u.status === filter) &&
-    u.name.includes(search)
-  );
-
-  const handleSearch = () => {
-    setIsLoading(true);
-    setTimeout(() => setIsLoading(false), 500);
-  };
-
-  return (
-    <div style={{ padding: 32, width: '100%', maxWidth: 1200, margin: '0 auto' }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, color: '#212529', marginBottom: 8 }}>사용자 관리</h1>
-      <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 24 }}>팀원들의 권한과 상태를 관리하세요.</p>
-
-      {/* Card Container */}
-      <div style={{ backgroundColor: '#ffffff', borderRadius: 12, border: '1px solid #dee2e6', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: 24 }}>
-        {/* Filters - NOTE: Select uses defaultValue with option's VALUE (not label) */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16, alignItems: 'end', marginBottom: 24 }}>
-          <div>
-            <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#212529', marginBottom: 6 }}>이름 검색</label>
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="이름을 입력하세요" style={{ width: '100%', padding: '10px 16px', borderRadius: 8, border: '1px solid #dee2e6', fontSize: 14, boxSizing: 'border-box', height: 42 }} />
-          </div>
-          <div>
-            <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#212529', marginBottom: 6 }}>상태</label>
-            <Select style={{ width: '100%' }} defaultValue="all" options={[{ label: '전체', value: 'all' }, { label: '활동', value: 'active' }, { label: '부재', value: 'offline' }]} onChange={(v) => setFilter(v)} />
-          </div>
-          <Button data-instance-id="search-btn" variant="primary" onClick={handleSearch} disabled={isLoading} style={{ width: '100%', height: 42 }}>
-            {isLoading ? '검색 중...' : '검색'}
-          </Button>
-        </div>
-
-        {/* Table */}
-        {isLoading ? (
-          <div style={{ textAlign: 'center', padding: 48, color: '#6b7280' }}>데이터를 불러오는 중...</div>
-        ) : filteredUsers.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: 48, color: '#6b7280' }}>검색 결과가 없습니다.</div>
-        ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
-            <thead>
-              <tr>
-                <th style={{ padding: '12px 16px', textAlign: 'left', backgroundColor: '#f8f9fa', fontWeight: 600, borderBottom: '2px solid #dee2e6' }}>사용자</th>
-                <th style={{ padding: '12px 16px', textAlign: 'left', backgroundColor: '#f8f9fa', fontWeight: 600, borderBottom: '2px solid #dee2e6' }}>이메일</th>
-                <th style={{ padding: '12px 16px', textAlign: 'left', backgroundColor: '#f8f9fa', fontWeight: 600, borderBottom: '2px solid #dee2e6' }}>상태</th>
-                <th style={{ padding: '12px 16px', textAlign: 'right', backgroundColor: '#f8f9fa', fontWeight: 600, borderBottom: '2px solid #dee2e6' }}>액션</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredUsers.map((user) => (
-                <tr key={user.id}>
-                  <td style={{ padding: '12px 16px', borderBottom: '1px solid #dee2e6' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: getAvatarColor(user.name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: '#ffffff' }}>{user.name[0]}</div>
-                      <span style={{ fontWeight: 500, color: '#212529' }}>{user.name}</span>
-                    </div>
-                  </td>
-                  <td style={{ padding: '12px 16px', borderBottom: '1px solid #dee2e6', color: '#6b7280' }}>{user.email}</td>
-                  <td style={{ padding: '12px 16px', borderBottom: '1px solid #dee2e6' }}>
-                    <Badge variant={user.status === 'active' ? 'success' : 'neutral'}>{user.status === 'active' ? '활동' : '부재'}</Badge>
-                  </td>
-                  <td style={{ padding: '12px 16px', borderBottom: '1px solid #dee2e6', textAlign: 'right' }}>
-                    <Button data-instance-id={`edit-${user.id}`} variant="secondary" size="sm">관리</Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-    </div>
-  );
-};
-
-export default UserDashboard;
-</file>
+**Analyze the user's request carefully and choose the appropriate UI pattern:**
+- **Forms**: Login, signup, settings, profile edit, data entry
+- **Cards**: Products, articles, team members, projects
+- **Lists**: Simple item lists, menus, navigation
+- **Tables**: Data management, admin panels, reports (ONLY when listing/managing multiple records)
+- **Detail views**: Single item display, profile, article detail
 
 ## 🔨 IMPLEMENTATION RULES
-1. **PREMIUM COMPLETION**: Assume the user wants a **production-ready UI**. Wrap content in proper containers with headings and spacing.
-2. **RICH MOCK DATA**: **NEVER** return empty data. Always generate 10+ realistic Korean items.
-3. **ZERO OMISSION**: If the user asks for 5 filters, implement ALL 5. Missing features = FAILURE.
+1. **MATCH USER INTENT**: Generate the UI type that fits the user's request. Do NOT always default to tables/dashboards.
+2. **RICH MOCK DATA**: Generate realistic Korean mock data appropriate to the context.
+3. **ZERO OMISSION**: If the user asks for 5 fields, implement ALL 5. Missing features = FAILURE.
 4. **IMPORT**: `import { Button } from '@/components'` / React hooks: `React.useState`.
 5. **STYLING**: Inline styles only (`style={{ ... }}`), NO emojis, Desktop-first.
 
@@ -853,9 +769,9 @@ Below are reference layouts extracted from Figma. Use these as structural guides
 - Respect the layoutMode (VERTICAL, HORIZONTAL)
 
 **CRITICAL - Figma State to React Props Mapping:**
-- Figma `Selected=True`, `State=Selected` → React `defaultValue` (NOT `value` or `selected`)
-- Figma placeholder text like "선택하세요", "전체 지역" in Select → React `placeholder` prop or `defaultValue`
-- Do NOT use `value` prop for initial states - always use `defaultValue` or `defaultChecked`
+- Figma `Selected=True`, `State=Selected` in Select → React `defaultValue` (NOT `value` or `selected`)
+- Figma placeholder text like "선택하세요", "전체 지역" in Select → React `placeholder` prop
+- Figma `Checked=True` in Checkbox/Radio/ToggleSwitch → React `checked` with `onChange` handler
 - Use similar spacing (itemSpacing, padding)
 - Match the component structure
 
@@ -957,12 +873,16 @@ When analyzing the image, identify:
 {design_tokens_section}
 """
 
-async def get_vision_system_prompt(schema_key: str | None) -> str:
+async def get_vision_system_prompt(
+    schema_key: str | None,
+    image_urls: list[str] | None = None,
+) -> str:
     """
     Vision 모드용 시스템 프롬프트 생성
 
     Args:
         schema_key: Firebase Storage 스키마 경로 (None이면 기본 컴포넌트만)
+        image_urls: 사용자가 업로드한 이미지 URL 목록 (코드에서 <img>로 사용 가능)
 
     Returns:
         Vision 시스템 프롬프트 문자열
@@ -991,12 +911,24 @@ async def get_vision_system_prompt(schema_key: str | None) -> str:
         "{current_date}", current_date
     ).replace("{design_tokens_section}", design_tokens_section)
 
+    # 이미지 URL 섹션 (사용자가 이미지를 코드에 삽입하고 싶을 때 사용)
+    image_urls_section = ""
+    if image_urls:
+        image_urls_section = "\n## Uploaded Image URLs\n"
+        image_urls_section += "The user has uploaded the following images. "
+        image_urls_section += "If they ask to INSERT/EMBED the image in the UI (not just analyze it), use these URLs in `<img>` tags:\n"
+        for i, url in enumerate(image_urls, 1):
+            image_urls_section += f"- Image {i}: `{url}`\n"
+        image_urls_section += "\n**Usage Example:**\n"
+        image_urls_section += "```tsx\n<img src=\"{url}\" alt=\"uploaded image\" style={{ maxWidth: '100%', height: 'auto' }} />\n```\n"
+
     return (
         base_prompt
         + "\n## Available Components\n"
         + available_note
         + "\n"
         + component_docs
+        + image_urls_section
         + "\n"
         + RESPONSE_FORMAT_INSTRUCTIONS
         + "\n"

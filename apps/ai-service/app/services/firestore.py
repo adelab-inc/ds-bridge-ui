@@ -37,7 +37,7 @@ class RoomData(TypedDict, total=False):
     created_at: int
 
 
-class MessageData(TypedDict):
+class MessageData(TypedDict, total=False):
     """채팅 메시지 문서 타입"""
 
     id: str
@@ -49,6 +49,7 @@ class MessageData(TypedDict):
     question_created_at: int
     answer_created_at: int
     status: str
+    image_urls: list[str]  # Vision 모드에서 사용된 이미지 URL 목록
 
 
 class PaginatedMessages(TypedDict):
@@ -315,6 +316,7 @@ async def create_chat_message(
     path: str = "",
     question_created_at: int | None = None,
     status: MessageStatus = "DONE",
+    image_urls: list[str] | None = None,
 ) -> MessageData:
     """
     새 채팅 메시지 생성
@@ -327,6 +329,7 @@ async def create_chat_message(
         path: 파일 경로
         question_created_at: 질문 생성 시간 (ms timestamp)
         status: 응답 상태 ("DONE" | "ERROR")
+        image_urls: Vision 모드에서 사용된 이미지 URL 목록
 
     Returns:
         생성된 메시지 문서
@@ -349,6 +352,10 @@ async def create_chat_message(
         "answer_created_at": now,
         "status": status,
     }
+
+    # 이미지 URL이 있으면 추가
+    if image_urls:
+        message_data["image_urls"] = image_urls
 
     await db.collection(CHAT_MESSAGES_COLLECTION).document(message_id).set(message_data)
     logger.debug("Chat message created", extra={"message_id": message_id, "room_id": room_id})
