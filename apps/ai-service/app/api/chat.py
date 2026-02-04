@@ -648,6 +648,7 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
             question=question_text,
             question_created_at=question_created_at,
             status="GENERATING",
+            image_urls=request.image_urls if is_vision_mode else None,
         )
         message_id = message_data["id"]
 
@@ -658,6 +659,7 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
         if is_vision_mode:
             system_prompt = await get_vision_system_prompt(
                 schema_key=room.get("schema_key"),
+                image_urls=request.image_urls,
             )
         else:
             system_prompt = await resolve_system_prompt(

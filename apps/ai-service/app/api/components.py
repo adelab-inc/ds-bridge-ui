@@ -73,16 +73,12 @@ AVAILABLE_COMPONENTS_WHITELIST = {
 }
 
 
-def format_prop_type(prop_type: list | str, max_values: int = 5) -> str:
+def format_prop_type(prop_type: list | str) -> str:
     """
     prop 타입을 문자열로 포맷
-    - list인 경우 enum 값들을 | 로 연결
-    - 값이 많으면 축약
+    - list인 경우 enum 값들을 | 로 연결 (전체 표시)
     """
     if isinstance(prop_type, list):
-        if len(prop_type) > max_values:
-            values = " | ".join(f'"{v}"' for v in prop_type[: max_values - 1])
-            return f"{values} | ... ({len(prop_type)} options)"
         return " | ".join(f'"{v}"' for v in prop_type)
     return str(prop_type)
 
@@ -196,7 +192,7 @@ def format_design_tokens(tokens: dict | None) -> str:
     font_size = design_tokens.get("fontSize", {})
     font_weight = design_tokens.get("fontWeight", {})
 
-    # 주요 색상 추출
+    # 주요 색상 추출 (자주 사용되는 것들)
     text_primary = colors.get("text-primary", "#212529")
     text_secondary = colors.get("text-secondary", "#495057")
     text_tertiary = colors.get("text-tertiary", "#6c757d")
@@ -205,6 +201,9 @@ def format_design_tokens(tokens: dict | None) -> str:
     bg_surface = colors.get("bg-surface", "#ffffff")
     bg_canvas = colors.get("bg-canvas", "#f4f6f8")
     bg_selection = colors.get("bg-selection", "#ecf0fa")
+
+    # 전체 색상 토큰 JSON (사용자가 토큰 이름으로 요청 시 참조용)
+    all_colors_json = json.dumps(colors, ensure_ascii=False, indent=2)
 
     # 폰트 크기/두께 추출 (Mapping to smaller tokens for better density)
     # Page Title (h1) -> Use Heading LG token
@@ -248,6 +247,13 @@ def format_design_tokens(tokens: dict | None) -> str:
   - **Shadows**: `boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)'`
   - **Borders**: `border: '1px solid {border_default}'`
   - **Radius**: `borderRadius: 8px` (inputs, buttons), `12px` (cards)
+
+## 📋 ALL COLOR TOKENS (REFERENCE)
+When user requests a specific token (e.g., "hue-green-500"), look up the EXACT value below. NEVER guess hex values.
+
+```json
+{all_colors_json}
+```
 
 """
 
@@ -371,11 +377,10 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
 
 def format_ag_grid_tokens(tokens: dict | None) -> str:
     """
-    AG Grid 토큰을 시스템 프롬프트용 문자열로 포맷팅
+    AG Grid 토큰을 시스템 프롬프트용 문자열로 포맷팅 (전체 JSON 포함)
 
     Args:
         tokens: AG Grid 토큰 dict 또는 None
-                구조: { "agGrid": { "colors": { "accent": { "value": "#xxx" }, ... } } }
 
     Returns:
         포맷팅된 AG Grid 토큰 문자열
@@ -388,51 +393,18 @@ def format_ag_grid_tokens(tokens: dict | None) -> str:
     if not grid_tokens:
         return ""
 
-    lines = ["### AG Grid Styling Tokens"]
-    lines.append("")
+    # 전체 토큰을 JSON으로 포함
+    tokens_json = json.dumps(grid_tokens, ensure_ascii=False, indent=2)
 
-    def extract_value(token_data):
-        """토큰 데이터에서 값 추출 (nested 구조 처리)"""
-        if isinstance(token_data, dict):
-            if "value" in token_data:
-                return token_data["value"]
-            # nested 객체는 첫 번째 레벨만 처리
-            return {k: v.get("value", v) if isinstance(v, dict) else v for k, v in token_data.items()}
-        return token_data
+    return f"""### AG Grid Styling Tokens
 
-    # 색상 토큰
-    colors = grid_tokens.get("colors", {})
-    if colors:
-        lines.append("**Colors:**")
-        for key, value in list(colors.items())[:8]:
-            extracted = extract_value(value)
-            if isinstance(extracted, str):
-                lines.append(f"  - {key}: `{extracted}`")
-            elif isinstance(extracted, dict):
-                # nested (e.g., background.chrome)
-                for sub_key, sub_val in list(extracted.items())[:3]:
-                    lines.append(f"  - {key}.{sub_key}: `{sub_val}`")
-        lines.append("")
+When user requests a specific AG Grid token, look up the EXACT value below.
 
-    # 간격/크기 토큰
-    spacing = grid_tokens.get("spacing", {})
-    if spacing:
-        lines.append("**Spacing:**")
-        for key, value in list(spacing.items())[:6]:
-            extracted = extract_value(value)
-            lines.append(f"  - {key}: `{extracted}`")
-        lines.append("")
+```json
+{tokens_json}
+```
 
-    # 폰트 토큰
-    font = grid_tokens.get("font", {})
-    if font:
-        lines.append("**Font:**")
-        for key, value in list(font.items())[:6]:
-            extracted = extract_value(value)
-            lines.append(f"  - {key}: `{extracted}`")
-        lines.append("")
-
-    return "\n".join(lines) if len(lines) > 2 else ""
+"""
 
 
 # 디자인 토큰을 로드하지 못했을 때 사용할 기본값
@@ -505,10 +477,18 @@ When updating existing code, you MUST:
   - Filter bar and Table MUST be visually grouped together.
   - Structure: Filters above, then table below with proper spacing (`marginBottom: 24`).
   - DO NOT separate filters and table into different cards.
-- **Status Styling**:
+- **Status Styling (USE COMPONENT PROPS - NO CUSTOM COLORS)**:
   - Use `Badge` with `type="status"` for status display. NEVER use plain text.
   - Use `statusVariant` prop: `success`, `info`, `warning`, `error`
-  - Active/정상: `statusVariant="success"`, Inactive/대기: `statusVariant="info"`, Warning/심사중: `statusVariant="warning"`, Error/해지: `statusVariant="error"`
+  - **NEVER use custom hex colors for status** - the component handles colors internally:
+    - ❌ `style={{ backgroundColor: '#10B981' }}` (WRONG - custom color)
+    - ❌ `style={{ color: '#22C55E' }}` (WRONG - custom color)
+    - ✅ `<Badge type="status" statusVariant="success">` (CORRECT - uses design system colors)
+  - Status mapping:
+    - Active/정상/완료: `statusVariant="success"`
+    - Inactive/대기/진행중: `statusVariant="info"`
+    - Warning/심사중/주의: `statusVariant="warning"`
+    - Error/해지/실패: `statusVariant="error"`
   - Example: `<Badge type="status" statusVariant="success">정상</Badge>`
 - **Empty States**:
   - Center the message: `textAlign: 'center'`, `padding: 48`, `color: '#6b7280'`
@@ -590,6 +570,24 @@ When updating existing code, you MUST:
     };
     ```
   - Use this for: user lists, comments, chat, team members, assignees.
+- **Images (NO BROKEN IMAGES - CRITICAL)**:
+  - **NEVER use `<img>` tag with placeholder URLs** - these will show as broken images (X-box):
+    - ❌ `<img src="/placeholder.png" />` (file doesn't exist)
+    - ❌ `<img src="https://via.placeholder.com/..." />` (external placeholder service)
+    - ❌ `<img src="/images/product.jpg" />` (assumed path that doesn't exist)
+  - **For thumbnails/product images**: Use a colored placeholder div with an icon or text:
+    ```tsx
+    <div style={{
+      width: 80, height: 80, borderRadius: 8,
+      backgroundColor: '#f1f3f5', color: '#adb5bd',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: 12
+    }}>
+      이미지
+    </div>
+    ```
+  - **For icons**: Use text symbols or the design system's icon component (if available), NOT image files.
+  - **Exception**: Only use `<img>` if the user explicitly provides a real image URL.
 - **Spacing**:
   - **섹션 간**: `marginBottom: 32px`
   - **폼 행 간**: `marginBottom: 24px`
@@ -954,12 +952,16 @@ When analyzing the image, identify:
 {design_tokens_section}
 """
 
-async def get_vision_system_prompt(schema_key: str | None) -> str:
+async def get_vision_system_prompt(
+    schema_key: str | None,
+    image_urls: list[str] | None = None,
+) -> str:
     """
     Vision 모드용 시스템 프롬프트 생성
 
     Args:
         schema_key: Firebase Storage 스키마 경로 (None이면 기본 컴포넌트만)
+        image_urls: 사용자가 업로드한 이미지 URL 목록 (코드에서 <img>로 사용 가능)
 
     Returns:
         Vision 시스템 프롬프트 문자열
@@ -988,12 +990,24 @@ async def get_vision_system_prompt(schema_key: str | None) -> str:
         "{current_date}", current_date
     ).replace("{design_tokens_section}", design_tokens_section)
 
+    # 이미지 URL 섹션 (사용자가 이미지를 코드에 삽입하고 싶을 때 사용)
+    image_urls_section = ""
+    if image_urls:
+        image_urls_section = "\n## Uploaded Image URLs\n"
+        image_urls_section += "The user has uploaded the following images. "
+        image_urls_section += "If they ask to INSERT/EMBED the image in the UI (not just analyze it), use these URLs in `<img>` tags:\n"
+        for i, url in enumerate(image_urls, 1):
+            image_urls_section += f"- Image {i}: `{url}`\n"
+        image_urls_section += "\n**Usage Example:**\n"
+        image_urls_section += "```tsx\n<img src=\"{url}\" alt=\"uploaded image\" style={{ maxWidth: '100%', height: 'auto' }} />\n```\n"
+
     return (
         base_prompt
         + "\n## Available Components\n"
         + available_note
         + "\n"
         + component_docs
+        + image_urls_section
         + "\n"
         + RESPONSE_FORMAT_INSTRUCTIONS
         + "\n"
