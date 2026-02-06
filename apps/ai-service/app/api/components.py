@@ -735,6 +735,9 @@ SYSTEM_PROMPT_FOOTER = """
 - **INLINE STYLES ONLY**: Do not create CSS classes. Use `style={{ ... }}`.
 - **NO EXTERNAL LIBS**: Do not import `lucide-react` or `framer-motion` unless explicitly allowed.
 - **REACT HOOKS**: Use `React.useState`, `React.useEffect` directly (do not import).
+- **VOID ELEMENTS (REACT ERROR #137)**: `<input>`, `<br>`, `<hr>`, `<img>` MUST be self-closing. NEVER add children:
+  - ✅ `<input value={v} onChange={fn} />`
+  - ❌ `<input>text</input>` ← CRASHES THE APP
 
 Create a premium, completed result."""
 
