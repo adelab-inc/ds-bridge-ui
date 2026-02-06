@@ -745,6 +745,11 @@ SYSTEM_PROMPT_FOOTER = """
 - **VOID ELEMENTS (REACT ERROR #137)**: `<input>`, `<br>`, `<hr>`, `<img>` MUST be self-closing. NEVER add children:
   - ✅ `<input value={v} onChange={fn} />`
   - ❌ `<input>text</input>` ← CRASHES THE APP
+- **Checkbox/Radio/ToggleSwitch MUST have onChange** (otherwise READ-ONLY, won't respond to clicks):
+  - ❌ `<Checkbox checked={true} />` ← READ-ONLY, clicking does nothing
+  - ✅ `<Checkbox checked={isChecked} onChange={(e) => setIsChecked(e.target.checked)} />`
+  - ❌ `<Radio checked={true} />` ← READ-ONLY
+  - ✅ `<Radio checked={selected === 'a'} onChange={() => setSelected('a')} />`
 
 Create a premium, completed result."""
 
