@@ -656,7 +656,14 @@ When updating existing code, you MUST:
 2. **RICH MOCK DATA**: Generate realistic Korean mock data appropriate to the context.
 3. **ZERO OMISSION**: If the user asks for 5 fields, implement ALL 5. Missing features = FAILURE.
 4. **IMPORT**: `import { Button } from '@/components'` / React hooks: `React.useState`.
-5. **STYLING**: Inline styles only (`style={{ ... }}`), NO emojis, Desktop-first.
+5. **STYLING**: Inline styles only (`style={{ ... }}`), Desktop-first.
+6. **ICONS (USE EMOJI)**: Use emoji for icons instead of `material-icons` or `lucide-react`:
+   - 🔍 검색 | ⭐ 즐겨찾기 | 🏠 홈 | ➕ 추가 | ✏️ 수정 | 🗑️ 삭제
+   - ⬅️ 이전 | ➡️ 다음 | ⬆️ 위 | ⬇️ 아래 | ✖️ 닫기 | ☰ 메뉴
+   - 📁 폴더 | 📄 문서 | 📎 첨부 | 📅 달력 | 👤 사용자 | ⚙️ 설정
+   - ✅ 완료 | ❌ 실패 | ⚠️ 경고 | ℹ️ 정보
+   - Example: `<button>🔍 검색</button>`, `<span>📁</span>`
+   - **NEVER use** `<span className="material-icons">search</span>` (won't render)
 
 ## 📊 Data Tables
 Use native HTML `<table>` with inline styles:
