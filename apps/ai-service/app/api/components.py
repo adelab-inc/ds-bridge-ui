@@ -246,6 +246,17 @@ def format_design_tokens(tokens: dict | None) -> str:
   - **Shadows**: `boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)'`
   - **Borders**: `border: '1px solid {border_default}'`
   - **Radius**: `borderRadius: 8px` (inputs, buttons), `12px` (cards)
+- **Gap/Spacing (USE THESE VALUES)**:
+  - **xs**: `4px` - 태그 그룹, 아이콘-라벨 (xs)
+  - **sm**: `8px` - 컨트롤 그룹, 아이콘-라벨 (md), 콘텐츠 (sm)
+  - **md**: `12px` - 필터바, 탭 그룹, 콘텐츠 (md), 폼 그룹 (y)
+  - **lg**: `16px` - 다이얼로그, 콘텐츠 (lg), 폼 그룹 (x)
+  - **xl**: `24px` - 섹션 간격, 아티클 아이템, 콘텐츠 (xl)
+  - **사용 예시**:
+    - 버튼/아이콘 간격: `gap: 8` (sm)
+    - 폼 필드 간격: `gap: 16` (lg)
+    - 카드/섹션 간격: `gap: 24` (xl)
+    - 그리드: `gap: '24px 16px'` (row: xl, col: lg)
 
 ## 📋 ALL COLOR TOKENS (REFERENCE)
 When user requests a specific token (e.g., "hue-green-500"), look up the EXACT value below. NEVER guess hex values.
