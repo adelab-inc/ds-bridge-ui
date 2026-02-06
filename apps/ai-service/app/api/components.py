@@ -67,7 +67,6 @@ AVAILABLE_COMPONENTS_WHITELIST = {
     "ToggleSwitch",
     # Layout
     "Scrollbar",
-    "Heading",
     # Data (프리뷰 미지원 - UMD 빌드에서 stub 처리됨)
     "DataGrid",
 }
@@ -462,6 +461,7 @@ When updating existing code, you MUST:
 **Common Mistakes to AVOID:**
 - ❌ `import { Button, Select, OptionGroup, Option } from '@/components'` → using only Button, Select (OptionGroup, Option unused = CRASH)
 - ❌ Importing Option/OptionGroup when using Select with `options` prop (Select handles options internally)
+- ❌ **FORGETTING TO IMPORT `Select`** → If you use `<Select ... />`, you MUST import it!
 - ❌ Importing components "just in case" or for future use
 
 **Correct Pattern:**
@@ -493,9 +493,10 @@ When updating existing code, you MUST:
 - **Empty States**:
   - Center the message: `textAlign: 'center'`, `padding: 48`, `color: '#6b7280'`
   - Example: `<div style={{textAlign:'center', padding:48, color:'#6b7280'}}>데이터가 없습니다.</div>`
-- **Responsive Layouts (NO FIXED WIDTHS)**:
-  - **Container**: `width: '100%'`, `maxWidth: '100%'` (Allow grow).
-  - **Inner Width**: Use `maxWidth: 1200px` for large screens, but `width: '100%'` always.
+- **Responsive Layouts (1920x1080 기준)**:
+  - **Target Resolution**: 1920x1080 (Full HD). Design for this viewport.
+  - **Container**: `width: '100%'`, `maxWidth: 1920px`, `margin: '0 auto'`.
+  - **Page Padding**: `padding: 32px` (양쪽 여백 포함).
   - **Flex**: Use `flex: 1` for fluid columns instead of `width: 200px`.
   - **Mobile-Friendly**: Ensure `flexWrap: 'wrap'` on all horizontal lists.
 - **Layout Safety (NO COLLISION)**:
@@ -713,8 +714,11 @@ SYSTEM_PROMPT_FOOTER = """
 ### 2. COMPONENT USAGE
 - **STRICT WHITELIST**: You must ONLY use the components listed above.
 - **NO CUSTOM COMPONENTS**: Do not create new components like `function Card() {...}`. Use `div` with styles.
+- **NO `<Heading>` COMPONENT**: Use standard HTML tags `<h1>`, `<h2>`, `<h3>` with styles. Do NOT use `<Heading />`.
 - **PROPS VALIDATION**: Use exact enum values (e.g., `variant="primary"`, NOT `variant="blue"`).
+- **NO HALLUCINATED PROPS**: Do not use props NOT listed in schema (e.g., `mode` on Select does NOT exist).
 - **INSTANCE IDs**: Design system components (`Button`, `Badge`, `Select`, etc.) MUST have `data-instance-id` attribute (e.g., `<Button data-instance-id="submit-btn">`).
+- **IMPORT CHECK**: Double-check that `Select`, `Heading`, `Badge` etc. are imported if used. `Select` usage without import cause ReferenceError!
 
 ### 3. TECHNICAL CONSTRAINTS
 - **INLINE STYLES ONLY**: Do not create CSS classes. Use `style={{ ... }}`.
