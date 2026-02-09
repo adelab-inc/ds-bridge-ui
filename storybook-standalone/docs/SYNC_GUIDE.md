@@ -44,7 +44,29 @@ src/styles/
 └── globals.css             # 전역 CSS (Storybook preview에서 import)
 ```
 
-### 6. tailwind.preset.js (루트)
+### 6. hooks/ (전체 폴더)
+```
+src/hooks/
+├── useBodyScrollLock.ts    # Body 스크롤 잠금
+├── useControllableState.ts # Controlled/Uncontrolled 상태 관리
+├── useEscapeKey.ts         # ESC 키 이벤트 핸들러
+├── useFocusTrap.ts         # 포커스 트랩 (Dialog, Drawer)
+├── useModalStack.ts        # 모달 z-index 스택 관리
+├── usePagination.ts        # 페이지네이션 로직
+├── usePopup.ts             # 팝업 위치/상태 관리
+└── index.ts                # barrel export
+```
+- **참조하는 컴포넌트**: Dialog, Drawer, TreeMenu, Select, Pagination
+- **참조하는 스토리**: usePopup.stories.tsx
+
+### 7. utils/ (전체 폴더)
+```
+src/utils/
+└── index.ts                # TruncateWithTooltip, MultiLineTruncateWithTooltip 등
+```
+- **참조하는 컴포넌트**: Select, Menu/Item
+
+### 8. tailwind.preset.js (루트)
 - TailwindCSS 프리셋 설정
 
 ---
@@ -67,17 +89,27 @@ rm -rf /Users/finelab-mini/Desktop/workspace/ds-bridge-ui/storybook-standalone/p
 cp -r /Users/finelab-mini/Desktop/workspace/aplus-world-ui/packages/ui/src/stories/* \
       /Users/finelab-mini/Desktop/workspace/ds-bridge-ui/storybook-standalone/packages/ui/src/stories/
 
-# 4. tokens 복사
+# 4. hooks 복사
+rm -rf /Users/finelab-mini/Desktop/workspace/ds-bridge-ui/storybook-standalone/packages/ui/src/hooks/*
+cp -r /Users/finelab-mini/Desktop/workspace/aplus-world-ui/packages/ui/src/hooks/* \
+      /Users/finelab-mini/Desktop/workspace/ds-bridge-ui/storybook-standalone/packages/ui/src/hooks/
+
+# 5. utils 복사
+rm -rf /Users/finelab-mini/Desktop/workspace/ds-bridge-ui/storybook-standalone/packages/ui/src/utils/*
+cp -r /Users/finelab-mini/Desktop/workspace/aplus-world-ui/packages/ui/src/utils/* \
+      /Users/finelab-mini/Desktop/workspace/ds-bridge-ui/storybook-standalone/packages/ui/src/utils/
+
+# 6. tokens 복사
 cp /Users/finelab-mini/Desktop/workspace/aplus-world-ui/packages/ui/src/tokens/design-tokens.ts \
    /Users/finelab-mini/Desktop/workspace/ds-bridge-ui/storybook-standalone/packages/ui/src/tokens/
 cp /Users/finelab-mini/Desktop/workspace/aplus-world-ui/packages/ui/src/tokens/types.ts \
    /Users/finelab-mini/Desktop/workspace/ds-bridge-ui/storybook-standalone/packages/ui/src/tokens/
 
-# 5. tailwind.preset.js 복사
+# 7. tailwind.preset.js 복사
 cp /Users/finelab-mini/Desktop/workspace/aplus-world-ui/packages/ui/tailwind.preset.js \
    /Users/finelab-mini/Desktop/workspace/ds-bridge-ui/storybook-standalone/packages/ui/
 
-# 6. styles/globals.css 복사
+# 8. styles/globals.css 복사
 cp /Users/finelab-mini/Desktop/workspace/aplus-world-ui/packages/ui/src/styles/globals.css \
    /Users/finelab-mini/Desktop/workspace/ds-bridge-ui/storybook-standalone/packages/ui/src/styles/
 ```
@@ -145,6 +177,11 @@ git checkout -- dist/component-schema.json
 3. `react-docgen-typescript`로 컴포넌트 props 추출
 4. `dist/component-schema.json` 생성
 
+> **Compound Component fallback**: Dialog, Drawer 등 `forwardRef + as TypeCast` 패턴의 컴포넌트는
+> `react-docgen-typescript`가 직접 파싱하지 못합니다. 스크립트가 `export interface XProps` +
+> `.displayName = 'X'` 패턴을 감지하면 임시 래퍼 파일을 생성하여 props를 추출합니다.
+> 이 패턴에 맞지 않는 새로운 compound component가 추가되면 fallback 로직 확장이 필요합니다.
+
 ---
 
 ## 변경 이력
@@ -152,3 +189,5 @@ git checkout -- dist/component-schema.json
 | 날짜 | 변경 내용 |
 |------|----------|
 | 2026-01-27 | 최초 작성 |
+| 2026-02-09 | hooks/, utils/ 동기화 대상 추가 (Dialog, Drawer, TreeMenu, Select, Menu/Item 참조) |
+| 2026-02-09 | Compound Component fallback 로직 추가 (Dialog, Drawer props 추출) |

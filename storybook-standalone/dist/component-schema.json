@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-02-09T10:09:30.651Z",
+  "generatedAt": "2026-02-09T10:43:20.733Z",
   "components": {
     "Alert": {
       "displayName": "Alert",
@@ -555,6 +555,65 @@
         }
       ]
     },
+    "Dialog": {
+      "displayName": "Dialog",
+      "filePath": "packages/ui/src/components/Dialog.tsx",
+      "category": "UI",
+      "props": {
+        "open": {
+          "type": "boolean",
+          "required": false
+        },
+        "x": {
+          "type": "string",
+          "required": false
+        },
+        "y": {
+          "type": "string",
+          "required": false
+        },
+        "onClose": {
+          "type": "() => void",
+          "required": true
+        },
+        "mode": {
+          "type": [
+            "base",
+            "compact"
+          ],
+          "required": false
+        },
+        "size": {
+          "type": [
+            "lg",
+            "md",
+            "sm",
+            "xl"
+          ],
+          "required": false
+        }
+      },
+      "stories": [
+        {
+          "id": "ui-dialog--default",
+          "name": "Default",
+          "tags": [
+            "dev",
+            "test",
+            "autodocs"
+          ]
+        },
+        {
+          "id": "ui-dialog--nested-modals",
+          "name": "Nested Modals",
+          "tags": [
+            "dev",
+            "test",
+            "autodocs"
+          ]
+        }
+      ]
+    },
     "Divider": {
       "displayName": "Divider",
       "filePath": "packages/ui/src/components/Divider.tsx",
@@ -584,6 +643,82 @@
         {
           "id": "ui-divider--default",
           "name": "Default",
+          "tags": [
+            "dev",
+            "test",
+            "autodocs"
+          ]
+        }
+      ]
+    },
+    "Drawer": {
+      "displayName": "Drawer",
+      "filePath": "packages/ui/src/components/Drawer.tsx",
+      "category": "UI",
+      "props": {
+        "open": {
+          "type": "boolean",
+          "required": false,
+          "description": "드로워 열림 상태"
+        },
+        "onClose": {
+          "type": "() => void",
+          "required": true,
+          "description": "닫기 핸들러"
+        },
+        "dim": {
+          "type": "boolean",
+          "required": false,
+          "description": "Dim(배경 어둡게) 처리 여부 (기본: true)"
+        },
+        "mode": {
+          "type": [
+            "base",
+            "compact"
+          ],
+          "required": false
+        },
+        "size": {
+          "type": [
+            "lg",
+            "md",
+            "sm",
+            "xl"
+          ],
+          "required": false
+        }
+      },
+      "stories": [
+        {
+          "id": "ui-drawer--default",
+          "name": "Default",
+          "tags": [
+            "dev",
+            "test",
+            "autodocs"
+          ]
+        },
+        {
+          "id": "ui-drawer--without-dim",
+          "name": "Without Dim",
+          "tags": [
+            "dev",
+            "test",
+            "autodocs"
+          ]
+        },
+        {
+          "id": "ui-drawer--all-sizes",
+          "name": "All Sizes",
+          "tags": [
+            "dev",
+            "test",
+            "autodocs"
+          ]
+        },
+        {
+          "id": "ui-drawer--with-scrollable-content",
+          "name": "With Scrollable Content",
           "tags": [
             "dev",
             "test",
@@ -1015,8 +1150,8 @@
           ]
         },
         {
-          "id": "ui-menu--label-only",
-          "name": "Label Only",
+          "id": "ui-menu--with-headings",
+          "name": "With Headings",
           "tags": [
             "dev",
             "test",
@@ -1024,8 +1159,17 @@
           ]
         },
         {
-          "id": "ui-menu--item-title-description",
-          "name": "Item Title Description",
+          "id": "ui-menu--with-disabled",
+          "name": "With Disabled",
+          "tags": [
+            "dev",
+            "test",
+            "autodocs"
+          ]
+        },
+        {
+          "id": "ui-menu--label-only",
+          "name": "Label Only",
           "tags": [
             "dev",
             "test",
@@ -1108,69 +1252,129 @@
     },
     "Item": {
       "displayName": "Item",
-      "filePath": "packages/ui/src/components/Menu/Item.tsx",
+      "filePath": "packages/ui/src/components/TreeMenu/Item.tsx",
       "category": "UI",
       "props": {
-        "item": {
-          "type": "MenuItem",
-          "required": true
-        },
         "size": {
           "type": [
             "sm",
             "md"
           ],
-          "required": false,
-          "defaultValue": "md"
-        },
-        "onItemClick": {
-          "type": "(item: MenuItem) => void",
           "required": false
         },
-        "onItemHover": {
-          "type": "(item: MenuItem) => void",
-          "required": false
+        "item": {
+          "type": [
+            "TreeMenuItemDataSm",
+            "TreeMenuItemDataMd"
+          ],
+          "required": true
         },
         "depth": {
-          "type": "number",
-          "required": false,
-          "defaultValue": 0
+          "type": [
+            "1",
+            "2",
+            "3",
+            "4"
+          ],
+          "required": false
         },
-        "isFocused": {
+        "hasChildren": {
           "type": "boolean",
-          "required": false,
-          "defaultValue": false
+          "required": false
         },
         "isExpanded": {
           "type": "boolean",
-          "required": false,
-          "defaultValue": false
+          "required": false
         },
-        "checkboxMode": {
-          "type": [
-            "none",
-            "checkbox",
-            "radio"
-          ],
-          "required": false,
-          "defaultValue": "none",
-          "description": "체크박스/라디오 모드"
+        "isFocused": {
+          "type": "boolean",
+          "required": false
         },
-        "isChecked": {
+        "isFirstFocusable": {
           "type": "boolean",
           "required": false,
-          "defaultValue": false,
-          "description": "체크 상태"
+          "description": "Tab 키로 진입 가능한 첫 번째 아이템 여부 (접근성)"
+        },
+        "onExpandToggle": {
+          "type": "() => void",
+          "required": false
+        },
+        "onItemClick": {
+          "type": "() => void",
+          "required": false
+        },
+        "draggable": {
+          "type": "boolean",
+          "required": false,
+          "description": "드래그 가능 여부"
+        },
+        "isDragging": {
+          "type": "boolean",
+          "required": false,
+          "description": "현재 드래그 중인 아이템인지 여부"
+        },
+        "dragOverPosition": {
+          "type": [
+            "before",
+            "after",
+            "inside"
+          ],
+          "required": false,
+          "description": "현재 드롭 대상 위치 (인디케이터 표시용)"
+        },
+        "onDragStart": {
+          "type": "(e: DragEvent<Element>) => void",
+          "required": false,
+          "description": "드래그 시작 핸들러"
+        },
+        "onDragEnd": {
+          "type": "(e: DragEvent<Element>) => void",
+          "required": false,
+          "description": "드래그 종료 핸들러"
+        },
+        "onDragOver": {
+          "type": "(e: DragEvent<Element>) => void",
+          "required": false,
+          "description": "드래그 오버 핸들러"
+        },
+        "onDragEnter": {
+          "type": "(e: DragEvent<Element>) => void",
+          "required": false,
+          "description": "드래그 진입 핸들러"
+        },
+        "onDragLeave": {
+          "type": "(e: DragEvent<Element>) => void",
+          "required": false,
+          "description": "드래그 이탈 핸들러"
+        },
+        "onDrop": {
+          "type": "(e: DragEvent<Element>) => void",
+          "required": false,
+          "description": "드롭 핸들러"
+        },
+        "checkboxMode": {
+          "type": "boolean",
+          "required": false,
+          "description": "체크박스 모드 (MD only)"
+        },
+        "checkState": {
+          "type": [
+            "checked",
+            "unchecked",
+            "indeterminate"
+          ],
+          "required": false,
+          "description": "체크 상태 (MD only)"
         },
         "onCheckChange": {
-          "type": "(id: string, checked: boolean) => void",
+          "type": "(checked: boolean) => void",
           "required": false,
-          "description": "체크 변경 핸들러"
+          "description": "체크 상태 변경 핸들러 (MD only)"
         }
       },
       "stories": [
         {
-          "id": "ui-menu--default",
+          "id": "ui-treemenu--default",
           "name": "Default",
           "tags": [
             "dev",
@@ -1179,8 +1383,8 @@
           ]
         },
         {
-          "id": "ui-menu--with-selected",
-          "name": "With Selected",
+          "id": "ui-treemenu--with-checkbox",
+          "name": "With Checkbox",
           "tags": [
             "dev",
             "test",
@@ -1188,34 +1392,7 @@
           ]
         },
         {
-          "id": "ui-menu--label-only",
-          "name": "Label Only",
-          "tags": [
-            "dev",
-            "test",
-            "autodocs"
-          ]
-        },
-        {
-          "id": "ui-menu--item-title-description",
-          "name": "Item Title Description",
-          "tags": [
-            "dev",
-            "test",
-            "autodocs"
-          ]
-        },
-        {
-          "id": "ui-menu--icon-with-title-description",
-          "name": "Icon With Title Description",
-          "tags": [
-            "dev",
-            "test",
-            "autodocs"
-          ]
-        },
-        {
-          "id": "ui-menu--with-badge",
+          "id": "ui-treemenu--with-badge",
           "name": "With Badge",
           "tags": [
             "dev",
@@ -1224,8 +1401,8 @@
           ]
         },
         {
-          "id": "ui-menu--with-badge-dot",
-          "name": "With Badge Dot",
+          "id": "ui-treemenu--with-hover-action",
+          "name": "With Hover Action",
           "tags": [
             "dev",
             "test",
@@ -1233,8 +1410,8 @@
           ]
         },
         {
-          "id": "ui-menu--title-description",
-          "name": "Title Description",
+          "id": "ui-treemenu--deep-nested",
+          "name": "Deep Nested",
           "tags": [
             "dev",
             "test",
@@ -1242,8 +1419,8 @@
           ]
         },
         {
-          "id": "ui-menu--with-toggle-button",
-          "name": "With Toggle Button",
+          "id": "ui-treemenu--with-disabled",
+          "name": "With Disabled",
           "tags": [
             "dev",
             "test",
@@ -1251,8 +1428,8 @@
           ]
         },
         {
-          "id": "ui-menu--menu-positioning-in-container",
-          "name": "Menu Positioning In Container",
+          "id": "ui-treemenu--checkbox-with-badge",
+          "name": "Checkbox With Badge",
           "tags": [
             "dev",
             "test",
@@ -1260,8 +1437,8 @@
           ]
         },
         {
-          "id": "ui-menu--with-checkbox-mode",
-          "name": "With Checkbox Mode",
+          "id": "ui-treemenu--single-tree-menu-item",
+          "name": "Single Tree Menu Item",
           "tags": [
             "dev",
             "test",
@@ -1269,8 +1446,35 @@
           ]
         },
         {
-          "id": "ui-menu--with-radio-mode",
-          "name": "With Radio Mode",
+          "id": "ui-treemenu--controlled-expand-state",
+          "name": "Controlled Expand State",
+          "tags": [
+            "dev",
+            "test",
+            "autodocs"
+          ]
+        },
+        {
+          "id": "ui-treemenu--in-section",
+          "name": "In Section",
+          "tags": [
+            "dev",
+            "test",
+            "autodocs"
+          ]
+        },
+        {
+          "id": "ui-treemenu--draggable",
+          "name": "Draggable",
+          "tags": [
+            "dev",
+            "test",
+            "autodocs"
+          ]
+        },
+        {
+          "id": "ui-treemenu--draggable-long-list",
+          "name": "Draggable Long List",
           "tags": [
             "dev",
             "test",
@@ -1617,6 +1821,15 @@
             "test",
             "autodocs"
           ]
+        },
+        {
+          "id": "ui-segment--with-gap",
+          "name": "With Gap",
+          "tags": [
+            "dev",
+            "test",
+            "autodocs"
+          ]
         }
       ]
     },
@@ -1748,6 +1961,15 @@
             "test",
             "autodocs"
           ]
+        },
+        {
+          "id": "ui-select--with-complex-options",
+          "name": "복합 옵션",
+          "tags": [
+            "dev",
+            "test",
+            "autodocs"
+          ]
         }
       ]
     },
@@ -1834,6 +2056,15 @@
         {
           "id": "ui-tab--disabled",
           "name": "Disabled",
+          "tags": [
+            "dev",
+            "test",
+            "autodocs"
+          ]
+        },
+        {
+          "id": "ui-tab--with-gap",
+          "name": "With Gap",
           "tags": [
             "dev",
             "test",
