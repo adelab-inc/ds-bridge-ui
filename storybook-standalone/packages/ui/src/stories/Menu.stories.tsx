@@ -177,7 +177,7 @@ const meta: Meta<typeof Menu> = {
         titleDescription: titleDescriptionMenuData,
         withSelected: [
           { id: '1', label: '작은 아이콘' },
-          { id: '2', label: '중간 아이콘', selected: true },
+          { id: '2', label: '중간 아이콘', selected: true, rightIcon: <Icon name="menu-selection" size={16} /> },
           { id: '3', label: '큰 아이콘' },
           { id: 'divider-1' },
           { id: '4', label: '목록' },
@@ -241,6 +241,36 @@ export const WithSelected: Story = {
   ),
 };
 
+export const WithHeadings: Story = {
+  args: {
+    size: 'md',
+    items: groupedMenuData,
+  },
+  render: (args) => (
+    <div className="flex h-[400px] items-start justify-center pt-8">
+      <Menu {...args} className="w-[240px]" />
+    </div>
+  ),
+};
+
+export const WithDisabled: Story = {
+  args: {
+    size: 'md',
+    items: [
+      { id: '1', label: '활성화됨', leftIcon: <Icon name="alert-success" /> },
+      { id: '2', label: '비활성화됨', leftIcon: <Icon name="close" />, disabled: true },
+      { id: '3', label: '활성화됨', leftIcon: <Icon name="alert-success" /> },
+      { id: 'divider-1' },
+      { id: '4', label: '삭제 (비활성)', destructive: true, disabled: true },
+    ],
+  },
+  render: (args) => (
+    <div className="flex h-[400px] items-start justify-center pt-8">
+      <Menu {...args} className="w-[240px]" />
+    </div>
+  ),
+};
+
 export const LabelOnly: Story = {
   args: {
     size: 'md',
@@ -290,18 +320,6 @@ export const LabelOnly: Story = {
   },
   render: (args) => (
     <div className="flex h-[600px] items-start justify-center pt-8">
-      <Menu {...args} className="w-[240px]" />
-    </div>
-  ),
-};
-
-export const ItemTitleDescription: Story = {
-  args: {
-    size: 'md',
-    items: titleDescriptionMenuData,
-  },
-  render: (args) => (
-    <div className="flex h-[400px] items-start justify-center pt-8">
       <Menu {...args} className="w-[240px]" />
     </div>
   ),

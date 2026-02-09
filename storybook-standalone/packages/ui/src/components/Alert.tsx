@@ -73,13 +73,23 @@ export interface AlertAction {
   onClick: () => void;
 }
 
+/**
+ * Alert actions 타입: 최대 2개의 액션만 허용
+ * - 빈 배열, 1개, 또는 2개의 액션만 가능
+ * - 3개 이상 전달 시 컴파일 에러 발생
+ */
+export type AlertActions =
+  | []
+  | [AlertAction]
+  | [AlertAction, AlertAction];
+
 export interface AlertProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof alertVariants> {
   title?: string;
   children: React.ReactNode;
   icon?: React.ReactNode;
-  actions?: AlertAction[];
+  actions?: AlertActions;
   onClose?: () => void;
   hasCloseButton?: boolean;
 }
@@ -183,12 +193,12 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
               );
             })()}
             {actions && actions.length > 0 && (
-              <div className="flex-shrink-0 flex items-center gap-[2px]">
+              <div className="flex-shrink-0 flex items-center gap-component-gap-control-group">
                 {actions.slice(0, 2).map((action, index) => (
                   <button
                     key={index}
                     onClick={action.onClick}
-                    className="text-body-sm-medium rounded py-[2px] px-[6px] hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed"
+                    className="text-body-sm-medium rounded py-[2px] px-[6px] -my-[2px] -mx-[6px] hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed"
                   >
                     {action.label}
                   </button>
@@ -198,7 +208,7 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
             {shouldShowCloseButton && onClose && (
               <button
                 onClick={onClose}
-                className="flex-shrink-0 size-[32px] box-border p-2 flex items-center justify-center rounded-full hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed -my-[6px]"
+                className="flex-shrink-0 p-2 -m-2 flex items-center justify-center rounded-full hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed"
                 aria-label="알림 닫기"
               >
                 <Icon name="close" size={16} className="text-icon-interactive-default" />
@@ -239,7 +249,7 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
                 {shouldShowCloseButton && onClose && (
                   <button
                     onClick={onClose}
-                    className="flex-shrink-0 -my-[6px] size-[32px] box-border p-2 flex items-center justify-center rounded-full hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed"
+                    className="flex-shrink-0 p-2 -m-2 flex items-center justify-center rounded-full hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed"
                     aria-label="알림 닫기"
                   >
                     <Icon name="close" size={16} className="text-icon-interactive-default" />
@@ -269,7 +279,7 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
                 {shouldShowCloseButton && onClose && (
                   <button
                     onClick={onClose}
-                    className="flex-shrink-0 -my-[6px] size-[32px] box-border p-2 flex items-center justify-center rounded-full hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed"
+                    className="flex-shrink-0 p-2 -m-2 flex items-center justify-center rounded-full hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed"
                     aria-label="알림 닫기"
                   >
                     <Icon name="close" size={16} className="text-icon-interactive-default" />
@@ -296,12 +306,12 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
 
             {/* 푸터: 액션 버튼 (우측 정렬) */}
             {actions && actions.length > 0 && (
-              <div className="flex w-full items-center justify-end gap-[2px]">
+              <div className="flex w-full items-center justify-end gap-component-gap-control-group">
                 {actions.slice(0, 2).map((action, index) => (
                   <button
                     key={index}
                     onClick={action.onClick}
-                    className="text-body-sm-medium rounded py-[2px] px-[6px] hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed"
+                    className="text-body-sm-medium rounded py-[2px] px-[6px] -my-[2px] -mx-[6px] hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed"
                   >
                     {action.label}
                   </button>

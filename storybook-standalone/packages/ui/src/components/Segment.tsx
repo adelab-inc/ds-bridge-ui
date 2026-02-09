@@ -61,6 +61,8 @@ export interface SegmentProps
   widthMode?: 'equal' | 'content';
   /** 전체 세그먼트 비활성화 */
   disabled?: boolean;
+  /** 세그먼트 리스트와 패널 사이 간격 (Tailwind 클래스, 예: 'gap-4', 'gap-layout-stack-md') */
+  gap?: string;
 }
 
 const Segment = React.forwardRef<HTMLDivElement, SegmentProps>(
@@ -74,6 +76,7 @@ const Segment = React.forwardRef<HTMLDivElement, SegmentProps>(
       widthMode = 'equal',
       mode: propMode,
       disabled = false,
+      gap,
       ...props
     },
     ref,
@@ -101,12 +104,10 @@ const Segment = React.forwardRef<HTMLDivElement, SegmentProps>(
           onChange?.(itemValue);
           break;
         case 'ArrowLeft':
-        case 'ArrowUp':
           e.preventDefault();
           focusItem(index - 1);
           break;
         case 'ArrowRight':
-        case 'ArrowDown':
           e.preventDefault();
           focusItem(index + 1);
           break;
@@ -135,7 +136,7 @@ const Segment = React.forwardRef<HTMLDivElement, SegmentProps>(
     const selectedItem = items.find((item) => item.value === value);
 
     return (
-      <div className="flex flex-col">
+      <div className={cn("flex flex-col", gap)}>
         {/* 세그먼트 리스트 */}
         <div
           ref={ref}
@@ -170,7 +171,7 @@ const Segment = React.forwardRef<HTMLDivElement, SegmentProps>(
 
         {/* 세그먼트 패널 (선택된 세그먼트의 컨텐츠) */}
         {selectedItem?.content && (
-          <div role="tabpanel" className="pt-4">
+          <div role="tabpanel">
             {selectedItem.content}
           </div>
         )}
@@ -182,7 +183,7 @@ Segment.displayName = 'Segment';
 
 // SegmentItem 내부 컴포넌트
 const segmentItemVariants = cva(
-  'flex justify-center items-center min-w-[56px] max-w-[200px] rounded-lg cursor-pointer transition-colors',
+  'flex justify-center items-center min-w-[56px] max-w-[200px] rounded-lg transition-colors',
   {
     variants: {
       size: {
@@ -204,7 +205,7 @@ const segmentItemVariants = cva(
       },
       isDisabled: {
         true: 'cursor-not-allowed',
-        false: '',
+        false: 'cursor-pointer',
       },
     },
     compoundVariants: [

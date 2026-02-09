@@ -3,10 +3,10 @@ import * as React from 'react';
 import { Checkbox } from '../Checkbox';
 import { Radio } from '../Radio';
 import { Icon } from '../Icon';
-import { Tooltip } from '../Tooltip';
 import { cn } from '../utils';
+import { TruncateWithTooltip, MultiLineTruncateWithTooltip } from '../../utils';
 
-const itemVariants = cva('flex items-center cursor-pointer transition-colors rounded-[4px]', ({
+const itemVariants = cva('flex items-center transition-colors rounded-[4px]', ({
     variants: {
       "destructive": {
         "false": "",
@@ -21,14 +21,14 @@ const itemVariants = cva('flex items-center cursor-pointer transition-colors rou
         "sm": "text-button-sm-medium",
       },
       "state": {
-        "default": "text-text-primary",
-        "disabled": "",
-        "focused": "",
-        "hover": "",
-        "pressed": "",
-        "selected": "",
-        "selected-hover": "",
-        "selected-pressed": "",
+        "default": "cursor-pointer",
+        "disabled": "cursor-not-allowed",
+        "focused": "cursor-pointer",
+        "hover": "cursor-pointer",
+        "pressed": "cursor-pointer",
+        "selected": "cursor-pointer",
+        "selected-hover": "cursor-pointer",
+        "selected-pressed": "cursor-pointer",
       },
     },
     defaultVariants: {
@@ -62,7 +62,7 @@ const itemVariants = cva('flex items-center cursor-pointer transition-colors rou
         "state": "pressed",
       },
       {
-        "class": "text-text-disabled cursor-not-allowed",
+        "class": "text-text-disabled",
         "state": "disabled",
       },
       {
@@ -83,8 +83,14 @@ const itemVariants = cva('flex items-center cursor-pointer transition-colors rou
         "state": "focused",
       },
       {
-        "class": "text-alert-error-text",
+        "class": "text-semantic-error text-button-md-medium",
         "destructive": true,
+        "size": "md",
+      },
+      {
+        "class": "text-semantic-error text-button-sm-medium",
+        "destructive": true,
+        "size": "sm",
       },
       {
         "class": "bg-state-overlay-on-neutral-hover",
@@ -119,96 +125,6 @@ export interface MenuItem {
   selected?: boolean;
   children?: MenuItem[];
 }
-
-/**
- * 텍스트가 잘릴 때만 Tooltip을 표시하는 컴포넌트 (단일 라인)
- */
-interface TruncateWithTooltipProps {
-  text: string;
-  className?: string;
-}
-
-const TruncateWithTooltip = ({ text, className }: TruncateWithTooltipProps) => {
-  const [isTruncated, setIsTruncated] = React.useState(false);
-  const textRef = React.useRef<HTMLSpanElement>(null);
-
-  const checkTruncation = React.useCallback(() => {
-    if (textRef.current) {
-      setIsTruncated(textRef.current.scrollWidth > textRef.current.clientWidth);
-    }
-  }, []);
-
-  React.useEffect(() => {
-    checkTruncation();
-    window.addEventListener('resize', checkTruncation);
-    return () => window.removeEventListener('resize', checkTruncation);
-  }, [checkTruncation, text]);
-
-  const textElement = (
-    <span ref={textRef} className={`truncate ${className || ''}`}>
-      {text}
-    </span>
-  );
-
-  if (isTruncated) {
-    return <Tooltip content={text}>{textElement}</Tooltip>;
-  }
-
-  return textElement;
-};
-
-/**
- * 다중 라인 텍스트가 잘릴 때 Tooltip을 표시하는 컴포넌트 (line-clamp용)
- */
-interface MultiLineTruncateWithTooltipProps {
-  text: string;
-  className?: string;
-}
-
-const MultiLineTruncateWithTooltip = ({ text, className }: MultiLineTruncateWithTooltipProps) => {
-  const [isTruncated, setIsTruncated] = React.useState(false);
-  const textRef = React.useRef<HTMLSpanElement>(null);
-
-  const checkTruncation = React.useCallback(() => {
-    if (textRef.current) {
-      // line-clamp 적용 시 scrollHeight와 clientHeight 비교
-      const el = textRef.current;
-      // 1px 여유를 두어 부동소수점 오차 방지
-      setIsTruncated(el.scrollHeight > el.clientHeight + 1);
-    }
-  }, []);
-
-  React.useEffect(() => {
-    // 레이아웃 완료 후 체크 (requestAnimationFrame 2번 호출로 paint 이후 체크)
-    let rafId: number;
-    const checkAfterLayout = () => {
-      rafId = requestAnimationFrame(() => {
-        rafId = requestAnimationFrame(() => {
-          checkTruncation();
-        });
-      });
-    };
-
-    checkAfterLayout();
-    window.addEventListener('resize', checkTruncation);
-    return () => {
-      cancelAnimationFrame(rafId);
-      window.removeEventListener('resize', checkTruncation);
-    };
-  }, [checkTruncation, text]);
-
-  const textElement = (
-    <span ref={textRef} className={className}>
-      {text}
-    </span>
-  );
-
-  if (isTruncated) {
-    return <Tooltip content={text}>{textElement}</Tooltip>;
-  }
-
-  return textElement;
-};
 
 /**
  * MenuItem Props
@@ -346,7 +262,7 @@ const Item = React.forwardRef<HTMLDivElement, ItemProps>(
           aria-expanded={item.children && item.children.length > 0 ? isExpanded : undefined}
           className={cn(
             itemVariants({ size, state, destructive: item.destructive }),
-            item.children ? 'justify-between' : '',
+            (item.children || item.rightIcon) ? 'justify-between' : '',
             className
           )}
           onMouseEnter={handleMouseEnter}
@@ -387,7 +303,7 @@ const Item = React.forwardRef<HTMLDivElement, ItemProps>(
                 )}
               </span>
             ) : item.leftIcon ? (
-              <span className={cn('flex-shrink-0 inline-flex items-center justify-center', iconBoxSize)}>{item.leftIcon}</span>
+              <span className={cn('flex-shrink-0 inline-flex items-center justify-center [&>svg]:w-full [&>svg]:h-full', iconBoxSize)}>{item.leftIcon}</span>
             ) : null}
 
             {/* 메인 콘텐츠 영역 (title + description) */}
@@ -406,15 +322,14 @@ const Item = React.forwardRef<HTMLDivElement, ItemProps>(
                 ) : (
                   <TruncateWithTooltip text={item.title || ''} className={cn('truncate', size === 'sm' ? 'text-button-sm-medium' : 'text-button-md-medium')} />
                 )}
-                {item.rightIcon && <span className={cn('flex-shrink-0 inline-flex items-center justify-center', iconBoxSize)}>{item.rightIcon}</span>}
               </div>
               <MultiLineTruncateWithTooltip text={item.description || ''} className="text-caption-xs-regular text-text-tertiary line-clamp-2" />
             </div>
           </div>
-          {/* 중첩메뉴 화살표 - 우측 정렬 */}
-          {item.children && (
-            <span className="flex-shrink-0 w-[16px] h-[16px] inline-flex items-center justify-center ml-2">
-              <Icon name="chevron-right" size={16} />
+          {/* 우측 영역 - rightIcon 또는 중첩메뉴 화살표 */}
+          {(item.rightIcon || item.children) && (
+            <span className={cn('flex-shrink-0 inline-flex items-center justify-center ml-2 [&>svg]:w-full [&>svg]:h-full', iconBoxSize)}>
+              {item.children ? <Icon name="chevron-right" size={16} /> : item.rightIcon}
             </span>
           )}
         </div>
@@ -434,7 +349,7 @@ const Item = React.forwardRef<HTMLDivElement, ItemProps>(
         aria-expanded={item.children && item.children.length > 0 ? isExpanded : undefined}
         className={cn(
           itemVariants({ size, state, destructive: item.destructive }),
-          item.children ? 'justify-between' : '',
+          (item.children || item.rightIcon) ? 'justify-between' : '',
           className
         )}
         onMouseEnter={handleMouseEnter}
@@ -476,7 +391,7 @@ const Item = React.forwardRef<HTMLDivElement, ItemProps>(
               )}
             </span>
           ) : item.leftIcon ? (
-            <span className={cn('flex-shrink-0 inline-flex items-center justify-center', iconBoxSize)}>{item.leftIcon}</span>
+            <span className={cn('flex-shrink-0 inline-flex items-center justify-center [&>svg]:w-full [&>svg]:h-full', iconBoxSize)}>{item.leftIcon}</span>
           ) : null}
           {item.badgeDot && item.badge ? (
             <span className="relative inline-flex items-start">
@@ -491,12 +406,11 @@ const Item = React.forwardRef<HTMLDivElement, ItemProps>(
           ) : (
             <TruncateWithTooltip text={item.label || ''} className="truncate min-w-0" />
           )}
-          {item.rightIcon && <span className={cn('flex-shrink-0 inline-flex items-center justify-center', iconBoxSize)}>{item.rightIcon}</span>}
         </div>
-        {/* 중첩메뉴 화살표 - 우측 정렬 */}
-        {item.children && (
-          <span className="flex-shrink-0 w-[16px] h-[16px] inline-flex items-center justify-center ml-2">
-            <Icon name="chevron-right" size={16} />
+        {/* 우측 영역 - rightIcon 또는 중첩메뉴 화살표 */}
+        {(item.rightIcon || item.children) && (
+          <span className={cn('flex-shrink-0 inline-flex items-center justify-center ml-2 [&>svg]:w-full [&>svg]:h-full', iconBoxSize)}>
+            {item.children ? <Icon name="chevron-right" size={16} /> : item.rightIcon}
           </span>
         )}
       </div>

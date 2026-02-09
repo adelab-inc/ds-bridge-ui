@@ -35,7 +35,7 @@ const radioVariants = cva(
       },
       {
         "checked": true,
-        "class": "border-control-stroke-default bg-bg-surface hover:border-control-bg-on active:border-control-bg-on focus-visible:shadow-[0_0_0_1px_var(--color-role-border-contrast,#FFF)_inset,0_0_0_2px_var(--color-role-focus,#0033A0)]",
+        "class": "border-control-stroke-default bg-bg-surface hover:border-control-bg-on active:border-control-bg-on peer-focus-visible:shadow-[0_0_0_1px_var(--color-role-border-contrast,#FFF)_inset,0_0_0_2px_var(--color-role-focus,#0033A0)]",
         "disabled": false,
       },
       {
@@ -45,7 +45,7 @@ const radioVariants = cva(
       },
       {
         "checked": false,
-        "class": "focus-visible:shadow-[0_0_0_1px_var(--color-role-border-contrast,#FFF)_inset,0_0_0_2px_var(--color-role-focus,#0033A0)]",
+        "class": "peer-focus-visible:shadow-[0_0_0_1px_var(--color-role-border-contrast,#FFF)_inset,0_0_0_2px_var(--color-role-focus,#0033A0)]",
         "disabled": false,
       },
     ],
@@ -85,7 +85,7 @@ const Radio = React.forwardRef<HTMLInputElement, RadioProps>(
       <Container className={cn("inline-flex items-center cursor-pointer", containerSizeClass)}>
         <input
           type="radio"
-          className="sr-only"
+          className="sr-only peer"
           checked={checked}
           disabled={disabled}
           onChange={handleChange}

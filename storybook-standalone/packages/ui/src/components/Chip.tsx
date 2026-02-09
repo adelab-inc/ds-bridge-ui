@@ -96,7 +96,7 @@ const chipVariants = cva('inline-flex items-center rounded-full cursor-pointer',
       },
     ],
   }));
-const chipCloseButtonVariants = cva("flex items-center justify-center rounded-full p-[3px]", {
+const chipCloseButtonVariants = cva("flex items-center justify-center rounded-full p-[3px] -m-[3px]", {
   variants: {
     size: {
       md: "",

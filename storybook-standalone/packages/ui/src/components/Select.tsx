@@ -7,6 +7,7 @@ import { Icon } from './Icon';
 import { Menu, type MenuItem } from './Menu';
 import { cn } from './utils';
 import { useSpacingMode } from './SpacingModeProvider';
+import { TruncateWithTooltip } from '../utils';
 
 const selectVariants = cva(
   'flex items-center flex-1 border appearance-none',
@@ -17,6 +18,10 @@ const selectVariants = cva(
         "true": "",
       },
       "hasValue": {
+        "false": "",
+        "true": "",
+      },
+      "isOpen": {
         "false": "",
         "true": "",
       },
@@ -32,6 +37,7 @@ const selectVariants = cva(
     defaultVariants: {
       "error": false,
       "hasValue": false,
+      "isOpen": false,
       "mode": "base",
       "size": "md",
     },
@@ -59,12 +65,12 @@ const selectVariants = cva(
       {
         "class": "border-field-border-default bg-field-bg-surface text-text-primary hover:bg-[#f0f0f0] active:bg-[#e6e6e6] focus:outline focus:outline-2 focus:outline-focus focus:outline-offset-[-2px]",
         "error": false,
-        "hasValue": false,
+        "isOpen": false,
       },
       {
         "class": "text-text-accent border-field-border-focus bg-bg-selection hover:bg-[#dde1eb] active:bg-[#d3d7e1] focus:outline focus:outline-2 focus:outline-focus focus:outline-offset-[-2px]",
         "error": false,
-        "hasValue": true,
+        "isOpen": true,
       },
       {
         "class": "border-field-border-error bg-field-bg-surface text-text-primary hover:bg-[#f0f0f0] active:bg-[#e6e6e6] focus:outline focus:outline-2 focus:outline-focus focus:outline-offset-[-2px]",
@@ -94,8 +100,8 @@ const selectLabelVariants = cva('flex items-center self-stretch min-w-0 overflow
 const selectIconVariants = cva('shrink-0 flex items-center justify-center text-icon-interactive-default', {
   variants: {
     size: {
-      md: 'w-[14px] h-[14px]',
-      sm: 'w-[12px] h-[12px]',
+      md: 'w-[20px] h-[20px]',
+      sm: 'w-[16px] h-[16px]',
     },
     isDisabled: {
       true: 'text-icon-interactive-disabled',
@@ -130,7 +136,7 @@ const selectHelperTextVariants = cva('', {
   },
 });
 
-const selectContainerVariants = cva('flex flex-col overflow-hidden', {
+const selectContainerVariants = cva('flex flex-col overflow-hidden w-full', {
   variants: {
     mode: {
       base: 'gap-component-gap-content-sm',
@@ -142,10 +148,17 @@ const selectContainerVariants = cva('flex flex-col overflow-hidden', {
   },
 });
 
-export interface SelectOption {
+export interface SelectOption extends Pick<MenuItem,
+  | 'label'
+  | 'disabled'
+  | 'leftIcon'
+  | 'rightIcon'
+  | 'badge'
+  | 'badgeDot'
+  | 'destructive'
+> {
+  /** 선택 시 반환되는 값 (MenuItem의 id에 매핑됨) */
   value: string;
-  label: string;
-  disabled?: boolean;
 }
 
 export interface SelectProps
@@ -217,11 +230,15 @@ const Select = React.forwardRef<HTMLDivElement, SelectProps>(
 
     // 상태 관리
     const [isOpen, setIsOpen] = React.useState(false);
+    const [isFocused, setIsFocused] = React.useState(false);
     const [internalValue, setInternalValue] = React.useState<string>(
       (value as string) || (defaultValue as string) || '',
     );
     const [menuPosition, setMenuPosition] = React.useState({ x: 0, y: 0 });
     const [menuWidth, setMenuWidth] = React.useState<number>(0);
+
+    // 활성 상태: 열려있거나 포커스가 있을 때
+    const isActive = isOpen || isFocused;
 
     const triggerRef = React.useRef<HTMLDivElement>(null);
     const combinedRef = ref || triggerRef;
@@ -239,14 +256,14 @@ const Select = React.forwardRef<HTMLDivElement, SelectProps>(
     const selectedOption = options.find((opt) => opt.value === currentValue);
     const displayLabel = selectedOption?.label || placeholder;
 
-    // 동적 스타일
-    const selectTextColor = disabled ? 'text-text-primary' : hasValue ? 'text-text-accent' : 'text-text-primary';
+    // 동적 스타일 (isActive: 열려있거나 포커스가 있을 때 selection 스타일 적용)
+    const selectTextColor = disabled ? 'text-text-primary' : isActive ? 'text-text-accent' : 'text-text-primary';
     const chevronColor = disabled
       ? 'text-icon-interactive-disabled'
-      : hasValue
+      : isActive
         ? 'text-icon-interactive-on-selection'
         : 'text-icon-interactive-default';
-    const chevronSize = size === 'sm' ? 12 : 14;
+    const chevronSize = size === 'sm' ? 16 : 20;
 
     // 위치 및 너비 계산 (동기적으로 처리하여 깜빡임 방지)
     React.useLayoutEffect(() => {
@@ -313,6 +330,11 @@ const Select = React.forwardRef<HTMLDivElement, SelectProps>(
           label: option.label,
           selected: currentValue === option.value,
           disabled: option.disabled ?? false,
+          leftIcon: option.leftIcon,
+          rightIcon: option.rightIcon,
+          badge: option.badge,
+          badgeDot: option.badgeDot,
+          destructive: option.destructive,
         })),
       [options, currentValue],
     );
@@ -383,7 +405,7 @@ const Select = React.forwardRef<HTMLDivElement, SelectProps>(
             tabIndex={disabled ? -1 : 0}
             {...selectProps}
             className={cn(
-              selectVariants({ size, mode, error, hasValue, className }),
+              selectVariants({ size, mode, error, hasValue, isOpen: isActive, className }),
               disabled && [
                 'cursor-not-allowed opacity-50',
                 '!border-field-border-default !bg-field-bg-surface !text-text-primary',
@@ -396,6 +418,8 @@ const Select = React.forwardRef<HTMLDivElement, SelectProps>(
             )}
             onClick={handleTriggerClick}
             onKeyDown={handleTriggerKeyDown}
+            onFocus={() => !disabled && setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
           >
             {startIcon && (
               onStartIconClick ? (
@@ -422,7 +446,7 @@ const Select = React.forwardRef<HTMLDivElement, SelectProps>(
               )
             )}
 
-            <span className={cn('flex-1 truncate', selectTextColor)}>{displayLabel}</span>
+            <TruncateWithTooltip text={displayLabel} className={cn('flex-1', selectTextColor)} />
 
             {endIcon ? (
               onEndIconClick ? (

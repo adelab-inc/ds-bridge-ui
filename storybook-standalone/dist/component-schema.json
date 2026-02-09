@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-01-27T08:25:01.430Z",
+  "generatedAt": "2026-02-09T10:09:30.651Z",
   "components": {
     "Alert": {
       "displayName": "Alert",
@@ -16,7 +16,7 @@
           "required": false
         },
         "actions": {
-          "type": "AlertAction[]",
+          "type": "AlertActions",
           "required": false
         },
         "onClose": {
@@ -92,7 +92,10 @@
           "required": true
         },
         "levelVariant": {
-          "type": "\"announcement\"",
+          "type": [
+            "neutral",
+            "primary"
+          ],
           "required": false
         },
         "statusVariant": {
@@ -552,89 +555,6 @@
         }
       ]
     },
-    "Dialog": {
-      "displayName": "Dialog",
-      "filePath": "packages/ui/src/components/Dialog.tsx",
-      "category": "UI",
-      "props": {
-        "open": {
-          "type": "boolean",
-          "required": false,
-          "defaultValue": true
-        },
-        "title": {
-          "type": "string",
-          "required": true
-        },
-        "subtitle": {
-          "type": "string",
-          "required": false
-        },
-        "x": {
-          "type": "string",
-          "required": false,
-          "defaultValue": "50%"
-        },
-        "y": {
-          "type": "string",
-          "required": false,
-          "defaultValue": "50%"
-        },
-        "onClose": {
-          "type": "() => void",
-          "required": true
-        },
-        "onPrimaryClick": {
-          "type": "() => void",
-          "required": false
-        },
-        "onSecondaryClick": {
-          "type": "() => void",
-          "required": false
-        },
-        "primaryLabel": {
-          "type": "string",
-          "required": false,
-          "defaultValue": "확인"
-        },
-        "secondaryLabel": {
-          "type": "string",
-          "required": false,
-          "defaultValue": "취소"
-        },
-        "footerContent": {
-          "type": "ReactNode",
-          "required": false
-        },
-        "mode": {
-          "type": [
-            "base",
-            "compact"
-          ],
-          "required": false
-        },
-        "size": {
-          "type": [
-            "lg",
-            "md",
-            "sm",
-            "xl"
-          ],
-          "required": false
-        }
-      },
-      "stories": [
-        {
-          "id": "ui-dialog--default",
-          "name": "Default",
-          "tags": [
-            "dev",
-            "test",
-            "autodocs"
-          ]
-        }
-      ]
-    },
     "Divider": {
       "displayName": "Divider",
       "filePath": "packages/ui/src/components/Divider.tsx",
@@ -677,6 +597,58 @@
       "filePath": "packages/ui/src/components/Field.tsx",
       "category": "UI",
       "props": {
+        "multiline": {
+          "type": "boolean",
+          "required": false,
+          "defaultValue": false,
+          "description": "Single-line input 모드 (기본값)\nMultiline textarea 모드"
+        },
+        "prefix": {
+          "type": "ReactNode",
+          "required": false,
+          "description": "입력 앞 텍스트 (예: $, ₩) - single-line 전용\nprefix는 single-line 전용"
+        },
+        "startIcon": {
+          "type": "ReactNode",
+          "required": false,
+          "description": "좌측 아이콘 - single-line 전용\nstartIcon은 single-line 전용"
+        },
+        "endIcon": {
+          "type": "ReactNode",
+          "required": false,
+          "description": "우측 아이콘 - single-line 전용\nendIcon은 single-line 전용"
+        },
+        "onStartIconClick": {
+          "type": "(e: MouseEvent<HTMLButtonElement, MouseEvent>) => void",
+          "required": false,
+          "description": "좌측 아이콘 클릭 핸들러 - single-line 전용\nonStartIconClick은 single-line 전용"
+        },
+        "onEndIconClick": {
+          "type": "(e: MouseEvent<HTMLButtonElement, MouseEvent>) => void",
+          "required": false,
+          "description": "우측 아이콘 클릭 핸들러 - single-line 전용\nonEndIconClick은 single-line 전용"
+        },
+        "startIconProps": {
+          "type": "HTMLAttributes<HTMLElement>",
+          "required": false,
+          "description": "내부 startIcon wrapper 요소에 전달할 추가 props - single-line 전용\nstartIconProps는 single-line 전용"
+        },
+        "endIconProps": {
+          "type": "HTMLAttributes<HTMLElement>",
+          "required": false,
+          "description": "내부 endIcon wrapper 요소에 전달할 추가 props - single-line 전용\nendIconProps는 single-line 전용"
+        },
+        "rowsVariant": {
+          "type": [
+            "flexible",
+            "rows4",
+            "rows6",
+            "rows8"
+          ],
+          "required": false,
+          "defaultValue": "flexible",
+          "description": "rowsVariant는 multiline 전용\nTextarea 행 수 변형 - multiline 전용"
+        },
         "label": {
           "type": "string",
           "required": false
@@ -694,41 +666,6 @@
           "type": "boolean",
           "required": false,
           "defaultValue": false
-        },
-        "prefix": {
-          "type": "ReactNode",
-          "required": false
-        },
-        "startIcon": {
-          "type": "ReactNode",
-          "required": false
-        },
-        "endIcon": {
-          "type": "ReactNode",
-          "required": false
-        },
-        "onStartIconClick": {
-          "type": "(e: MouseEvent<HTMLButtonElement, MouseEvent>) => void",
-          "required": false
-        },
-        "onEndIconClick": {
-          "type": "(e: MouseEvent<HTMLButtonElement, MouseEvent>) => void",
-          "required": false
-        },
-        "multiline": {
-          "type": "boolean",
-          "required": false,
-          "defaultValue": false
-        },
-        "rowsVariant": {
-          "type": [
-            "flexible",
-            "rows4",
-            "rows6",
-            "rows8"
-          ],
-          "required": false,
-          "defaultValue": "flexible"
         },
         "size": {
           "type": [
@@ -755,16 +692,6 @@
           "type": "HTMLAttributes<HTMLSpanElement>",
           "required": false,
           "description": "내부 helperText 요소에 전달할 추가 props"
-        },
-        "startIconProps": {
-          "type": "HTMLAttributes<HTMLElement>",
-          "required": false,
-          "description": "내부 startIcon wrapper 요소에 전달할 추가 props"
-        },
-        "endIconProps": {
-          "type": "HTMLAttributes<HTMLElement>",
-          "required": false,
-          "description": "내부 endIcon wrapper 요소에 전달할 추가 props"
         },
         "hasError": {
           "type": "boolean",
@@ -1637,6 +1564,11 @@
           "defaultValue": false,
           "description": "전체 세그먼트 비활성화"
         },
+        "gap": {
+          "type": "string",
+          "required": false,
+          "description": "세그먼트 리스트와 패널 사이 간격 (Tailwind 클래스, 예: 'gap-4', 'gap-layout-stack-md')"
+        },
         "isDisabled": {
           "type": "boolean",
           "required": false
@@ -1787,6 +1719,10 @@
           "type": "boolean",
           "required": false
         },
+        "isOpen": {
+          "type": "boolean",
+          "required": false
+        },
         "mode": {
           "type": [
             "base",
@@ -1849,6 +1785,11 @@
           "required": false,
           "defaultValue": false,
           "description": "전체 탭 비활성화"
+        },
+        "gap": {
+          "type": "string",
+          "required": false,
+          "description": "탭 리스트와 패널 사이 간격 (Tailwind 클래스, 예: 'gap-4', 'gap-layout-stack-md')"
         },
         "isDisabled": {
           "type": "boolean",

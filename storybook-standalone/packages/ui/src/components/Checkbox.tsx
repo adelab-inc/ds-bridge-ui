@@ -45,12 +45,12 @@ const checkboxVariants = cva(
       },
       {
         "checked": false,
-        "class": "focus-visible:shadow-[0_0_0_1px_var(--color-role-border-contrast,#FFF)_inset,0_0_0_2px_var(--color-role-focus,#0033A0)]",
+        "class": "peer-focus-visible:shadow-[0_0_0_1px_var(--color-role-border-contrast,#FFF)_inset,0_0_0_2px_var(--color-role-focus,#0033A0)]",
         "disabled": false,
       },
       {
         "checked": true,
-        "class": "focus-visible:shadow-[0_0_0_1px_var(--color-role-border-contrast,#FFF)_inset,0_0_0_2px_var(--color-role-focus,#0033A0)]",
+        "class": "peer-focus-visible:shadow-[0_0_0_1px_var(--color-role-border-contrast,#FFF)_inset,0_0_0_2px_var(--color-role-focus,#0033A0)]",
         "disabled": false,
       },
     ],
@@ -93,7 +93,7 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
       <Container className={cn("inline-flex items-center cursor-pointer", containerSizeClass)}>
         <input
           type="checkbox"
-          className="sr-only"
+          className="sr-only peer"
           checked={checked}
           disabled={disabled}
           onChange={handleChange}

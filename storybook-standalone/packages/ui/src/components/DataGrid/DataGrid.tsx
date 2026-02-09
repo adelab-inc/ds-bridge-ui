@@ -2,12 +2,7 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 
-// AG Grid CSS 스타일 import
-import 'ag-grid-community/styles/ag-grid.css';
-import 'ag-grid-community/styles/ag-theme-alpine.css';
-import 'ag-grid-community/styles/ag-theme-balham.css';
-import 'ag-grid-community/styles/ag-theme-material.css';
-
+// AG Grid v34 Theme API
 import {
   ColDef,
   GridApi,
@@ -26,10 +21,74 @@ import {
   ColumnMovedEvent,
   ModuleRegistry,
   AllCommunityModule,
+  themeQuartz,
 } from 'ag-grid-community';
+
+// Design Tokens import - packages/ui 토큰 시스템 사용
+import { designTokens } from '../../tokens/design-tokens';
 
 // AG Grid 모듈 등록 (v34 필수)
 ModuleRegistry.registerModules([AllCommunityModule]);
+
+/**
+ * AG Grid 커스텀 테마 - Design Tokens 기반
+ * packages/ui/src/tokens/design-tokens.ts의 토큰을 AG Grid Theme API에 직접 매핑
+ * @see https://www.figma.com/design/m3MKIEBXCXtj4HCdJd2zS6/WSR?node-id=5084-157297
+ */
+const aplusGridTheme = themeQuartz.withParams({
+  // === Colors: Background ===
+  backgroundColor: designTokens.colors['bg-surface'],
+  headerBackgroundColor: designTokens.colors['bg-surface'],
+  oddRowBackgroundColor: designTokens.colors['bg-surface'],
+  rowHoverColor: designTokens.colors['state-overlay-on-neutral-hover'],
+  selectedRowBackgroundColor: designTokens.colors['bg-selection'],
+  modalOverlayBackgroundColor: designTokens.colors['overlay-scrim'],
+
+  // === Colors: Border ===
+  borderColor: designTokens.colors['border-default'],
+  rowBorder: { color: designTokens.colors['border-default'] },
+  headerColumnBorder: { color: designTokens.colors['border-default'] },
+
+  // === Colors: Text ===
+  foregroundColor: designTokens.colors['text-primary'],
+  headerTextColor: designTokens.colors['text-primary'],
+  textColor: designTokens.colors['text-primary'],
+  subtleTextColor: designTokens.colors['text-secondary'],
+
+  // === Colors: Accent ===
+  accentColor: designTokens.colors['brand-primary'],
+
+  // === Colors: Input ===
+  inputBorder: { color: designTokens.colors['field-border-default'] },
+  inputFocusBorder: { color: designTokens.colors['field-border-focus'] },
+  inputDisabledBackgroundColor: designTokens.colors['field-bg-disabled'],
+
+  // === Colors: Checkbox ===
+  checkboxCheckedBackgroundColor: designTokens.colors['control-bg-on'],
+  checkboxUncheckedBackgroundColor: designTokens.colors['bg-surface'],
+  checkboxUncheckedBorderColor: designTokens.colors['control-stroke-default'],
+
+  // === Colors: Invalid ===
+  invalidColor: designTokens.colors['semantic-error'],
+
+  // === Spacing & Sizing ===
+  cellHorizontalPadding: 12,
+  cellWidgetSpacing: 8,
+  rowHeight: 40,
+  headerHeight: 42,
+  spacing: 8,
+  wrapperBorderRadius: 8,
+  borderRadius: 6,
+
+  // === Typography ===
+  fontFamily: "'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+  fontSize: 14,
+  headerFontSize: 14,
+  headerFontWeight: 500,
+
+  // === Icons ===
+  iconSize: 16,
+});
 
 /**
  * 기본 셀 렌더러 컴포넌트들
@@ -115,8 +174,8 @@ export interface DataGridProps {
   columnDefs: ColDef[];
 
   /** 테마 및 스타일 */
-  /** 그리드 테마 선택 */
-  theme?: 'alpine' | 'balham' | 'material' | 'custom';
+  /** 그리드 테마 선택 (quartz 권장 - Design Tokens 적용) */
+  theme?: 'quartz' | 'alpine' | 'balham' | 'material' | 'custom';
   /** 그리드 높이 */
   height?: number | string;
   /** 그리드 너비 */
@@ -224,7 +283,7 @@ export interface DataGridProps {
 export const DataGrid: React.FC<DataGridProps> = ({
   rowData,
   columnDefs,
-  theme = 'alpine',
+  theme = 'quartz',
   height = 400,
   width = '100%',
   className = '',
@@ -290,19 +349,6 @@ export const DataGrid: React.FC<DataGridProps> = ({
     },
     [onGridReady]
   );
-
-  // 테마에 따른 CSS 클래스 반환
-  const getThemeClass = () => {
-    switch (theme) {
-      case 'balham':
-        return 'ag-theme-balham';
-      case 'material':
-        return 'ag-theme-material';
-      case 'alpine':
-      default:
-        return 'ag-theme-alpine';
-    }
-  };
 
   // 그리드 옵션 메모이제이션
   const gridOptions: GridOptions = useMemo(
@@ -377,10 +423,10 @@ export const DataGrid: React.FC<DataGridProps> = ({
   }, [gridApi, loading]);
 
   return (
-    <div className={`${getThemeClass()} ${className}`} style={{ height, width }}>
+    <div className={className} style={{ height, width }}>
       {React.createElement(AgGridReact as any, {
         ref: gridRef,
-        theme: 'legacy',
+        theme: aplusGridTheme,
         ...gridOptions,
         onGridReady: handleGridReady,
         onSelectionChanged: onSelectionChanged,

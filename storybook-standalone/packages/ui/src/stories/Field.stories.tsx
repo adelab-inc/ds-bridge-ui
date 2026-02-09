@@ -160,8 +160,8 @@ export const FlexibleMultiline: Story = {
   name: 'Flexible (Auto-grow)',
   args: {
     label: '메모',
-    placeholder: '입력하면 자동으로 높이가 늘어납니다 (최대 4줄)',
-    helperText: '1줄에서 최대 4줄까지 자동 확장됩니다.',
+    placeholder: '입력하면 자동으로 높이가 늘어납니다',
+    helperText: '내용에 따라 자동으로 확장됩니다.',
     multiline: true,
     rowsVariant: 'flexible',
     size: 'md',

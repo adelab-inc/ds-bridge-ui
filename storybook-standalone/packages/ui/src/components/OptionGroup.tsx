@@ -42,42 +42,15 @@ const optionGroupVariants = cva(
 );
 
 const optionsContainerVariants = cva(
-  'flex min-h-[32px]',
+  'flex min-h-[32px] gap-component-gap-selection-group',
   {
     variants: {
-      mode: {
-        base: '',
-        compact: '',
-      },
       orientation: {
         horizontal: 'flex-row',
         vertical: 'flex-col',
       },
     },
-    compoundVariants: [
-      {
-        mode: 'base',
-        orientation: 'horizontal',
-        class: 'gap-layout-inline-lg',
-      },
-      {
-        mode: 'base',
-        orientation: 'vertical',
-        class: 'gap-layout-inline-lg',
-      },
-      {
-        mode: 'compact',
-        orientation: 'horizontal',
-        class: 'gap-layout-inline-lg-compact',
-      },
-      {
-        mode: 'compact',
-        orientation: 'vertical',
-        class: 'gap-layout-inline-lg-compact',
-      },
-    ],
     defaultVariants: {
-      mode: 'base',
       orientation: 'vertical',
     },
   }
@@ -191,7 +164,7 @@ const OptionGroup = React.forwardRef<HTMLDivElement, OptionGroupProps>(
             )}
           </div>
         )}
-        <div className={cn(optionsContainerVariants({ mode, orientation }))}>
+        <div className={cn(optionsContainerVariants({ orientation }))}>
           {childrenWithSize}
         </div>
         {helperText && (
