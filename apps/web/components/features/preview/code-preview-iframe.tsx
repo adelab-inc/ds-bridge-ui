@@ -48,6 +48,35 @@ function CodePreviewIframe({
             .filter(Boolean)
         : [];
 
+      // 2-1. @aplus/ui import에서 컴포넌트 목록 추출
+      const aplusUiImportMatch = code.match(
+        /import\s+\{([^}]+)\}\s+from\s+['"]@aplus\/ui['"]/
+      );
+      const aplusUiComponents = aplusUiImportMatch
+        ? aplusUiImportMatch[1]
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : [];
+
+      // 2-2. DataGrid 사용 감지 → AG Grid CDN 로딩 필요 여부
+      const hasDataGrid = aplusUiComponents.includes('DataGrid');
+      const needsAgGrid = hasAgGrid || hasDataGrid;
+
+      // 2-3. AG Grid 관련 exports는 커스텀 래퍼로 주입 → UMD 매핑에서 제외
+      const agGridRelatedExports = [
+        'DataGrid',
+        'COLUMN_TYPES',
+        'AgGridUtils',
+        'ButtonCellRenderer',
+        'CheckboxCellRenderer',
+        'ImageCellRenderer',
+        'DataGridProps',
+      ];
+      const nonAgGridAplusComponents = aplusUiComponents.filter(
+        (c) => !agGridRelatedExports.includes(c)
+      );
+
       // 3. import 문 제거
       let processedCode = code
         // @/components import 제거
@@ -73,6 +102,12 @@ function CodePreviewIframe({
         // value imports from ag-grid-community 제거
         .replace(
           /import\s+\{[^}]+\}\s+from\s+['"]ag-grid-community['"];?\n?/g,
+          ''
+        )
+        // @aplus/ui import 제거
+        .replace(/import\s+\{[^}]+\}\s+from\s+['"]@aplus\/ui['"];?\n?/g, '')
+        .replace(
+          /import\s+\{[^}]+\}\s+from\s+['"]@aplus\/ui\/[^'"]*['"];?\n?/g,
           ''
         );
 
@@ -125,7 +160,7 @@ function CodePreviewIframe({
       });
 
       // 6. AG Grid 인라인 래퍼 코드 생성
-      const agGridWrapperCode = hasAgGrid
+      const agGridWrapperCode = needsAgGrid
         ? `
         // AG Grid 인라인 래퍼 컴포넌트 (ag-grid-react UMD가 v34에서 작동하지 않으므로 직접 구현)
         const AgGridReact = React.forwardRef(function AgGridReact(props, ref) {
@@ -227,6 +262,92 @@ function CodePreviewIframe({
         // ag-grid-community exports 매핑
         const ModuleRegistry = window.agGrid.ModuleRegistry;
         const AllCommunityModule = window.agGrid.AllCommunityModule;
+
+        // DataGrid 래퍼 - @aplus/ui DataGrid의 프리뷰 버전
+        // 내부적으로 위에서 정의한 AgGridReact 커스텀 래퍼를 사용
+        const DataGrid = function DataGrid(props) {
+          var rowData = props.rowData;
+          var columnDefs = props.columnDefs;
+          var height = props.height !== undefined ? props.height : 400;
+          var width = props.width !== undefined ? props.width : '100%';
+          var className = props.className || '';
+          var pagination = props.pagination;
+          var paginationPageSize = props.paginationPageSize;
+          var paginationPageSizeSelector = props.paginationPageSizeSelector;
+          var domLayout = props.domLayout;
+          var rowSelection = props.rowSelection;
+          var enableFilter = props.enableFilter !== undefined ? props.enableFilter : true;
+          var enableSorting = props.enableSorting !== undefined ? props.enableSorting : true;
+          var animateRows = props.animateRows;
+          var defaultColDef = props.defaultColDef;
+          var onGridReady = props.onGridReady;
+          var onSelectionChanged = props.onSelectionChanged;
+          var onCellClicked = props.onCellClicked;
+          var onRowSelected = props.onRowSelected;
+          var onFilterChanged = props.onFilterChanged;
+          var onSortChanged = props.onSortChanged;
+          var onCellValueChanged = props.onCellValueChanged;
+          var onColumnMoved = props.onColumnMoved;
+
+          var mergedDefaultColDef = Object.assign(
+            { sortable: enableSorting, filter: enableFilter, resizable: true },
+            defaultColDef || {}
+          );
+
+          return React.createElement('div', { className: className, style: { height: height, width: width } },
+            React.createElement(AgGridReact, {
+              rowData: rowData,
+              columnDefs: columnDefs,
+              defaultColDef: mergedDefaultColDef,
+              pagination: pagination,
+              paginationPageSize: paginationPageSize,
+              paginationPageSizeSelector: paginationPageSizeSelector,
+              domLayout: domLayout,
+              rowSelection: rowSelection,
+              animateRows: animateRows,
+              onGridReady: onGridReady,
+              onSelectionChanged: onSelectionChanged,
+              onCellClicked: onCellClicked,
+              onRowSelected: onRowSelected,
+              onFilterChanged: onFilterChanged,
+              onSortChanged: onSortChanged,
+              onCellValueChanged: onCellValueChanged,
+              onColumnMoved: onColumnMoved,
+            })
+          );
+        };
+
+        // COLUMN_TYPES - 미리 정의된 컬럼 타입
+        const COLUMN_TYPES = {
+          numberColumn: { width: 130, filter: 'agNumberColumnFilter', cellClass: 'ag-right-aligned-cell', headerClass: 'ag-right-aligned-header' },
+          dateColumn: { filter: 'agDateColumnFilter', cellEditor: 'agDateCellEditor', width: 150 },
+          currencyColumn: { width: 150, filter: 'agNumberColumnFilter', cellClass: 'ag-right-aligned-cell', headerClass: 'ag-right-aligned-header',
+            valueFormatter: function(params) { if (params.value == null) return ''; return new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(params.value); }
+          },
+          percentColumn: { width: 130, filter: 'agNumberColumnFilter', cellClass: 'ag-right-aligned-cell', headerClass: 'ag-right-aligned-header',
+            valueFormatter: function(params) { if (params.value == null) return ''; return params.value + '%'; }
+          },
+        };
+
+        // AgGridUtils - 그리드 유틸리티 함수
+        const AgGridUtils = {
+          exportToCsv: function(api, f) { api.exportDataAsCsv({ fileName: f || 'export_' + Date.now() + '.csv' }); },
+          exportToExcel: function(api, f) { api.exportDataAsExcel({ fileName: f || 'export_' + Date.now() + '.xlsx' }); },
+          getSelectedRows: function(api) { return api.getSelectedRows(); },
+          selectAll: function(api) { api.selectAll(); },
+          deselectAll: function(api) { api.deselectAll(); },
+          scrollToRow: function(api, i) { api.ensureIndexVisible(i); },
+          autoSizeAllColumns: function(api) { var ids = (api.getColumns() || []).map(function(c) { return c.getColId(); }); api.autoSizeColumns(ids); },
+          getFilterModel: function(api) { return api.getFilterModel(); },
+          setFilterModel: function(api, m) { api.setFilterModel(m); },
+          getSortModel: function(api) { return api.getColumnState(); },
+          setSortModel: function(api, m) { api.applyColumnState({ state: m }); },
+        };
+
+        // 셀 렌더러 폴백 (vanilla AG Grid에서는 React 셀 렌더러 미지원 - 참조용)
+        const ButtonCellRenderer = function(props) { return React.createElement('button', { style: { padding: '4px 8px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' } }, props.value || '클릭'); };
+        const CheckboxCellRenderer = function(props) { return React.createElement('input', { type: 'checkbox', checked: !!props.value, readOnly: true }); };
+        const ImageCellRenderer = function(props) { return React.createElement('img', { src: props.value, alt: 'cell image', style: { width: 30, height: 30, objectFit: 'cover', borderRadius: '4px' } }); };
         `
         : '';
 
@@ -239,7 +360,7 @@ function CodePreviewIframe({
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
   ${
-    hasAgGrid
+    needsAgGrid
       ? `
   <!-- AG Grid CDN (v34.2.0) - Theming API 사용으로 ag-grid.css 불필요 -->
   <script src="${AG_GRID_CDN}/dist/ag-grid-community.min.js"></script>
@@ -276,6 +397,18 @@ function CodePreviewIframe({
         ${
           importedComponents.length > 0
             ? importedComponents
+                .map(
+                  (comp) =>
+                    `const ${comp} = AplusUI.${comp} || (function() { missingComponents.push('${comp}'); return function(props) { return React.createElement('div', { style: { padding: '8px', border: '1px dashed #ccc', borderRadius: '4px', background: '#f9f9f9' }, ...props }, props.children || '[${comp}]'); }; })();`
+                )
+                .join('\n        ')
+            : ''
+        }
+
+        // @aplus/ui 컴포넌트 매핑 (AG Grid 관련은 커스텀 래퍼로 주입되므로 제외)
+        ${
+          nonAgGridAplusComponents.length > 0
+            ? nonAgGridAplusComponents
                 .map(
                   (comp) =>
                     `const ${comp} = AplusUI.${comp} || (function() { missingComponents.push('${comp}'); return function(props) { return React.createElement('div', { style: { padding: '8px', border: '1px dashed #ccc', borderRadius: '4px', background: '#f9f9f9' }, ...props }, props.children || '[${comp}]'); }; })();`
