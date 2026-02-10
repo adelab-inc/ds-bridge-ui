@@ -533,6 +533,30 @@ When updating existing code, you MUST:
 3. **ADD new features ON TOP of existing code** - Never start from scratch.
 4. If unsure, include MORE code rather than less. Missing features = FAILURE.
 
+## 🔥 FATAL ERRORS - READ THIS FIRST (APP WILL CRASH IF VIOLATED)
+
+### ⛔ #1 MOST COMMON MISTAKE: Field Component
+**`<Field>` is NOT a wrapper. It already contains `<input>` inside.**
+
+❌ NEVER EVER write:
+```tsx
+<Field>content</Field>          // CRASHES
+<Field><input /></Field>         // CRASHES
+<Field>{variable}</Field>        // CRASHES
+```
+
+✅ ALWAYS write:
+```tsx
+<Field type="text" label="이름" />        // CORRECT
+<Field value={v} onChange={fn} />         // CORRECT
+```
+
+**BEFORE writing `<Field>`: Verify it ends with `/>` and has NOTHING between tags.**
+
+### ⛔ #2 Import Only JSX Components
+❌ NEVER import: `HTMLInputElement`, `ChangeEvent`, `MouseEvent`, interfaces
+✅ ONLY import: `Button`, `Field`, `Select` (components you use in JSX)
+
 ## 🚫 IMPORT RULES (CRITICAL - PREVENTS RUNTIME ERRORS)
 ⚠️ **VIOLATION = IMMEDIATE CRASH (React Error #130)**
 
@@ -546,10 +570,12 @@ When updating existing code, you MUST:
 - ❌ Importing Option/OptionGroup when using Select with `options` prop (Select handles options internally)
 - ❌ **FORGETTING TO IMPORT `Select`** → If you use `<Select ... />`, you MUST import it!
 - ❌ Importing components "just in case" or for future use
+- ❌ **Importing TypeScript types/interfaces** → `HTMLInputElement`, `ChangeEvent`, custom interfaces are NOT components. Don't import them from @/components.
 
 **Correct Pattern:**
 - ✅ `import { Button, Select } from '@/components'` (import matches usage exactly)
 - ✅ Check your JSX: `<Button>`, `<Select>` → import Button, Select only
+- ✅ Define interfaces inline: `interface Order { id: string; ... }` (no import needed)
 
 {design_tokens_section}## 💎 PREMIUM VISUAL STANDARDS
 - **Containerization (NO FLOATING TEXT)**:
@@ -634,11 +660,19 @@ When updating existing code, you MUST:
   - Void elements (`input`, `br`, `hr`, `img`, etc.) MUST end with `/>` and NEVER have children:
     - ✅ `<input value={v} onChange={fn} />` | `<br />` | `<img src={url} alt="" />`
     - ❌ `<input>text</input>` — FATAL ERROR (React Error #137)
-- **Use `<Field>` instead of native `<input>` (CRITICAL: PREVENTS REACT ERROR #137)**:
-  - `Field` renders its own `<input>` internally. NEVER nest elements inside it. Pass props directly.
-  - ✅ `<Field type="text" label="이름" placeholder="이름" />` | `<Field multiline label="설명" />`
-  - ❌ `<Field><input type="number" /></Field>` — CRASHES (void element gets children)
-  - ❌ `<input type="text" placeholder="이름" />` — Use `<Field>` instead
+- **⛔ ABSOLUTE RULE: Field Component (CRITICAL: PREVENTS REACT ERROR #137)**:
+  - **Field renders `<input>` internally. NEVER EVER put ANYTHING between `<Field>` tags.**
+  - Field is NOT a wrapper. It's a self-contained input component.
+  - **BEFORE writing `<Field>`: Verify it ends with `/>` and has ZERO content between tags.**
+  - ✅ CORRECT:
+    - `<Field type="text" label="이름" />`
+    - `<Field type="number" value={count} onChange={fn} />`
+    - `<Field multiline label="설명" rowsVariant="flexible" />`
+  - ❌ FATAL ERROR (crashes app):
+    - `<Field><input type="number" /></Field>` — NO! Field already has input inside
+    - `<Field label="검색">검색어 입력</Field>` — NO! No text between tags
+    - `<Field>{someContent}</Field>` — NO! Field doesn't accept children
+  - ❌ `<input type="text" placeholder="이름" />` — NO! Always use Field, never native input
 - **Non-existent Components — DO NOT import or use**:
   - `DatePicker`, `DateInput`, `Calendar` → Use `<Field type="date" />`
   - `TimePicker`, `TimeInput` → Use `<Field type="time" />`
@@ -758,7 +792,7 @@ SYSTEM_PROMPT_FOOTER = """
 - NO EXTERNAL LIBS: Don't import `lucide-react` or `framer-motion`.
 - REACT HOOKS: Use `React.useState`, `React.useEffect` directly (no imports).
 - VOID ELEMENTS (REACT ERROR #137): `<input>`, `<br>`, `<hr>`, `<img>` MUST end with `/>`. ❌ `<input>text</input>` crashes.
-- `<Field>` NO CHILDREN (REACT ERROR #137): `Field` renders `<input>` internally. ❌ `<Field><input /></Field>` crashes. ✅ `<Field type="text" label="이름" />`
+- **⛔ FIELD NO CHILDREN (REACT ERROR #137 - FATAL)**: Field is NOT a wrapper. NEVER put anything between `<Field>` tags. ❌ `<Field><input /></Field>` | ❌ `<Field>text</Field>` | ❌ `<Field>{content}</Field>` ALL CRASH. ✅ `<Field type="text" label="이름" />` self-closing only.
 - NO HALLUCINATED COMPONENTS: `DatePicker` → `<Field type="date" />` | `Input` → `<Field type="text" />`
 - Checkbox/Radio/ToggleSwitch MUST have onChange: ❌ `<Checkbox checked={true} />` (read-only) ✅ `<Checkbox checked={isChecked} onChange={(e) => setIsChecked(e.target.checked)} />`
 
