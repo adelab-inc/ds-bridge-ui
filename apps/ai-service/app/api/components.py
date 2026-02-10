@@ -283,41 +283,39 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
         return ""
 
     # AG Grid 스키마는 단일 컴포넌트 구조
-    comp_name = schema.get("componentName") or schema.get("displayName", "DataGrid")
     description = schema.get("description", "")
     props = schema.get("props", {})
-    required_imports = schema.get("requiredImports", [])
-    theme_config = schema.get("themeConfig", {})
 
     if not props:
         return ""
 
     lines = ["## 📊 AG Grid Component (DataGrid)"]
     lines.append("")
-    lines.append(f"**{comp_name}** - {description}" if description else f"**{comp_name}**")
+    lines.append(f"**DataGrid** - {description}" if description else "**DataGrid**")
     lines.append("")
 
-    # Import 가이드
-    if required_imports:
-        lines.append("### Required Imports")
-        lines.append("```tsx")
-        for imp in required_imports:
-            imp_name = imp.get("name", "")
-            imp_from = imp.get("from", "")
-            is_type = imp.get("isTypeOnly", False)
-            if is_type:
-                lines.append(f"import type {{ {imp_name} }} from '{imp_from}';")
-            else:
-                lines.append(f"import {{ {imp_name} }} from '{imp_from}';")
-        lines.append("```")
-        lines.append("")
+    # Import 가이드 (가이드 문서 기준으로 고정)
+    lines.append("### Required Imports")
+    lines.append("```tsx")
+    lines.append("// 기본 사용")
+    lines.append("import { DataGrid } from '@aplus/ui';")
+    lines.append("import { ColDef } from 'ag-grid-community';")
+    lines.append("")
+    lines.append("// 셀 렌더러가 필요한 경우")
+    lines.append("import { DataGrid, ButtonCellRenderer, CheckboxCellRenderer, ImageCellRenderer } from '@aplus/ui';")
+    lines.append("")
+    lines.append("// 컬럼 타입 또는 유틸리티가 필요한 경우")
+    lines.append("import { DataGrid, COLUMN_TYPES, AgGridUtils } from '@aplus/ui';")
+    lines.append("```")
+    lines.append("")
 
     # 테마 설정
-    if theme_config:
-        lines.append("### Theme Configuration")
-        lines.append(f"- Always use `theme={{dsRuntimeTheme}}` prop")
-        lines.append(f"- Import theme from `{theme_config.get('themeFile', '@/themes/agGridTheme')}`")
-        lines.append("")
+    lines.append("### Theme")
+    lines.append("- DataGrid has `aplusGridTheme` built-in. **NO separate theme import needed.**")
+    lines.append("- ❌ `import { dsRuntimeTheme } from '@/themes/agGridTheme'` — DOES NOT EXIST")
+    lines.append("- ❌ `<AgGridReact theme={dsRuntimeTheme} />` — WRONG, use `<DataGrid />` instead")
+    lines.append("- ✅ `<DataGrid rowData={data} columnDefs={cols} height={400} />` — theme auto-applied")
+    lines.append("")
 
     # Props 문서
     lines.append("### Props")
@@ -352,34 +350,76 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
 
     lines.append("")
 
+    # COLUMN_TYPES
+    lines.append("### Predefined Column Types (COLUMN_TYPES)")
+    lines.append("Spread these into ColDef for common column formats:")
+    lines.append("  ├─ `COLUMN_TYPES.numberColumn` - 우측 정렬, agNumberColumnFilter, width: 130")
+    lines.append("  ├─ `COLUMN_TYPES.dateColumn` - agDateColumnFilter, agDateCellEditor, width: 150")
+    lines.append("  ├─ `COLUMN_TYPES.currencyColumn` - 우측 정렬, KRW 포맷, width: 150")
+    lines.append("  └─ `COLUMN_TYPES.percentColumn` - 우측 정렬, % 접미사, width: 130")
+    lines.append("")
+    lines.append("```tsx")
+    lines.append("const columnDefs: ColDef[] = [")
+    lines.append("  { field: 'name', headerName: '이름', flex: 1 },")
+    lines.append("  { field: 'age', headerName: '나이', ...COLUMN_TYPES.numberColumn },")
+    lines.append("  { field: 'joinDate', headerName: '입사일', ...COLUMN_TYPES.dateColumn },")
+    lines.append("  { field: 'salary', headerName: '급여', ...COLUMN_TYPES.currencyColumn },")
+    lines.append("  { field: 'rate', headerName: '달성률', ...COLUMN_TYPES.percentColumn },")
+    lines.append("];")
+    lines.append("```")
+    lines.append("")
+
+    # 셀 렌더러
+    lines.append("### Cell Renderers")
+    lines.append("- **ButtonCellRenderer**: `cellRenderer: ButtonCellRenderer, cellRendererParams: { onClick: (data) => ... }`")
+    lines.append("- **CheckboxCellRenderer**: `cellRenderer: CheckboxCellRenderer, cellRendererParams: { onCheckboxChange: (data, checked) => ... }`")
+    lines.append("- **ImageCellRenderer**: `cellRenderer: ImageCellRenderer` (renders 30x30 image from field value)")
+    lines.append("")
+
+    # AgGridUtils
+    lines.append("### AgGridUtils")
+    lines.append("Store `GridApi` from `onGridReady` event, then use:")
+    lines.append("  ├─ `AgGridUtils.exportToCsv(gridApi, 'filename.csv')` - CSV 내보내기")
+    lines.append("  ├─ `AgGridUtils.exportToExcel(gridApi, 'filename.xlsx')` - Excel 내보내기")
+    lines.append("  ├─ `AgGridUtils.getSelectedRows(gridApi)` - 선택된 행")
+    lines.append("  ├─ `AgGridUtils.selectAll(gridApi)` / `deselectAll(gridApi)` - 전체 선택/해제")
+    lines.append("  └─ `AgGridUtils.autoSizeAllColumns(gridApi)` - 컬럼 자동 크기")
+    lines.append("")
+
     # 사용 예시
     lines.append("### Usage Example")
     lines.append("```tsx")
-    lines.append("import { AgGridReact } from 'ag-grid-react';")
-    lines.append("import { dsRuntimeTheme } from '@/themes/agGridTheme';")
-    lines.append("import type { ColDef } from 'ag-grid-community';")
+    lines.append("import { DataGrid, COLUMN_TYPES } from '@aplus/ui';")
+    lines.append("import { ColDef } from 'ag-grid-community';")
     lines.append("")
     lines.append("const columnDefs: ColDef[] = [")
     lines.append("  { field: 'name', headerName: '이름', flex: 1 },")
     lines.append("  { field: 'email', headerName: '이메일', flex: 2 },")
+    lines.append("  { field: 'salary', headerName: '급여', ...COLUMN_TYPES.currencyColumn },")
     lines.append("  { field: 'status', headerName: '상태', width: 100 },")
     lines.append("];")
     lines.append("")
     lines.append("const rowData = [")
-    lines.append("  { name: '김민수', email: 'kim@example.com', status: '활성' },")
-    lines.append("  { name: '이지은', email: 'lee@example.com', status: '비활성' },")
+    lines.append("  { name: '김민수', email: 'kim@example.com', salary: 5000000, status: '활성' },")
+    lines.append("  { name: '이지은', email: 'lee@example.com', salary: 4500000, status: '비활성' },")
     lines.append("];")
     lines.append("")
-    lines.append("<div style={{ height: 400 }}>")
-    lines.append("  <AgGridReact")
-    lines.append("    theme={dsRuntimeTheme}")
-    lines.append("    rowData={rowData}")
-    lines.append("    columnDefs={columnDefs}")
-    lines.append("    pagination={true}")
-    lines.append("    paginationPageSize={10}")
-    lines.append("  />")
-    lines.append("</div>")
+    lines.append("<DataGrid")
+    lines.append("  rowData={rowData}")
+    lines.append("  columnDefs={columnDefs}")
+    lines.append("  height={400}")
+    lines.append("  pagination")
+    lines.append("  paginationPageSize={10}")
+    lines.append("/>")
     lines.append("```")
+    lines.append("")
+
+    # 금지 사항
+    lines.append("### ⚠️ DO NOT")
+    lines.append("- ❌ `import { AgGridReact } from 'ag-grid-react'` — Use `DataGrid` from `@aplus/ui`")
+    lines.append("- ❌ `import { dsRuntimeTheme } from '@/themes/agGridTheme'` — Does NOT exist")
+    lines.append("- ❌ `<div style={{ height: 500 }}><DataGrid ... /></div>` — Use `height` prop instead")
+    lines.append("- ❌ `style={{ '--ag-header-background-color': 'red' }}` — Do NOT override theme tokens")
     lines.append("")
 
     return "\n".join(lines)
@@ -412,6 +452,31 @@ When user requests a specific AG Grid token, look up the EXACT value below.
 
 ```json
 {tokens_json}
+```
+
+"""
+
+
+def format_component_definitions(definitions: dict | None) -> str:
+    """
+    컴포넌트 정의(Tailwind CSS variants)를 시스템 프롬프트용 문자열로 포맷팅
+
+    Args:
+        definitions: 컴포넌트 정의 dict (Firebase에서 로드) 또는 None
+
+    Returns:
+        포맷팅된 컴포넌트 정의 문자열
+    """
+    if not definitions:
+        return ""
+
+    definitions_json = json.dumps(definitions, ensure_ascii=False, indent=2)
+
+    return f"""## 🧩 Component Definitions (CSS Variant Structure)
+Below are the Tailwind CSS variant definitions for each component. Use these to understand component structure, available variants, and their visual styles.
+
+```json
+{definitions_json}
 ```
 
 """
@@ -600,17 +665,66 @@ When updating existing code, you MUST:
     ```
   - **For icons**: Use text symbols or the design system's icon component (if available), NOT image files.
   - **Exception**: Only use `<img>` if the user explicitly provides a real image URL.
-- **HTML Void Elements (SELF-CLOSING - CRITICAL)**:
-  - These elements MUST be self-closing and CANNOT have children:
-    - ✅ `<input />` or `<input style={{...}} />`
-    - ✅ `<br />`, `<hr />`, `<img />`, `<meta />`, `<link />`
-    - ❌ `<input>text</input>` (CAUSES REACT ERROR #137)
-    - ❌ `<br>content</br>` (INVALID)
-  - If you need a text label near an input, use a separate `<label>` element:
+- **HTML Void Elements (SELF-CLOSING — FATAL CRASH)**:
+  - **⛔ Void elements MUST NEVER have children or closing tags. VIOLATION = APP CRASH (React Error #137)**
+  - Void element list: `input`, `br`, `hr`, `img`, `meta`, `link`, `col`, `area`, `source`, `track`, `wbr`, `embed`
+  - **CORRECT** (self-closing, no children):
+    - ✅ `<input value={v} onChange={fn} />`
+    - ✅ `<input type="text" placeholder="검색" style={{width:'100%'}} />`
+    - ✅ `<input type="checkbox" checked={c} onChange={fn} />`
+    - ✅ `<br />`, `<hr />`, `<img src={url} alt="" />`
+  - **WRONG** (children or closing tag — CRASHES THE APP):
+    - ❌ `<input>any text</input>` — FATAL ERROR
+    - ❌ `<input><span>icon</span></input>` — FATAL ERROR
+    - ❌ `<input type="checkbox">label</input>` — FATAL ERROR
+    - ❌ `<br>text</br>` — FATAL ERROR
+  - **Pattern**: To place text next to an input, ALWAYS use a sibling element:
     ```tsx
     <label>이름</label>
     <input style={{width: '100%'}} />
     ```
+  - **BEFORE writing any `<input>`: Verify it ends with `/>` and has ZERO children between tags.**
+- **CRITICAL: Use `<Field>` instead of native `<input>` (PREVENTS REACT ERROR #137)**:
+  - The `Field` component renders its own `<input>` internally. NEVER nest elements inside it.
+  - `Field` does NOT accept children. It is NOT a wrapper component.
+  - Pass `type`, `value`, `onChange`, `placeholder` directly as `Field` props.
+  - ✅ Correct usage:
+    ```tsx
+    <Field type="text" label="이름" placeholder="이름을 입력하세요" />
+    <Field type="number" label="수량" value={count} onChange={handleChange} />
+    <Field type="date" label="날짜" />
+    <Field type="email" label="이메일" />
+    <Field type="password" label="비밀번호" />
+    <Field multiline label="설명" rowsVariant="flexible" />
+    <Field label="검색" startIcon="🔍" placeholder="검색어를 입력하세요" />
+    ```
+  - ❌ WRONG — Children inside Field (causes React Error #137):
+    ```tsx
+    <Field><input type="number" /></Field>
+    <Field label="이름"><input value={name} /></Field>
+    <Field>텍스트</Field>
+    ```
+  - ❌ WRONG — Native input without Field wrapper:
+    ```tsx
+    <input type="text" placeholder="이름" />
+    <input type="number" value={count} />
+    <textarea rows={4}>내용</textarea>
+    ```
+  - For form layouts, combine `Field` with `div` containers:
+    ```tsx
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+      <Field type="text" label="이름" placeholder="이름" />
+      <Field type="email" label="이메일" placeholder="이메일" />
+      <Field type="number" label="나이" />
+      <Field type="date" label="생년월일" />
+    </div>
+    ```
+- **Non-existent Components — DO NOT import or use**:
+  - `DatePicker`, `DateInput`, `Calendar` → Use `<Field type="date" />`
+  - `TimePicker`, `TimeInput` → Use `<Field type="time" />`
+  - `NumberInput`, `TextInput` → Use `<Field type="number" />`, `<Field type="text" />`
+  - `TextArea`, `Textarea` → Use `<Field multiline />`
+  - `Input` → Use `<Field />` (Input is NOT in the whitelist)
 - **Spacing**:
   - **섹션 간**: `marginBottom: 32px`
   - **폼 행 간**: `marginBottom: 24px`
@@ -626,8 +740,8 @@ When updating existing code, you MUST:
   - **Example**:
     ```
     <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(240px, 1fr))', gap:'24px 16px', alignItems:'end'}}>
-      <div><label>상태</label><Select style={{width:'100%'}} options={...} /></div>
-      <div><label>이름</label><input style={{width:'100%'}}/></div>
+      <Select label="상태" style={{width:'100%'}} options={...} />
+      <Field type="text" label="이름" style={{width:'100%'}} />
       <div style={{gridColumn:'1 / -1', display:'flex', justifyContent:'flex-end', gap:8}}>
         <Button>초기화</Button><Button>조회</Button>
       </div>
@@ -687,7 +801,7 @@ RESPONSE_FORMAT_INSTRUCTIONS = """
 로그인 폼입니다.
 
 <file path="src/pages/Login.tsx">
-import { Button } from '@/components';
+import { Button, Field } from '@/components';
 
 const Login = () => {
   const [email, setEmail] = React.useState('');
@@ -702,12 +816,10 @@ const Login = () => {
           <p style={{ fontSize: 14, color: '#6b7280' }}>계정에 로그인하세요</p>
         </div>
         <div style={{ marginBottom: 20 }}>
-          <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#212529', marginBottom: 8 }}>이메일</label>
-          <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" style={{ width: '100%', padding: 12, border: '1px solid #dee2e6', borderRadius: 8, boxSizing: 'border-box', fontSize: 14 }} />
+          <Field data-instance-id="email-field" type="email" label="이메일" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" style={{ width: '100%' }} />
         </div>
         <div style={{ marginBottom: 24 }}>
-          <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#212529', marginBottom: 8 }}>비밀번호</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="비밀번호 입력" style={{ width: '100%', padding: 12, border: '1px solid #dee2e6', borderRadius: 8, boxSizing: 'border-box', fontSize: 14 }} />
+          <Field data-instance-id="password-field" type="password" label="비밀번호" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="비밀번호 입력" style={{ width: '100%' }} />
         </div>
         <Button data-instance-id="login-btn" variant="primary" onClick={() => setLoading(true)} style={{ width: '100%', height: 44 }}>
           {loading ? '로그인 중...' : '로그인'}
@@ -742,9 +854,22 @@ SYSTEM_PROMPT_FOOTER = """
 - **INLINE STYLES ONLY**: Do not create CSS classes. Use `style={{ ... }}`.
 - **NO EXTERNAL LIBS**: Do not import `lucide-react` or `framer-motion` unless explicitly allowed.
 - **REACT HOOKS**: Use `React.useState`, `React.useEffect` directly (do not import).
-- **VOID ELEMENTS (REACT ERROR #137)**: `<input>`, `<br>`, `<hr>`, `<img>` MUST be self-closing. NEVER add children:
+- **VOID ELEMENTS (REACT ERROR #137 — FATAL CRASH)**: `<input>`, `<br>`, `<hr>`, `<img>` are void elements. They MUST end with `/>`. NEVER place anything between opening and closing tags:
   - ✅ `<input value={v} onChange={fn} />`
+  - ✅ `<input type="checkbox" checked={c} onChange={fn} />`
   - ❌ `<input>text</input>` ← CRASHES THE APP
+  - ❌ `<input type="checkbox">label</input>` ← CRASHES THE APP
+  - **VALIDATION**: After writing code, scan every `<input` and verify it ends with `/>` not `>...</input>`
+- **`<Field>` COMPONENT — NO CHILDREN (REACT ERROR #137)**: `Field` renders its own `<input>` internally.
+  - ❌ `<Field><input type="number" /></Field>` ← CRASHES (void element gets children)
+  - ❌ `<Field label="이름"><input /></Field>` ← CRASHES
+  - ❌ `<Field>텍스트</Field>` ← CRASHES
+  - ✅ `<Field type="number" label="수량" value={count} onChange={handleChange} />`
+  - Use `<Field>` for ALL text/number/date/email/password inputs. Do NOT use native `<input>` or `<textarea>`.
+- **NO HALLUCINATED COMPONENTS**: Do NOT import components that don't exist:
+  - `DatePicker`, `Calendar` → `<Field type="date" />`
+  - `NumberInput`, `TextInput`, `Input` → `<Field type="number" />`, `<Field type="text" />`
+  - `TextArea`, `Textarea` → `<Field multiline />`
 - **Checkbox/Radio/ToggleSwitch MUST have onChange** (otherwise READ-ONLY, won't respond to clicks):
   - ❌ `<Checkbox checked={true} />` ← READ-ONLY, clicking does nothing
   - ✅ `<Checkbox checked={isChecked} onChange={(e) => setIsChecked(e.target.checked)} />`
@@ -821,6 +946,7 @@ def generate_system_prompt(
     ag_grid_schema: dict | None = None,
     ag_grid_tokens: dict | None = None,
     layouts: list[dict] | None = None,
+    component_definitions: dict | None = None,
 ) -> str:
     """
     주어진 스키마로 시스템 프롬프트 동적 생성
@@ -831,6 +957,7 @@ def generate_system_prompt(
         ag_grid_schema: AG Grid 컴포넌트 스키마 dict (Firebase에서 로드, None이면 미포함)
         ag_grid_tokens: AG Grid 토큰 dict (Firebase에서 로드, None이면 미포함)
         layouts: Figma 레이아웃 JSON 리스트 (Firebase에서 로드, None이면 미포함)
+        component_definitions: 컴포넌트 정의 dict (Firebase에서 로드, None이면 미포함)
 
     Returns:
         생성된 시스템 프롬프트 문자열 (현재 날짜 포함)
@@ -847,6 +974,9 @@ def generate_system_prompt(
     if ag_grid_tokens:
         ag_grid_section += format_ag_grid_tokens(ag_grid_tokens)
 
+    # 컴포넌트 정의 섹션
+    component_definitions_section = format_component_definitions(component_definitions)
+
     # 레이아웃 섹션
     layouts_section = format_layouts(layouts) if layouts else ""
 
@@ -857,6 +987,7 @@ def generate_system_prompt(
         + available_components
         + component_docs
         + ag_grid_section
+        + component_definitions_section
         + layouts_section
         + RESPONSE_FORMAT_INSTRUCTIONS
         + SYSTEM_PROMPT_FOOTER
@@ -906,6 +1037,7 @@ When analyzing the image, identify:
 async def get_vision_system_prompt(
     schema_key: str | None,
     image_urls: list[str] | None = None,
+    component_definitions: dict | None = None,
 ) -> str:
     """
     Vision 모드용 시스템 프롬프트 생성
@@ -913,6 +1045,7 @@ async def get_vision_system_prompt(
     Args:
         schema_key: Firebase Storage 스키마 경로 (None이면 기본 컴포넌트만)
         image_urls: 사용자가 업로드한 이미지 URL 목록 (코드에서 <img>로 사용 가능)
+        component_definitions: 컴포넌트 정의 dict (Firebase에서 로드, None이면 미포함)
 
     Returns:
         Vision 시스템 프롬프트 문자열
@@ -941,6 +1074,9 @@ async def get_vision_system_prompt(
         "{current_date}", current_date
     ).replace("{design_tokens_section}", design_tokens_section)
 
+    # 컴포넌트 정의 섹션
+    component_definitions_section = format_component_definitions(component_definitions)
+
     # 이미지 URL 섹션 (사용자가 이미지를 코드에 삽입하고 싶을 때 사용)
     image_urls_section = ""
     if image_urls:
@@ -958,6 +1094,7 @@ async def get_vision_system_prompt(
         + available_note
         + "\n"
         + component_docs
+        + component_definitions_section
         + image_urls_section
         + "\n"
         + RESPONSE_FORMAT_INSTRUCTIONS

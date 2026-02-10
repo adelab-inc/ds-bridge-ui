@@ -75,7 +75,7 @@ def _evict_oldest_cache() -> None:
 
 def cleanup_firebase() -> None:
     """Firebase 리소스 정리 (서버 종료 시 호출)"""
-    global _firebase_initialized, _schema_cache
+    global _firebase_initialized, _schema_cache, _component_definitions_cache
 
     try:
         firebase_admin.delete_app(firebase_admin.get_app())
@@ -85,6 +85,7 @@ def cleanup_firebase() -> None:
 
     _firebase_initialized = False
     _schema_cache = {}
+    _component_definitions_cache = None
     logger.info("Firebase cleanup completed")
 
 
@@ -175,9 +176,11 @@ async def fetch_schema_from_storage(schema_key: str, use_cache: bool = True) -> 
 DEFAULT_DESIGN_TOKENS_KEY = "exports/default/design-tokens.json"
 DEFAULT_AG_GRID_SCHEMA_KEY = "exports/default/ag-grid/ag-grid-component.storybook.json"
 DEFAULT_AG_GRID_TOKENS_KEY = "exports/default/ag-grid/ag-grid-tokens.json"
+DEFAULT_COMPONENT_DEFINITIONS_KEY = "exports/default/component-definitions.json"
 
 _design_tokens_cache: dict | None = None
 _ag_grid_tokens_cache: dict | None = None
+_component_definitions_cache: dict | None = None
 
 
 async def fetch_design_tokens_from_storage(
@@ -273,6 +276,54 @@ async def fetch_ag_grid_tokens_from_storage(
         return None
     except Exception as e:
         logger.error("Failed to fetch AG Grid tokens", extra={"tokens_key": tokens_key, "error": str(e)})
+        return None
+
+
+async def fetch_component_definitions_from_storage(
+    definitions_key: str = DEFAULT_COMPONENT_DEFINITIONS_KEY,
+) -> dict | None:
+    """
+    Firebase Storage에서 컴포넌트 정의(Tailwind CSS variants) 다운로드
+
+    Args:
+        definitions_key: Storage 내 파일 경로 (기본: "exports/default/component-definitions.json")
+
+    Returns:
+        파싱된 컴포넌트 정의 dict 또는 None (파일이 없는 경우)
+    """
+    global _component_definitions_cache
+
+    # 캐시 확인
+    if _component_definitions_cache is not None:
+        logger.debug("Component definitions cache hit")
+        return _component_definitions_cache
+
+    # Firebase 초기화
+    init_firebase()
+
+    try:
+        bucket = storage.bucket()
+        blob = bucket.blob(definitions_key)
+
+        if not blob.exists():
+            logger.warning("Component definitions not found", extra={"definitions_key": definitions_key})
+            return None
+
+        # 다운로드 및 파싱
+        content = blob.download_as_string()
+        definitions = json.loads(content.decode("utf-8"))
+
+        # 캐시 저장
+        _component_definitions_cache = definitions
+        logger.info("Component definitions loaded", extra={"definitions_key": definitions_key})
+
+        return definitions
+
+    except json.JSONDecodeError as e:
+        logger.error("Invalid JSON in component definitions", extra={"definitions_key": definitions_key, "error": str(e)})
+        return None
+    except Exception as e:
+        logger.error("Failed to fetch component definitions", extra={"definitions_key": definitions_key, "error": str(e)})
         return None
 
 
