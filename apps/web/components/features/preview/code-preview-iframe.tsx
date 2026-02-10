@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 // AG Grid CDN URL (v34.2.0 고정)
 const AG_GRID_CDN = 'https://cdn.jsdelivr.net/npm/ag-grid-community@34.2.0';
 
-type PreviewViewMode = '100%' | 'fit' | 'transform' | 'viewport';
+type PreviewViewMode = 'fit' | 'transform' | 'viewport';
 
 interface CodePreviewIframeProps extends React.ComponentProps<'div'> {
   /** AI가 생성한 React 컴포넌트 코드 */
@@ -30,7 +30,7 @@ interface CodePreviewIframeProps extends React.ComponentProps<'div'> {
 function CodePreviewIframe({
   code,
   filePath,
-  viewMode = 'fit',
+  viewMode = 'viewport',
   className,
   ...props
 }: CodePreviewIframeProps) {

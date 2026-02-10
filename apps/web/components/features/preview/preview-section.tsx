@@ -58,7 +58,7 @@ function PreviewSection({
   // Controlled tabs state
   const [activeTab, setActiveTab] = React.useState<string>(effectiveDefaultTab);
   const [copied, setCopied] = React.useState(false);
-  const [viewMode, setViewMode] = React.useState<PreviewViewMode>('fit');
+  const [viewMode, setViewMode] = React.useState<PreviewViewMode>('viewport');
 
   // aiCode 변경 시 탭 자동 전환
   React.useEffect(() => {
@@ -126,10 +126,9 @@ function PreviewSection({
               <div className="flex items-center rounded-md bg-muted p-0.5 text-xs">
                 {(
                   [
-                    { value: '100%', label: '100%' },
+                    { value: 'viewport', label: 'Viewport' },
+                    { value: 'transform', label: 'Transform' },
                     { value: 'fit', label: 'Fit' },
-                    { value: 'transform', label: '1920' },
-                    { value: 'viewport', label: 'VP' },
                   ] as const
                 ).map((mode) => (
                   <button
