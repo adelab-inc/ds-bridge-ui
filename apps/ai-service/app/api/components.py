@@ -584,23 +584,18 @@ When updating existing code, you MUST:
   - **Mobile-Friendly**: Ensure `flex-wrap` on all horizontal lists.
 - **Layout Safety (NO COLLISION)**:
   - **Grid Children**: Direct children of grid MUST have `className="w-full min-w-0"` to prevent blowout.
-  - **Override Defaults**: The `Select` component has a fixed `240px` width by default. You **MUST** override this:
+  - **Select Width Override**: The `Select` component has a fixed `240px` width by default. You **MUST** override this:
     - ✅ `<Select className="w-full" ... />` (Allows shrinking/growing)
     - ❌ `<Select ... />` (Causes overflow/overlap)
-  - **CRITICAL - Default Values for Form Controls**:
-    - **Select/Dropdown Placeholder State**: When showing "선택하세요", "선택", "Select...", or any placeholder text, do NOT set value or defaultValue:
-      - ✅ `<Select placeholder="선택하세요" options={...} />` (No value, shows placeholder)
-      - ❌ `<Select value="선택하세요" options={...} />` (WRONG - treats placeholder as selected value)
-      - ❌ `<Select defaultValue="선택하세요" options={...} />` (WRONG)
-    - **Select/Dropdown with Default Selection**: Use option's `value` (NOT `label`) for `defaultValue`:
-      - ✅ `<Select defaultValue="all" options={[{ label: '전체', value: 'all' }, ...]} />` (value matches option.value)
-      - ✅ `<Select defaultValue="all_region" options={[{ label: '전체 지역', value: 'all_region' }, ...]} />`
-      - ❌ `<Select defaultValue="전체" options={[{ label: '전체', value: 'all' }, ...]} />` (WRONG - using label instead of value)
-      - ❌ `<Select value="all" options={...} />` (WRONG - requires onChange handler)
-    - **Radio/Checkbox/ToggleSwitch**: Use `checked` with `onChange` handler for controlled state:
-      - ✅ `<Radio checked={isSelected} onChange={handleChange} />`
-      - ✅ `<Checkbox checked={isChecked} onChange={handleChange} />`
-      - ✅ `<ToggleSwitch checked={isOn} onChange={handleToggle} />`
+  - **Select Default Values**:
+    - **Placeholder State**: Do NOT set value or defaultValue when showing placeholder text:
+      - ✅ `<Select placeholder="선택하세요" options={...} />`
+      - ❌ `<Select defaultValue="선택하세요" options={...} />`
+    - **Default Selection**: Use option's `value` (NOT `label`) for `defaultValue`:
+      - ✅ `<Select defaultValue="all" options={[{ label: '전체', value: 'all' }, ...]} />`
+      - ❌ `<Select defaultValue="전체" options={...} />` (using label - WRONG)
+  - **Radio/Checkbox/ToggleSwitch**: Use `checked` with `onChange` handler for controlled state:
+    - ✅ `<Checkbox checked={isChecked} onChange={(e) => setIsChecked(e.target.checked)} />`
   - **Inputs**: internal inputs MUST be `className="w-full"`. NEVER use fixed pixels like `w-[300px]` inside a grid.
   - **Z-Index**: Dropdowns/Modals must have `z-50` or higher to float above content.
 
@@ -611,46 +606,18 @@ When updating existing code, you MUST:
   - **Realistic Korean Data**: Use real-world examples (names: 김민준, 이서연 / companies: 토스, 당근, 쿠팡).
   - **Rich Detail**: Fill all fields. Don't use "Test 1", "Item 1". Use "프로젝트 알파", "1분기 실적 보고서".
   - **Context-Aware**: If the user asks for a "Project Dashboard", generate "Project A - In Progress", "Team Meeting - 10:00 AM".
-  - **Select/Dropdown Options (CRITICAL)**: ALWAYS populate Select options with **at least 4-6 realistic choices** based on the field context:
-    - ❌ `options={[{ label: '전체', value: 'all' }]}` (only 1 option - WRONG)
-    - ✅ Populate with context-appropriate data:
-      - 상태 필터 → `전체, 정상, 심사중, 해지, 미납`
-      - 지역 필터 → `전체, 서울, 경기, 인천, 부산, 대구`
-      - 부서 필터 → `전체, 영업부, 마케팅부, 개발부, 인사부`
-      - 기간 필터 → `전체, 1개월, 3개월, 6개월, 1년`
-    - NEVER copy examples blindly - always match the field label/context.
-  - **Filter Select MUST use placeholder + "전체" option (CRITICAL)**: ALL filter dropdowns MUST:
-    - Use `placeholder="전체"` for initial display (shows as placeholder style - lighter color)
-    - Include "전체" as the FIRST option in options array (so user can re-select it later)
-    - Do NOT use `defaultValue` (start in placeholder state, not selected state)
-    - ✅ `<Select placeholder="전체" options={[{ label: '전체', value: 'all' }, { label: '완료', value: 'completed' }, { label: '미완료', value: 'incomplete' }]} />`
-    - ❌ `<Select defaultValue="all" options={[...]} />` (WRONG - shows as selected, not placeholder)
-    - ❌ `<Select options={[{ label: '완료', value: 'completed' }, ...]} />` (WRONG - missing "전체" option)
-    - In filter logic: treat empty/undefined value as "all" (show all data)
-  - **Filter-Table Data Consistency (CRITICAL)**: Filter options MUST match the data in the table:
-    - If table has 보험사 column with "삼성생명, 한화손보, DB손보" → 보험사 filter must include these options
-    - If table has 상태 column with "정상, 심사중, 해지" → 상태 filter must include these options
-    - Extract unique values from table data and use them as filter options (plus "전체" as first option)
+  - **Select Options**: ALWAYS populate Select options with **at least 4-6 realistic choices** based on field context:
+    - ❌ `options={[{ label: '전체', value: 'all' }]}` (only 1 option)
+    - ✅ 상태 필터 → `전체, 정상, 심사중, 해지, 미납` / 지역 필터 → `전체, 서울, 경기, 인천, 부산, 대구`
+  - **Filter Select Pattern**: ALL filter dropdowns MUST use `placeholder="전체"` + include "전체" as first option:
+    - ✅ `<Select placeholder="전체" options={[{ label: '전체', value: 'all' }, { label: '완료', value: 'completed' }, ...]} />`
+    - ❌ `<Select defaultValue="all" options={[...]} />` (shows as selected, not placeholder)
+  - **Filter-Table Consistency**: Filter options MUST match table data. If table has "삼성생명, 한화손보" in 보험사 column, filter must include these options.
 - **Profile Images (INITIAL AVATAR - NO EMOJI)**:
   - NEVER use emoji (👤, 🧑, 👨) for profile images.
-  - Use **Initial Avatar**: A colored circle with the first character of the name.
-  - Color palette: `['#4F46E5', '#7C3AED', '#EC4899', '#F59E0B', '#10B981', '#3B82F6', '#EF4444', '#8B5CF6']`
-  - Pick color by `name.charCodeAt(0) % colors.length` for consistency.
-  - Example:
-    ```tsx
-    const getInitialAvatar = (name: string) => {
-      const colors = ['#4F46E5', '#7C3AED', '#EC4899', '#F59E0B', '#10B981', '#3B82F6', '#EF4444', '#8B5CF6'];
-      const color = colors[name.charCodeAt(0) % colors.length];
-      return (
-        <div className="w-10 h-10 rounded-full text-white flex items-center justify-center font-semibold text-sm"
-             style={{ backgroundColor: color }}>
-          {name.charAt(0)}
-        </div>
-      );
-    };
-    ```
-  - Use this for: user lists, comments, chat, team members, assignees.
-- **Images (NO BROKEN IMAGES - CRITICAL)**:
+  - Use **Initial Avatar**: Colored circle with first character. Pick color by `name.charCodeAt(0) % 8` from palette: `['#4F46E5', '#7C3AED', '#EC4899', '#F59E0B', '#10B981', '#3B82F6', '#EF4444', '#8B5CF6']`
+  - Example: `<div className="w-10 h-10 rounded-full bg-[#4F46E5] text-white flex items-center justify-center font-semibold text-sm">{name.charAt(0)}</div>`
+- **Images (NO BROKEN IMAGES)**:
   - **NEVER use `<img>` tag with placeholder URLs** - these will show as broken images (X-box):
     - ❌ `<img src="/placeholder.png" />` (file doesn't exist)
     - ❌ `<img src="https://via.placeholder.com/..." />` (external placeholder service)
@@ -663,60 +630,15 @@ When updating existing code, you MUST:
     ```
   - **For icons**: Use text symbols or the design system's icon component (if available), NOT image files.
   - **Exception**: Only use `<img>` if the user explicitly provides a real image URL.
-- **HTML Void Elements (SELF-CLOSING — FATAL CRASH)**:
-  - **⛔ Void elements MUST NEVER have children or closing tags. VIOLATION = APP CRASH (React Error #137)**
-  - Void element list: `input`, `br`, `hr`, `img`, `meta`, `link`, `col`, `area`, `source`, `track`, `wbr`, `embed`
-  - **CORRECT** (self-closing, no children):
-    - ✅ `<input value={v} onChange={fn} />`
-    - ✅ `<input type="text" placeholder="검색" className="w-full" />`
-    - ✅ `<input type="checkbox" checked={c} onChange={fn} />`
-    - ✅ `<br />`, `<hr />`, `<img src={url} alt="" />`
-  - **WRONG** (children or closing tag — CRASHES THE APP):
-    - ❌ `<input>any text</input>` — FATAL ERROR
-    - ❌ `<input><span>icon</span></input>` — FATAL ERROR
-    - ❌ `<input type="checkbox">label</input>` — FATAL ERROR
-    - ❌ `<br>text</br>` — FATAL ERROR
-  - **Pattern**: To place text next to an input, ALWAYS use a sibling element:
-    ```tsx
-    <label>이름</label>
-    <input className="w-full" />
-    ```
-  - **BEFORE writing any `<input>`: Verify it ends with `/>` and has ZERO children between tags.**
-- **CRITICAL: Use `<Field>` instead of native `<input>` (PREVENTS REACT ERROR #137)**:
-  - The `Field` component renders its own `<input>` internally. NEVER nest elements inside it.
-  - `Field` does NOT accept children. It is NOT a wrapper component.
-  - Pass `type`, `value`, `onChange`, `placeholder` directly as `Field` props.
-  - ✅ Correct usage:
-    ```tsx
-    <Field type="text" label="이름" placeholder="이름을 입력하세요" />
-    <Field type="number" label="수량" value={count} onChange={handleChange} />
-    <Field type="date" label="날짜" />
-    <Field type="email" label="이메일" />
-    <Field type="password" label="비밀번호" />
-    <Field multiline label="설명" rowsVariant="flexible" />
-    <Field label="검색" startIcon="🔍" placeholder="검색어를 입력하세요" />
-    ```
-  - ❌ WRONG — Children inside Field (causes React Error #137):
-    ```tsx
-    <Field><input type="number" /></Field>
-    <Field label="이름"><input value={name} /></Field>
-    <Field>텍스트</Field>
-    ```
-  - ❌ WRONG — Native input without Field wrapper:
-    ```tsx
-    <input type="text" placeholder="이름" />
-    <input type="number" value={count} />
-    <textarea rows={4}>내용</textarea>
-    ```
-  - For form layouts, combine `Field` with `div` containers:
-    ```tsx
-    <div className="grid grid-cols-2 gap-4">
-      <Field type="text" label="이름" placeholder="이름" />
-      <Field type="email" label="이메일" placeholder="이메일" />
-      <Field type="number" label="나이" />
-      <Field type="date" label="생년월일" />
-    </div>
-    ```
+- **HTML Void Elements — SELF-CLOSING (CRITICAL: VIOLATION = APP CRASH)**:
+  - Void elements (`input`, `br`, `hr`, `img`, etc.) MUST end with `/>` and NEVER have children:
+    - ✅ `<input value={v} onChange={fn} />` | `<br />` | `<img src={url} alt="" />`
+    - ❌ `<input>text</input>` — FATAL ERROR (React Error #137)
+- **Use `<Field>` instead of native `<input>` (CRITICAL: PREVENTS REACT ERROR #137)**:
+  - `Field` renders its own `<input>` internally. NEVER nest elements inside it. Pass props directly.
+  - ✅ `<Field type="text" label="이름" placeholder="이름" />` | `<Field multiline label="설명" />`
+  - ❌ `<Field><input type="number" /></Field>` — CRASHES (void element gets children)
+  - ❌ `<input type="text" placeholder="이름" />` — Use `<Field>` instead
 - **Non-existent Components — DO NOT import or use**:
   - `DatePicker`, `DateInput`, `Calendar` → Use `<Field type="date" />`
   - `TimePicker`, `TimeInput` → Use `<Field type="time" />`
@@ -726,27 +648,21 @@ When updating existing code, you MUST:
 - **Spacing**:
   - **섹션 간**: `mb-8` (32px)
   - **폼 행 간**: `mb-6` (24px)
-- **Responsive Grid System (STRUCTURED LAYOUT)**:
-  - **Form Grid**: Use `className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4"`.
-  - **Why Grid?**: Ensures alignment and prevents unnatural stretching of short inputs.
+- **Responsive Grid System**:
+  - **12-Column Grid (for flexible layouts)**:
+    - Use `grid-cols-12` as base, then span columns with `col-span-N`
+    - **4 items**: `col-span-3` each (3 × 4 = 12) → `<div className="grid grid-cols-12 gap-4"><div className="col-span-3">...</div></div>`
+    - **3 items**: `col-span-4` each (4 × 3 = 12)
+    - **2 items**: `col-span-6` each (6 × 2 = 12)
+    - **Mixed layout**: Combine different spans (e.g., `col-span-8` + `col-span-4` for main + sidebar)
+  - **Simple Grid (for equal divisions)**:
+    - **4 items**: `grid-cols-4` | **3 items**: `grid-cols-3` | **2 items**: `grid-cols-2`
+    - Use this when all items have equal width (simpler than 12-column)
+  - **Form Grid (for responsive filters)**: Use `className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4"`. Ensures alignment and prevents stretching.
   - **Alignment**: Use `items-end` to align buttons with inputs.
-  - **CRITICAL - Grid Span Values**: `col-span-X` must use INTEGER values only:
-    - ✅ `col-span-2` (integer - works)
-    - ✅ `col-span-3` (integer - works)
-    - ❌ `col-span-1.5` (decimal - DOES NOT WORK)
-    - ❌ `col-span-2.5` (decimal - DOES NOT WORK)
-  - **Example**:
-    ```
-    <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-x-4 gap-y-6 items-end">
-      <Select label="상태" className="w-full" options={...} />
-      <Field type="text" label="이름" className="w-full" />
-      <div className="col-span-full flex justify-end gap-2">
-        <Button>초기화</Button><Button>조회</Button>
-      </div>
-    </div>
-    ```
+  - **Grid Span Values**: `col-span-X` must use INTEGER values only (✅ `col-span-2` | ❌ `col-span-1.5`)
 
-## 🎯 UI GENERATION PRINCIPLE (CRITICAL)
+## 🎯 UI GENERATION PRINCIPLE
 
 **Generate UI that EXACTLY matches the user's request.** Do NOT default to dashboard/table layouts.
 
@@ -795,7 +711,7 @@ RESPONSE_FORMAT_INSTRUCTIONS = """
 1. 간단한 한글 설명 (1-2문장)
 2. `<file path="src/...">코드</file>` 태그
 
-### Example (구조 참고용 - 색상은 DESIGN STANDARDS 사용):
+### Example:
 로그인 폼입니다.
 
 <file path="src/pages/Login.tsx">
@@ -804,24 +720,18 @@ import { Button, Field } from '@/components';
 const Login = () => {
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
-  const [loading, setLoading] = React.useState(false);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
       <div className="w-full max-w-[420px] bg-white rounded-xl border border-gray-300 shadow-sm p-8">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">로그인</h1>
-          <p className="text-sm text-gray-500">계정에 로그인하세요</p>
-        </div>
+        <h1 className="text-2xl font-bold text-gray-800 mb-6">로그인</h1>
         <div className="mb-5">
-          <Field data-instance-id="email-field" type="email" label="이메일" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" className="w-full" />
+          <Field data-instance-id="email-field" type="email" label="이메일" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full" />
         </div>
         <div className="mb-6">
-          <Field data-instance-id="password-field" type="password" label="비밀번호" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="비밀번호 입력" className="w-full" />
+          <Field data-instance-id="password-field" type="password" label="비밀번호" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full" />
         </div>
-        <Button data-instance-id="login-btn" variant="primary" onClick={() => setLoading(true)} className="w-full h-11">
-          {loading ? '로그인 중...' : '로그인'}
-        </Button>
+        <Button data-instance-id="login-btn" variant="primary" className="w-full">로그인</Button>
       </div>
     </div>
   );
@@ -835,44 +745,22 @@ SYSTEM_PROMPT_FOOTER = """
 ## 🚨 CRITICAL RULES - VIOLATION = FAILURE
 
 ### 1. FILE COMPLETENESS
-- **NEVER TRUNCATE CODE**: Do not use `// ...` or `// rest of code`.
-- **FULL FUNCTIONALITY**: All buttons must have `onClick` handlers. All inputs must be controlled (`value` + `onChange`).
-- **NO PLACEHOLDERS**: Do not say "Add logic here". Implement the logic.
+- NEVER truncate code (no `// ...` or `// rest of code`). All buttons need `onClick`, all inputs need `value` + `onChange`.
 
 ### 2. COMPONENT USAGE
-- **STRICT WHITELIST**: You must ONLY use the components listed above.
-- **NO CUSTOM COMPONENTS**: Do not create new components like `function Card() {...}`. Use `div` with styles.
-- **NO `<Heading>` COMPONENT**: Use standard HTML tags `<h1>`, `<h2>`, `<h3>` with styles. Do NOT use `<Heading />`.
-- **PROPS VALIDATION**: Use exact enum values (e.g., `variant="primary"`, NOT `variant="blue"`).
-- **NO HALLUCINATED PROPS**: Do not use props NOT listed in schema (e.g., `mode` on Select does NOT exist).
-- **INSTANCE IDs**: Design system components (`Button`, `Badge`, `Select`, etc.) MUST have `data-instance-id` attribute (e.g., `<Button data-instance-id="submit-btn">`).
-- **IMPORT CHECK**: Double-check that `Select`, `Heading`, `Badge` etc. are imported if used. `Select` usage without import cause ReferenceError!
+- STRICT WHITELIST: Only use components listed above. No custom components. Use `<h1>`, `<h2>`, `<h3>` NOT `<Heading />`.
+- PROPS VALIDATION: Use exact enum values (`variant="primary"` NOT `variant="blue"`). Don't hallucinate props.
+- INSTANCE IDs: All design system components MUST have `data-instance-id` (e.g., `<Button data-instance-id="submit-btn">`).
+- IMPORT CHECK: Verify all used components are imported (e.g., `Select` usage without import = ReferenceError).
 
 ### 3. TECHNICAL CONSTRAINTS
-- **TAILWIND CSS ONLY**: Use Tailwind utility classes (`className="..."`). Use `style={{}}` ONLY for dynamic JS variable values (e.g., `style={{ backgroundColor: dynamicColor }}`). NEVER use `style={{}}` for static values like `style={{ backgroundColor: '#ffffff' }}` — use `className="bg-white"` instead. Do not create custom CSS classes.
-- **NO EXTERNAL LIBS**: Do not import `lucide-react` or `framer-motion` unless explicitly allowed.
-- **REACT HOOKS**: Use `React.useState`, `React.useEffect` directly (do not import).
-- **VOID ELEMENTS (REACT ERROR #137 — FATAL CRASH)**: `<input>`, `<br>`, `<hr>`, `<img>` are void elements. They MUST end with `/>`. NEVER place anything between opening and closing tags:
-  - ✅ `<input value={v} onChange={fn} />`
-  - ✅ `<input type="checkbox" checked={c} onChange={fn} />`
-  - ❌ `<input>text</input>` ← CRASHES THE APP
-  - ❌ `<input type="checkbox">label</input>` ← CRASHES THE APP
-  - **VALIDATION**: After writing code, scan every `<input` and verify it ends with `/>` not `>...</input>`
-- **`<Field>` COMPONENT — NO CHILDREN (REACT ERROR #137)**: `Field` renders its own `<input>` internally.
-  - ❌ `<Field><input type="number" /></Field>` ← CRASHES (void element gets children)
-  - ❌ `<Field label="이름"><input /></Field>` ← CRASHES
-  - ❌ `<Field>텍스트</Field>` ← CRASHES
-  - ✅ `<Field type="number" label="수량" value={count} onChange={handleChange} />`
-  - Use `<Field>` for ALL text/number/date/email/password inputs. Do NOT use native `<input>` or `<textarea>`.
-- **NO HALLUCINATED COMPONENTS**: Do NOT import components that don't exist:
-  - `DatePicker`, `Calendar` → `<Field type="date" />`
-  - `NumberInput`, `TextInput`, `Input` → `<Field type="number" />`, `<Field type="text" />`
-  - `TextArea`, `Textarea` → `<Field multiline />`
-- **Checkbox/Radio/ToggleSwitch MUST have onChange** (otherwise READ-ONLY, won't respond to clicks):
-  - ❌ `<Checkbox checked={true} />` ← READ-ONLY, clicking does nothing
-  - ✅ `<Checkbox checked={isChecked} onChange={(e) => setIsChecked(e.target.checked)} />`
-  - ❌ `<Radio checked={true} />` ← READ-ONLY
-  - ✅ `<Radio checked={selected === 'a'} onChange={() => setSelected('a')} />`
+- TAILWIND CSS ONLY: Use `className="..."`. Use `style={{}}` ONLY for dynamic JS variables. Don't create custom CSS.
+- NO EXTERNAL LIBS: Don't import `lucide-react` or `framer-motion`.
+- REACT HOOKS: Use `React.useState`, `React.useEffect` directly (no imports).
+- VOID ELEMENTS (REACT ERROR #137): `<input>`, `<br>`, `<hr>`, `<img>` MUST end with `/>`. ❌ `<input>text</input>` crashes.
+- `<Field>` NO CHILDREN (REACT ERROR #137): `Field` renders `<input>` internally. ❌ `<Field><input /></Field>` crashes. ✅ `<Field type="text" label="이름" />`
+- NO HALLUCINATED COMPONENTS: `DatePicker` → `<Field type="date" />` | `Input` → `<Field type="text" />`
+- Checkbox/Radio/ToggleSwitch MUST have onChange: ❌ `<Checkbox checked={true} />` (read-only) ✅ `<Checkbox checked={isChecked} onChange={(e) => setIsChecked(e.target.checked)} />`
 
 Create a premium, completed result."""
 
@@ -895,7 +783,9 @@ SYSTEM_PROMPT = (
 def get_system_prompt() -> str:
     """현재 시스템 프롬프트 반환 (로컬 스키마 기반, 현재 날짜/시간 포함)"""
     current_date = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M KST")
-    return SYSTEM_PROMPT.replace("{current_date}", current_date)
+    return SYSTEM_PROMPT.replace("{current_date}", current_date).replace(
+        "{design_tokens_section}", DEFAULT_DESIGN_TOKENS_SECTION
+    )
 
 
 def format_layouts(layouts: list[dict]) -> str:
