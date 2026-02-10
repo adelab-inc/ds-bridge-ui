@@ -8,11 +8,15 @@ import { cn } from '@/lib/utils';
 // AG Grid CDN URL (v34.2.0 고정)
 const AG_GRID_CDN = 'https://cdn.jsdelivr.net/npm/ag-grid-community@34.2.0';
 
+type PreviewViewMode = '100%' | 'fit' | 'transform' | 'viewport';
+
 interface CodePreviewIframeProps extends React.ComponentProps<'div'> {
   /** AI가 생성한 React 컴포넌트 코드 */
   code: string;
   /** 파일 경로 (표시용) */
   filePath?: string;
+  /** 프리뷰 뷰 모드 */
+  viewMode?: PreviewViewMode;
 }
 
 /**
@@ -26,9 +30,37 @@ interface CodePreviewIframeProps extends React.ComponentProps<'div'> {
 function CodePreviewIframe({
   code,
   filePath,
+  viewMode = 'fit',
   className,
   ...props
 }: CodePreviewIframeProps) {
+  // ResizeObserver로 컨테이너 크기 측정 (fit/transform 모드용)
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [containerSize, setContainerSize] = React.useState({
+    width: 0,
+    height: 0,
+  });
+
+  React.useEffect(() => {
+    if (!containerRef.current) return;
+    const ro = new ResizeObserver(([entry]) => {
+      setContainerSize({
+        width: entry.contentRect.width,
+        height: entry.contentRect.height,
+      });
+    });
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  // Scale 계산
+  const needsTransform = viewMode === 'fit' || viewMode === 'transform';
+  const scale = React.useMemo(() => {
+    if (!needsTransform || containerSize.width === 0) return 1;
+    const raw = containerSize.width / 1920;
+    return viewMode === 'fit' ? Math.min(1, raw) : raw;
+  }, [viewMode, needsTransform, containerSize.width]);
+
   const { srcDoc, error } = React.useMemo(() => {
     try {
       // 1. AG Grid 사용 여부 감지
@@ -356,9 +388,11 @@ function CodePreviewIframe({
 <html>
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="${viewMode === 'viewport' ? 'width=1920, initial-scale=1' : 'width=device-width, initial-scale=1'}">
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { corePlugins: { preflight: false } }</script>
   ${
     needsAgGrid
       ? `
@@ -448,7 +482,7 @@ function CodePreviewIframe({
         error: err instanceof Error ? err.message : '트랜스파일 에러',
       };
     }
-  }, [code]);
+  }, [code, viewMode]);
 
   // 에러 상태 렌더링
   if (error) {
@@ -546,15 +580,28 @@ function CodePreviewIframe({
           <span className="font-mono">{filePath}</span>
         </div>
       )}
-      <iframe
-        srcDoc={srcDoc || undefined}
-        title="Code Preview"
-        className="h-full w-full flex-1 border-0"
-        sandbox="allow-scripts"
-      />
+      <div ref={containerRef} className="relative flex-1 overflow-hidden">
+        <iframe
+          srcDoc={srcDoc || undefined}
+          title="Code Preview"
+          sandbox="allow-scripts"
+          className={needsTransform ? '' : 'h-full w-full flex-1 border-0'}
+          style={
+            needsTransform && containerSize.width > 0
+              ? {
+                  width: '1920px',
+                  height: `${containerSize.height / scale}px`,
+                  transform: `scale(${scale})`,
+                  transformOrigin: 'top left',
+                  border: 'none',
+                }
+              : undefined
+          }
+        />
+      </div>
     </div>
   );
 }
 
 export { CodePreviewIframe };
-export type { CodePreviewIframeProps };
+export type { CodePreviewIframeProps, PreviewViewMode };

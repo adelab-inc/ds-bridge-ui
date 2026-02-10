@@ -24,7 +24,7 @@ import {
   CompositionPreview,
   type CompositionNode,
 } from './composition-preview';
-import { CodePreviewIframe } from './code-preview-iframe';
+import { CodePreviewIframe, type PreviewViewMode } from './code-preview-iframe';
 import { CodePreviewLoading } from './code-preview-loading';
 
 interface PreviewSectionProps extends React.ComponentProps<'section'> {
@@ -58,6 +58,7 @@ function PreviewSection({
   // Controlled tabs state
   const [activeTab, setActiveTab] = React.useState<string>(effectiveDefaultTab);
   const [copied, setCopied] = React.useState(false);
+  const [viewMode, setViewMode] = React.useState<PreviewViewMode>('fit');
 
   // aiCode 변경 시 탭 자동 전환
   React.useEffect(() => {
@@ -119,29 +120,59 @@ function PreviewSection({
             </TabsTrigger>
           </TabsList>
 
-          {/* 상태 표시 */}
-          <div className="text-muted-foreground text-xs">
-            {isGeneratingCode ? (
-              <span className="flex items-center gap-1">
-                <span className="size-2 animate-pulse rounded-full bg-primary" />
-                생성 중...
-              </span>
-            ) : aiCode ? (
-              <span className="flex items-center gap-1">
-                <span className="size-2 rounded-full bg-primary" />
-                AI 생성
-              </span>
-            ) : storybookUrl ? (
-              <span className="flex items-center gap-1">
-                <span className="size-2 rounded-full bg-green-500" />
-                연결됨
-              </span>
-            ) : (
-              <span className="flex items-center gap-1">
-                <span className="bg-muted-foreground/50 size-2 rounded-full" />
-                연결 대기
-              </span>
+          {/* 뷰 모드 선택기 - AI Generated 탭 활성화 시에만 표시 */}
+          <div className="flex items-center gap-2">
+            {activeTab === 'ai-generated' && (aiCode || isGeneratingCode) && (
+              <div className="flex items-center rounded-md bg-muted p-0.5 text-xs">
+                {(
+                  [
+                    { value: '100%', label: '100%' },
+                    { value: 'fit', label: 'Fit' },
+                    { value: 'transform', label: '1920' },
+                    { value: 'viewport', label: 'VP' },
+                  ] as const
+                ).map((mode) => (
+                  <button
+                    key={mode.value}
+                    type="button"
+                    onClick={() => setViewMode(mode.value as PreviewViewMode)}
+                    className={cn(
+                      'rounded-sm px-2 py-0.5 font-medium transition-colors',
+                      viewMode === mode.value
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    {mode.label}
+                  </button>
+                ))}
+              </div>
             )}
+
+            {/* 상태 표시 */}
+            <div className="text-muted-foreground text-xs">
+              {isGeneratingCode ? (
+                <span className="flex items-center gap-1">
+                  <span className="size-2 animate-pulse rounded-full bg-primary" />
+                  생성 중...
+                </span>
+              ) : aiCode ? (
+                <span className="flex items-center gap-1">
+                  <span className="size-2 rounded-full bg-primary" />
+                  AI 생성
+                </span>
+              ) : storybookUrl ? (
+                <span className="flex items-center gap-1">
+                  <span className="size-2 rounded-full bg-green-500" />
+                  연결됨
+                </span>
+              ) : (
+                <span className="flex items-center gap-1">
+                  <span className="bg-muted-foreground/50 size-2 rounded-full" />
+                  연결 대기
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -186,7 +217,11 @@ function PreviewSection({
               {isGeneratingCode && !aiCode ? (
                 <CodePreviewLoading />
               ) : (
-                <CodePreviewIframe code={aiCode!} filePath={aiFilePath} />
+                <CodePreviewIframe
+                  code={aiCode!}
+                  filePath={aiFilePath}
+                  viewMode={viewMode}
+                />
               )}
             </TabsContent>
           )}
