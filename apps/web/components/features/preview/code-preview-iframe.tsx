@@ -199,6 +199,21 @@ function CodePreviewIframe({
           const containerRef = React.useRef(null);
           const gridApiRef = React.useRef(null);
 
+          // columnDefs 전처리 - cellRenderer 제거 (vanilla JS API에서 React 컴포넌트 미지원)
+          // 컬럼 그룹의 children까지 재귀적으로 처리
+          function sanitizeColumnDefs(cols) {
+            return (cols || []).map(function(col) {
+              var rest = Object.assign({}, col);
+              delete rest.cellRenderer;
+              delete rest.cellRendererFramework;
+              delete rest.cellRendererParams;
+              if (rest.children) {
+                rest.children = sanitizeColumnDefs(rest.children);
+              }
+              return rest;
+            });
+          }
+
           React.useEffect(() => {
             if (!containerRef.current || !window.agGrid) {
               console.error('[AgGridReact] AG Grid not loaded');
@@ -213,17 +228,7 @@ function CodePreviewIframe({
               window.__AG_GRID_REGISTERED__ = true;
             }
 
-            // columnDefs 전처리 - cellRenderer 제거 (vanilla JS API에서 React 컴포넌트 미지원)
-            var sanitizedColumnDefs = (props.columnDefs || []).map(function(col) {
-              var cellRenderer = col.cellRenderer;
-              var cellRendererFramework = col.cellRendererFramework;
-              var cellRendererParams = col.cellRendererParams;
-              var rest = Object.assign({}, col);
-              delete rest.cellRenderer;
-              delete rest.cellRendererFramework;
-              delete rest.cellRendererParams;
-              return rest;
-            });
+            var sanitizedColumnDefs = sanitizeColumnDefs(props.columnDefs);
 
             // 그리드 옵션 구성
             const gridOptions = {
@@ -235,7 +240,6 @@ function CodePreviewIframe({
               rowSelection: props.rowSelection,
               animateRows: props.animateRows !== false,
               theme: props.theme || themeQuartz,
-              suppressPropertyNamesCheck: true,
               defaultColDef: props.defaultColDef || { flex: 1, filter: true, sortable: true, resizable: true },
               onGridReady: function(params) {
                 gridApiRef.current = params.api;
@@ -270,13 +274,7 @@ function CodePreviewIframe({
           // columnDefs 변경 시 업데이트 (cellRenderer 제거)
           React.useEffect(() => {
             if (gridApiRef.current && props.columnDefs) {
-              var sanitized = props.columnDefs.map(function(col) {
-                var rest = Object.assign({}, col);
-                delete rest.cellRenderer;
-                delete rest.cellRendererFramework;
-                delete rest.cellRendererParams;
-                return rest;
-              });
+              var sanitized = sanitizeColumnDefs(props.columnDefs);
               gridApiRef.current.setGridOption('columnDefs', sanitized);
             }
           }, [props.columnDefs]);
