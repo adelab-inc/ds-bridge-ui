@@ -20,6 +20,9 @@ export const LAYOUT = {
   /** Left Panel 최대 너비 (px) */
   LEFT_PANEL_MAX_PX: 600,
 
+  /** Left Panel 접힌 상태 크기 (%) - 0이면 완전히 숨김 */
+  LEFT_PANEL_COLLAPSED_SIZE: 0,
+
   /** 모바일 바텀시트 기본 높이 (vh) */
   MOBILE_SHEET_DEFAULT_HEIGHT: 40,
 
