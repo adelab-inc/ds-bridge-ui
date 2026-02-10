@@ -177,14 +177,24 @@ function ChatInput({
                     />
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="top" align="start" className="max-w-56 space-y-2 bg-popover text-popover-foreground border border-border shadow-md px-3 py-2.5 [&>:last-child]:bg-popover">
-                  <p className="text-sm font-semibold border-b border-border pb-1.5">이미지 업로드 안내</p>
+                <TooltipContent
+                  side="top"
+                  align="start"
+                  className="max-w-56 space-y-2 bg-popover text-popover-foreground border border-border shadow-md px-3 py-2.5 [&>:last-child]:bg-popover"
+                >
+                  <p className="text-sm font-semibold border-b border-border pb-1.5">
+                    이미지 업로드 안내
+                  </p>
                   <div className="space-y-1">
-                    <p className="text-muted-foreground text-[11px]">지원 형식</p>
+                    <p className="text-muted-foreground text-[11px]">
+                      지원 형식
+                    </p>
                     <p>JPG, PNG, GIF, WebP</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-muted-foreground text-[11px]">파일 크기</p>
+                    <p className="text-muted-foreground text-[11px]">
+                      파일 크기
+                    </p>
                     <p>최대 10MB까지 첨부할 수 있어요</p>
                   </div>
                 </TooltipContent>
