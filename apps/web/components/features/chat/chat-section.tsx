@@ -2,16 +2,44 @@
 
 import * as React from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { Message01Icon } from '@hugeicons/core-free-icons';
+import {
+  Message01Icon,
+  Bookmark02Icon,
+  Delete02Icon,
+  Tick01Icon,
+} from '@hugeicons/core-free-icons';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 import { cn } from '@/lib/utils';
 import { ChatMessageList } from './chat-message-list';
 import { ChatInput } from './chat-input';
 import { useChatStream } from '@/hooks/useChatStream';
 import { useImageUpload } from '@/hooks/useImageUpload';
+import { useBookmarks } from '@/hooks/useBookmarks';
 import type { CodeEvent } from '@/types/chat';
 import { useGetPaginatedFbMessages } from '@/hooks/firebase/useGetPaginatedFbMessages';
 import type { ChatMessage } from '@/hooks/firebase/messageUtils';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 
 interface ChatSectionProps extends React.ComponentProps<'section'> {
   roomId: string;
@@ -41,11 +69,28 @@ function ChatSection({
     },
   });
 
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
   const [messages, setMessages] = React.useState<ChatMessage[]>([]);
-  const [selectedMessageId, setSelectedMessageId] = React.useState<
-    string | null
-  >(null);
   const currentMessageIdRef = React.useRef<string | null>(null);
+
+  // URL의 mid 쿼리 파라미터에서 선택된 메시지 ID 읽기
+  const selectedMessageId = searchParams.get('mid');
+
+  // URL의 mid 파라미터 업데이트
+  const updateSelectedMessageId = React.useCallback(
+    (messageId: string | null) => {
+      const url = new URL(window.location.href);
+      if (messageId) {
+        url.searchParams.set('mid', messageId);
+      } else {
+        url.searchParams.delete('mid');
+      }
+      router.replace(url.pathname + url.search, { scroll: false });
+    },
+    [router]
+  );
 
   const {
     images,
@@ -93,7 +138,7 @@ function ChatSection({
             )
           );
           // 현재 스트리밍 중인 메시지를 선택 상태로 설정
-          setSelectedMessageId(currentMessageIdRef.current);
+          updateSelectedMessageId(currentMessageIdRef.current);
         }
         // 부모 컴포넌트에 코드 생성 알림
         onCodeGenerated?.(code);
@@ -147,7 +192,7 @@ function ChatSection({
   const handleMessageClick = React.useCallback(
     (message: ChatMessage) => {
       if (message.content && message.content.trim()) {
-        setSelectedMessageId(message.id);
+        updateSelectedMessageId(message.id);
         onCodeGenerated?.({
           type: 'code',
           content: message.content,
@@ -155,7 +200,7 @@ function ChatSection({
         });
       }
     },
-    [onCodeGenerated]
+    [updateSelectedMessageId, onCodeGenerated]
   );
 
   const handleSend = async (message: string) => {
@@ -204,92 +249,272 @@ function ChatSection({
     return data.pages.flat();
   }, [data]);
 
-  // Firebase 메시지 로드 시 가장 최근 content가 있는 메시지를 PreviewSection에 전달
-  React.useEffect(() => {
-    if (!firebaseMessages.length) return;
-
-    // content가 있는 가장 최근 메시지 찾기 (역순으로 탐색)
-    const latestWithContent = [...firebaseMessages]
-      .reverse()
-      .find((msg) => msg.content && msg.content.trim());
-
-    if (latestWithContent) {
-      setSelectedMessageId(latestWithContent.id);
-      onCodeGenerated?.({
-        type: 'code',
-        content: latestWithContent.content,
-        path: latestWithContent.path,
-      });
-    }
-  }, [firebaseMessages, onCodeGenerated]);
-
   // 표시할 메시지 목록 (Firebase 메시지 + 로컬 메시지)
   const displayMessages = React.useMemo(() => {
     return [...firebaseMessages, ...messages];
   }, [firebaseMessages, messages]);
 
-  // Firebase 메시지 로드 시 마지막 메시지의 코드를 Preview에 표시
-  const initialCodeSetRef = React.useRef(false);
+  // Firebase 메시지 로드 시 초기 메시지 선택 처리
+  const initialSelectionRef = React.useRef(false);
   React.useEffect(() => {
-    // 초기 로드 시 한 번만 실행 (스트리밍 중이 아닐 때)
-    if (
-      !initialCodeSetRef.current &&
-      !isLoading &&
-      firebaseMessages.length > 0
-    ) {
-      const lastMessage = firebaseMessages[firebaseMessages.length - 1];
-      if (lastMessage.content) {
-        setSelectedMessageId(lastMessage.id);
+    if (initialSelectionRef.current) return;
+    if (!firebaseMessages.length || isLoading) return;
+
+    // URL에 mid가 이미 있으면 해당 메시지를 찾아서 프리뷰 표시
+    if (selectedMessageId) {
+      const targetMessage = firebaseMessages.find(
+        (msg) => msg.id === selectedMessageId
+      );
+      if (targetMessage?.content?.trim()) {
         onCodeGenerated?.({
           type: 'code',
-          content: lastMessage.content,
-          path: lastMessage.path,
+          content: targetMessage.content,
+          path: targetMessage.path,
         });
-        initialCodeSetRef.current = true;
+        initialSelectionRef.current = true;
+        return;
       }
     }
-  }, [firebaseMessages, isLoading, onCodeGenerated]);
+
+    // mid가 없으면 최신 content 있는 메시지 자동 선택 후 URL 업데이트
+    const latestWithContent = [...firebaseMessages]
+      .reverse()
+      .find((msg) => msg.content && msg.content.trim());
+
+    if (latestWithContent) {
+      updateSelectedMessageId(latestWithContent.id);
+      onCodeGenerated?.({
+        type: 'code',
+        content: latestWithContent.content,
+        path: latestWithContent.path,
+      });
+      initialSelectionRef.current = true;
+    }
+  }, [
+    firebaseMessages,
+    isLoading,
+    selectedMessageId,
+    onCodeGenerated,
+    updateSelectedMessageId,
+  ]);
+
+  // ===== 북마크 기능 =====
+  const { bookmarks, addBookmark, removeBookmark, isBookmarked } =
+    useBookmarks(roomId);
+
+  // 북마크된 메시지 ID Set (ChatMessageList에 전달)
+  const bookmarkedMessageIds = React.useMemo(
+    () => new Set(bookmarks.map((b) => b.messageId)),
+    [bookmarks]
+  );
+
+  // 북마크 추가 다이얼로그 상태
+  const [bookmarkDialog, setBookmarkDialog] = React.useState<{
+    open: boolean;
+    message: ChatMessage | null;
+  }>({ open: false, message: null });
+  const [bookmarkLabel, setBookmarkLabel] = React.useState('');
+
+  // 북마크 아이콘 클릭: 미등록 → 다이얼로그 열기, 등록됨 → 삭제
+  const handleBookmarkIconClick = React.useCallback(
+    (message: ChatMessage) => {
+      if (isBookmarked(message.id)) {
+        const bm = bookmarks.find((b) => b.messageId === message.id);
+        if (bm) removeBookmark(bm.id);
+      } else {
+        setBookmarkLabel(
+          message.question.replace(/^\[이미지 \d+개\] /, '').slice(0, 50)
+        );
+        setBookmarkDialog({ open: true, message });
+      }
+    },
+    [isBookmarked, bookmarks, removeBookmark]
+  );
+
+  // 북마크 저장
+  const handleBookmarkSubmit = React.useCallback(() => {
+    if (!bookmarkDialog.message || !bookmarkLabel.trim()) return;
+    addBookmark({
+      messageId: bookmarkDialog.message.id,
+      roomId,
+      label: bookmarkLabel.trim(),
+      question: bookmarkDialog.message.question,
+    });
+    setBookmarkDialog({ open: false, message: null });
+    setBookmarkLabel('');
+  }, [bookmarkDialog.message, bookmarkLabel, addBookmark, roomId]);
+
+  // 북마크 클릭 → 해당 메시지로 이동
+  const handleBookmarkClick = React.useCallback(
+    (messageId: string) => {
+      const allMessages = [...firebaseMessages, ...messages];
+      const target = allMessages.find((msg) => msg.id === messageId);
+      if (target?.content?.trim()) {
+        updateSelectedMessageId(messageId);
+        onCodeGenerated?.({
+          type: 'code',
+          content: target.content,
+          path: target.path,
+        });
+      }
+    },
+    [firebaseMessages, messages, updateSelectedMessageId, onCodeGenerated]
+  );
 
   return (
-    <section
-      data-slot="chat-section"
-      className={cn(
-        'bg-card border-border flex-1 flex flex-col overflow-hidden rounded-lg border',
-        className
-      )}
-      {...props}
-    >
-      {/* Header */}
-      <div className="border-border flex items-center gap-2 border-b px-4 py-3">
-        <HugeiconsIcon
-          icon={Message01Icon}
-          className="text-muted-foreground size-4"
-          strokeWidth={2}
-        />
-        <h2 className="text-sm font-medium">AI Navigator</h2>
-        {error && (
-          <span className="text-destructive ml-auto text-xs">{error}</span>
+    <>
+      <section
+        data-slot="chat-section"
+        className={cn(
+          'bg-card border-border relative flex-1 flex flex-col overflow-hidden rounded-lg border',
+          className
         )}
-      </div>
+        {...props}
+      >
+        {/* Header */}
+        <div className="border-border flex items-center gap-2 border-b px-4 py-3">
+          <HugeiconsIcon
+            icon={Message01Icon}
+            className="text-muted-foreground size-4"
+            strokeWidth={2}
+          />
+          <h2 className="text-sm font-medium">AI Navigator</h2>
+          {error && <span className="text-destructive text-xs">{error}</span>}
 
-      {/* Messages */}
-      <ChatMessageList
-        messages={displayMessages}
-        selectedMessageId={selectedMessageId ?? undefined}
-        onMessageClick={handleMessageClick}
-        className="min-h-0 flex-1 overflow-y-auto"
-      />
+          {/* 북마크 플로팅 버튼 */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="ml-auto rounded-full"
+                aria-label="북마크 목록"
+              >
+                <HugeiconsIcon
+                  icon={Bookmark02Icon}
+                  className="size-4"
+                  strokeWidth={2}
+                />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              side="bottom"
+              align="end"
+              sideOffset={4}
+              className="w-64"
+            >
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>북마크</DropdownMenuLabel>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              {bookmarks.length === 0 ? (
+                <p className="text-muted-foreground px-2 py-3 text-center text-xs">
+                  북마크가 없습니다
+                </p>
+              ) : (
+                bookmarks.map((bm) => (
+                  <DropdownMenuItem
+                    key={bm.id}
+                    className="flex items-center justify-between gap-2"
+                    onClick={() => handleBookmarkClick(bm.messageId)}
+                  >
+                    {selectedMessageId === bm.messageId && (
+                      <HugeiconsIcon
+                        icon={Tick01Icon}
+                        className="text-primary size-3.5 shrink-0"
+                        strokeWidth={2}
+                      />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm">{bm.label}</p>
+                      <p className="text-muted-foreground truncate text-xs">
+                        {new Date(bm.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className="text-muted-foreground hover:text-destructive shrink-0 p-0.5"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeBookmark(bm.id);
+                      }}
+                      aria-label="북마크 삭제"
+                    >
+                      <HugeiconsIcon
+                        icon={Delete02Icon}
+                        className="size-3.5"
+                        strokeWidth={2}
+                      />
+                    </button>
+                  </DropdownMenuItem>
+                ))
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
 
-      {/* Input */}
-      <ChatInput
-        onSend={handleSend}
-        disabled={isLoading}
-        images={images}
-        onAddImages={addImages}
-        onRemoveImage={removeImage}
-        isUploading={isUploading}
-      />
-    </section>
+        {/* Messages */}
+        <ChatMessageList
+          messages={displayMessages}
+          selectedMessageId={selectedMessageId ?? undefined}
+          bookmarkedMessageIds={bookmarkedMessageIds}
+          onMessageClick={handleMessageClick}
+          onBookmarkClick={handleBookmarkIconClick}
+          className="min-h-0 flex-1 overflow-y-auto"
+        />
+
+        {/* Input */}
+        <ChatInput
+          onSend={handleSend}
+          disabled={isLoading}
+          images={images}
+          onAddImages={addImages}
+          onRemoveImage={removeImage}
+          isUploading={isUploading}
+        />
+      </section>
+
+      {/* 북마크 이름 입력 다이얼로그 */}
+      <AlertDialog
+        open={bookmarkDialog.open}
+        onOpenChange={(open) => {
+          if (!open) {
+            setBookmarkDialog({ open: false, message: null });
+            setBookmarkLabel('');
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>북마크 추가</AlertDialogTitle>
+            <AlertDialogDescription>
+              북마크 이름을 입력하세요
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Input
+            value={bookmarkLabel}
+            onChange={(e) => setBookmarkLabel(e.target.value)}
+            placeholder="북마크 이름"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleBookmarkSubmit();
+              }
+            }}
+            autoFocus
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBookmarkSubmit}
+              disabled={!bookmarkLabel.trim()}
+            >
+              추가
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
