@@ -759,6 +759,7 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
       <div className="w-full max-w-[420px] bg-white rounded-xl border border-gray-300 shadow-sm p-8">
         <h1 className="text-2xl font-bold text-gray-800 mb-6">로그인</h1>
+        {/* ⛔ CRITICAL: Field는 self-closing만 가능. <Field>children</Field> 금지 */}
         <div className="mb-5">
           <Field data-instance-id="email-field" type="email" label="이메일" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full" />
         </div>
@@ -799,6 +800,37 @@ SYSTEM_PROMPT_FOOTER = """
 Create a premium, completed result."""
 
 # ============================================================================
+# Field Rules Reminder (Middle Reinforcement)
+# ============================================================================
+
+FIELD_RULES_REMINDER = """
+
+---
+
+## ⛔ REMINDER: Field Component (MOST COMMON ERROR)
+
+**Field is self-closing ONLY. NEVER put children inside.**
+
+❌ NEVER:
+```tsx
+<Field>content</Field>
+<Field><input /></Field>
+<Field>{variable}</Field>
+```
+
+✅ ALWAYS:
+```tsx
+<Field type="text" label="이름" />
+<Field value={v} onChange={fn} />
+```
+
+**Why?** Field renders `<input>` internally. Adding children causes React Error #137 → app crash.
+
+---
+
+"""
+
+# ============================================================================
 # Initialize Schema and Prompt
 # ============================================================================
 
@@ -808,6 +840,7 @@ AVAILABLE_COMPONENTS = get_available_components_note(_schema) if _schema else ""
 SYSTEM_PROMPT = (
     SYSTEM_PROMPT_HEADER
     + AVAILABLE_COMPONENTS
+    + FIELD_RULES_REMINDER  # Middle reinforcement
     + COMPONENT_DOCS
     + RESPONSE_FORMAT_INSTRUCTIONS
     + SYSTEM_PROMPT_FOOTER
