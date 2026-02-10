@@ -114,7 +114,7 @@ def build_instance_edit_context(
 
 예시) "배경색 파란색으로" 요청 시:
 - 변경 전: `<Button data-instance-id="{selected.id}" variant="primary">로그인</Button>`
-- 변경 후: `<Button data-instance-id="{selected.id}" variant="primary" style={{{{ backgroundColor: 'blue' }}}}>로그인</Button>`
+- 변경 후: `<Button data-instance-id="{selected.id}" variant="primary" className="bg-blue-500">로그인</Button>`
 
 사용자의 요청에 따라 선택된 인스턴스({selected.id})만 수정하세요.
 """

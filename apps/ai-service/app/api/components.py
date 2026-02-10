@@ -224,39 +224,40 @@ def format_design_tokens(tokens: dict | None) -> str:
     body_md = font_size.get("typography-body-md-regular", ["16px", {}])
     helper_text = font_size.get("typography-form-helper-text-md-regular", ["14px", {}])
 
-    return f"""## 🎨 DESIGN STANDARDS (CRITICAL - USE EXACT VALUES)
+    return f"""## 🎨 DESIGN STANDARDS (CRITICAL - USE TAILWIND CLASSES)
 - **Typography (MUST FOLLOW EXACT TOKENS)**:
-  - Font Family: `'Pretendard', sans-serif`
-  - **Page Title (h1)**: `fontSize: {heading_xl[0].replace('px', '')}`, `fontWeight: {heading_xl_weight}`, `color: '{text_primary}'`
-  - **Section Title (h2)**: `fontSize: {heading_lg[0].replace('px', '')}`, `fontWeight: {heading_lg_weight}`, `color: '{text_primary}'`
-  - **Subsection (h3)**: `fontSize: {heading_md[0].replace('px', '')}`, `fontWeight: {heading_md_weight}`, `color: '{text_primary}'`
-  - **Form Label**: `fontSize: {form_label_md[0].replace('px', '')}`, `fontWeight: {form_label_weight}`, `color: '{text_primary}'`
-  - **Body Text**: `fontSize: {body_md[0].replace('px', '')}`, `fontWeight: 400`, `color: '{text_primary}'`
-  - **Helper Text**: `fontSize: {helper_text[0].replace('px', '')}`, `fontWeight: 400`, `color: '{text_secondary}'`
-- **Colors (EXACT HEX - DO NOT CHANGE)**:
-  - **Primary Text**: `{text_primary}` (titles, labels, body)
-  - **Secondary Text**: `{text_secondary}` (helper text, descriptions)
-  - **Tertiary Text**: `{text_tertiary}` (placeholder, caption)
-  - **Brand/Accent**: `{text_accent}` (links, selected state)
-  - **Border Default**: `{border_default}`
-  - **Background Surface**: `{bg_surface}`
-  - **Background Canvas**: `{bg_canvas}`
-  - **Background Selection**: `{bg_selection}` (selected state only)
+  - Font Family: `font-['Pretendard',sans-serif]` (applied globally)
+  - **Page Title (h1)**: `className="text-2xl font-bold text-gray-800"` ({heading_xl[0]}, {heading_xl_weight})
+  - **Section Title (h2)**: `className="text-xl font-semibold text-gray-800"` ({heading_lg[0]}, {heading_lg_weight})
+  - **Subsection (h3)**: `className="text-lg font-medium text-gray-800"` ({heading_md[0]}, {heading_md_weight})
+  - **Form Label**: `className="text-sm font-medium text-gray-800"` ({form_label_md[0]}, {form_label_weight})
+  - **Body Text**: `className="text-base font-normal text-gray-800"` ({body_md[0]}, 400)
+  - **Helper Text**: `className="text-sm font-normal text-gray-600"` ({helper_text[0]}, 400)
+- **Colors (Tailwind Classes)**:
+  - **Primary Text**: `text-gray-800` (`{text_primary}` - titles, labels, body)
+  - **Secondary Text**: `text-gray-600` (`{text_secondary}` - helper text, descriptions)
+  - **Tertiary Text**: `text-gray-500` (`{text_tertiary}` - placeholder, caption)
+  - **Brand/Accent**: `text-[#0033a0]` (`{text_accent}` - links, selected state)
+  - **Border Default**: `border-gray-300` (`{border_default}`)
+  - **Background Surface**: `bg-white` (`{bg_surface}`)
+  - **Background Canvas**: `bg-gray-50` (`{bg_canvas}`)
+  - **Background Selection**: `bg-blue-50` (`{bg_selection}` - selected state only)
 - **Visuals**:
-  - **Shadows**: `boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)'`
-  - **Borders**: `border: '1px solid {border_default}'`
-  - **Radius**: `borderRadius: 8px` (inputs, buttons), `12px` (cards)
-- **Gap/Spacing (USE THESE VALUES)**:
-  - **xs**: `4px` - 태그 그룹, 아이콘-라벨 (xs)
-  - **sm**: `8px` - 컨트롤 그룹, 아이콘-라벨 (md), 콘텐츠 (sm)
-  - **md**: `12px` - 필터바, 탭 그룹, 콘텐츠 (md), 폼 그룹 (y)
-  - **lg**: `16px` - 다이얼로그, 콘텐츠 (lg), 폼 그룹 (x)
-  - **xl**: `24px` - 섹션 간격, 아티클 아이템, 콘텐츠 (xl)
+  - **Shadows**: `shadow-sm`
+  - **Borders**: `border border-gray-300`
+  - **Radius**: `rounded-lg` (inputs, buttons), `rounded-xl` (cards)
+- **Gap/Spacing (Tailwind Classes)**:
+  - **xs**: `gap-1` (4px) - 태그 그룹, 아이콘-라벨 (xs)
+  - **sm**: `gap-2` (8px) - 컨트롤 그룹, 아이콘-라벨 (md), 콘텐츠 (sm)
+  - **md**: `gap-3` (12px) - 필터바, 탭 그룹, 콘텐츠 (md), 폼 그룹 (y)
+  - **lg**: `gap-4` (16px) - 다이얼로그, 콘텐츠 (lg), 폼 그룹 (x)
+  - **xl**: `gap-6` (24px) - 섹션 간격, 아티클 아이템, 콘텐츠 (xl)
   - **사용 예시**:
-    - 버튼/아이콘 간격: `gap: 8` (sm)
-    - 폼 필드 간격: `gap: 16` (lg)
-    - 카드/섹션 간격: `gap: 24` (xl)
-    - 그리드: `gap: '24px 16px'` (row: xl, col: lg)
+    - 버튼/아이콘 간격: `gap-2` (sm)
+    - 폼 필드 간격: `gap-4` (lg)
+    - 카드/섹션 간격: `gap-6` (xl)
+    - 그리드: `gap-x-4 gap-y-6` (col: lg, row: xl)
+    - 패딩: `p-2` (8px), `p-3` (12px), `p-4` (16px), `p-6` (24px), `p-8` (32px), `p-12` (48px)
 
 ## 📋 ALL COLOR TOKENS (REFERENCE)
 When user requests a specific token (e.g., "hue-green-500"), look up the EXACT value below. NEVER guess hex values.
@@ -483,28 +484,34 @@ Below are the Tailwind CSS variant definitions for each component. Use these to 
 
 
 # 디자인 토큰을 로드하지 못했을 때 사용할 기본값
-DEFAULT_DESIGN_TOKENS_SECTION = """## 🎨 DESIGN STANDARDS (CRITICAL - USE EXACT VALUES)
+DEFAULT_DESIGN_TOKENS_SECTION = """## 🎨 DESIGN STANDARDS (CRITICAL - USE TAILWIND CLASSES)
 - **Typography (MUST FOLLOW EXACT TOKENS)**:
-  - Font Family: `'Pretendard', sans-serif`
-  - **Page Title (h1)**: `fontSize: 28`, `fontWeight: 700`, `color: '#212529'`
-  - **Section Title (h2)**: `fontSize: 24`, `fontWeight: 700`, `color: '#212529'`
-  - **Subsection (h3)**: `fontSize: 18`, `fontWeight: 600`, `color: '#212529'`
-  - **Form Label**: `fontSize: 14`, `fontWeight: 500`, `color: '#212529'`
-  - **Body Text**: `fontSize: 16`, `fontWeight: 400`, `color: '#212529'`
-  - **Helper Text**: `fontSize: 14`, `fontWeight: 400`, `color: '#495057'`
-- **Colors (EXACT HEX - DO NOT CHANGE)**:
-  - **Primary Text**: `#212529` (titles, labels, body)
-  - **Secondary Text**: `#495057` (helper text, descriptions)
-  - **Tertiary Text**: `#6c757d` (placeholder, caption)
-  - **Brand/Accent**: `#0033a0` (links, selected state)
-  - **Border Default**: `#dee2e6`
-  - **Background Surface**: `#ffffff`
-  - **Background Canvas**: `#f4f6f8`
-  - **Background Selection**: `#ecf0fa` (selected state only)
+  - Font Family: `font-['Pretendard',sans-serif]` (applied globally)
+  - **Page Title (h1)**: `className="text-2xl font-bold text-gray-800"` (28px, 700)
+  - **Section Title (h2)**: `className="text-xl font-semibold text-gray-800"` (24px, 700)
+  - **Subsection (h3)**: `className="text-lg font-medium text-gray-800"` (18px, 600)
+  - **Form Label**: `className="text-sm font-medium text-gray-800"` (14px, 500)
+  - **Body Text**: `className="text-base font-normal text-gray-800"` (16px, 400)
+  - **Helper Text**: `className="text-sm font-normal text-gray-600"` (14px, 400)
+- **Colors (Tailwind Classes)**:
+  - **Primary Text**: `text-gray-800` (`#212529` - titles, labels, body)
+  - **Secondary Text**: `text-gray-600` (`#495057` - helper text, descriptions)
+  - **Tertiary Text**: `text-gray-500` (`#6c757d` - placeholder, caption)
+  - **Brand/Accent**: `text-[#0033a0]` (links, selected state)
+  - **Border Default**: `border-gray-300` (`#dee2e6`)
+  - **Background Surface**: `bg-white` (`#ffffff`)
+  - **Background Canvas**: `bg-gray-50` (`#f4f6f8`)
+  - **Background Selection**: `bg-blue-50` (`#ecf0fa` - selected state only)
 - **Visuals**:
-  - **Shadows**: `boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)'`
-  - **Borders**: `border: '1px solid #dee2e6'`
-  - **Radius**: `borderRadius: 8px` (inputs, buttons), `12px` (cards)
+  - **Shadows**: `shadow-sm`
+  - **Borders**: `border border-gray-300`
+  - **Radius**: `rounded-lg` (inputs, buttons), `rounded-xl` (cards)
+- **Gap/Spacing (Tailwind Classes)**:
+  - **xs**: `gap-1` (4px) - 태그 그룹, 아이콘-라벨 (xs)
+  - **sm**: `gap-2` (8px) - 컨트롤 그룹, 콘텐츠 (sm)
+  - **md**: `gap-3` (12px) - 필터바, 탭 그룹, 폼 그룹 (y)
+  - **lg**: `gap-4` (16px) - 다이얼로그, 콘텐츠 (lg), 폼 그룹 (x)
+  - **xl**: `gap-6` (24px) - 섹션 간격, 아티클 아이템
 
 """
 
@@ -546,19 +553,19 @@ When updating existing code, you MUST:
 
 {design_tokens_section}## 💎 PREMIUM VISUAL STANDARDS
 - **Containerization (NO FLOATING TEXT)**:
-  - ALL content must be inside a white card: `<div style={{backgroundColor:'#ffffff', borderRadius:12, border:'1px solid #dee2e6', boxShadow:'0 1px 3px rgba(0,0,0,0.1)', padding:24}}>`
+  - ALL content must be inside a white card: `<div className="bg-white rounded-xl border border-gray-300 shadow-sm p-6">`
   - NEVER place naked text or buttons directly on the gray background.
   - Exception: Page Titles (`h1`) can be outside.
 - **Filter + Table Layout (IMPORTANT)**:
   - Filter bar and Table MUST be visually grouped together.
-  - Structure: Filters above, then table below with proper spacing (`marginBottom: 24`).
+  - Structure: Filters above, then table below with proper spacing (`mb-6`).
   - DO NOT separate filters and table into different cards.
 - **Status Styling (USE COMPONENT PROPS - NO CUSTOM COLORS)**:
   - Use `Badge` with `type="status"` for status display. NEVER use plain text.
   - Use `statusVariant` prop: `success`, `info`, `warning`, `error`
   - **NEVER use custom hex colors for status** - the component handles colors internally:
-    - ❌ `style={{ backgroundColor: '#10B981' }}` (WRONG - custom color)
-    - ❌ `style={{ color: '#22C55E' }}` (WRONG - custom color)
+    - ❌ `className="bg-emerald-500"` (WRONG - custom color)
+    - ❌ `className="text-green-500"` (WRONG - custom color)
     - ✅ `<Badge type="status" statusVariant="success">` (CORRECT - uses design system colors)
   - Status mapping:
     - Active/정상/완료: `statusVariant="success"`
@@ -567,18 +574,18 @@ When updating existing code, you MUST:
     - Error/해지/실패: `statusVariant="error"`
   - Example: `<Badge type="status" statusVariant="success">정상</Badge>`
 - **Empty States**:
-  - Center the message: `textAlign: 'center'`, `padding: 48`, `color: '#6b7280'`
-  - Example: `<div style={{textAlign:'center', padding:48, color:'#6b7280'}}>데이터가 없습니다.</div>`
+  - Center the message with Tailwind: `className="text-center p-12 text-gray-500"`
+  - Example: `<div className="text-center p-12 text-gray-500">데이터가 없습니다.</div>`
 - **Responsive Layouts (1920x1080 기준)**:
   - **Target Resolution**: 1920x1080 (Full HD). Design for this viewport.
-  - **Container**: `width: '100%'`, `maxWidth: 1920px`, `margin: '0 auto'`.
-  - **Page Padding**: `padding: 32px` (양쪽 여백 포함).
-  - **Flex**: Use `flex: 1` for fluid columns instead of `width: 200px`.
-  - **Mobile-Friendly**: Ensure `flexWrap: 'wrap'` on all horizontal lists.
+  - **Container**: `className="w-full max-w-[1920px] mx-auto"`.
+  - **Page Padding**: `className="p-8"` (32px 양쪽 여백 포함).
+  - **Flex**: Use `flex-1` for fluid columns instead of fixed widths.
+  - **Mobile-Friendly**: Ensure `flex-wrap` on all horizontal lists.
 - **Layout Safety (NO COLLISION)**:
-  - **Grid Children**: Direct children of grid MUST have `width: '100%'` and `minWidth: 0` to prevent blowout.
+  - **Grid Children**: Direct children of grid MUST have `className="w-full min-w-0"` to prevent blowout.
   - **Override Defaults**: The `Select` component has a fixed `240px` width by default. You **MUST** override this:
-    - ✅ `<Select style={{ width: '100%' }} ... />` (Allows shrinking/growing)
+    - ✅ `<Select className="w-full" ... />` (Allows shrinking/growing)
     - ❌ `<Select ... />` (Causes overflow/overlap)
   - **CRITICAL - Default Values for Form Controls**:
     - **Select/Dropdown Placeholder State**: When showing "선택하세요", "선택", "Select...", or any placeholder text, do NOT set value or defaultValue:
@@ -594,8 +601,8 @@ When updating existing code, you MUST:
       - ✅ `<Radio checked={isSelected} onChange={handleChange} />`
       - ✅ `<Checkbox checked={isChecked} onChange={handleChange} />`
       - ✅ `<ToggleSwitch checked={isOn} onChange={handleToggle} />`
-  - **Inputs**: internal inputs MUST be `width: '100%'`. NEVER use fixed pixels like `width: 300px` inside a grid.
-  - **Z-Index**: Dropdowns/Modals must have `zIndex: 50` or higher to float above content.
+  - **Inputs**: internal inputs MUST be `className="w-full"`. NEVER use fixed pixels like `w-[300px]` inside a grid.
+  - **Z-Index**: Dropdowns/Modals must have `z-50` or higher to float above content.
 
 - **Content & Mock Data (MANDATORY)**:
   - **NO EMPTY STATES**: NEVER generate empty tables, lists, or selects.
@@ -635,12 +642,8 @@ When updating existing code, you MUST:
       const colors = ['#4F46E5', '#7C3AED', '#EC4899', '#F59E0B', '#10B981', '#3B82F6', '#EF4444', '#8B5CF6'];
       const color = colors[name.charCodeAt(0) % colors.length];
       return (
-        <div style={{
-          width: 40, height: 40, borderRadius: '50%',
-          backgroundColor: color, color: 'white',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontWeight: 600, fontSize: 14
-        }}>
+        <div className="w-10 h-10 rounded-full text-white flex items-center justify-center font-semibold text-sm"
+             style={{ backgroundColor: color }}>
           {name.charAt(0)}
         </div>
       );
@@ -654,12 +657,7 @@ When updating existing code, you MUST:
     - ❌ `<img src="/images/product.jpg" />` (assumed path that doesn't exist)
   - **For thumbnails/product images**: Use a colored placeholder div with an icon or text:
     ```tsx
-    <div style={{
-      width: 80, height: 80, borderRadius: 8,
-      backgroundColor: '#f1f3f5', color: '#adb5bd',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: 12
-    }}>
+    <div className="w-20 h-20 rounded-lg bg-gray-100 text-gray-400 flex items-center justify-center text-xs">
       이미지
     </div>
     ```
@@ -670,7 +668,7 @@ When updating existing code, you MUST:
   - Void element list: `input`, `br`, `hr`, `img`, `meta`, `link`, `col`, `area`, `source`, `track`, `wbr`, `embed`
   - **CORRECT** (self-closing, no children):
     - ✅ `<input value={v} onChange={fn} />`
-    - ✅ `<input type="text" placeholder="검색" style={{width:'100%'}} />`
+    - ✅ `<input type="text" placeholder="검색" className="w-full" />`
     - ✅ `<input type="checkbox" checked={c} onChange={fn} />`
     - ✅ `<br />`, `<hr />`, `<img src={url} alt="" />`
   - **WRONG** (children or closing tag — CRASHES THE APP):
@@ -681,7 +679,7 @@ When updating existing code, you MUST:
   - **Pattern**: To place text next to an input, ALWAYS use a sibling element:
     ```tsx
     <label>이름</label>
-    <input style={{width: '100%'}} />
+    <input className="w-full" />
     ```
   - **BEFORE writing any `<input>`: Verify it ends with `/>` and has ZERO children between tags.**
 - **CRITICAL: Use `<Field>` instead of native `<input>` (PREVENTS REACT ERROR #137)**:
@@ -712,7 +710,7 @@ When updating existing code, you MUST:
     ```
   - For form layouts, combine `Field` with `div` containers:
     ```tsx
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+    <div className="grid grid-cols-2 gap-4">
       <Field type="text" label="이름" placeholder="이름" />
       <Field type="email" label="이메일" placeholder="이메일" />
       <Field type="number" label="나이" />
@@ -726,23 +724,23 @@ When updating existing code, you MUST:
   - `TextArea`, `Textarea` → Use `<Field multiline />`
   - `Input` → Use `<Field />` (Input is NOT in the whitelist)
 - **Spacing**:
-  - **섹션 간**: `marginBottom: 32px`
-  - **폼 행 간**: `marginBottom: 24px`
+  - **섹션 간**: `mb-8` (32px)
+  - **폼 행 간**: `mb-6` (24px)
 - **Responsive Grid System (STRUCTURED LAYOUT)**:
-  - **Form Grid**: Use `display: 'grid'`, `gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))'`, `gap: '16px'`.
+  - **Form Grid**: Use `className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4"`.
   - **Why Grid?**: Ensures alignment and prevents unnatural stretching of short inputs.
-  - **Alignment**: Use `alignItems: 'end'` to align buttons with inputs.
-  - **CRITICAL - Grid Span Values**: `gridColumn: 'span X'` must use INTEGER values only:
-    - ✅ `gridColumn: 'span 2'` (integer - works)
-    - ✅ `gridColumn: 'span 3'` (integer - works)
-    - ❌ `gridColumn: 'span 1.5'` (decimal - DOES NOT WORK)
-    - ❌ `gridColumn: 'span 2.5'` (decimal - DOES NOT WORK)
+  - **Alignment**: Use `items-end` to align buttons with inputs.
+  - **CRITICAL - Grid Span Values**: `col-span-X` must use INTEGER values only:
+    - ✅ `col-span-2` (integer - works)
+    - ✅ `col-span-3` (integer - works)
+    - ❌ `col-span-1.5` (decimal - DOES NOT WORK)
+    - ❌ `col-span-2.5` (decimal - DOES NOT WORK)
   - **Example**:
     ```
-    <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(240px, 1fr))', gap:'24px 16px', alignItems:'end'}}>
-      <Select label="상태" style={{width:'100%'}} options={...} />
-      <Field type="text" label="이름" style={{width:'100%'}} />
-      <div style={{gridColumn:'1 / -1', display:'flex', justifyContent:'flex-end', gap:8}}>
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-x-4 gap-y-6 items-end">
+      <Select label="상태" className="w-full" options={...} />
+      <Field type="text" label="이름" className="w-full" />
+      <div className="col-span-full flex justify-end gap-2">
         <Button>초기화</Button><Button>조회</Button>
       </div>
     </div>
@@ -770,7 +768,7 @@ When updating existing code, you MUST:
 2. **RICH MOCK DATA**: Generate realistic Korean mock data appropriate to the context.
 3. **ZERO OMISSION**: If the user asks for 5 fields, implement ALL 5. Missing features = FAILURE.
 4. **IMPORT**: `import { Button } from '@/components'` / React hooks: `React.useState`.
-5. **STYLING**: Inline styles only (`style={{ ... }}`), Desktop-first.
+5. **STYLING**: Tailwind CSS utility classes (`className="..."`), Desktop-first. Use `style={{}}` ONLY for dynamic JS variable values.
 6. **ICONS (USE EMOJI)**: Use emoji for icons instead of `material-icons` or `lucide-react`:
    - 🔍 검색 | ⭐ 즐겨찾기 | 🏠 홈 | ➕ 추가 | ✏️ 수정 | 🗑️ 삭제
    - ⬅️ 이전 | ➡️ 다음 | ⬆️ 위 | ⬇️ 아래 | ✖️ 닫기 | ☰ 메뉴
@@ -780,10 +778,10 @@ When updating existing code, you MUST:
    - **NEVER use** `<span className="material-icons">search</span>` (won't render)
 
 ## 📊 Data Tables
-Use native HTML `<table>` with inline styles:
-- Table: `width: '100%'`, `borderCollapse: 'collapse'`, `fontSize: 14`
-- Header (th): `padding: '12px 16px'`, `backgroundColor: '#f8f9fa'`, `fontWeight: 600`, `borderBottom: '2px solid #dee2e6'`
-- Cells (td): `padding: '12px 16px'`, `borderBottom: '1px solid #dee2e6'`
+Use native HTML `<table>` with Tailwind classes:
+- Table: `<table className="w-full border-collapse text-sm">`
+- Header (th): `<th className="px-4 py-3 bg-gray-50 font-semibold border-b-2 border-gray-300 text-left">`
+- Cells (td): `<td className="px-4 py-3 border-b border-gray-300">`
 - Use `Badge` for status columns
 - Always generate 10+ rows of mock data
 
@@ -809,19 +807,19 @@ const Login = () => {
   const [loading, setLoading] = React.useState(false);
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8f9fa', padding: 24 }}>
-      <div style={{ width: '100%', maxWidth: 420, backgroundColor: '#ffffff', borderRadius: 12, border: '1px solid #dee2e6', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: 32 }}>
-        <div style={{ marginBottom: 24 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#212529', marginBottom: 8 }}>로그인</h1>
-          <p style={{ fontSize: 14, color: '#6b7280' }}>계정에 로그인하세요</p>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+      <div className="w-full max-w-[420px] bg-white rounded-xl border border-gray-300 shadow-sm p-8">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">로그인</h1>
+          <p className="text-sm text-gray-500">계정에 로그인하세요</p>
         </div>
-        <div style={{ marginBottom: 20 }}>
-          <Field data-instance-id="email-field" type="email" label="이메일" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" style={{ width: '100%' }} />
+        <div className="mb-5">
+          <Field data-instance-id="email-field" type="email" label="이메일" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" className="w-full" />
         </div>
-        <div style={{ marginBottom: 24 }}>
-          <Field data-instance-id="password-field" type="password" label="비밀번호" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="비밀번호 입력" style={{ width: '100%' }} />
+        <div className="mb-6">
+          <Field data-instance-id="password-field" type="password" label="비밀번호" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="비밀번호 입력" className="w-full" />
         </div>
-        <Button data-instance-id="login-btn" variant="primary" onClick={() => setLoading(true)} style={{ width: '100%', height: 44 }}>
+        <Button data-instance-id="login-btn" variant="primary" onClick={() => setLoading(true)} className="w-full h-11">
           {loading ? '로그인 중...' : '로그인'}
         </Button>
       </div>
@@ -851,7 +849,7 @@ SYSTEM_PROMPT_FOOTER = """
 - **IMPORT CHECK**: Double-check that `Select`, `Heading`, `Badge` etc. are imported if used. `Select` usage without import cause ReferenceError!
 
 ### 3. TECHNICAL CONSTRAINTS
-- **INLINE STYLES ONLY**: Do not create CSS classes. Use `style={{ ... }}`.
+- **TAILWIND CSS ONLY**: Use Tailwind utility classes (`className="..."`). Use `style={{}}` ONLY for dynamic JS variable values (e.g., `style={{ backgroundColor: dynamicColor }}`). NEVER use `style={{}}` for static values like `style={{ backgroundColor: '#ffffff' }}` — use `className="bg-white"` instead. Do not create custom CSS classes.
 - **NO EXTERNAL LIBS**: Do not import `lucide-react` or `framer-motion` unless explicitly allowed.
 - **REACT HOOKS**: Use `React.useState`, `React.useEffect` directly (do not import).
 - **VOID ELEMENTS (REACT ERROR #137 — FATAL CRASH)**: `<input>`, `<br>`, `<hr>`, `<img>` are void elements. They MUST end with `/>`. NEVER place anything between opening and closing tags:
@@ -1023,7 +1021,7 @@ When analyzing the image, identify:
 
 ## Code Generation Rules
 - Use TypeScript with proper type annotations
-- Use inline styles (style={{ ... }})
+- Use Tailwind CSS utility classes (`className="..."`). Use `style={{}}` ONLY for dynamic JS variable values.
 - Import components from @/components
 - Use <file path="...">...</file> tags for code output
 - Generate complete, runnable code (no placeholders)
@@ -1086,7 +1084,7 @@ async def get_vision_system_prompt(
         for i, url in enumerate(image_urls, 1):
             image_urls_section += f"- Image {i}: `{url}`\n"
         image_urls_section += "\n**Usage Example:**\n"
-        image_urls_section += "```tsx\n<img src=\"{url}\" alt=\"uploaded image\" style={{ maxWidth: '100%', height: 'auto' }} />\n```\n"
+        image_urls_section += "```tsx\n<img src=\"{url}\" alt=\"uploaded image\" className=\"max-w-full h-auto\" />\n```\n"
 
     return (
         base_prompt
