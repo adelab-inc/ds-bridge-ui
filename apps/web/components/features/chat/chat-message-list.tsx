@@ -11,14 +11,20 @@ interface ChatMessageListProps extends React.ComponentProps<'div'> {
   messages?: ChatMessageType[];
   /** 현재 선택된 메시지 ID */
   selectedMessageId?: string;
+  /** 북마크된 메시지 ID 목록 */
+  bookmarkedMessageIds?: Set<string>;
   /** 메시지 클릭 핸들러 (content가 있는 메시지만 호출됨) */
   onMessageClick?: (message: ChatMessageType) => void;
+  /** 북마크 아이콘 클릭 핸들러 */
+  onBookmarkClick?: (message: ChatMessageType) => void;
 }
 
 function ChatMessageList({
   messages = [],
   selectedMessageId,
+  bookmarkedMessageIds,
   onMessageClick,
+  onBookmarkClick,
   className,
   ...props
 }: ChatMessageListProps) {
@@ -70,7 +76,11 @@ function ChatMessageList({
               content={message.content}
               hasContent={hasContent}
               isSelected={selectedMessageId === message.id}
+              isBookmarked={bookmarkedMessageIds?.has(message.id)}
               onClick={hasContent ? () => onMessageClick?.(message) : undefined}
+              onBookmarkClick={
+                hasContent ? () => onBookmarkClick?.(message) : undefined
+              }
             />
           </div>
         );
