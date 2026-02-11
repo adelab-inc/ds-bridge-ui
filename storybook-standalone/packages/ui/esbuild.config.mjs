@@ -122,6 +122,7 @@ await esbuild.build({
             contents = `
               export const ModuleRegistry = { registerModules: () => {} };
               export const AllCommunityModule = {};
+              export const themeQuartz = { withParams: () => ({}) };
               export default {};
             `;
           } else if (args.path.includes("ag-grid-react")) {

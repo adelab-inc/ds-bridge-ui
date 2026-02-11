@@ -403,7 +403,8 @@
         "compact": ""
       },
       "levelVariant": {
-        "announcement": ""
+        "primary": "",
+        "neutral": ""
       },
       "statusVariant": {
         "info": "",
@@ -429,21 +430,33 @@
       },
       {
         "type": "level",
-        "levelVariant": "announcement",
+        "levelVariant": "primary",
         "appearance": "solid",
-        "class": "bg-badge-primary-solid-bg text-badge-solid-text"
+        "class": "bg-badge-primary-solid-bg text-badge-primary-solid-text"
       },
       {
         "type": "level",
-        "levelVariant": "announcement",
+        "levelVariant": "primary",
         "appearance": "subtle",
         "class": "bg-badge-primary-subtle-bg text-badge-primary-subtle-text"
+      },
+      {
+        "type": "level",
+        "levelVariant": "neutral",
+        "appearance": "solid",
+        "class": "bg-badge-neutral-solid-bg text-badge-neutral-solid-text"
+      },
+      {
+        "type": "level",
+        "levelVariant": "neutral",
+        "appearance": "subtle",
+        "class": "bg-badge-neutral-subtle-bg text-badge-neutral-subtle-text"
       },
       {
         "type": "status",
         "statusVariant": "info",
         "appearance": "solid",
-        "class": "bg-bg-semantic-info text-badge-solid-text"
+        "class": "bg-bg-semantic-info text-badge-primary-solid-text"
       },
       {
         "type": "status",
@@ -455,7 +468,7 @@
         "type": "status",
         "statusVariant": "success",
         "appearance": "solid",
-        "class": "bg-bg-semantic-success text-badge-solid-text"
+        "class": "bg-bg-semantic-success text-badge-primary-solid-text"
       },
       {
         "type": "status",
@@ -467,7 +480,7 @@
         "type": "status",
         "statusVariant": "warning",
         "appearance": "solid",
-        "class": "bg-bg-semantic-warning text-badge-solid-text"
+        "class": "bg-bg-semantic-warning text-badge-primary-solid-text"
       },
       {
         "type": "status",
@@ -479,7 +492,7 @@
         "type": "status",
         "statusVariant": "error",
         "appearance": "solid",
-        "class": "bg-bg-semantic-error text-badge-solid-text"
+        "class": "bg-bg-semantic-error text-badge-primary-solid-text"
       },
       {
         "type": "status",
@@ -493,13 +506,13 @@
       },
       {
         "type": "count",
-        "class": "bg-badge-primary-solid-bg text-badge-solid-text"
+        "class": "bg-badge-primary-solid-bg text-badge-primary-solid-text"
       }
     ],
     "defaultVariants": {
       "type": "level",
       "mode": "base",
-      "levelVariant": "announcement",
+      "levelVariant": "primary",
       "appearance": "solid"
     }
   },
@@ -645,8 +658,8 @@
     "base": "flex flex-col items-start rounded-xl border border-border-subtle bg-bg-surface shadow-[0_4px_8px_0_rgba(0,0,0,0.20)]",
     "variants": {
       "size": {
-        "sm": "w-[480px] max-h-[80vh]",
-        "md": "w-[612px] max-h-[80vh]",
+        "sm": "w-[480px] max-h-[600px]",
+        "md": "w-[612px] max-h-[760px]",
         "lg": "w-[928px] max-h-[80vh]",
         "xl": "w-[1244px] max-h-[80vh]"
       },
@@ -663,6 +676,35 @@
       {
         "mode": "compact",
         "class": "py-component-inset-dialog-y-compact px-component-inset-dialog-x-compact gap-component-gap-dialog-structure-compact"
+      }
+    ],
+    "defaultVariants": {
+      "size": "md",
+      "mode": "base"
+    }
+  },
+  "drawer": {
+    "base": "flex h-screen flex-col items-center bg-bg-surface shadow-[0_8px_16px_0_rgba(0,0,0,0.24)]",
+    "variants": {
+      "size": {
+        "sm": "w-[352px]",
+        "md": "w-[552px]",
+        "lg": "w-[752px]",
+        "xl": "w-[1152px]"
+      },
+      "mode": {
+        "base": "",
+        "compact": ""
+      }
+    },
+    "compoundVariants": [
+      {
+        "mode": "base",
+        "class": "py-component-inset-drawer-y px-component-inset-drawer-x gap-layout-stack-lg2"
+      },
+      {
+        "mode": "compact",
+        "class": "py-component-inset-drawer-y px-component-inset-drawer-x gap-layout-stack-lg2"
       }
     ],
     "defaultVariants": {
@@ -891,7 +933,7 @@
       {
         "checked": true,
         "disabled": false,
-        "class": "border-control-stroke-default bg-bg-surface hover:border-control-bg-on active:border-control-bg-on focus-visible:shadow-[0_0_0_1px_var(--color-role-border-contrast,#FFF)_inset,0_0_0_2px_var(--color-role-focus,#0033A0)]"
+        "class": "border-control-stroke-default bg-bg-surface hover:border-control-bg-on active:border-control-bg-on peer-focus-visible:shadow-[0_0_0_1px_var(--color-role-border-contrast,#FFF)_inset,0_0_0_2px_var(--color-role-focus,#0033A0)]"
       },
       {
         "checked": true,
@@ -901,7 +943,7 @@
       {
         "checked": false,
         "disabled": false,
-        "class": "focus-visible:shadow-[0_0_0_1px_var(--color-role-border-contrast,#FFF)_inset,0_0_0_2px_var(--color-role-focus,#0033A0)]"
+        "class": "peer-focus-visible:shadow-[0_0_0_1px_var(--color-role-border-contrast,#FFF)_inset,0_0_0_2px_var(--color-role-focus,#0033A0)]"
       }
     ],
     "defaultVariants": {
@@ -945,12 +987,12 @@
       {
         "checked": false,
         "disabled": false,
-        "class": "focus-visible:shadow-[0_0_0_1px_var(--color-role-border-contrast,#FFF)_inset,0_0_0_2px_var(--color-role-focus,#0033A0)]"
+        "class": "peer-focus-visible:shadow-[0_0_0_1px_var(--color-role-border-contrast,#FFF)_inset,0_0_0_2px_var(--color-role-focus,#0033A0)]"
       },
       {
         "checked": true,
         "disabled": false,
-        "class": "focus-visible:shadow-[0_0_0_1px_var(--color-role-border-contrast,#FFF)_inset,0_0_0_2px_var(--color-role-focus,#0033A0)]"
+        "class": "peer-focus-visible:shadow-[0_0_0_1px_var(--color-role-border-contrast,#FFF)_inset,0_0_0_2px_var(--color-role-focus,#0033A0)]"
       }
     ],
     "defaultVariants": {
@@ -1030,6 +1072,10 @@
       "hasValue": {
         "true": "",
         "false": ""
+      },
+      "isOpen": {
+        "true": "",
+        "false": ""
       }
     },
     "compoundVariants": [
@@ -1055,12 +1101,12 @@
       },
       {
         "error": false,
-        "hasValue": false,
+        "isOpen": false,
         "class": "border-field-border-default bg-field-bg-surface text-text-primary hover:bg-[#f0f0f0] active:bg-[#e6e6e6] focus:outline focus:outline-2 focus:outline-focus focus:outline-offset-[-2px]"
       },
       {
         "error": false,
-        "hasValue": true,
+        "isOpen": true,
         "class": "text-text-accent border-field-border-focus bg-bg-selection hover:bg-[#dde1eb] active:bg-[#d3d7e1] focus:outline focus:outline-2 focus:outline-focus focus:outline-offset-[-2px]"
       },
       {
@@ -1072,7 +1118,8 @@
       "size": "md",
       "mode": "base",
       "error": false,
-      "hasValue": false
+      "hasValue": false,
+      "isOpen": false
     }
   },
   "option": {
@@ -1149,7 +1196,7 @@
     }
   },
   "menu.item": {
-    "base": "flex items-center cursor-pointer transition-colors rounded-[4px]",
+    "base": "flex items-center transition-colors rounded-[4px]",
     "variants": {
       "size": {
         "md": "text-button-md-medium",
@@ -1160,14 +1207,14 @@
         "compact": ""
       },
       "state": {
-        "default": "text-text-primary",
-        "hover": "",
-        "pressed": "",
-        "disabled": "",
-        "selected": "",
-        "selected-hover": "",
-        "selected-pressed": "",
-        "focused": ""
+        "default": "cursor-pointer",
+        "hover": "cursor-pointer",
+        "pressed": "cursor-pointer",
+        "disabled": "cursor-not-allowed",
+        "selected": "cursor-pointer",
+        "selected-hover": "cursor-pointer",
+        "selected-pressed": "cursor-pointer",
+        "focused": "cursor-pointer"
       },
       "destructive": {
         "true": "",
@@ -1200,7 +1247,7 @@
       },
       {
         "state": "disabled",
-        "class": "text-text-disabled cursor-not-allowed"
+        "class": "text-text-disabled"
       },
       {
         "state": "selected",
@@ -1221,7 +1268,13 @@
       },
       {
         "destructive": true,
-        "class": "text-alert-error-text"
+        "size": "md",
+        "class": "text-semantic-error text-button-md-medium"
+      },
+      {
+        "destructive": true,
+        "size": "sm",
+        "class": "text-semantic-error text-button-sm-medium"
       },
       {
         "destructive": true,
@@ -1242,23 +1295,14 @@
     }
   },
   "menu.heading": {
-    "base": "flex items-center text-text-tertiary text-button-sm-medium",
+    "base": "flex items-center self-stretch pt-component-inset-menu-item-y px-component-inset-menu-item-x pb-layout-stack-xs text-text-tertiary text-button-sm-medium",
     "variants": {
       "mode": {
         "base": "",
-        "compact": ""
+        "compact": "pt-component-inset-menu-item-y-compact px-component-inset-menu-item-x-compact pb-layout-stack-xs-compact"
       }
     },
-    "compoundVariants": [
-      {
-        "mode": "base",
-        "class": "py-component-inset-menu-item-y px-component-inset-menu-item-x pb-layout-stack-xs"
-      },
-      {
-        "mode": "compact",
-        "class": "py-component-inset-menu-item-y-compact px-component-inset-menu-item-x-compact pb-layout-stack-xs-compact"
-      }
-    ],
+    "compoundVariants": [],
     "defaultVariants": {
       "mode": "base"
     }
@@ -1431,6 +1475,45 @@
     "defaultVariants": {
       "size": "md",
       "mode": "base"
+    }
+  },
+  "treeMenu": {
+    "base": "flex flex-col max-h-[640px] overflow-y-auto",
+    "variants": {
+      "size": {
+        "md": "",
+        "sm": ""
+      }
+    },
+    "compoundVariants": [],
+    "defaultVariants": {
+      "size": "md"
+    }
+  },
+  "treeMenu.item": {
+    "base": "relative flex items-center py-component-inset-menu-item-y px-component-inset-menu-item-x gap-layout-stack-md text-text-primary",
+    "variants": {
+      "size": {
+        "md": "text-button-md-medium",
+        "sm": "text-button-sm-medium"
+      },
+      "depth": {
+        "1": "",
+        "2": "pl-8",
+        "3": "pl-12",
+        "4": "pl-16"
+      },
+      "state": {
+        "default": "cursor-pointer",
+        "hover": "rounded-[4px] cursor-pointer",
+        "disabled": "text-text-disabled cursor-not-allowed"
+      }
+    },
+    "compoundVariants": [],
+    "defaultVariants": {
+      "size": "md",
+      "depth": "1",
+      "state": "default"
     }
   }
 }

@@ -85,7 +85,7 @@ export const Default: StoryObj<AlertStoryArgs> = {
   },
   render: (args) => {
     const { hasActions, ...restArgs } = args;
-    const actions = hasActions
+    const actions: [{ label: string; onClick: () => void }, { label: string; onClick: () => void }] | undefined = hasActions
       ? [
           { label: '실행', onClick: () => console.log('Action 1') },
           { label: '실행취소', onClick: () => console.log('Action 2') },

@@ -1,4 +1,4 @@
-import type { AlertAction } from '../Alert';
+import type { AlertActions } from '../Alert';
 
 export type ToastPosition =
   | 'top-left'
@@ -21,8 +21,8 @@ export interface ToastOptions {
   duration?: number;
   /** Toast position (default: 'top-right') */
   position?: ToastPosition;
-  /** Action buttons */
-  actions?: AlertAction[];
+  /** Action buttons (max 2) */
+  actions?: AlertActions;
   /** Show close button (default: true) */
   hasCloseButton?: boolean;
 }

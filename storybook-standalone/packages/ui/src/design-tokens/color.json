@@ -10,8 +10,8 @@
     "VariableID:4:87",
     "VariableID:4:88",
     "VariableID:4:89",
-    "VariableID:4:90",
     "VariableID:4:92",
+    "VariableID:4:90",
     "VariableID:4:91",
     "VariableID:320:10858",
     "VariableID:4:117",
@@ -60,8 +60,8 @@
     "VariableID:4:130",
     "VariableID:4:97",
     "VariableID:4:131",
-    "VariableID:4:192",
     "VariableID:334:21774",
+    "VariableID:4:192",
     "VariableID:4:195",
     "VariableID:4:194",
     "VariableID:4:196",
@@ -70,6 +70,8 @@
     "VariableID:4:199",
     "VariableID:4:200",
     "VariableID:4:201",
+    "VariableID:4427:594331",
+    "VariableID:4427:594332",
     "VariableID:4:106",
     "VariableID:4:115",
     "VariableID:4:114",
@@ -109,14 +111,14 @@
     "VariableID:4:150",
     "VariableID:4:79",
     "VariableID:4:151",
-    "VariableID:336:5724",
     "VariableID:336:5729",
-    "VariableID:336:5730",
-    "VariableID:336:5727",
-    "VariableID:336:5732",
-    "VariableID:336:5733",
-    "VariableID:336:5735",
     "VariableID:336:5728",
+    "VariableID:336:5724",
+    "VariableID:336:5727",
+    "VariableID:336:5735",
+    "VariableID:336:5733",
+    "VariableID:336:5732",
+    "VariableID:336:5730",
     "VariableID:4:98",
     "VariableID:4:99",
     "VariableID:4:100",
@@ -142,23 +144,23 @@
     "VariableID:206:4167",
     "VariableID:206:4168",
     "VariableID:2291:26545",
-    "VariableID:206:4169",
-    "VariableID:2291:26546",
     "VariableID:2291:26541",
-    "VariableID:2291:26542",
+    "VariableID:206:4169",
     "VariableID:2291:26543",
     "VariableID:2291:26547",
+    "VariableID:2291:26542",
+    "VariableID:2291:26546",
     "VariableID:2291:26538",
     "VariableID:336:5696",
     "VariableID:336:5697",
     "VariableID:2291:26540",
     "VariableID:336:5705",
     "VariableID:336:5706",
-    "VariableID:336:5716",
-    "VariableID:336:5707",
     "VariableID:336:5714",
-    "VariableID:336:5709",
     "VariableID:336:5712",
+    "VariableID:336:5707",
+    "VariableID:336:5709",
+    "VariableID:336:5716",
     "VariableID:336:5718",
     "VariableID:336:5719",
     "VariableID:336:5717",
@@ -232,7 +234,11 @@
     "VariableID:966:14543",
     "VariableID:1820:28564",
     "VariableID:2681:30375",
-    "VariableID:2681:30376"
+    "VariableID:2681:30376",
+    "VariableID:4104:56099",
+    "VariableID:4104:56132",
+    "VariableID:4427:594329",
+    "VariableID:4427:594330"
   ],
   "variables": [
     {
@@ -3112,7 +3118,7 @@
     },
     {
       "id": "VariableID:334:21774",
-      "name": "color/role/badge/solid/text",
+      "name": "color/role/badge/primary/solid/text",
       "description": "",
       "type": "COLOR",
       "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:129" } },
@@ -4024,6 +4030,108 @@
           "resolvedValue": { "r": 1, "g": 1, "b": 1, "a": 0.1599999964237213 },
           "alias": "VariableID:2679:30345",
           "aliasName": "color/palette/overlay/white/0-16"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4104:56099",
+      "name": "color/role/bg/inverse",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:75" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.20392157137393951, "g": 0.22745098173618317, "b": 0.250980406999588, "a": 1 },
+          "alias": "VariableID:4:75",
+          "aliasName": "color/palette/neutral/gray/800"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4104:56132",
+      "name": "color/role/border/inverse",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:2679:30345" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 1, "g": 1, "b": 1, "a": 0.1599999964237213 },
+          "alias": "VariableID:2679:30345",
+          "aliasName": "color/palette/overlay/white/0-16"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4427:594329",
+      "name": "color/role/badge/neutral/solid/bg",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:74" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.2862745225429535, "g": 0.3137255012989044, "b": 0.34117648005485535, "a": 1 },
+          "alias": "VariableID:4:74",
+          "aliasName": "color/palette/neutral/gray/700"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4427:594330",
+      "name": "color/role/badge/neutral/solid/text",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:129" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 1, "g": 1, "b": 1, "a": 1 },
+          "alias": "VariableID:4:129",
+          "aliasName": "color/role/text/inverse"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4427:594331",
+      "name": "color/role/badge/neutral/subtle/bg",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:90" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.9254902005195618, "g": 0.9372549057006836, "b": 0.9529411792755127, "a": 1 },
+          "alias": "VariableID:4:90",
+          "aliasName": "color/role/bg/subtle"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4427:594332",
+      "name": "color/role/badge/neutral/subtle/text",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:86" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.2862745225429535, "g": 0.3137255012989044, "b": 0.34117648005485535, "a": 1 },
+          "alias": "VariableID:4:86",
+          "aliasName": "color/role/text/secondary"
         }
       },
       "scopes": ["ALL_SCOPES"],

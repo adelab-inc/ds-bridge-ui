@@ -3,6 +3,7 @@ import React from 'react';
 
 import { Select } from '../components/Select';
 import { Icon } from '../components/Icon';
+import { Badge } from '../components/Badge';
 
 // Icon 옵션 매핑
 const iconOptions = {
@@ -112,3 +113,56 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
+
+// 복합 옵션 (다양한 옵션 조합)
+export const WithComplexOptions: Story = {
+  name: '복합 옵션',
+  decorators: [
+    (Story) => (
+      <div className="w-[320px]">
+        <Story />
+      </div>
+    ),
+  ],
+  args: {
+    label: '메뉴 항목',
+    helperText: '다양한 옵션 스타일을 확인하세요',
+    options: [
+      // 텍스트만 있는 경우
+      { value: 'text-only', label: '텍스트만' },
+      // 긴 텍스트 (말줄임표 + 툴팁 테스트)
+      { value: 'long-text', label: '이것은 매우 긴 텍스트로 말줄임표가 나타나야 합니다' },
+      // right Icon만 있는 경우
+      { value: 'right-icon', label: '선택됨', rightIcon: <Icon name="menu-selection" size={16} /> },
+      // left icon + 텍스트
+      { value: 'left-icon', label: '검색', leftIcon: <Icon name="search" size={14} /> },
+      // left icon + 텍스트 + 뱃지
+      {
+        value: 'with-badge',
+        label: '알림',
+        leftIcon: <Icon name="alert-info" size={14} />,
+        badge: <Badge type="status" statusVariant="info">NEW</Badge>,
+      },
+      // left icon + 텍스트 + 뱃지 + right icon
+      {
+        value: 'full-option',
+        label: '프리미엄',
+        leftIcon: <Icon name="widgets" size={14} />,
+        badge: <Badge type="status" statusVariant="success">추천</Badge>,
+        rightIcon: <Icon name="menu-selection" size={16} />,
+      },
+      // 긴 텍스트 + 아이콘 + 뱃지 조합
+      {
+        value: 'long-with-icons',
+        label: '이것은 아이콘과 뱃지가 함께 있는 매우 긴 텍스트입니다',
+        leftIcon: <Icon name="person" size={14} />,
+        badge: <Badge type="status" statusVariant="warning">긴뱃지텍스트</Badge>,
+        rightIcon: <Icon name="menu-selection" size={16} />,
+      },
+      // destructive item
+      { value: 'delete', label: '삭제', leftIcon: <Icon name="close" size={14} />, destructive: true },
+      // disabled item
+      { value: 'disabled', label: '비활성화됨', leftIcon: <Icon name="more-vert" size={14} />, disabled: true },
+    ],
+  },
+};

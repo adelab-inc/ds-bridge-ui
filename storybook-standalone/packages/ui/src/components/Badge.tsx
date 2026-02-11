@@ -14,7 +14,8 @@ const badgeVariants = cva(
         "subtle": "",
       },
       "levelVariant": {
-        "announcement": "",
+        "neutral": "",
+        "primary": "",
       },
       "mode": {
         "base": "",
@@ -35,7 +36,7 @@ const badgeVariants = cva(
     },
     defaultVariants: {
       "appearance": "solid",
-      "levelVariant": "announcement",
+      "levelVariant": "primary",
       "mode": "base",
       "type": "level",
     },
@@ -52,19 +53,31 @@ const badgeVariants = cva(
       },
       {
         "appearance": "solid",
-        "class": "bg-badge-primary-solid-bg text-badge-solid-text",
-        "levelVariant": "announcement",
+        "class": "bg-badge-primary-solid-bg text-badge-primary-solid-text",
+        "levelVariant": "primary",
         "type": "level",
       },
       {
         "appearance": "subtle",
         "class": "bg-badge-primary-subtle-bg text-badge-primary-subtle-text",
-        "levelVariant": "announcement",
+        "levelVariant": "primary",
         "type": "level",
       },
       {
         "appearance": "solid",
-        "class": "bg-bg-semantic-info text-badge-solid-text",
+        "class": "bg-badge-neutral-solid-bg text-badge-neutral-solid-text",
+        "levelVariant": "neutral",
+        "type": "level",
+      },
+      {
+        "appearance": "subtle",
+        "class": "bg-badge-neutral-subtle-bg text-badge-neutral-subtle-text",
+        "levelVariant": "neutral",
+        "type": "level",
+      },
+      {
+        "appearance": "solid",
+        "class": "bg-bg-semantic-info text-badge-primary-solid-text",
         "statusVariant": "info",
         "type": "status",
       },
@@ -76,7 +89,7 @@ const badgeVariants = cva(
       },
       {
         "appearance": "solid",
-        "class": "bg-bg-semantic-success text-badge-solid-text",
+        "class": "bg-bg-semantic-success text-badge-primary-solid-text",
         "statusVariant": "success",
         "type": "status",
       },
@@ -88,7 +101,7 @@ const badgeVariants = cva(
       },
       {
         "appearance": "solid",
-        "class": "bg-bg-semantic-warning text-badge-solid-text",
+        "class": "bg-bg-semantic-warning text-badge-primary-solid-text",
         "statusVariant": "warning",
         "type": "status",
       },
@@ -100,7 +113,7 @@ const badgeVariants = cva(
       },
       {
         "appearance": "solid",
-        "class": "bg-bg-semantic-error text-badge-solid-text",
+        "class": "bg-bg-semantic-error text-badge-primary-solid-text",
         "statusVariant": "error",
         "type": "status",
       },
@@ -115,7 +128,7 @@ const badgeVariants = cva(
         "type": "dot",
       },
       {
-        "class": "bg-badge-primary-solid-bg text-badge-solid-text",
+        "class": "bg-badge-primary-solid-bg text-badge-primary-solid-text",
         "type": "count",
       },
     ],
@@ -131,7 +144,7 @@ type BadgeBaseProps = React.HTMLAttributes<HTMLDivElement> & CVAVariantProps;
 // type별 discriminated union
 type BadgeLevelProps = BadgeBaseProps & {
   type: 'level';
-  levelVariant: 'announcement';
+  levelVariant: 'primary' | 'neutral';
   statusVariant?: never;
   maxDigits?: never;
 };

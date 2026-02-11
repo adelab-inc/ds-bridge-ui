@@ -23,7 +23,7 @@ const meta = {
     },
     levelVariant: {
       control: { type: 'select' },
-      options: ['announcement'],
+      options: ['primary', 'neutral'],
       description: 'level 타입의 세부 종류',
       if: { arg: 'type', eq: 'level' },
     },
@@ -57,9 +57,10 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   args: {
     type: 'level',
-    levelVariant: 'announcement',
+    levelVariant: 'primary',
+    statusVariant: 'info',
     mode: 'base',
     appearance: 'solid',
     children: 'Badge',
-  } as BadgeProps,
+  } as unknown as BadgeProps,
 };

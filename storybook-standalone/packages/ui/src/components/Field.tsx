@@ -244,20 +244,14 @@ const fieldHelperTextVariants = cva('', {
   },
 });
 
-export interface FieldProps
+/** 공통 Props (single-line과 multiline 모두 사용) */
+interface FieldBaseProps
   extends Omit<React.InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement>, 'size' | 'prefix'>,
     VariantProps<typeof fieldVariants> {
   label?: string;
   required?: boolean;
   helperText?: string;
   error?: boolean;
-  prefix?: React.ReactNode;
-  startIcon?: React.ReactNode;
-  endIcon?: React.ReactNode;
-  onStartIconClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
-  onEndIconClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
-  multiline?: boolean;
-  rowsVariant?: 'flexible' | 'rows4' | 'rows6' | 'rows8';
   size?: 'md' | 'sm';
   /** 내부 input/textarea 요소에 전달할 추가 props */
   inputProps?: React.HTMLAttributes<HTMLInputElement | HTMLTextAreaElement>;
@@ -265,11 +259,54 @@ export interface FieldProps
   labelProps?: React.LabelHTMLAttributes<HTMLLabelElement>;
   /** 내부 helperText 요소에 전달할 추가 props */
   helperTextProps?: React.HTMLAttributes<HTMLSpanElement>;
-  /** 내부 startIcon wrapper 요소에 전달할 추가 props */
-  startIconProps?: React.HTMLAttributes<HTMLElement>;
-  /** 내부 endIcon wrapper 요소에 전달할 추가 props */
-  endIconProps?: React.HTMLAttributes<HTMLElement>;
 }
+
+/** Single-line 전용 Props */
+interface SingleLineFieldProps extends FieldBaseProps {
+  /** Single-line input 모드 (기본값) */
+  multiline?: false;
+  /** 입력 앞 텍스트 (예: $, ₩) - single-line 전용 */
+  prefix?: React.ReactNode;
+  /** 좌측 아이콘 - single-line 전용 */
+  startIcon?: React.ReactNode;
+  /** 우측 아이콘 - single-line 전용 */
+  endIcon?: React.ReactNode;
+  /** 좌측 아이콘 클릭 핸들러 - single-line 전용 */
+  onStartIconClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  /** 우측 아이콘 클릭 핸들러 - single-line 전용 */
+  onEndIconClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  /** 내부 startIcon wrapper 요소에 전달할 추가 props - single-line 전용 */
+  startIconProps?: React.HTMLAttributes<HTMLElement>;
+  /** 내부 endIcon wrapper 요소에 전달할 추가 props - single-line 전용 */
+  endIconProps?: React.HTMLAttributes<HTMLElement>;
+  /** rowsVariant는 multiline 전용 */
+  rowsVariant?: never;
+}
+
+/** Multiline (textarea) 전용 Props */
+interface MultilineFieldProps extends FieldBaseProps {
+  /** Multiline textarea 모드 */
+  multiline: true;
+  /** Textarea 행 수 변형 - multiline 전용 */
+  rowsVariant?: 'flexible' | 'rows4' | 'rows6' | 'rows8';
+  /** prefix는 single-line 전용 */
+  prefix?: never;
+  /** startIcon은 single-line 전용 */
+  startIcon?: never;
+  /** endIcon은 single-line 전용 */
+  endIcon?: never;
+  /** onStartIconClick은 single-line 전용 */
+  onStartIconClick?: never;
+  /** onEndIconClick은 single-line 전용 */
+  onEndIconClick?: never;
+  /** startIconProps는 single-line 전용 */
+  startIconProps?: never;
+  /** endIconProps는 single-line 전용 */
+  endIconProps?: never;
+}
+
+/** Field 컴포넌트 Props - multiline 여부에 따라 사용 가능한 Props가 달라집니다 */
+export type FieldProps = SingleLineFieldProps | MultilineFieldProps;
 
 const rowsMap = {
   flexible: 1,
@@ -277,8 +314,6 @@ const rowsMap = {
   rows6: 6,
   rows8: 8,
 } as const;
-
-const MAX_FLEXIBLE_ROWS = 4;
 
 const Field = React.forwardRef<HTMLInputElement | HTMLTextAreaElement, FieldProps>(
   (
@@ -320,7 +355,7 @@ const Field = React.forwardRef<HTMLInputElement | HTMLTextAreaElement, FieldProp
     const inputId = id || `field-${React.useId()}`;
     const helperTextId = helperText ? `${inputId}-helper` : undefined;
 
-    // Auto-grow for flexible multiline
+    // Auto-grow for flexible multiline (no max height limit)
     const adjustTextareaHeight = React.useCallback(() => {
       const textarea = textareaRef.current;
       if (!textarea || !multiline) return;
@@ -341,10 +376,9 @@ const Field = React.forwardRef<HTMLInputElement | HTMLTextAreaElement, FieldProp
       const paddingBottom = parseFloat(computedStyle.paddingBottom) || 0;
 
       const minHeight = lineHeight + paddingTop + paddingBottom;
-      const maxHeight = lineHeight * MAX_FLEXIBLE_ROWS + paddingTop + paddingBottom;
 
-      // Set height based on content, clamped between min and max
-      const newHeight = Math.min(Math.max(textarea.scrollHeight, minHeight), maxHeight);
+      // Set height based on content (no max limit - grows indefinitely)
+      const newHeight = Math.max(textarea.scrollHeight, minHeight);
       textarea.style.height = `${newHeight}px`;
     }, [multiline, rowsVariant]);
 

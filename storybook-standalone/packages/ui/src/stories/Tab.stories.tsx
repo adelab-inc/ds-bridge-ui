@@ -10,20 +10,26 @@ const meta: Meta<typeof Tab> = {
   },
   tags: ['autodocs'],
   argTypes: {
-    widthMode: {
-      control: 'select',
-      options: ['equal', 'content'],
-      description: '아이템 너비 모드 (content 권장)',
-    },
     mode: {
       control: 'select',
       options: ['base', 'compact'],
       description: '간격 모드',
     },
+    gap: {
+      control: 'text',
+      description: '탭 리스트와 패널 사이 간격 (Tailwind 클래스)',
+    },
     disabled: {
       control: 'boolean',
       description: '전체 비활성화',
     },
+    // 컨트롤 패널에서 숨김
+    items: { table: { disable: true } },
+    value: { table: { disable: true } },
+    onChange: { table: { disable: true } },
+    widthMode: { table: { disable: true } },
+    isDisabled: { table: { disable: true } },
+    className: { table: { disable: true } },
   },
 };
 
@@ -124,6 +130,31 @@ export const Disabled: Story = {
         <div>
           <p className="text-sm text-text-tertiary mb-2">개별 아이템 비활성화</p>
           <Tab items={itemsWithDisabled} value="active" onChange={setValue} />
+        </div>
+      </div>
+    );
+  },
+};
+
+// 탭-패널 간격 (gap prop)
+export const WithGap: Story = {
+  render: () => {
+    const [value1, setValue1] = useState('home');
+    const [value2, setValue2] = useState('home');
+    const [value3, setValue3] = useState('home');
+    return (
+      <div className="flex flex-col gap-8 w-[600px]">
+        <div>
+          <p className="text-sm text-text-tertiary mb-2">gap 없음 (기본)</p>
+          <Tab items={defaultItems} value={value1} onChange={setValue1} />
+        </div>
+        <div>
+          <p className="text-sm text-text-tertiary mb-2">gap-4 (16px)</p>
+          <Tab items={defaultItems} value={value2} onChange={setValue2} gap="gap-4" />
+        </div>
+        <div>
+          <p className="text-sm text-text-tertiary mb-2">gap-6 (24px)</p>
+          <Tab items={defaultItems} value={value3} onChange={setValue3} gap="gap-6" />
         </div>
       </div>
     );

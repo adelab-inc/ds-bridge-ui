@@ -231,7 +231,7 @@ const Tag = forwardRef<HTMLDivElement, TagProps>(
           <button
             onClick={onClose}
             aria-label={`${tagText} 태그 제거`}
-            className="flex items-center justify-center rounded-full w-[12px] h-[12px] hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed"
+            className="flex items-center justify-center rounded-full w-[12px] h-[12px] p-[1px] -m-[1px] hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed"
           >
             <Icon name="close" size={12} aria-hidden="true" />
           </button>

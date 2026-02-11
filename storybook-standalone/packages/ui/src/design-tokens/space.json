@@ -71,6 +71,8 @@
     "VariableID:4:249",
     "VariableID:4:250",
     "VariableID:4:251",
+    "VariableID:3944:55722",
+    "VariableID:3944:55723",
     "VariableID:3590:657316",
     "VariableID:409:6715",
     "VariableID:263:5411",
@@ -129,7 +131,8 @@
     "VariableID:1321:16411",
     "VariableID:1865:31451",
     "VariableID:1865:31452",
-    "VariableID:3590:657314"
+    "VariableID:3590:657314",
+    "VariableID:4073:56036"
   ],
   "variables": [
     {
@@ -745,11 +748,11 @@
       "description": "[L2] 폼 필드들이 그리드 형태로 나열될 때의 수직 간격",
       "type": "FLOAT",
       "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" },
         "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" }
       },
       "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
+        "4:1": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" },
         "4:2": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" }
       },
       "scopes": ["GAP"],
@@ -792,7 +795,7 @@
     },
     {
       "id": "VariableID:4:263",
-      "name": "space/component/inset/toolbar/x",
+      "name": "space/component/inset/formatting-bar/x",
       "description": "툴바의 좌우 내부 여백",
       "type": "FLOAT",
       "valuesByMode": {
@@ -809,7 +812,7 @@
     },
     {
       "id": "VariableID:4:264",
-      "name": "space/component/inset/toolbar/y",
+      "name": "space/component/inset/formatting-bar/y",
       "description": "툴바의 상하 내부 여백",
       "type": "FLOAT",
       "valuesByMode": {
@@ -894,8 +897,8 @@
     },
     {
       "id": "VariableID:4:269",
-      "name": "space/component/inset/panel/x",
-      "description": "사이드/디테일 패널",
+      "name": "space/component/inset/drawer/x",
+      "description": "사이드/드로우 패널",
       "type": "FLOAT",
       "valuesByMode": {
         "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" },
@@ -911,8 +914,8 @@
     },
     {
       "id": "VariableID:4:270",
-      "name": "space/component/inset/panel/y",
-      "description": "사이드/디테일 패널",
+      "name": "space/component/inset/drawer/y",
+      "description": "사이드/드로우 패널",
       "type": "FLOAT",
       "valuesByMode": {
         "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:222" },
@@ -1337,12 +1340,12 @@
       "description": "[L3] 다이얼로그의 부품(헤더, 바디, 푸터) 사이 결속을 위한 전용 구조 간격",
       "type": "FLOAT",
       "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" }
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:224" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" }
       },
       "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" },
-        "4:2": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" }
+        "4:1": { "resolvedValue": 32, "alias": "VariableID:4:224", "aliasName": "space/scale/32" },
+        "4:2": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" }
       },
       "scopes": ["GAP"],
       "hiddenFromPublishing": false,
@@ -2178,12 +2181,12 @@
       "description": "[L2] 폼 필드들이 그리드 형태로 나열될 때의 수평 간격",
       "type": "FLOAT",
       "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" }
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:222" }
       },
       "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" },
-        "4:2": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" }
+        "4:1": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" },
+        "4:2": { "resolvedValue": 20, "alias": "VariableID:4:222", "aliasName": "space/scale/20" }
       },
       "scopes": ["ALL_SCOPES"],
       "hiddenFromPublishing": false,
@@ -2212,12 +2215,12 @@
       "description": "[L1] 다이얼로그 바디 내부에 배치되는 요소들 사이의 배치 간격",
       "type": "FLOAT",
       "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" }
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:222" }
       },
       "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" },
-        "4:2": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" }
+        "4:1": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" },
+        "4:2": { "resolvedValue": 20, "alias": "VariableID:4:222", "aliasName": "space/scale/20" }
       },
       "scopes": ["ALL_SCOPES"],
       "hiddenFromPublishing": false,
@@ -2227,6 +2230,57 @@
       "id": "VariableID:3795:2687291",
       "name": "space/component/gap/filterbar/items",
       "description": "[L1] 필터바 내부에 나열되는 아이템들 사이의 배치 간격",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
+        "4:2": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:3944:55722",
+      "name": "space/component/inset/action-bar/x",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:224" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 32, "alias": "VariableID:4:224", "aliasName": "space/scale/32" },
+        "4:2": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:3944:55723",
+      "name": "space/component/inset/action-bar/y",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" },
+        "4:2": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4073:56036",
+      "name": "space/component/gap/selection-group",
+      "description": "[L2] 체크박스, 라디오 버튼처럼 하나의 질문에 속한 선택지 아이템 간의 간격",
       "type": "FLOAT",
       "valuesByMode": {
         "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },

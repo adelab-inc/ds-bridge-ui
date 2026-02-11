@@ -60,6 +60,8 @@ export interface TabProps
   widthMode?: 'equal' | 'content';
   /** 전체 탭 비활성화 */
   disabled?: boolean;
+  /** 탭 리스트와 패널 사이 간격 (Tailwind 클래스, 예: 'gap-4', 'gap-layout-stack-md') */
+  gap?: string;
 }
 
 const Tab = React.forwardRef<HTMLDivElement, TabProps>(
@@ -72,6 +74,7 @@ const Tab = React.forwardRef<HTMLDivElement, TabProps>(
       widthMode = 'content',
       mode: propMode,
       disabled = false,
+      gap,
       ...props
     },
     ref,
@@ -172,7 +175,7 @@ const Tab = React.forwardRef<HTMLDivElement, TabProps>(
     const selectedItem = items.find((item) => item.value === value);
 
     return (
-      <div className="flex flex-col">
+      <div className={cn("flex flex-col", gap)}>
         {/* 탭 리스트 */}
         <div
           ref={ref}
@@ -249,7 +252,7 @@ const Tab = React.forwardRef<HTMLDivElement, TabProps>(
 
         {/* 탭 패널 (선택된 탭의 컨텐츠) */}
         {selectedItem?.content && (
-          <div role="tabpanel" className="pt-4">
+          <div role="tabpanel">
             {selectedItem.content}
           </div>
         )}
@@ -261,7 +264,7 @@ Tab.displayName = 'Tab';
 
 // TabItemComponent 내부 컴포넌트
 const tabItemVariants = cva(
-  'cursor-pointer flex justify-center items-center whitespace-nowrap rounded text-button-lg-medium text-text-secondary text-center transition-colors',
+  'flex justify-center items-center whitespace-nowrap rounded text-button-lg-medium text-text-secondary text-center transition-colors',
   {
     variants: {
       mode: {
@@ -278,7 +281,7 @@ const tabItemVariants = cva(
       },
       isDisabled: {
         true: 'cursor-not-allowed',
-        false: '',
+        false: 'cursor-pointer',
       },
     },
     compoundVariants: [

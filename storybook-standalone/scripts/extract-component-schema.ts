@@ -306,11 +306,43 @@ async function main(): Promise<void> {
     }
 
     try {
-      const docs: ComponentDoc[] = parser.parse(targetPath);
+      let docs: ComponentDoc[] = parser.parse(targetPath);
 
+      // Compound Component fallback: forwardRef + as 타입 캐스팅 패턴 처리
+      // (예: Dialog, Drawer 등 export { X } where X = XRoot as XComponent)
       if (docs.length === 0) {
-        console.warn(`   ⚠️  Props 없음: ${relativePath}`);
-        continue;
+        const fileContent = fs.readFileSync(targetPath, 'utf-8');
+        const propsMatch = fileContent.match(/export\s+interface\s+(\w+Props)\b/);
+        const displayNameMatch = fileContent.match(/\.displayName\s*=\s*['"](\w+)['"];?\s*\n/);
+
+        if (propsMatch && displayNameMatch) {
+          const propsName = propsMatch[1];
+          const componentName = displayNameMatch[1];
+          const tmpPath = targetPath.replace(/\.tsx$/, '.__compound_fallback__.tsx');
+          const tmpContent = [
+            `import React from 'react';`,
+            `import type { ${propsName} } from './${path.basename(targetPath, '.tsx')}';`,
+            `const ${componentName}: React.FC<${propsName}> = () => null;`,
+            `${componentName}.displayName = '${componentName}';`,
+            `export { ${componentName} };`,
+          ].join('\n');
+
+          fs.writeFileSync(tmpPath, tmpContent);
+          try {
+            docs = parser.parse(tmpPath);
+          } finally {
+            fs.unlinkSync(tmpPath);
+          }
+
+          if (docs.length > 0) {
+            console.log(`   🔄 Compound Component fallback: ${componentName} (${propsName})`);
+          }
+        }
+
+        if (docs.length === 0) {
+          console.warn(`   ⚠️  Props 없음: ${relativePath}`);
+          continue;
+        }
       }
 
       for (const doc of docs) {

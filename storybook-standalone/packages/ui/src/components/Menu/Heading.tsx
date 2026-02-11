@@ -2,7 +2,7 @@ import { cva } from 'class-variance-authority';
 import * as React from 'react';
 import { cn } from '../utils';
 
-const headingVariants = cva('flex items-center text-text-tertiary text-button-sm-medium');
+const headingVariants = cva('flex items-center self-stretch pt-component-inset-menu-item-y px-component-inset-menu-item-x pb-layout-stack-xs text-text-tertiary text-button-sm-medium');
 
 /**
  * MenuHeading Props
