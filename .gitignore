@@ -136,3 +136,6 @@ PROJECT_GUIDE.md
 # Figma extracted layouts (full/clean만 제외, compact는 커밋)
 apps/web/public/figma-nodes/*.full.json
 apps/web/public/figma-nodes/*.clean.json
+
+# data
+apps/ai-service/data
