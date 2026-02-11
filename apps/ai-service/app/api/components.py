@@ -67,7 +67,6 @@ AVAILABLE_COMPONENTS_WHITELIST = {
     "ToggleSwitch",
     # Layout
     "Scrollbar",
-    "Heading",
     # Data (프리뷰 미지원 - UMD 빌드에서 stub 처리됨)
     "DataGrid",
 }
@@ -225,28 +224,40 @@ def format_design_tokens(tokens: dict | None) -> str:
     body_md = font_size.get("typography-body-md-regular", ["16px", {}])
     helper_text = font_size.get("typography-form-helper-text-md-regular", ["14px", {}])
 
-    return f"""## 🎨 DESIGN STANDARDS (CRITICAL - USE EXACT VALUES)
+    return f"""## 🎨 DESIGN STANDARDS (CRITICAL - USE TAILWIND CLASSES)
 - **Typography (MUST FOLLOW EXACT TOKENS)**:
-  - Font Family: `'Pretendard', sans-serif`
-  - **Page Title (h1)**: `fontSize: {heading_xl[0].replace('px', '')}`, `fontWeight: {heading_xl_weight}`, `color: '{text_primary}'`
-  - **Section Title (h2)**: `fontSize: {heading_lg[0].replace('px', '')}`, `fontWeight: {heading_lg_weight}`, `color: '{text_primary}'`
-  - **Subsection (h3)**: `fontSize: {heading_md[0].replace('px', '')}`, `fontWeight: {heading_md_weight}`, `color: '{text_primary}'`
-  - **Form Label**: `fontSize: {form_label_md[0].replace('px', '')}`, `fontWeight: {form_label_weight}`, `color: '{text_primary}'`
-  - **Body Text**: `fontSize: {body_md[0].replace('px', '')}`, `fontWeight: 400`, `color: '{text_primary}'`
-  - **Helper Text**: `fontSize: {helper_text[0].replace('px', '')}`, `fontWeight: 400`, `color: '{text_secondary}'`
-- **Colors (EXACT HEX - DO NOT CHANGE)**:
-  - **Primary Text**: `{text_primary}` (titles, labels, body)
-  - **Secondary Text**: `{text_secondary}` (helper text, descriptions)
-  - **Tertiary Text**: `{text_tertiary}` (placeholder, caption)
-  - **Brand/Accent**: `{text_accent}` (links, selected state)
-  - **Border Default**: `{border_default}`
-  - **Background Surface**: `{bg_surface}`
-  - **Background Canvas**: `{bg_canvas}`
-  - **Background Selection**: `{bg_selection}` (selected state only)
+  - Font Family: `font-['Pretendard',sans-serif]` (applied globally)
+  - **Page Title (h1)**: `className="text-2xl font-bold text-gray-800"` ({heading_xl[0]}, {heading_xl_weight})
+  - **Section Title (h2)**: `className="text-xl font-semibold text-gray-800"` ({heading_lg[0]}, {heading_lg_weight})
+  - **Subsection (h3)**: `className="text-lg font-medium text-gray-800"` ({heading_md[0]}, {heading_md_weight})
+  - **Form Label**: `className="text-sm font-medium text-gray-800"` ({form_label_md[0]}, {form_label_weight})
+  - **Body Text**: `className="text-base font-normal text-gray-800"` ({body_md[0]}, 400)
+  - **Helper Text**: `className="text-sm font-normal text-gray-600"` ({helper_text[0]}, 400)
+- **Colors (Tailwind Classes)**:
+  - **Primary Text**: `text-gray-800` (`{text_primary}` - titles, labels, body)
+  - **Secondary Text**: `text-gray-600` (`{text_secondary}` - helper text, descriptions)
+  - **Tertiary Text**: `text-gray-500` (`{text_tertiary}` - placeholder, caption)
+  - **Brand/Accent**: `text-[#0033a0]` (`{text_accent}` - links, selected state)
+  - **Border Default**: `border-gray-300` (`{border_default}`)
+  - **Background Surface**: `bg-white` (`{bg_surface}`)
+  - **Background Canvas**: `bg-gray-50` (`{bg_canvas}`)
+  - **Background Selection**: `bg-blue-50` (`{bg_selection}` - selected state only)
 - **Visuals**:
-  - **Shadows**: `boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)'`
-  - **Borders**: `border: '1px solid {border_default}'`
-  - **Radius**: `borderRadius: 8px` (inputs, buttons), `12px` (cards)
+  - **Shadows**: `shadow-sm`
+  - **Borders**: `border border-gray-300`
+  - **Radius**: `rounded-lg` (inputs, buttons), `rounded-xl` (cards)
+- **Gap/Spacing (Tailwind Classes)**:
+  - **xs**: `gap-1` (4px) - 태그 그룹, 아이콘-라벨 (xs)
+  - **sm**: `gap-2` (8px) - 컨트롤 그룹, 아이콘-라벨 (md), 콘텐츠 (sm)
+  - **md**: `gap-3` (12px) - 필터바, 탭 그룹, 콘텐츠 (md), 폼 그룹 (y)
+  - **lg**: `gap-4` (16px) - 다이얼로그, 콘텐츠 (lg), 폼 그룹 (x)
+  - **xl**: `gap-6` (24px) - 섹션 간격, 아티클 아이템, 콘텐츠 (xl)
+  - **사용 예시**:
+    - 버튼/아이콘 간격: `gap-2` (sm)
+    - 폼 필드 간격: `gap-4` (lg)
+    - 카드/섹션 간격: `gap-6` (xl)
+    - 그리드: `gap-x-4 gap-y-6` (col: lg, row: xl)
+    - 패딩: `p-2` (8px), `p-3` (12px), `p-4` (16px), `p-6` (24px), `p-8` (32px), `p-12` (48px)
 
 ## 📋 ALL COLOR TOKENS (REFERENCE)
 When user requests a specific token (e.g., "hue-green-500"), look up the EXACT value below. NEVER guess hex values.
@@ -273,41 +284,39 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
         return ""
 
     # AG Grid 스키마는 단일 컴포넌트 구조
-    comp_name = schema.get("componentName") or schema.get("displayName", "DataGrid")
     description = schema.get("description", "")
     props = schema.get("props", {})
-    required_imports = schema.get("requiredImports", [])
-    theme_config = schema.get("themeConfig", {})
 
     if not props:
         return ""
 
     lines = ["## 📊 AG Grid Component (DataGrid)"]
     lines.append("")
-    lines.append(f"**{comp_name}** - {description}" if description else f"**{comp_name}**")
+    lines.append(f"**DataGrid** - {description}" if description else "**DataGrid**")
     lines.append("")
 
-    # Import 가이드
-    if required_imports:
-        lines.append("### Required Imports")
-        lines.append("```tsx")
-        for imp in required_imports:
-            imp_name = imp.get("name", "")
-            imp_from = imp.get("from", "")
-            is_type = imp.get("isTypeOnly", False)
-            if is_type:
-                lines.append(f"import type {{ {imp_name} }} from '{imp_from}';")
-            else:
-                lines.append(f"import {{ {imp_name} }} from '{imp_from}';")
-        lines.append("```")
-        lines.append("")
+    # Import 가이드 (가이드 문서 기준으로 고정)
+    lines.append("### Required Imports")
+    lines.append("```tsx")
+    lines.append("// 기본 사용")
+    lines.append("import { DataGrid } from '@aplus/ui';")
+    lines.append("import { ColDef } from 'ag-grid-community';")
+    lines.append("")
+    lines.append("// 셀 렌더러가 필요한 경우")
+    lines.append("import { DataGrid, ButtonCellRenderer, CheckboxCellRenderer, ImageCellRenderer } from '@aplus/ui';")
+    lines.append("")
+    lines.append("// 컬럼 타입 또는 유틸리티가 필요한 경우")
+    lines.append("import { DataGrid, COLUMN_TYPES, AgGridUtils } from '@aplus/ui';")
+    lines.append("```")
+    lines.append("")
 
     # 테마 설정
-    if theme_config:
-        lines.append("### Theme Configuration")
-        lines.append(f"- Always use `theme={{dsRuntimeTheme}}` prop")
-        lines.append(f"- Import theme from `{theme_config.get('themeFile', '@/themes/agGridTheme')}`")
-        lines.append("")
+    lines.append("### Theme")
+    lines.append("- DataGrid has `aplusGridTheme` built-in. **NO separate theme import needed.**")
+    lines.append("- ❌ `import { dsRuntimeTheme } from '@/themes/agGridTheme'` — DOES NOT EXIST")
+    lines.append("- ❌ `<AgGridReact theme={dsRuntimeTheme} />` — WRONG, use `<DataGrid />` instead")
+    lines.append("- ✅ `<DataGrid rowData={data} columnDefs={cols} height={400} />` — theme auto-applied")
+    lines.append("")
 
     # Props 문서
     lines.append("### Props")
@@ -342,34 +351,76 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
 
     lines.append("")
 
+    # COLUMN_TYPES
+    lines.append("### Predefined Column Types (COLUMN_TYPES)")
+    lines.append("Spread these into ColDef for common column formats:")
+    lines.append("  ├─ `COLUMN_TYPES.numberColumn` - 우측 정렬, agNumberColumnFilter, width: 130")
+    lines.append("  ├─ `COLUMN_TYPES.dateColumn` - agDateColumnFilter, agDateCellEditor, width: 150")
+    lines.append("  ├─ `COLUMN_TYPES.currencyColumn` - 우측 정렬, KRW 포맷, width: 150")
+    lines.append("  └─ `COLUMN_TYPES.percentColumn` - 우측 정렬, % 접미사, width: 130")
+    lines.append("")
+    lines.append("```tsx")
+    lines.append("const columnDefs: ColDef[] = [")
+    lines.append("  { field: 'name', headerName: '이름', flex: 1 },")
+    lines.append("  { field: 'age', headerName: '나이', ...COLUMN_TYPES.numberColumn },")
+    lines.append("  { field: 'joinDate', headerName: '입사일', ...COLUMN_TYPES.dateColumn },")
+    lines.append("  { field: 'salary', headerName: '급여', ...COLUMN_TYPES.currencyColumn },")
+    lines.append("  { field: 'rate', headerName: '달성률', ...COLUMN_TYPES.percentColumn },")
+    lines.append("];")
+    lines.append("```")
+    lines.append("")
+
+    # 셀 렌더러
+    lines.append("### Cell Renderers")
+    lines.append("- **ButtonCellRenderer**: `cellRenderer: ButtonCellRenderer, cellRendererParams: { onClick: (data) => ... }`")
+    lines.append("- **CheckboxCellRenderer**: `cellRenderer: CheckboxCellRenderer, cellRendererParams: { onCheckboxChange: (data, checked) => ... }`")
+    lines.append("- **ImageCellRenderer**: `cellRenderer: ImageCellRenderer` (renders 30x30 image from field value)")
+    lines.append("")
+
+    # AgGridUtils
+    lines.append("### AgGridUtils")
+    lines.append("Store `GridApi` from `onGridReady` event, then use:")
+    lines.append("  ├─ `AgGridUtils.exportToCsv(gridApi, 'filename.csv')` - CSV 내보내기")
+    lines.append("  ├─ `AgGridUtils.exportToExcel(gridApi, 'filename.xlsx')` - Excel 내보내기")
+    lines.append("  ├─ `AgGridUtils.getSelectedRows(gridApi)` - 선택된 행")
+    lines.append("  ├─ `AgGridUtils.selectAll(gridApi)` / `deselectAll(gridApi)` - 전체 선택/해제")
+    lines.append("  └─ `AgGridUtils.autoSizeAllColumns(gridApi)` - 컬럼 자동 크기")
+    lines.append("")
+
     # 사용 예시
     lines.append("### Usage Example")
     lines.append("```tsx")
-    lines.append("import { AgGridReact } from 'ag-grid-react';")
-    lines.append("import { dsRuntimeTheme } from '@/themes/agGridTheme';")
-    lines.append("import type { ColDef } from 'ag-grid-community';")
+    lines.append("import { DataGrid, COLUMN_TYPES } from '@aplus/ui';")
+    lines.append("import { ColDef } from 'ag-grid-community';")
     lines.append("")
     lines.append("const columnDefs: ColDef[] = [")
     lines.append("  { field: 'name', headerName: '이름', flex: 1 },")
     lines.append("  { field: 'email', headerName: '이메일', flex: 2 },")
+    lines.append("  { field: 'salary', headerName: '급여', ...COLUMN_TYPES.currencyColumn },")
     lines.append("  { field: 'status', headerName: '상태', width: 100 },")
     lines.append("];")
     lines.append("")
     lines.append("const rowData = [")
-    lines.append("  { name: '김민수', email: 'kim@example.com', status: '활성' },")
-    lines.append("  { name: '이지은', email: 'lee@example.com', status: '비활성' },")
+    lines.append("  { name: '김민수', email: 'kim@example.com', salary: 5000000, status: '활성' },")
+    lines.append("  { name: '이지은', email: 'lee@example.com', salary: 4500000, status: '비활성' },")
     lines.append("];")
     lines.append("")
-    lines.append("<div style={{ height: 400 }}>")
-    lines.append("  <AgGridReact")
-    lines.append("    theme={dsRuntimeTheme}")
-    lines.append("    rowData={rowData}")
-    lines.append("    columnDefs={columnDefs}")
-    lines.append("    pagination={true}")
-    lines.append("    paginationPageSize={10}")
-    lines.append("  />")
-    lines.append("</div>")
+    lines.append("<DataGrid")
+    lines.append("  rowData={rowData}")
+    lines.append("  columnDefs={columnDefs}")
+    lines.append("  height={400}")
+    lines.append("  pagination")
+    lines.append("  paginationPageSize={10}")
+    lines.append("/>")
     lines.append("```")
+    lines.append("")
+
+    # 금지 사항
+    lines.append("### ⚠️ DO NOT")
+    lines.append("- ❌ `import { AgGridReact } from 'ag-grid-react'` — Use `DataGrid` from `@aplus/ui`")
+    lines.append("- ❌ `import { dsRuntimeTheme } from '@/themes/agGridTheme'` — Does NOT exist")
+    lines.append("- ❌ `<div style={{ height: 500 }}><DataGrid ... /></div>` — Use `height` prop instead")
+    lines.append("- ❌ `style={{ '--ag-header-background-color': 'red' }}` — Do NOT override theme tokens")
     lines.append("")
 
     return "\n".join(lines)
@@ -407,29 +458,60 @@ When user requests a specific AG Grid token, look up the EXACT value below.
 """
 
 
+def format_component_definitions(definitions: dict | None) -> str:
+    """
+    컴포넌트 정의(Tailwind CSS variants)를 시스템 프롬프트용 문자열로 포맷팅
+
+    Args:
+        definitions: 컴포넌트 정의 dict (Firebase에서 로드) 또는 None
+
+    Returns:
+        포맷팅된 컴포넌트 정의 문자열
+    """
+    if not definitions:
+        return ""
+
+    definitions_json = json.dumps(definitions, ensure_ascii=False, indent=2)
+
+    return f"""## 🧩 Component Definitions (CSS Variant Structure)
+Below are the Tailwind CSS variant definitions for each component. Use these to understand component structure, available variants, and their visual styles.
+
+```json
+{definitions_json}
+```
+
+"""
+
+
 # 디자인 토큰을 로드하지 못했을 때 사용할 기본값
-DEFAULT_DESIGN_TOKENS_SECTION = """## 🎨 DESIGN STANDARDS (CRITICAL - USE EXACT VALUES)
+DEFAULT_DESIGN_TOKENS_SECTION = """## 🎨 DESIGN STANDARDS (CRITICAL - USE TAILWIND CLASSES)
 - **Typography (MUST FOLLOW EXACT TOKENS)**:
-  - Font Family: `'Pretendard', sans-serif`
-  - **Page Title (h1)**: `fontSize: 28`, `fontWeight: 700`, `color: '#212529'`
-  - **Section Title (h2)**: `fontSize: 24`, `fontWeight: 700`, `color: '#212529'`
-  - **Subsection (h3)**: `fontSize: 18`, `fontWeight: 600`, `color: '#212529'`
-  - **Form Label**: `fontSize: 14`, `fontWeight: 500`, `color: '#212529'`
-  - **Body Text**: `fontSize: 16`, `fontWeight: 400`, `color: '#212529'`
-  - **Helper Text**: `fontSize: 14`, `fontWeight: 400`, `color: '#495057'`
-- **Colors (EXACT HEX - DO NOT CHANGE)**:
-  - **Primary Text**: `#212529` (titles, labels, body)
-  - **Secondary Text**: `#495057` (helper text, descriptions)
-  - **Tertiary Text**: `#6c757d` (placeholder, caption)
-  - **Brand/Accent**: `#0033a0` (links, selected state)
-  - **Border Default**: `#dee2e6`
-  - **Background Surface**: `#ffffff`
-  - **Background Canvas**: `#f4f6f8`
-  - **Background Selection**: `#ecf0fa` (selected state only)
+  - Font Family: `font-['Pretendard',sans-serif]` (applied globally)
+  - **Page Title (h1)**: `className="text-2xl font-bold text-gray-800"` (28px, 700)
+  - **Section Title (h2)**: `className="text-xl font-semibold text-gray-800"` (24px, 700)
+  - **Subsection (h3)**: `className="text-lg font-medium text-gray-800"` (18px, 600)
+  - **Form Label**: `className="text-sm font-medium text-gray-800"` (14px, 500)
+  - **Body Text**: `className="text-base font-normal text-gray-800"` (16px, 400)
+  - **Helper Text**: `className="text-sm font-normal text-gray-600"` (14px, 400)
+- **Colors (Tailwind Classes)**:
+  - **Primary Text**: `text-gray-800` (`#212529` - titles, labels, body)
+  - **Secondary Text**: `text-gray-600` (`#495057` - helper text, descriptions)
+  - **Tertiary Text**: `text-gray-500` (`#6c757d` - placeholder, caption)
+  - **Brand/Accent**: `text-[#0033a0]` (links, selected state)
+  - **Border Default**: `border-gray-300` (`#dee2e6`)
+  - **Background Surface**: `bg-white` (`#ffffff`)
+  - **Background Canvas**: `bg-gray-50` (`#f4f6f8`)
+  - **Background Selection**: `bg-blue-50` (`#ecf0fa` - selected state only)
 - **Visuals**:
-  - **Shadows**: `boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)'`
-  - **Borders**: `border: '1px solid #dee2e6'`
-  - **Radius**: `borderRadius: 8px` (inputs, buttons), `12px` (cards)
+  - **Shadows**: `shadow-sm`
+  - **Borders**: `border border-gray-300`
+  - **Radius**: `rounded-lg` (inputs, buttons), `rounded-xl` (cards)
+- **Gap/Spacing (Tailwind Classes)**:
+  - **xs**: `gap-1` (4px) - 태그 그룹, 아이콘-라벨 (xs)
+  - **sm**: `gap-2` (8px) - 컨트롤 그룹, 콘텐츠 (sm)
+  - **md**: `gap-3` (12px) - 필터바, 탭 그룹, 폼 그룹 (y)
+  - **lg**: `gap-4` (16px) - 다이얼로그, 콘텐츠 (lg), 폼 그룹 (x)
+  - **xl**: `gap-6` (24px) - 섹션 간격, 아티클 아이템
 
 """
 
@@ -451,6 +533,30 @@ When updating existing code, you MUST:
 3. **ADD new features ON TOP of existing code** - Never start from scratch.
 4. If unsure, include MORE code rather than less. Missing features = FAILURE.
 
+## 🔥 FATAL ERRORS - READ THIS FIRST (APP WILL CRASH IF VIOLATED)
+
+### ⛔ #1 MOST COMMON MISTAKE: Field Component
+**`<Field>` is NOT a wrapper. It already contains `<input>` inside.**
+
+❌ NEVER EVER write:
+```tsx
+<Field>content</Field>          // CRASHES
+<Field><input /></Field>         // CRASHES
+<Field>{variable}</Field>        // CRASHES
+```
+
+✅ ALWAYS write:
+```tsx
+<Field type="text" label="이름" />        // CORRECT
+<Field value={v} onChange={fn} />         // CORRECT
+```
+
+**BEFORE writing `<Field>`: Verify it ends with `/>` and has NOTHING between tags.**
+
+### ⛔ #2 Import Only JSX Components
+❌ NEVER import: `HTMLInputElement`, `ChangeEvent`, `MouseEvent`, interfaces
+✅ ONLY import: `Button`, `Field`, `Select` (components you use in JSX)
+
 ## 🚫 IMPORT RULES (CRITICAL - PREVENTS RUNTIME ERRORS)
 ⚠️ **VIOLATION = IMMEDIATE CRASH (React Error #130)**
 
@@ -462,27 +568,30 @@ When updating existing code, you MUST:
 **Common Mistakes to AVOID:**
 - ❌ `import { Button, Select, OptionGroup, Option } from '@/components'` → using only Button, Select (OptionGroup, Option unused = CRASH)
 - ❌ Importing Option/OptionGroup when using Select with `options` prop (Select handles options internally)
+- ❌ **FORGETTING TO IMPORT `Select`** → If you use `<Select ... />`, you MUST import it!
 - ❌ Importing components "just in case" or for future use
+- ❌ **Importing TypeScript types/interfaces** → `HTMLInputElement`, `ChangeEvent`, custom interfaces are NOT components. Don't import them from @/components.
 
 **Correct Pattern:**
 - ✅ `import { Button, Select } from '@/components'` (import matches usage exactly)
 - ✅ Check your JSX: `<Button>`, `<Select>` → import Button, Select only
+- ✅ Define interfaces inline: `interface Order { id: string; ... }` (no import needed)
 
 {design_tokens_section}## 💎 PREMIUM VISUAL STANDARDS
 - **Containerization (NO FLOATING TEXT)**:
-  - ALL content must be inside a white card: `<div style={{backgroundColor:'#ffffff', borderRadius:12, border:'1px solid #dee2e6', boxShadow:'0 1px 3px rgba(0,0,0,0.1)', padding:24}}>`
+  - ALL content must be inside a white card: `<div className="bg-white rounded-xl border border-gray-300 shadow-sm p-6">`
   - NEVER place naked text or buttons directly on the gray background.
   - Exception: Page Titles (`h1`) can be outside.
 - **Filter + Table Layout (IMPORTANT)**:
   - Filter bar and Table MUST be visually grouped together.
-  - Structure: Filters above, then table below with proper spacing (`marginBottom: 24`).
+  - Structure: Filters above, then table below with proper spacing (`mb-6`).
   - DO NOT separate filters and table into different cards.
 - **Status Styling (USE COMPONENT PROPS - NO CUSTOM COLORS)**:
   - Use `Badge` with `type="status"` for status display. NEVER use plain text.
   - Use `statusVariant` prop: `success`, `info`, `warning`, `error`
   - **NEVER use custom hex colors for status** - the component handles colors internally:
-    - ❌ `style={{ backgroundColor: '#10B981' }}` (WRONG - custom color)
-    - ❌ `style={{ color: '#22C55E' }}` (WRONG - custom color)
+    - ❌ `className="bg-emerald-500"` (WRONG - custom color)
+    - ❌ `className="text-green-500"` (WRONG - custom color)
     - ✅ `<Badge type="status" statusVariant="success">` (CORRECT - uses design system colors)
   - Status mapping:
     - Active/정상/완료: `statusVariant="success"`
@@ -491,34 +600,30 @@ When updating existing code, you MUST:
     - Error/해지/실패: `statusVariant="error"`
   - Example: `<Badge type="status" statusVariant="success">정상</Badge>`
 - **Empty States**:
-  - Center the message: `textAlign: 'center'`, `padding: 48`, `color: '#6b7280'`
-  - Example: `<div style={{textAlign:'center', padding:48, color:'#6b7280'}}>데이터가 없습니다.</div>`
-- **Responsive Layouts (NO FIXED WIDTHS)**:
-  - **Container**: `width: '100%'`, `maxWidth: '100%'` (Allow grow).
-  - **Inner Width**: Use `maxWidth: 1200px` for large screens, but `width: '100%'` always.
-  - **Flex**: Use `flex: 1` for fluid columns instead of `width: 200px`.
-  - **Mobile-Friendly**: Ensure `flexWrap: 'wrap'` on all horizontal lists.
+  - Center the message with Tailwind: `className="text-center p-12 text-gray-500"`
+  - Example: `<div className="text-center p-12 text-gray-500">데이터가 없습니다.</div>`
+- **Responsive Layouts (1920x1080 기준)**:
+  - **Target Resolution**: 1920x1080 (Full HD). Design for this viewport.
+  - **Container**: `className="w-full max-w-[1920px] mx-auto"`.
+  - **Page Padding**: `className="p-8"` (32px 양쪽 여백 포함).
+  - **Flex**: Use `flex-1` for fluid columns instead of fixed widths.
+  - **Mobile-Friendly**: Ensure `flex-wrap` on all horizontal lists.
 - **Layout Safety (NO COLLISION)**:
-  - **Grid Children**: Direct children of grid MUST have `width: '100%'` and `minWidth: 0` to prevent blowout.
-  - **Override Defaults**: The `Select` component has a fixed `240px` width by default. You **MUST** override this:
-    - ✅ `<Select style={{ width: '100%' }} ... />` (Allows shrinking/growing)
+  - **Grid Children**: Direct children of grid MUST have `className="w-full min-w-0"` to prevent blowout.
+  - **Select Width Override**: The `Select` component has a fixed `240px` width by default. You **MUST** override this:
+    - ✅ `<Select className="w-full" ... />` (Allows shrinking/growing)
     - ❌ `<Select ... />` (Causes overflow/overlap)
-  - **CRITICAL - Default Values for Form Controls**:
-    - **Select/Dropdown Placeholder State**: When showing "선택하세요", "선택", "Select...", or any placeholder text, do NOT set value or defaultValue:
-      - ✅ `<Select placeholder="선택하세요" options={...} />` (No value, shows placeholder)
-      - ❌ `<Select value="선택하세요" options={...} />` (WRONG - treats placeholder as selected value)
-      - ❌ `<Select defaultValue="선택하세요" options={...} />` (WRONG)
-    - **Select/Dropdown with Default Selection**: Use option's `value` (NOT `label`) for `defaultValue`:
-      - ✅ `<Select defaultValue="all" options={[{ label: '전체', value: 'all' }, ...]} />` (value matches option.value)
-      - ✅ `<Select defaultValue="all_region" options={[{ label: '전체 지역', value: 'all_region' }, ...]} />`
-      - ❌ `<Select defaultValue="전체" options={[{ label: '전체', value: 'all' }, ...]} />` (WRONG - using label instead of value)
-      - ❌ `<Select value="all" options={...} />` (WRONG - requires onChange handler)
-    - **Radio/Checkbox/ToggleSwitch**: Use `checked` with `onChange` handler for controlled state:
-      - ✅ `<Radio checked={isSelected} onChange={handleChange} />`
-      - ✅ `<Checkbox checked={isChecked} onChange={handleChange} />`
-      - ✅ `<ToggleSwitch checked={isOn} onChange={handleToggle} />`
-  - **Inputs**: internal inputs MUST be `width: '100%'`. NEVER use fixed pixels like `width: 300px` inside a grid.
-  - **Z-Index**: Dropdowns/Modals must have `zIndex: 50` or higher to float above content.
+  - **Select Default Values**:
+    - **Placeholder State**: Do NOT set value or defaultValue when showing placeholder text:
+      - ✅ `<Select placeholder="선택하세요" options={...} />`
+      - ❌ `<Select defaultValue="선택하세요" options={...} />`
+    - **Default Selection**: Use option's `value` (NOT `label`) for `defaultValue`:
+      - ✅ `<Select defaultValue="all" options={[{ label: '전체', value: 'all' }, ...]} />`
+      - ❌ `<Select defaultValue="전체" options={...} />` (using label - WRONG)
+  - **Radio/Checkbox/ToggleSwitch**: Use `checked` with `onChange` handler for controlled state:
+    - ✅ `<Checkbox checked={isChecked} onChange={(e) => setIsChecked(e.target.checked)} />`
+  - **Inputs**: internal inputs MUST be `className="w-full"`. NEVER use fixed pixels like `w-[300px]` inside a grid.
+  - **Z-Index**: Dropdowns/Modals must have `z-50` or higher to float above content.
 
 - **Content & Mock Data (MANDATORY)**:
   - **NO EMPTY STATES**: NEVER generate empty tables, lists, or selects.
@@ -527,102 +632,71 @@ When updating existing code, you MUST:
   - **Realistic Korean Data**: Use real-world examples (names: 김민준, 이서연 / companies: 토스, 당근, 쿠팡).
   - **Rich Detail**: Fill all fields. Don't use "Test 1", "Item 1". Use "프로젝트 알파", "1분기 실적 보고서".
   - **Context-Aware**: If the user asks for a "Project Dashboard", generate "Project A - In Progress", "Team Meeting - 10:00 AM".
-  - **Select/Dropdown Options (CRITICAL)**: ALWAYS populate Select options with **at least 4-6 realistic choices** based on the field context:
-    - ❌ `options={[{ label: '전체', value: 'all' }]}` (only 1 option - WRONG)
-    - ✅ Populate with context-appropriate data:
-      - 상태 필터 → `전체, 정상, 심사중, 해지, 미납`
-      - 지역 필터 → `전체, 서울, 경기, 인천, 부산, 대구`
-      - 부서 필터 → `전체, 영업부, 마케팅부, 개발부, 인사부`
-      - 기간 필터 → `전체, 1개월, 3개월, 6개월, 1년`
-    - NEVER copy examples blindly - always match the field label/context.
-  - **Filter Select MUST use placeholder + "전체" option (CRITICAL)**: ALL filter dropdowns MUST:
-    - Use `placeholder="전체"` for initial display (shows as placeholder style - lighter color)
-    - Include "전체" as the FIRST option in options array (so user can re-select it later)
-    - Do NOT use `defaultValue` (start in placeholder state, not selected state)
-    - ✅ `<Select placeholder="전체" options={[{ label: '전체', value: 'all' }, { label: '완료', value: 'completed' }, { label: '미완료', value: 'incomplete' }]} />`
-    - ❌ `<Select defaultValue="all" options={[...]} />` (WRONG - shows as selected, not placeholder)
-    - ❌ `<Select options={[{ label: '완료', value: 'completed' }, ...]} />` (WRONG - missing "전체" option)
-    - In filter logic: treat empty/undefined value as "all" (show all data)
-  - **Filter-Table Data Consistency (CRITICAL)**: Filter options MUST match the data in the table:
-    - If table has 보험사 column with "삼성생명, 한화손보, DB손보" → 보험사 filter must include these options
-    - If table has 상태 column with "정상, 심사중, 해지" → 상태 filter must include these options
-    - Extract unique values from table data and use them as filter options (plus "전체" as first option)
+  - **Select Options**: ALWAYS populate Select options with **at least 4-6 realistic choices** based on field context:
+    - ❌ `options={[{ label: '전체', value: 'all' }]}` (only 1 option)
+    - ✅ 상태 필터 → `전체, 정상, 심사중, 해지, 미납` / 지역 필터 → `전체, 서울, 경기, 인천, 부산, 대구`
+  - **Filter Select Pattern**: ALL filter dropdowns MUST use `placeholder="전체"` + include "전체" as first option:
+    - ✅ `<Select placeholder="전체" options={[{ label: '전체', value: 'all' }, { label: '완료', value: 'completed' }, ...]} />`
+    - ❌ `<Select defaultValue="all" options={[...]} />` (shows as selected, not placeholder)
+  - **Filter-Table Consistency**: Filter options MUST match table data. If table has "삼성생명, 한화손보" in 보험사 column, filter must include these options.
 - **Profile Images (INITIAL AVATAR - NO EMOJI)**:
   - NEVER use emoji (👤, 🧑, 👨) for profile images.
-  - Use **Initial Avatar**: A colored circle with the first character of the name.
-  - Color palette: `['#4F46E5', '#7C3AED', '#EC4899', '#F59E0B', '#10B981', '#3B82F6', '#EF4444', '#8B5CF6']`
-  - Pick color by `name.charCodeAt(0) % colors.length` for consistency.
-  - Example:
-    ```tsx
-    const getInitialAvatar = (name: string) => {
-      const colors = ['#4F46E5', '#7C3AED', '#EC4899', '#F59E0B', '#10B981', '#3B82F6', '#EF4444', '#8B5CF6'];
-      const color = colors[name.charCodeAt(0) % colors.length];
-      return (
-        <div style={{
-          width: 40, height: 40, borderRadius: '50%',
-          backgroundColor: color, color: 'white',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontWeight: 600, fontSize: 14
-        }}>
-          {name.charAt(0)}
-        </div>
-      );
-    };
-    ```
-  - Use this for: user lists, comments, chat, team members, assignees.
-- **Images (NO BROKEN IMAGES - CRITICAL)**:
+  - Use **Initial Avatar**: Colored circle with first character. Pick color by `name.charCodeAt(0) % 8` from palette: `['#4F46E5', '#7C3AED', '#EC4899', '#F59E0B', '#10B981', '#3B82F6', '#EF4444', '#8B5CF6']`
+  - Example: `<div className="w-10 h-10 rounded-full bg-[#4F46E5] text-white flex items-center justify-center font-semibold text-sm">{name.charAt(0)}</div>`
+- **Images (NO BROKEN IMAGES)**:
   - **NEVER use `<img>` tag with placeholder URLs** - these will show as broken images (X-box):
     - ❌ `<img src="/placeholder.png" />` (file doesn't exist)
     - ❌ `<img src="https://via.placeholder.com/..." />` (external placeholder service)
     - ❌ `<img src="/images/product.jpg" />` (assumed path that doesn't exist)
   - **For thumbnails/product images**: Use a colored placeholder div with an icon or text:
     ```tsx
-    <div style={{
-      width: 80, height: 80, borderRadius: 8,
-      backgroundColor: '#f1f3f5', color: '#adb5bd',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: 12
-    }}>
+    <div className="w-20 h-20 rounded-lg bg-gray-100 text-gray-400 flex items-center justify-center text-xs">
       이미지
     </div>
     ```
   - **For icons**: Use text symbols or the design system's icon component (if available), NOT image files.
   - **Exception**: Only use `<img>` if the user explicitly provides a real image URL.
-- **HTML Void Elements (SELF-CLOSING - CRITICAL)**:
-  - These elements MUST be self-closing and CANNOT have children:
-    - ✅ `<input />` or `<input style={{...}} />`
-    - ✅ `<br />`, `<hr />`, `<img />`, `<meta />`, `<link />`
-    - ❌ `<input>text</input>` (CAUSES REACT ERROR #137)
-    - ❌ `<br>content</br>` (INVALID)
-  - If you need a text label near an input, use a separate `<label>` element:
-    ```tsx
-    <label>이름</label>
-    <input style={{width: '100%'}} />
-    ```
+- **HTML Void Elements — SELF-CLOSING (CRITICAL: VIOLATION = APP CRASH)**:
+  - Void elements (`input`, `br`, `hr`, `img`, etc.) MUST end with `/>` and NEVER have children:
+    - ✅ `<input value={v} onChange={fn} />` | `<br />` | `<img src={url} alt="" />`
+    - ❌ `<input>text</input>` — FATAL ERROR (React Error #137)
+- **⛔ ABSOLUTE RULE: Field Component (CRITICAL: PREVENTS REACT ERROR #137)**:
+  - **Field renders `<input>` internally. NEVER EVER put ANYTHING between `<Field>` tags.**
+  - Field is NOT a wrapper. It's a self-contained input component.
+  - **BEFORE writing `<Field>`: Verify it ends with `/>` and has ZERO content between tags.**
+  - ✅ CORRECT:
+    - `<Field type="text" label="이름" />`
+    - `<Field type="number" value={count} onChange={fn} />`
+    - `<Field multiline label="설명" rowsVariant="flexible" />`
+  - ❌ FATAL ERROR (crashes app):
+    - `<Field><input type="number" /></Field>` — NO! Field already has input inside
+    - `<Field label="검색">검색어 입력</Field>` — NO! No text between tags
+    - `<Field>{someContent}</Field>` — NO! Field doesn't accept children
+  - ❌ `<input type="text" placeholder="이름" />` — NO! Always use Field, never native input
+- **Non-existent Components — DO NOT import or use**:
+  - `DatePicker`, `DateInput`, `Calendar` → Use `<Field type="date" />`
+  - `TimePicker`, `TimeInput` → Use `<Field type="time" />`
+  - `NumberInput`, `TextInput` → Use `<Field type="number" />`, `<Field type="text" />`
+  - `TextArea`, `Textarea` → Use `<Field multiline />`
+  - `Input` → Use `<Field />` (Input is NOT in the whitelist)
 - **Spacing**:
-  - **섹션 간**: `marginBottom: 32px`
-  - **폼 행 간**: `marginBottom: 24px`
-- **Responsive Grid System (STRUCTURED LAYOUT)**:
-  - **Form Grid**: Use `display: 'grid'`, `gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))'`, `gap: '16px'`.
-  - **Why Grid?**: Ensures alignment and prevents unnatural stretching of short inputs.
-  - **Alignment**: Use `alignItems: 'end'` to align buttons with inputs.
-  - **CRITICAL - Grid Span Values**: `gridColumn: 'span X'` must use INTEGER values only:
-    - ✅ `gridColumn: 'span 2'` (integer - works)
-    - ✅ `gridColumn: 'span 3'` (integer - works)
-    - ❌ `gridColumn: 'span 1.5'` (decimal - DOES NOT WORK)
-    - ❌ `gridColumn: 'span 2.5'` (decimal - DOES NOT WORK)
-  - **Example**:
-    ```
-    <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(240px, 1fr))', gap:'24px 16px', alignItems:'end'}}>
-      <div><label>상태</label><Select style={{width:'100%'}} options={...} /></div>
-      <div><label>이름</label><input style={{width:'100%'}}/></div>
-      <div style={{gridColumn:'1 / -1', display:'flex', justifyContent:'flex-end', gap:8}}>
-        <Button>초기화</Button><Button>조회</Button>
-      </div>
-    </div>
-    ```
+  - **섹션 간**: `mb-8` (32px)
+  - **폼 행 간**: `mb-6` (24px)
+- **Responsive Grid System**:
+  - **12-Column Grid (for flexible layouts)**:
+    - Use `grid-cols-12` as base, then span columns with `col-span-N`
+    - **4 items**: `col-span-3` each (3 × 4 = 12) → `<div className="grid grid-cols-12 gap-4"><div className="col-span-3">...</div></div>`
+    - **3 items**: `col-span-4` each (4 × 3 = 12)
+    - **2 items**: `col-span-6` each (6 × 2 = 12)
+    - **Mixed layout**: Combine different spans (e.g., `col-span-8` + `col-span-4` for main + sidebar)
+  - **Simple Grid (for equal divisions)**:
+    - **4 items**: `grid-cols-4` | **3 items**: `grid-cols-3` | **2 items**: `grid-cols-2`
+    - Use this when all items have equal width (simpler than 12-column)
+  - **Form Grid (for responsive filters)**: Use `className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4"`. Ensures alignment and prevents stretching.
+  - **Alignment**: Use `items-end` to align buttons with inputs.
+  - **Grid Span Values**: `col-span-X` must use INTEGER values only (✅ `col-span-2` | ❌ `col-span-1.5`)
 
-## 🎯 UI GENERATION PRINCIPLE (CRITICAL)
+## 🎯 UI GENERATION PRINCIPLE
 
 **Generate UI that EXACTLY matches the user's request.** Do NOT default to dashboard/table layouts.
 
@@ -644,13 +718,20 @@ When updating existing code, you MUST:
 2. **RICH MOCK DATA**: Generate realistic Korean mock data appropriate to the context.
 3. **ZERO OMISSION**: If the user asks for 5 fields, implement ALL 5. Missing features = FAILURE.
 4. **IMPORT**: `import { Button } from '@/components'` / React hooks: `React.useState`.
-5. **STYLING**: Inline styles only (`style={{ ... }}`), NO emojis, Desktop-first.
+5. **STYLING**: Tailwind CSS utility classes (`className="..."`), Desktop-first. Use `style={{}}` ONLY for dynamic JS variable values.
+6. **ICONS (USE EMOJI)**: Use emoji for icons instead of `material-icons` or `lucide-react`:
+   - 🔍 검색 | ⭐ 즐겨찾기 | 🏠 홈 | ➕ 추가 | ✏️ 수정 | 🗑️ 삭제
+   - ⬅️ 이전 | ➡️ 다음 | ⬆️ 위 | ⬇️ 아래 | ✖️ 닫기 | ☰ 메뉴
+   - 📁 폴더 | 📄 문서 | 📎 첨부 | 📅 달력 | 👤 사용자 | ⚙️ 설정
+   - ✅ 완료 | ❌ 실패 | ⚠️ 경고 | ℹ️ 정보
+   - Example: `<button>🔍 검색</button>`, `<span>📁</span>`
+   - **NEVER use** `<span className="material-icons">search</span>` (won't render)
 
 ## 📊 Data Tables
-Use native HTML `<table>` with inline styles:
-- Table: `width: '100%'`, `borderCollapse: 'collapse'`, `fontSize: 14`
-- Header (th): `padding: '12px 16px'`, `backgroundColor: '#f8f9fa'`, `fontWeight: 600`, `borderBottom: '2px solid #dee2e6'`
-- Cells (td): `padding: '12px 16px'`, `borderBottom: '1px solid #dee2e6'`
+Use native HTML `<table>` with Tailwind classes:
+- Table: `<table className="w-full border-collapse text-sm">`
+- Header (th): `<th className="px-4 py-3 bg-gray-50 font-semibold border-b-2 border-gray-300 text-left">`
+- Cells (td): `<td className="px-4 py-3 border-b border-gray-300">`
 - Use `Badge` for status columns
 - Always generate 10+ rows of mock data
 
@@ -664,35 +745,28 @@ RESPONSE_FORMAT_INSTRUCTIONS = """
 1. 간단한 한글 설명 (1-2문장)
 2. `<file path="src/...">코드</file>` 태그
 
-### Example (구조 참고용 - 색상은 DESIGN STANDARDS 사용):
+### Example:
 로그인 폼입니다.
 
 <file path="src/pages/Login.tsx">
-import { Button } from '@/components';
+import { Button, Field } from '@/components';
 
 const Login = () => {
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
-  const [loading, setLoading] = React.useState(false);
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8f9fa', padding: 24 }}>
-      <div style={{ width: '100%', maxWidth: 420, backgroundColor: '#ffffff', borderRadius: 12, border: '1px solid #dee2e6', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: 32 }}>
-        <div style={{ marginBottom: 24 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#212529', marginBottom: 8 }}>로그인</h1>
-          <p style={{ fontSize: 14, color: '#6b7280' }}>계정에 로그인하세요</p>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+      <div className="w-full max-w-[420px] bg-white rounded-xl border border-gray-300 shadow-sm p-8">
+        <h1 className="text-2xl font-bold text-gray-800 mb-6">로그인</h1>
+        {/* ⛔ CRITICAL: Field는 self-closing만 가능. <Field>children</Field> 금지 */}
+        <div className="mb-5">
+          <Field data-instance-id="email-field" type="email" label="이메일" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full" />
         </div>
-        <div style={{ marginBottom: 20 }}>
-          <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#212529', marginBottom: 8 }}>이메일</label>
-          <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" style={{ width: '100%', padding: 12, border: '1px solid #dee2e6', borderRadius: 8, boxSizing: 'border-box', fontSize: 14 }} />
+        <div className="mb-6">
+          <Field data-instance-id="password-field" type="password" label="비밀번호" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full" />
         </div>
-        <div style={{ marginBottom: 24 }}>
-          <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#212529', marginBottom: 8 }}>비밀번호</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="비밀번호 입력" style={{ width: '100%', padding: 12, border: '1px solid #dee2e6', borderRadius: 8, boxSizing: 'border-box', fontSize: 14 }} />
-        </div>
-        <Button data-instance-id="login-btn" variant="primary" onClick={() => setLoading(true)} style={{ width: '100%', height: 44 }}>
-          {loading ? '로그인 중...' : '로그인'}
-        </Button>
+        <Button data-instance-id="login-btn" variant="primary" className="w-full">로그인</Button>
       </div>
     </div>
   );
@@ -706,22 +780,55 @@ SYSTEM_PROMPT_FOOTER = """
 ## 🚨 CRITICAL RULES - VIOLATION = FAILURE
 
 ### 1. FILE COMPLETENESS
-- **NEVER TRUNCATE CODE**: Do not use `// ...` or `// rest of code`.
-- **FULL FUNCTIONALITY**: All buttons must have `onClick` handlers. All inputs must be controlled (`value` + `onChange`).
-- **NO PLACEHOLDERS**: Do not say "Add logic here". Implement the logic.
+- NEVER truncate code (no `// ...` or `// rest of code`). All buttons need `onClick`, all inputs need `value` + `onChange`.
 
 ### 2. COMPONENT USAGE
-- **STRICT WHITELIST**: You must ONLY use the components listed above.
-- **NO CUSTOM COMPONENTS**: Do not create new components like `function Card() {...}`. Use `div` with styles.
-- **PROPS VALIDATION**: Use exact enum values (e.g., `variant="primary"`, NOT `variant="blue"`).
-- **INSTANCE IDs**: Design system components (`Button`, `Badge`, `Select`, etc.) MUST have `data-instance-id` attribute (e.g., `<Button data-instance-id="submit-btn">`).
+- STRICT WHITELIST: Only use components listed above. No custom components. Use `<h1>`, `<h2>`, `<h3>` NOT `<Heading />`.
+- PROPS VALIDATION: Use exact enum values (`variant="primary"` NOT `variant="blue"`). Don't hallucinate props.
+- INSTANCE IDs: All design system components MUST have `data-instance-id` (e.g., `<Button data-instance-id="submit-btn">`).
+- IMPORT CHECK: Verify all used components are imported (e.g., `Select` usage without import = ReferenceError).
 
 ### 3. TECHNICAL CONSTRAINTS
-- **INLINE STYLES ONLY**: Do not create CSS classes. Use `style={{ ... }}`.
-- **NO EXTERNAL LIBS**: Do not import `lucide-react` or `framer-motion` unless explicitly allowed.
-- **REACT HOOKS**: Use `React.useState`, `React.useEffect` directly (do not import).
+- TAILWIND CSS ONLY: Use `className="..."`. Use `style={{}}` ONLY for dynamic JS variables. Don't create custom CSS.
+- NO EXTERNAL LIBS: Don't import `lucide-react` or `framer-motion`.
+- REACT HOOKS: Use `React.useState`, `React.useEffect` directly (no imports).
+- VOID ELEMENTS (REACT ERROR #137): `<input>`, `<br>`, `<hr>`, `<img>` MUST end with `/>`. ❌ `<input>text</input>` crashes.
+- **⛔ FIELD NO CHILDREN (REACT ERROR #137 - FATAL)**: Field is NOT a wrapper. NEVER put anything between `<Field>` tags. ❌ `<Field><input /></Field>` | ❌ `<Field>text</Field>` | ❌ `<Field>{content}</Field>` ALL CRASH. ✅ `<Field type="text" label="이름" />` self-closing only.
+- NO HALLUCINATED COMPONENTS: `DatePicker` → `<Field type="date" />` | `Input` → `<Field type="text" />`
+- Checkbox/Radio/ToggleSwitch MUST have onChange: ❌ `<Checkbox checked={true} />` (read-only) ✅ `<Checkbox checked={isChecked} onChange={(e) => setIsChecked(e.target.checked)} />`
 
 Create a premium, completed result."""
+
+# ============================================================================
+# Field Rules Reminder (Middle Reinforcement)
+# ============================================================================
+
+FIELD_RULES_REMINDER = """
+
+---
+
+## ⛔ REMINDER: Field Component (MOST COMMON ERROR)
+
+**Field is self-closing ONLY. NEVER put children inside.**
+
+❌ NEVER:
+```tsx
+<Field>content</Field>
+<Field><input /></Field>
+<Field>{variable}</Field>
+```
+
+✅ ALWAYS:
+```tsx
+<Field type="text" label="이름" />
+<Field value={v} onChange={fn} />
+```
+
+**Why?** Field renders `<input>` internally. Adding children causes React Error #137 → app crash.
+
+---
+
+"""
 
 # ============================================================================
 # Initialize Schema and Prompt
@@ -733,6 +840,7 @@ AVAILABLE_COMPONENTS = get_available_components_note(_schema) if _schema else ""
 SYSTEM_PROMPT = (
     SYSTEM_PROMPT_HEADER
     + AVAILABLE_COMPONENTS
+    + FIELD_RULES_REMINDER  # Middle reinforcement
     + COMPONENT_DOCS
     + RESPONSE_FORMAT_INSTRUCTIONS
     + SYSTEM_PROMPT_FOOTER
@@ -742,7 +850,9 @@ SYSTEM_PROMPT = (
 def get_system_prompt() -> str:
     """현재 시스템 프롬프트 반환 (로컬 스키마 기반, 현재 날짜/시간 포함)"""
     current_date = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M KST")
-    return SYSTEM_PROMPT.replace("{current_date}", current_date)
+    return SYSTEM_PROMPT.replace("{current_date}", current_date).replace(
+        "{design_tokens_section}", DEFAULT_DESIGN_TOKENS_SECTION
+    )
 
 
 def format_layouts(layouts: list[dict]) -> str:
@@ -791,6 +901,7 @@ def generate_system_prompt(
     ag_grid_schema: dict | None = None,
     ag_grid_tokens: dict | None = None,
     layouts: list[dict] | None = None,
+    component_definitions: dict | None = None,
 ) -> str:
     """
     주어진 스키마로 시스템 프롬프트 동적 생성
@@ -801,6 +912,7 @@ def generate_system_prompt(
         ag_grid_schema: AG Grid 컴포넌트 스키마 dict (Firebase에서 로드, None이면 미포함)
         ag_grid_tokens: AG Grid 토큰 dict (Firebase에서 로드, None이면 미포함)
         layouts: Figma 레이아웃 JSON 리스트 (Firebase에서 로드, None이면 미포함)
+        component_definitions: 컴포넌트 정의 dict (Firebase에서 로드, None이면 미포함)
 
     Returns:
         생성된 시스템 프롬프트 문자열 (현재 날짜 포함)
@@ -817,6 +929,9 @@ def generate_system_prompt(
     if ag_grid_tokens:
         ag_grid_section += format_ag_grid_tokens(ag_grid_tokens)
 
+    # 컴포넌트 정의 섹션
+    component_definitions_section = format_component_definitions(component_definitions)
+
     # 레이아웃 섹션
     layouts_section = format_layouts(layouts) if layouts else ""
 
@@ -827,6 +942,7 @@ def generate_system_prompt(
         + available_components
         + component_docs
         + ag_grid_section
+        + component_definitions_section
         + layouts_section
         + RESPONSE_FORMAT_INSTRUCTIONS
         + SYSTEM_PROMPT_FOOTER
@@ -862,7 +978,7 @@ When analyzing the image, identify:
 
 ## Code Generation Rules
 - Use TypeScript with proper type annotations
-- Use inline styles (style={{ ... }})
+- Use Tailwind CSS utility classes (`className="..."`). Use `style={{}}` ONLY for dynamic JS variable values.
 - Import components from @/components
 - Use <file path="...">...</file> tags for code output
 - Generate complete, runnable code (no placeholders)
@@ -876,6 +992,7 @@ When analyzing the image, identify:
 async def get_vision_system_prompt(
     schema_key: str | None,
     image_urls: list[str] | None = None,
+    component_definitions: dict | None = None,
 ) -> str:
     """
     Vision 모드용 시스템 프롬프트 생성
@@ -883,6 +1000,7 @@ async def get_vision_system_prompt(
     Args:
         schema_key: Firebase Storage 스키마 경로 (None이면 기본 컴포넌트만)
         image_urls: 사용자가 업로드한 이미지 URL 목록 (코드에서 <img>로 사용 가능)
+        component_definitions: 컴포넌트 정의 dict (Firebase에서 로드, None이면 미포함)
 
     Returns:
         Vision 시스템 프롬프트 문자열
@@ -911,6 +1029,9 @@ async def get_vision_system_prompt(
         "{current_date}", current_date
     ).replace("{design_tokens_section}", design_tokens_section)
 
+    # 컴포넌트 정의 섹션
+    component_definitions_section = format_component_definitions(component_definitions)
+
     # 이미지 URL 섹션 (사용자가 이미지를 코드에 삽입하고 싶을 때 사용)
     image_urls_section = ""
     if image_urls:
@@ -920,7 +1041,7 @@ async def get_vision_system_prompt(
         for i, url in enumerate(image_urls, 1):
             image_urls_section += f"- Image {i}: `{url}`\n"
         image_urls_section += "\n**Usage Example:**\n"
-        image_urls_section += "```tsx\n<img src=\"{url}\" alt=\"uploaded image\" style={{ maxWidth: '100%', height: 'auto' }} />\n```\n"
+        image_urls_section += "```tsx\n<img src=\"{url}\" alt=\"uploaded image\" className=\"max-w-full h-auto\" />\n```\n"
 
     return (
         base_prompt
@@ -928,6 +1049,7 @@ async def get_vision_system_prompt(
         + available_note
         + "\n"
         + component_docs
+        + component_definitions_section
         + image_urls_section
         + "\n"
         + RESPONSE_FORMAT_INSTRUCTIONS

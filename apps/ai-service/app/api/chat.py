@@ -27,6 +27,7 @@ from app.services.firebase_storage import (
     DEFAULT_AG_GRID_SCHEMA_KEY,
     fetch_ag_grid_tokens_from_storage,
     fetch_all_layouts_from_storage,
+    fetch_component_definitions_from_storage,
     fetch_design_tokens_from_storage,
     fetch_image_as_base64,
     fetch_schema_from_storage,
@@ -113,7 +114,7 @@ def build_instance_edit_context(
 
 예시) "배경색 파란색으로" 요청 시:
 - 변경 전: `<Button data-instance-id="{selected.id}" variant="primary">로그인</Button>`
-- 변경 후: `<Button data-instance-id="{selected.id}" variant="primary" style={{{{ backgroundColor: 'blue' }}}}>로그인</Button>`
+- 변경 후: `<Button data-instance-id="{selected.id}" variant="primary" className="bg-blue-500">로그인</Button>`
 
 사용자의 요청에 따라 선택된 인스턴스({selected.id})만 수정하세요.
 """
@@ -147,6 +148,13 @@ async def resolve_system_prompt(
     except Exception as e:
         logger.warning("AG Grid data not loaded", extra={"error": str(e)})
 
+    # 컴포넌트 정의 로드 (실패 시 None, 프롬프트에서 생략됨)
+    component_definitions = None
+    try:
+        component_definitions = await fetch_component_definitions_from_storage()
+    except Exception as e:
+        logger.warning("Component definitions not loaded", extra={"error": str(e)})
+
     # 레이아웃 로드 (실패 시 빈 리스트, 프롬프트에서 생략됨)
     layouts: list[dict] = []
     try:
@@ -165,13 +173,13 @@ async def resolve_system_prompt(
                 status_code=500, detail="No schema available. Please upload a schema first."
             )
         base_prompt = generate_system_prompt(
-            local_schema, design_tokens, ag_grid_schema, ag_grid_tokens, layouts
+            local_schema, design_tokens, ag_grid_schema, ag_grid_tokens, layouts, component_definitions
         )
     else:
         try:
             schema = await fetch_schema_from_storage(schema_key)
             base_prompt = generate_system_prompt(
-                schema, design_tokens, ag_grid_schema, ag_grid_tokens, layouts
+                schema, design_tokens, ag_grid_schema, ag_grid_tokens, layouts, component_definitions
             )
         except FileNotFoundError:
             logger.warning("Schema not found, using local", extra={"schema_key": schema_key})
@@ -181,7 +189,7 @@ async def resolve_system_prompt(
                     status_code=404, detail=f"Schema not found: {schema_key}"
                 )
             base_prompt = generate_system_prompt(
-                local_schema, design_tokens, ag_grid_schema, ag_grid_tokens, layouts
+                local_schema, design_tokens, ag_grid_schema, ag_grid_tokens, layouts, component_definitions
             )
         except Exception as e:
             logger.error("Failed to fetch schema", extra={"schema_key": schema_key, "error": str(e)})
@@ -657,9 +665,17 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
 
         # 4. 시스템 프롬프트 생성 (Vision/일반 모드에 따라 분기)
         if is_vision_mode:
+            # Vision 모드에서도 컴포넌트 정의 로드
+            vision_component_definitions = None
+            try:
+                vision_component_definitions = await fetch_component_definitions_from_storage()
+            except Exception as e:
+                logger.warning("Component definitions not loaded for vision", extra={"error": str(e)})
+
             system_prompt = await get_vision_system_prompt(
                 schema_key=room.get("schema_key"),
                 image_urls=request.image_urls,
+                component_definitions=vision_component_definitions,
             )
         else:
             system_prompt = await resolve_system_prompt(
