@@ -736,6 +736,49 @@ When updating existing code, you MUST:
   - **Inputs**: internal inputs MUST be `className="w-full"`. NEVER use fixed pixels like `w-[300px]` inside a grid.
   - **Z-Index**: Dropdowns/Modals must have `z-50` or higher to float above content.
 
+- **Dialog/Modal Usage Patterns (IMPORTANT)**:
+  - **When to Use Dialog**: Use `<Dialog>` for confirmations, forms, detail views, or notifications.
+  - **Common Scenarios**:
+    - **삭제 확인**: Confirm dangerous actions (delete, remove, cancel)
+    - **폼 입력**: Collect additional information (add member, create project)
+    - **상세 보기**: Show item details without navigation
+    - **알림**: Display success/error messages
+  - **Required Props**:
+    - `open={isOpen}`: Boolean state to control visibility
+    - `title="제목"`: Dialog title (required)
+    - `onClose={() => setIsOpen(false)}`: Close handler (required)
+  - **Optional Action Buttons**:
+    - `onPrimaryClick={handleAction}`: Primary button handler
+    - `onSecondaryClick={() => setIsOpen(false)}`: Secondary button handler
+    - `primaryLabel="확인"`, `secondaryLabel="취소"`: Button labels
+  - **Usage Example**:
+    ```tsx
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = React.useState(false);
+
+    <Button variant="danger" onClick={() => setIsDeleteModalOpen(true)}>
+      삭제
+    </Button>
+
+    <Dialog
+      open={isDeleteModalOpen}
+      title="삭제 확인"
+      subtitle="정말 삭제하시겠습니까?"
+      onClose={() => setIsDeleteModalOpen(false)}
+      onPrimaryClick={() => {
+        // 삭제 로직
+        setIsDeleteModalOpen(false);
+      }}
+      onSecondaryClick={() => setIsDeleteModalOpen(false)}
+      primaryLabel="삭제"
+      secondaryLabel="취소"
+      size="md"
+    >
+      <p className="text-gray-600">이 작업은 되돌릴 수 없습니다.</p>
+    </Dialog>
+    ```
+  - **State Management**: ALWAYS use `React.useState` for modal open/close state.
+  - **Multiple Modals**: Each modal needs its own state variable (`isDeleteOpen`, `isEditOpen`, etc.).
+
 - **Content & Mock Data (MANDATORY)**:
   - **NO EMPTY STATES**: NEVER generate empty tables, lists, or selects.
   - **Rich Volume**: Always provide **at least 10 items** for lists/tables to show scrolling behavior.
@@ -1177,6 +1220,38 @@ When analyzing the image, identify:
 - Use React.useState, React.useEffect directly (no imports)
 - Add data-instance-id to every component
 - **List all design system components used at the end**
+
+## Dialog/Modal Usage (IMPORTANT)
+**Use `<Dialog>` for confirmations, forms, detail views, or notifications:**
+
+Common scenarios:
+- **삭제 확인**: Confirm dangerous actions
+- **폼 입력**: Collect additional information
+- **상세 보기**: Show item details
+- **알림**: Display success/error messages
+
+Required props:
+- `open={isOpen}`: Boolean state
+- `title="제목"`: Dialog title
+- `onClose={() => setIsOpen(false)}`: Close handler
+
+Example:
+```tsx
+const [isModalOpen, setIsModalOpen] = React.useState(false);
+
+<Button onClick={() => setIsModalOpen(true)}>삭제</Button>
+
+<Dialog
+  open={isModalOpen}
+  title="삭제 확인"
+  onClose={() => setIsModalOpen(false)}
+  onPrimaryClick={handleDelete}
+  primaryLabel="삭제"
+  secondaryLabel="취소"
+>
+  <p>이 작업은 되돌릴 수 없습니다.</p>
+</Dialog>
+```
 
 {design_tokens_section}
 
