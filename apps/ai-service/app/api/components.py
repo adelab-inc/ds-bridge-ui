@@ -722,8 +722,9 @@ When updating existing code, you MUST:
 6. **ICONS (DO NOT USE)**:
    - **NEVER use emoji as icons** (🔍, ⭐, 📁, 👤, etc.) - looks unprofessional
    - **NEVER use icon libraries** (`material-icons`, `lucide-react`) - not available in this design system
-   - **Use text labels instead**: `<button>검색</button>`, `<button>추가</button>`, `<button>삭제</button>`
-   - **Exception**: IconButton/Button components accept `icon` prop for custom ReactNode, but avoid using it unless absolutely necessary
+   - **NEVER use IconButton component** - no icon assets available
+   - **NEVER use icon props** (`leftIcon`, `rightIcon`, `icon` on Button/Alert/Chip) - leave them empty
+   - **Use text-only buttons**: `<Button>검색</Button>`, `<Button>추가</Button>`, `<Button>삭제</Button>`
 
 ## 📊 Data Tables
 Use native HTML `<table>` with Tailwind classes:
