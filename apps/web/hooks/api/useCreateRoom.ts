@@ -4,6 +4,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import type { paths } from '@ds-hub/shared-types/typescript/api/schema';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 type CreateRoomRequest =
   paths['/rooms']['post']['requestBody']['content']['application/json'];
@@ -30,10 +31,12 @@ export function useCreateRoom(mutationOptions?: UseCreateRoomOptions) {
     mutationFn: async (
       data: CreateRoomRequest
     ): Promise<CreateRoomResponse> => {
+      const token = await useAuthStore.getState().getIdToken();
       const response = await fetch('/api/rooms', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify(data),
       });
