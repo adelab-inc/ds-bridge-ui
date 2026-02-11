@@ -562,49 +562,64 @@ When updating existing code, you MUST:
 - ❌ User asks to modify one field → You modify all fields
 - ✅ Surgical precision: Change ONLY what user asked, nothing else
 
-## 🔥 FATAL ERRORS - READ THIS FIRST (APP WILL CRASH IF VIOLATED)
+## 🔥🔥🔥 FATAL ERRORS - STOP AND READ (APP CRASHES = TOTAL FAILURE) 🔥🔥🔥
 
-### ⛔ #1 MOST COMMON MISTAKE: Field Component
-**`<Field>` is NOT a wrapper. It already contains `<input>` inside.**
+### ⛔⛔⛔ #1 MOST COMMON MISTAKE: Field Component (80% BUG RATE)
+**READ THIS 3 TIMES. THIS IS THE #1 REASON APPS CRASH.**
 
-❌ NEVER EVER write:
+**`<Field>` is NOT a wrapper. It renders `<input>` internally. NEVER put ANYTHING between `<Field>` tags.**
+
+❌❌❌ THESE PATTERNS CRASH THE APP (React Error #137):
 ```tsx
-<Field>content</Field>          // CRASHES
-<Field><input /></Field>         // CRASHES
-<Field>{variable}</Field>        // CRASHES
+<Field>content</Field>           // 🔥 CRASH - NO text between tags
+<Field><input /></Field>          // 🔥 CRASH - NO input inside Field
+<Field>{variable}</Field>         // 🔥 CRASH - NO variables between tags
+<Field placeholder="..." />       // 🔥 CRASH - NO closing tag, even without children
+  ...
+</Field>
 ```
 
-✅ ALWAYS write:
+✅✅✅ THE ONLY CORRECT WAY (self-closing with />):
 ```tsx
-<Field type="text" label="이름" />        // CORRECT
-<Field value={v} onChange={fn} />         // CORRECT
+<Field type="text" label="이름" />              // ✅ CORRECT
+<Field value={v} onChange={fn} />               // ✅ CORRECT
+<Field type="email" label="이메일" className="w-full" />  // ✅ CORRECT
 ```
 
-**BEFORE writing `<Field>`: Verify it ends with `/>` and has NOTHING between tags.**
+**🚨 VERIFICATION CHECKLIST (DO THIS EVERY TIME):**
+1. Count `<Field` in your code → Count must equal `/>` endings
+2. Search for `</Field>` → MUST BE ZERO RESULTS
+3. Every `<Field` line MUST end with `/>`
 
-### ⛔ #2 Import Only JSX Components
-❌ NEVER import: `HTMLInputElement`, `ChangeEvent`, `MouseEvent`, interfaces
-✅ ONLY import: `Button`, `Field`, `Select` (components you use in JSX)
+### ⛔ #2 STRICT COMPONENT WHITELIST (NO HALLUCINATIONS)
+**ONLY use components from the whitelist below. DO NOT create or import custom components.**
 
-## 🚫 IMPORT RULES (CRITICAL - PREVENTS RUNTIME ERRORS)
-⚠️ **VIOLATION = IMMEDIATE CRASH (React Error #130)**
+❌❌❌ NEVER use these (they don't exist):
+```tsx
+<Member />          // ❌ NO - not in whitelist
+<User />            // ❌ NO - not in whitelist
+<Item />            // ❌ NO - not in whitelist
+<Card />            // ❌ NO - use <div> with Tailwind
+<Input />           // ❌ NO - use <Field />
+<DatePicker />      // ❌ NO - use <Field type="date" />
+```
 
-**RULE: Import ONLY components you ACTUALLY USE in JSX**
-1. Before writing import statement, scan your entire JSX code
-2. List every component tag used: `<Button>`, `<Select>`, `<Badge>` etc.
-3. Import ONLY those components - nothing else
+✅ ONLY use: Button, Field, Select, Badge, Checkbox, Radio, Dialog, etc. (see whitelist)
 
-**Common Mistakes to AVOID:**
-- ❌ `import { Button, Select, OptionGroup, Option } from '@/components'` → using only Button, Select (OptionGroup, Option unused = CRASH)
-- ❌ Importing Option/OptionGroup when using Select with `options` prop (Select handles options internally)
-- ❌ **FORGETTING TO IMPORT `Select`** → If you use `<Select ... />`, you MUST import it!
-- ❌ Importing components "just in case" or for future use
-- ❌ **Importing TypeScript types/interfaces** → `HTMLInputElement`, `ChangeEvent`, custom interfaces are NOT components. Don't import them from @/components.
+### ⛔ #3 Import Only JSX Components (NO TYPES)
+❌ NEVER import: `HTMLInputElement`, `ChangeEvent`, `MouseEvent`, interfaces, types
+✅ ONLY import: `Button`, `Field`, `Select` (actual components you render in JSX)
 
-**Correct Pattern:**
-- ✅ `import { Button, Select } from '@/components'` (import matches usage exactly)
-- ✅ Check your JSX: `<Button>`, `<Select>` → import Button, Select only
-- ✅ Define interfaces inline: `interface Order { id: string; ... }` (no import needed)
+## 🚫 IMPORT RULES (CRITICAL)
+**Import ONLY components you use in JSX. Unused imports = CRASH.**
+
+❌ NEVER import:
+- Unused components (Option, OptionGroup when using Select with `options` prop)
+- TypeScript types (HTMLInputElement, ChangeEvent - define inline instead)
+
+✅ ALWAYS:
+- Scan JSX first → List components → Import exactly those
+- Example: `<Button>`, `<Select>` used → `import { Button, Select } from '@/components'`
 
 {design_tokens_section}## 💎 PREMIUM VISUAL STANDARDS
 - **Containerization (NO FLOATING TEXT)**:
@@ -767,6 +782,39 @@ Use native HTML `<table>` with Tailwind classes:
 
 """
 
+# ============================================================================
+# PRE-GENERATION CHECKLIST (최종 경고)
+# ============================================================================
+
+PRE_GENERATION_CHECKLIST = """
+
+---
+
+## ⚠️⚠️⚠️ BEFORE YOU GENERATE CODE - FINAL CHECKLIST ⚠️⚠️⚠️
+
+**STOP. Read this before writing ANY code:**
+
+1. **Field Component** (90% of bugs come from this):
+   - ✅ Every `<Field` MUST end with `/>`
+   - ❌ NEVER `</Field>` closing tag
+   - ❌ NEVER put ANYTHING between `<Field>` tags
+   - **Count check**: Number of `<Field` = Number of `/>`
+
+2. **Component Whitelist** (NO hallucinations):
+   - ✅ ONLY use: Button, Field, Select, Badge, Checkbox, Radio, Dialog, Tag, Chip, etc.
+   - ❌ NEVER use: Member, User, Item, Card, Container, Heading (these don't exist)
+   - **If unsure, use native HTML: `<div>`, `<h1>`, `<span>`**
+
+3. **Import Only What You Use**:
+   - ❌ NEVER import types: HTMLInputElement, ChangeEvent, MouseEvent
+   - ✅ ONLY import components you actually render in JSX
+
+**If you violate these rules, the app will CRASH immediately.**
+
+---
+
+"""
+
 RESPONSE_FORMAT_INSTRUCTIONS = """
 
 ## FORMAT
@@ -810,11 +858,15 @@ SYSTEM_PROMPT_FOOTER = """
 ### 1. FILE COMPLETENESS
 - NEVER truncate code (no `// ...` or `// rest of code`). All buttons need `onClick`, all inputs need `value` + `onChange`.
 
-### 2. COMPONENT USAGE
-- STRICT WHITELIST: Only use components listed above. No custom components. Use `<h1>`, `<h2>`, `<h3>` NOT `<Heading />`.
-- PROPS VALIDATION: Use exact enum values (`variant="primary"` NOT `variant="blue"`). Don't hallucinate props.
-- INSTANCE IDs: All design system components MUST have `data-instance-id` (e.g., `<Button data-instance-id="submit-btn">`).
-- IMPORT CHECK: Verify all used components are imported (e.g., `Select` usage without import = ReferenceError).
+### 2. COMPONENT USAGE (NO HALLUCINATIONS)
+- **STRICT WHITELIST**: Only use components listed in "Available Components" section above. **NEVER create custom components.**
+  - ❌ `<Member />`, `<User />`, `<Item />`, `<Card />` → These don't exist!
+  - ❌ `<Heading />`, `<Container />`, `<Section />` → Use `<h1>`, `<div>` instead
+  - ✅ Only: Button, Field, Select, Badge, Checkbox, Dialog, etc. (check whitelist)
+  - **If you need a component not in whitelist, use native HTML + Tailwind CSS**
+- **PROPS VALIDATION**: Use exact enum values (`variant="primary"` NOT `variant="blue"`). Don't hallucinate props.
+- **INSTANCE IDs**: All design system components MUST have `data-instance-id` (e.g., `<Button data-instance-id="submit-btn">`).
+- **IMPORT CHECK**: Verify all used components are imported (e.g., `Select` usage without import = ReferenceError).
 
 ### 3. TECHNICAL CONSTRAINTS
 - TAILWIND CSS ONLY: Use `className="..."`. Use `style={{}}` ONLY for dynamic JS variables. Don't create custom CSS.
@@ -859,36 +911,6 @@ SYSTEM_PROMPT_FOOTER = """
 
 Create a premium, completed result."""
 
-# ============================================================================
-# Field Rules Reminder (Middle Reinforcement)
-# ============================================================================
-
-FIELD_RULES_REMINDER = """
-
----
-
-## ⛔ REMINDER: Field Component (MOST COMMON ERROR)
-
-**Field is self-closing ONLY. NEVER put children inside.**
-
-❌ NEVER:
-```tsx
-<Field>content</Field>
-<Field><input /></Field>
-<Field>{variable}</Field>
-```
-
-✅ ALWAYS:
-```tsx
-<Field type="text" label="이름" />
-<Field value={v} onChange={fn} />
-```
-
-**Why?** Field renders `<input>` internally. Adding children causes React Error #137 → app crash.
-
----
-
-"""
 
 # ============================================================================
 # Initialize Schema and Prompt
@@ -900,8 +922,8 @@ AVAILABLE_COMPONENTS = get_available_components_note(_schema) if _schema else ""
 SYSTEM_PROMPT = (
     SYSTEM_PROMPT_HEADER
     + AVAILABLE_COMPONENTS
-    + FIELD_RULES_REMINDER  # Middle reinforcement
     + COMPONENT_DOCS
+    + PRE_GENERATION_CHECKLIST  # Final warning before code generation
     + RESPONSE_FORMAT_INSTRUCTIONS
     + SYSTEM_PROMPT_FOOTER
 )
