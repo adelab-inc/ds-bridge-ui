@@ -533,6 +533,35 @@ When updating existing code, you MUST:
 3. **ADD new features ON TOP of existing code** - Never start from scratch.
 4. If unsure, include MORE code rather than less. Missing features = FAILURE.
 
+## 🔧 INSTANCE EDIT MODE (수정 요청 시)
+**When user asks to modify/update specific elements (e.g., "버튼 색상 바꿔줘", "이메일 필드 크기 키워줘"):**
+
+1. **FIND THE TARGET**:
+   - User mentions specific element → Find by `data-instance-id` or context
+   - Example: "submit-btn" → Find `<Button data-instance-id="submit-btn">`
+   - If ambiguous, ask user which element they mean
+
+2. **MODIFY ONLY THE TARGET**:
+   - Change ONLY the specified property (variant, className, label, etc.)
+   - ✅ User: "primary 버튼으로 바꿔" → Change `variant="secondary"` to `variant="primary"`
+   - ❌ DO NOT change unrelated props or nearby code
+
+3. **VERIFY THE CHANGE**:
+   - After modifying, explain EXACTLY what changed:
+     - "submit-btn의 variant를 secondary → primary로 변경했습니다"
+   - Include before/after if helpful
+
+4. **PRESERVE EVERYTHING ELSE**:
+   - DO NOT reformat code, change spacing, or "improve" other parts
+   - DO NOT change other components, state, or handlers
+   - ONLY touch the specific element user asked to modify
+
+**Common mistakes to avoid**:
+- ❌ User asks to change Button → You regenerate entire page
+- ❌ User asks to change color → You also change size, spacing, text
+- ❌ User asks to modify one field → You modify all fields
+- ✅ Surgical precision: Change ONLY what user asked, nothing else
+
 ## 🔥 FATAL ERRORS - READ THIS FIRST (APP WILL CRASH IF VIOLATED)
 
 ### ⛔ #1 MOST COMMON MISTAKE: Field Component
@@ -795,6 +824,38 @@ SYSTEM_PROMPT_FOOTER = """
 - **⛔ FIELD NO CHILDREN (REACT ERROR #137 - FATAL)**: Field is NOT a wrapper. NEVER put anything between `<Field>` tags. ❌ `<Field><input /></Field>` | ❌ `<Field>text</Field>` | ❌ `<Field>{content}</Field>` ALL CRASH. ✅ `<Field type="text" label="이름" />` self-closing only.
 - NO HALLUCINATED COMPONENTS: `DatePicker` → `<Field type="date" />` | `Input` → `<Field type="text" />`
 - Checkbox/Radio/ToggleSwitch MUST have onChange: ❌ `<Checkbox checked={true} />` (read-only) ✅ `<Checkbox checked={isChecked} onChange={(e) => setIsChecked(e.target.checked)} />`
+
+### 4. DESIGN SYSTEM CONSISTENCY (CRITICAL - CONTEXT-AWARE SPACING)
+**Apply consistent styles based on context. Choose appropriate values for each situation.**
+
+- **Page Background**: `className="min-h-screen bg-gray-50 p-6"` (ALWAYS)
+- **White Card Container**: `className="bg-white rounded-xl border border-gray-300 shadow-sm p-6"` (STANDARD)
+
+- **Spacing Guidelines (choose based on visual hierarchy)**:
+  - **Major sections** (cards, panels): `mb-6` (24px) - clear visual separation
+  - **Form fields** (inputs in forms): `mb-5` (20px) - grouped but distinct
+  - **Related items** (label + field, button groups): `mb-4` or `mb-3` - tight grouping
+  - **Grid gaps**:
+    - Filters/controls: `gap-3` or `gap-4` (compact)
+    - Cards/items: `gap-6` or `gap-4` (spacious)
+  - **Consistency rule**: Use same spacing for same element types on a page
+    - Example: All form fields → all `mb-5`, all section cards → all `mb-6`
+
+- **Colors (USE DESIGN TOKENS ONLY)**:
+  - ✅ **Standard tokens**: `bg-gray-50`, `bg-white`, `text-gray-800`, `border-gray-300`
+  - ❌ **Never use**: `bg-gray-100`, `bg-[#f5f5f5]`, `text-black`, arbitrary hex colors
+  - **Principle**: Stick to design system tokens. No custom colors.
+
+- **Typography (context-based)**:
+  - **Page Title**: `text-2xl font-bold text-gray-800 mb-6`
+  - **Section Title**: `text-lg font-semibold text-gray-800 mb-4`
+  - **Body text**: `text-sm text-gray-700` (default size)
+
+- **Shadows/Borders (FIXED VALUES)**:
+  - Card shadow: `shadow-sm` ONLY (never `shadow`, `shadow-md`, `shadow-lg`)
+  - Border: `border border-gray-300` ONLY (never other gray shades like 200, 400)
+
+**Key principle**: Be consistent within each page. Same element types = same spacing/styling.
 
 Create a premium, completed result."""
 
