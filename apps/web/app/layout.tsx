@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono, Figtree } from 'next/font/google';
 import './globals.css';
 import { QueryProvider } from '@/components/providers/query-provider';
+import { AuthInitializer } from '@/components/providers/auth-initializer';
 
 const figtree = Figtree({ subsets: ['latin'], variable: '--font-sans' });
 
@@ -30,7 +31,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <QueryProvider>{children}</QueryProvider>
+        <QueryProvider>
+          <AuthInitializer />
+          {children}
+        </QueryProvider>
       </body>
     </html>
   );

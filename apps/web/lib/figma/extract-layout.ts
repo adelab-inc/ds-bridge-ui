@@ -376,8 +376,13 @@ function extractTextStyle(node: FigmaNode): LayoutTextStyle | undefined {
     return undefined;
   }
 
-  const { fontSize, fontWeight, fontFamily, textAlignHorizontal, lineHeightPx } =
-    node.style;
+  const {
+    fontSize,
+    fontWeight,
+    fontFamily,
+    textAlignHorizontal,
+    lineHeightPx,
+  } = node.style;
 
   if (fontSize === undefined) {
     return undefined;
@@ -393,7 +398,10 @@ function extractTextStyle(node: FigmaNode): LayoutTextStyle | undefined {
   }
 
   if (textAlignHorizontal !== undefined) {
-    textStyle.textAlign = textAlignHorizontal.toLowerCase() as 'left' | 'center' | 'right';
+    textStyle.textAlign = textAlignHorizontal.toLowerCase() as
+      | 'left'
+      | 'center'
+      | 'right';
   }
 
   if (lineHeightPx !== undefined) {
@@ -526,11 +534,13 @@ function createStyleCollector(): StyleCollector {
 function buildExtractedComponents(
   map: Map<string, { count: number; variants: Set<string> }>
 ): ExtractedComponent[] {
-  const components = Array.from(map.entries()).map(([name, { count, variants }]) => ({
-    name,
-    instances: count,
-    variants: Array.from(variants).sort(),
-  }));
+  const components = Array.from(map.entries()).map(
+    ([name, { count, variants }]) => ({
+      name,
+      instances: count,
+      variants: Array.from(variants).sort(),
+    })
+  );
 
   // 사용 횟수 내림차순 정렬
   components.sort((a, b) => b.instances - a.instances);

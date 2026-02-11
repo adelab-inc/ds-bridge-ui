@@ -33,6 +33,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { UserMenu } from '@/components/features/auth/user-menu';
 
 /**
  * SSR fallback skeleton for header controls
@@ -163,6 +164,9 @@ function Header({
                 <p>ds.json 파일 업로드</p>
               </TooltipContent>
             </Tooltip>
+
+            {/* User Menu */}
+            <UserMenu />
 
             {/* More Options */}
             <DropdownMenu>

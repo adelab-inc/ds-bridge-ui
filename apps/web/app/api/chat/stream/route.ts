@@ -1,11 +1,27 @@
 import { NextRequest } from 'next/server';
 import type { paths } from '@ds-hub/shared-types/typescript/api/schema';
+import { verifyFirebaseToken } from '@/lib/auth/verify-token';
 
 type ChatStreamRequest =
   paths['/chat/stream']['post']['requestBody']['content']['application/json'];
 
 export async function POST(request: NextRequest) {
   try {
+    // Firebase Auth 토큰 검증
+    const decodedToken = await verifyFirebaseToken(
+      request.headers.get('authorization')
+    );
+    if (!decodedToken) {
+      return new Response(
+        JSON.stringify({
+          detail: [
+            { loc: ['header'], msg: 'Unauthorized', type: 'auth_error' },
+          ],
+        }),
+        { status: 401, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     // 요청 body 파싱
     const body: ChatStreamRequest = await request.json();
 

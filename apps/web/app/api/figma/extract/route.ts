@@ -10,7 +10,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
-import { parseFigmaUrl, fetchFigmaNodes, extractLayoutSchema, createCleanSchema, createCompactSchema, FigmaApiError } from '@/lib/figma';
+import {
+  parseFigmaUrl,
+  fetchFigmaNodes,
+  extractLayoutSchema,
+  createCleanSchema,
+  createCompactSchema,
+  FigmaApiError,
+} from '@/lib/figma';
 import type { FigmaExtractRequest, LayoutSchema } from '@/types/layout-schema';
 
 const FIGMA_NODES_DIR = path.join(process.cwd(), 'public', 'figma-nodes');
@@ -50,11 +57,13 @@ export async function POST(request: NextRequest) {
     } catch {
       return NextResponse.json(
         {
-          detail: [{
-            loc: ['body'],
-            msg: 'Invalid JSON body',
-            type: 'value_error',
-          }],
+          detail: [
+            {
+              loc: ['body'],
+              msg: 'Invalid JSON body',
+              type: 'value_error',
+            },
+          ],
         },
         { status: 422 }
       );
@@ -64,11 +73,13 @@ export async function POST(request: NextRequest) {
     if (!body.url || typeof body.url !== 'string') {
       return NextResponse.json(
         {
-          detail: [{
-            loc: ['body', 'url'],
-            msg: 'url is required',
-            type: 'value_error.missing',
-          }],
+          detail: [
+            {
+              loc: ['body', 'url'],
+              msg: 'url is required',
+              type: 'value_error.missing',
+            },
+          ],
         },
         { status: 422 }
       );
@@ -79,11 +90,13 @@ export async function POST(request: NextRequest) {
     if (!figmaToken) {
       return NextResponse.json(
         {
-          detail: [{
-            loc: ['server'],
-            msg: 'FIGMA_ACCESS_TOKEN is not configured',
-            type: 'configuration_error',
-          }],
+          detail: [
+            {
+              loc: ['server'],
+              msg: 'FIGMA_ACCESS_TOKEN is not configured',
+              type: 'configuration_error',
+            },
+          ],
         },
         { status: 500 }
       );
@@ -107,7 +120,11 @@ export async function POST(request: NextRequest) {
     // 5. Figma API 호출
     let figmaResponse;
     try {
-      figmaResponse = await fetchFigmaNodes(urlInfo.fileKey, urlInfo.nodeId, figmaToken);
+      figmaResponse = await fetchFigmaNodes(
+        urlInfo.fileKey,
+        urlInfo.nodeId,
+        figmaToken
+      );
     } catch (error) {
       if (error instanceof FigmaApiError) {
         const statusMap: Record<string, number> = {
@@ -120,8 +137,13 @@ export async function POST(request: NextRequest) {
           {
             success: false,
             error: error.message,
-            code: error.code === 'RATE_LIMITED' ? 'RATE_LIMITED' : 'FIGMA_API_ERROR',
-            ...(error.retryAfter !== undefined && { retryAfter: error.retryAfter }),
+            code:
+              error.code === 'RATE_LIMITED'
+                ? 'RATE_LIMITED'
+                : 'FIGMA_API_ERROR',
+            ...(error.retryAfter !== undefined && {
+              retryAfter: error.retryAfter,
+            }),
           },
           { status: statusMap[error.code] || 500 }
         );
@@ -132,12 +154,17 @@ export async function POST(request: NextRequest) {
     // 6. layout-schema 추출
     let layoutSchema;
     try {
-      layoutSchema = extractLayoutSchema(figmaResponse, urlInfo.nodeId, body.url);
+      layoutSchema = extractLayoutSchema(
+        figmaResponse,
+        urlInfo.nodeId,
+        body.url
+      );
     } catch (error) {
       return NextResponse.json(
         {
           success: false,
-          error: error instanceof Error ? error.message : 'Failed to extract layout',
+          error:
+            error instanceof Error ? error.message : 'Failed to extract layout',
           code: 'PARSE_ERROR',
         },
         { status: 500 }
@@ -154,7 +181,9 @@ export async function POST(request: NextRequest) {
       saveLayoutToFile(compactSchema, urlInfo.nodeId, 'compact'),
     ]);
 
-    console.log(`[Figma Extract] Saved: ${fullPath}, ${cleanPath}, ${compactPath}`);
+    console.log(
+      `[Figma Extract] Saved: ${fullPath}, ${cleanPath}, ${compactPath}`
+    );
 
     // 8. 성공 응답 (compact 버전을 기본 data로 반환)
     return NextResponse.json({
@@ -166,7 +195,6 @@ export async function POST(request: NextRequest) {
         compact: compactPath,
       },
     });
-
   } catch (error) {
     return NextResponse.json(
       {
