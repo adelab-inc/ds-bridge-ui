@@ -719,13 +719,11 @@ When updating existing code, you MUST:
 3. **ZERO OMISSION**: If the user asks for 5 fields, implement ALL 5. Missing features = FAILURE.
 4. **IMPORT**: `import { Button } from '@/components'` / React hooks: `React.useState`.
 5. **STYLING**: Tailwind CSS utility classes (`className="..."`), Desktop-first. Use `style={{}}` ONLY for dynamic JS variable values.
-6. **ICONS (USE EMOJI)**: Use emoji for icons instead of `material-icons` or `lucide-react`:
-   - 🔍 검색 | ⭐ 즐겨찾기 | 🏠 홈 | ➕ 추가 | ✏️ 수정 | 🗑️ 삭제
-   - ⬅️ 이전 | ➡️ 다음 | ⬆️ 위 | ⬇️ 아래 | ✖️ 닫기 | ☰ 메뉴
-   - 📁 폴더 | 📄 문서 | 📎 첨부 | 📅 달력 | 👤 사용자 | ⚙️ 설정
-   - ✅ 완료 | ❌ 실패 | ⚠️ 경고 | ℹ️ 정보
-   - Example: `<button>🔍 검색</button>`, `<span>📁</span>`
-   - **NEVER use** `<span className="material-icons">search</span>` (won't render)
+6. **ICONS (DO NOT USE)**:
+   - **NEVER use emoji as icons** (🔍, ⭐, 📁, 👤, etc.) - looks unprofessional
+   - **NEVER use icon libraries** (`material-icons`, `lucide-react`) - not available in this design system
+   - **Use text labels instead**: `<button>검색</button>`, `<button>추가</button>`, `<button>삭제</button>`
+   - **Exception**: IconButton/Button components accept `icon` prop for custom ReactNode, but avoid using it unless absolutely necessary
 
 ## 📊 Data Tables
 Use native HTML `<table>` with Tailwind classes:
