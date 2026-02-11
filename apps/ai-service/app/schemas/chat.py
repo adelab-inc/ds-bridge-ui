@@ -383,6 +383,12 @@ class CreateRoomRequest(BaseModel):
         description="사용자 ID",
         json_schema_extra={"example": "user-123"},
     )
+    room_title: str | None = Field(
+        default=None,
+        max_length=200,
+        description="채팅방 제목 (최대 200자)",
+        json_schema_extra={"example": "프로젝트 UI 디자인"},
+    )
     storybook_url: str | None = Field(
         default=None,
         description="Storybook URL (참고용)",
@@ -394,6 +400,7 @@ class CreateRoomRequest(BaseModel):
             "examples": [
                 {
                     "user_id": "user-123",
+                    "room_title": "프로젝트 UI 디자인",
                     "storybook_url": "https://storybook.example.com",
                 }
             ]
@@ -404,6 +411,12 @@ class CreateRoomRequest(BaseModel):
 class UpdateRoomRequest(BaseModel):
     """채팅방 업데이트 요청"""
 
+    room_title: str | None = Field(
+        default=None,
+        max_length=200,
+        description="채팅방 제목 (최대 200자)",
+        json_schema_extra={"example": "프로젝트 UI 디자인"},
+    )
     storybook_url: str | None = Field(
         default=None,
         description="Storybook URL (참고용)",
@@ -419,6 +432,7 @@ class UpdateRoomRequest(BaseModel):
         "json_schema_extra": {
             "examples": [
                 {
+                    "room_title": "프로젝트 UI 디자인",
                     "storybook_url": "https://new-storybook.example.com",
                     "schema_key": "schemas/aplus-ui.json",
                 },
@@ -434,6 +448,11 @@ class RoomResponse(BaseModel):
         ...,
         description="채팅방 ID (UUID)",
         json_schema_extra={"example": "550e8400-e29b-41d4-a716-446655440000"},
+    )
+    room_title: str | None = Field(
+        default=None,
+        description="채팅방 제목",
+        json_schema_extra={"example": "프로젝트 UI 디자인"},
     )
     storybook_url: str | None = Field(
         default=None,
@@ -492,6 +511,15 @@ class PaginatedMessagesResponse(BaseModel):
     total_count: int = Field(..., description="총 메시지 수")
 
 
+class PaginatedRoomsResponse(BaseModel):
+    """페이지네이션된 채팅방 응답"""
+
+    rooms: list[RoomResponse] = Field(..., description="채팅방 목록")
+    next_cursor: int | None = Field(None, description="다음 페이지 커서 (created_at)")
+    has_more: bool = Field(..., description="다음 페이지 존재 여부")
+    total_count: int = Field(..., description="총 채팅방 수")
+
+
 # ============================================================================
 # Schema Management Schemas
 # ============================================================================
@@ -519,3 +547,102 @@ class SchemaResponse(BaseModel):
 
     schema_key: str
     data: dict[str, Any]
+
+
+# ============================================================================
+# Prompt Enhancement Schemas
+# ============================================================================
+
+
+class PromptSuggestion(BaseModel):
+    """프롬프트 개선 제안"""
+
+    text: str = Field(
+        ...,
+        description="제안 내용",
+        json_schema_extra={"example": "소셜 로그인 버튼 추가"},
+    )
+    priority: Literal["high", "medium", "low"] = Field(
+        default="medium",
+        description="제안 우선순위",
+    )
+
+
+class EnhancePromptRequest(BaseModel):
+    """프롬프트 변환 요청"""
+
+    message: str = Field(
+        ...,
+        min_length=1,
+        max_length=500,
+        description="기획자가 입력한 짧은 프롬프트",
+        json_schema_extra={"example": "로그인 페이지"},
+    )
+    room_id: str = Field(
+        ...,
+        description="채팅방 ID (스키마 참조용)",
+        json_schema_extra={"example": "550e8400-e29b-41d4-a716-446655440000"},
+    )
+    detail_level: Literal["low", "medium", "high"] = Field(
+        default="medium",
+        description="상세도 수준 (low: 간단, medium: 보통, high: 매우 구체적)",
+    )
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "message": "로그인 페이지",
+                    "room_id": "550e8400-e29b-41d4-a716-446655440000",
+                    "detail_level": "medium",
+                },
+                {
+                    "message": "대시보드",
+                    "room_id": "550e8400-e29b-41d4-a716-446655440000",
+                    "detail_level": "high",
+                },
+            ]
+        }
+    }
+
+
+class EnhancePromptResponse(BaseModel):
+    """프롬프트 변환 응답"""
+
+    original: str = Field(
+        ...,
+        description="원본 프롬프트",
+        json_schema_extra={"example": "로그인 페이지"},
+    )
+    enhanced: str = Field(
+        ...,
+        description="디자인 시스템 용어로 구체화된 프롬프트",
+        json_schema_extra={
+            "example": "모던한 로그인 페이지를 만들어주세요.\n\n사용할 컴포넌트:\n- Field (type=email, label='이메일')\n- Field (type=password, label='비밀번호')\n- Button (variant=primary, children='로그인')\n\n레이아웃은 중앙 정렬 카드 형태로 구성하고, 반응형 디자인을 적용해주세요."
+        },
+    )
+    suggestions: list[PromptSuggestion] = Field(
+        default_factory=list,
+        description="추가 제안 사항",
+    )
+    components_used: list[str] = Field(
+        default_factory=list,
+        description="제안된 컴포넌트 목록",
+        json_schema_extra={"example": ["Button", "Field"]},
+    )
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "original": "로그인 페이지",
+                    "enhanced": "모던한 로그인 페이지를 만들어주세요.\n\n사용할 컴포넌트:\n- Field (type=email)\n- Field (type=password)\n- Button (variant=primary)",
+                    "suggestions": [
+                        {"text": "소셜 로그인 버튼 추가", "priority": "medium"},
+                        {"text": "비밀번호 찾기 링크", "priority": "low"},
+                    ],
+                    "components_used": ["Button", "Field"],
+                }
+            ]
+        }
+    }

@@ -1,3 +1,4 @@
+from google.genai._interactions.types import Content
 import json
 import logging
 import re
@@ -17,10 +18,13 @@ from app.schemas.chat import (
     ChatRequest,
     ChatResponse,
     CurrentComposition,
+    EnhancePromptRequest,
+    EnhancePromptResponse,
     FileContent,
     ImageContent,
     Message,
     ParsedResponse,
+    PromptSuggestion,
 )
 from app.services.ai_provider import get_ai_provider
 from app.services.firebase_storage import (
@@ -777,5 +781,327 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
         raise HTTPException(
             status_code=500, detail="An unexpected error occurred. Please try again."
         ) from e
+
+
+# ============================================================================
+# Prompt Enhancement
+# ============================================================================
+
+
+@router.post(
+    "/enhance-prompt",
+    response_model=EnhancePromptResponse,
+    summary="프롬프트 변환 (기획자 → 개발자용)",
+    description="""
+기획자가 입력한 짧은 프롬프트를 디자인 시스템 용어로 구체화합니다.
+
+## 사용 사례
+- 기획자: "로그인 페이지" (짧고 추상적)
+- 변환 후: "Button(variant=primary), Field(type=email) 컴포넌트를 사용한 로그인 페이지..." (구체적)
+
+## 상세도 수준
+- `low`: 간단한 설명 추가
+- `medium`: 컴포넌트와 기본 레이아웃 제안
+- `high`: 매우 구체적 (props, 상태, 에러 처리 등)
+
+## 요청 예시
+```json
+{
+  "message": "로그인 페이지",
+  "room_id": "550e8400-e29b-41d4-a716-446655440000",
+  "detail_level": "medium"
+}
+```
+
+## 응답 예시
+```json
+{
+  "original": "로그인 페이지",
+  "enhanced": "모던한 로그인 페이지를 만들어주세요...",
+  "suggestions": [
+    {"text": "소셜 로그인 버튼 추가", "priority": "medium"}
+  ],
+  "components_used": ["Button", "Field"]
+}
+```
+""",
+    responses={
+        200: {"description": "변환 성공"},
+        404: {"description": "채팅방을 찾을 수 없음"},
+        500: {"description": "AI API 호출 실패"},
+    },
+)
+async def enhance_prompt(request: EnhancePromptRequest) -> EnhancePromptResponse:
+    """
+    기획자 프롬프트를 디자인 시스템 용어로 변환
+
+    AI를 사용하여 짧은 프롬프트를 컴포넌트 스키마 기반으로 구체화합니다.
+    """
+    try:
+        # room 조회 및 검증
+        room = await get_chat_room(request.room_id)
+        if room is None:
+            raise RoomNotFoundError(f"채팅방을 찾을 수 없습니다: {request.room_id}")
+
+        provider = get_ai_provider()
+
+        # 컴포넌트 정의 로드
+        component_definitions = None
+        try:
+            component_definitions = await fetch_component_definitions_from_storage()
+        except Exception as e:
+            logger.warning("Component definitions not loaded", extra={"error": str(e)})
+
+        # 프롬프트 변환용 시스템 프롬프트 생성
+        enhancement_system_prompt = await build_enhancement_system_prompt(
+            room.get("schema_key"),
+            request.detail_level,
+            component_definitions,
+        )
+
+        # AI에게 프롬프트 변환 요청
+        messages = [
+            Message(role="system", content=enhancement_system_prompt),
+            Message(role="user", content=request.message),
+        ]
+
+        response_message, _ = await provider.chat(messages)
+
+        # 응답 파싱
+        enhanced_response = parse_enhancement_response(
+            original=request.message,
+            ai_response=response_message.content,
+        )
+
+        return enhanced_response
+
+    except HTTPException:
+        raise
+    except RoomNotFoundError as e:
+        raise HTTPException(status_code=404, detail="Chat room not found.") from e
+    except Exception as e:
+        logger.error("Unexpected error in enhance_prompt", extra={"room_id": request.room_id, "error": str(e)})
+        raise HTTPException(
+            status_code=500, detail="An unexpected error occurred. Please try again."
+        ) from e
+
+
+async def build_enhancement_system_prompt(
+    schema_key: str | None,
+    detail_level: str,
+    component_definitions: dict | None = None,
+) -> str:
+    """
+    프롬프트 변환용 시스템 프롬프트 생성
+
+    Args:
+        schema_key: Firebase Storage 스키마 경로
+        detail_level: 상세도 수준 (low, medium, high)
+        component_definitions: 컴포넌트 정의 JSON
+
+    Returns:
+        시스템 프롬프트 문자열
+    """
+    # 컴포넌트 상세 정보 생성
+    components_info = ""
+    if component_definitions:
+        components_info = format_component_info(component_definitions, max_components=15)
+    else:
+        # 폴백: 기본 컴포넌트 정보
+        components_info = """**Button**
+  - variants: primary, secondary, tertiary
+  - sizes: small, medium, large
+  - optional: onClick, disabled, children
+
+**Field**
+  - optional: label, placeholder, error, onChange
+
+**Card**
+  - optional: title, children
+
+**Table**
+  - required: columns, data
+  - optional: onRowClick
+
+**Select**
+  - required: options
+  - optional: label, placeholder, onChange"""
+
+    # 상세도별 지침
+    detail_instructions = {
+        "low": "간단하고 핵심적인 설명만 추가하세요.",
+        "medium": "컴포넌트와 기본 레이아웃을 제안하세요. 주요 props를 명시하세요.",
+        "high": "매우 구체적으로 작성하세요. props, variant, 상태, 에러 처리, 반응형 디자인까지 포함하세요.",
+    }
+
+    prompt = f"""당신은 UI/UX 기획 전문가입니다. 기획자가 입력한 짧은 프롬프트를 개발자가 바로 사용할 수 있는 구체적인 프롬프트로 변환하세요.
+
+## 디자인 시스템 컴포넌트
+
+{components_info}
+
+## 변환 규칙
+
+1. **컴포넌트 명시**: 어떤 컴포넌트를 사용할지 구체적으로 제안
+2. **디자인 시스템 용어 사용**: variant, size 같은 props 포함
+3. **레이아웃 설명**: 배치와 구조 명확히
+4. **상세도**: {detail_instructions.get(detail_level, detail_instructions["medium"])}
+
+## 응답 형식 (JSON)
+{{
+  "enhanced": "구체화된 프롬프트 (마크다운 형식)",
+  "suggestions": [
+    {{"text": "추가 제안 1", "priority": "high|medium|low"}},
+    {{"text": "추가 제안 2", "priority": "medium"}}
+  ],
+  "components_used": ["Button", "Field"]
+}}
+
+## 예시
+
+입력: "로그인 페이지"
+
+출력:
+{{
+  "enhanced": "모던한 로그인 페이지를 만들어주세요.\\n\\n**사용할 컴포넌트:**\\n- Field (label='이메일', placeholder='example@email.com', type='email')\\n- Field (label='비밀번호', type='password')\\n- Button (variant='primary', children='로그인')\\n- Link (href='/forgot-password', children='비밀번호를 잊으셨나요?')\\n\\n**레이아웃:**\\n- Card 컴포넌트로 폼 영역 감싸기\\n- 중앙 정렬 (max-width: 400px)\\n- 모바일 반응형 적용\\n\\n**상호작용:**\\n- Field onChange로 실시간 유효성 검사\\n- Button onClick으로 로그인 처리\\n- 로딩 중에는 Button disabled 상태",
+  "suggestions": [
+    {{"text": "소셜 로그인 버튼 추가 (IconButton 사용)", "priority": "medium"}},
+    {{"text": "비밀번호 표시/숨김 토글", "priority": "medium"}},
+    {{"text": "로그인 유지 Checkbox", "priority": "low"}}
+  ],
+  "components_used": ["Button", "Field", "Card", "Link"]
+}}
+
+이제 사용자의 짧은 프롬프트를 구체화하세요. 반드시 JSON 형식으로만 응답하세요."""
+
+    return prompt
+
+
+def parse_enhancement_response(
+    original: str,
+    ai_response: str,
+) -> EnhancePromptResponse:
+    """
+    AI 응답을 EnhancePromptResponse로 파싱
+
+    Args:
+        original: 원본 프롬프트
+        ai_response: AI의 JSON 응답
+
+    Returns:
+        EnhancePromptResponse 객체
+    """
+    try:
+        # JSON 추출 (코드 블록 제거)
+        json_match = re.search(r'```(?:json)?\s*(\{[\s\S]*?\})\s*```', ai_response)
+        if json_match:
+            json_str = json_match.group(1)
+        else:
+            # 코드 블록 없이 바로 JSON인 경우
+            json_str = ai_response.strip()
+
+        data = json.loads(json_str)
+
+        # PromptSuggestion 객체로 변환
+        suggestions = [
+            PromptSuggestion(
+                text=s.get("text", ""),
+                priority=s.get("priority", "medium"),
+            )
+            for s in data.get("suggestions", [])
+        ]
+
+        return EnhancePromptResponse(
+            original=original,
+            enhanced=data.get("enhanced", ""),
+            suggestions=suggestions,
+            components_used=data.get("components_used", []),
+        )
+
+    except Exception as e:
+        logger.error("Failed to parse enhancement response", extra={"error": str(e), "response": ai_response})
+        # 파싱 실패 시 기본 응답
+        return EnhancePromptResponse(
+            original=original,
+            enhanced=f"**{original}**에 대한 UI를 만들어주세요.\n\n디자인 시스템의 컴포넌트를 활용하여 구현해주세요.",
+            suggestions=[],
+            components_used=[],
+        )
+
+
+def format_component_info(component_definitions: dict, max_components: int = 15) -> str:
+    """
+    컴포넌트 정의를 읽기 쉬운 형식으로 변환
+
+    Args:
+        component_definitions: 컴포넌트 정의 JSON
+        max_components: 최대 표시할 컴포넌트 수
+
+    Returns:
+        포맷팅된 컴포넌트 정보 문자열
+    """
+    components = component_definitions.get("components", {})
+
+    # 주요 컴포넌트 우선 순위
+    priority_components = [
+        "Button", "Field", "Card", "Table", "Select",
+        "Checkbox", "Radio", "IconButton", "Link", "Badge"
+    ]
+
+    # 우선 순위 컴포넌트 먼저, 나머지는 알파벳 순
+    sorted_names = []
+    for name in priority_components:
+        if name in components:
+            sorted_names.append(name)
+
+    for name in sorted(components.keys()):
+        if name not in sorted_names:
+            sorted_names.append(name)
+
+    # 제한된 수만큼만 선택
+    selected_names = sorted_names[:max_components]
+
+    result = []
+    for name in selected_names:
+        comp = components[name]
+        props = comp.get("props", {})
+
+        # variant 정보 추출
+        variants = []
+        sizes = []
+        required_props = []
+        optional_props = []
+
+        for prop_name, prop_info in props.items():
+            prop_type = prop_info.get("type")
+            is_required = prop_info.get("required", False)
+
+            # variant 옵션 추출
+            if prop_name == "variant" and isinstance(prop_type, list):
+                variants = prop_type
+            elif prop_name == "size" and isinstance(prop_type, list):
+                sizes = prop_type
+            elif is_required:
+                required_props.append(prop_name)
+            else:
+                # 주요 선택 props만 포함
+                if prop_name in ["onClick", "onChange", "disabled", "placeholder", "label", "error", "children"]:
+                    optional_props.append(prop_name)
+
+        # 컴포넌트 정보 포맷팅
+        comp_info = [f"**{name}**"]
+
+        if variants:
+            comp_info.append(f"  - variants: {', '.join(variants)}")
+        if sizes:
+            comp_info.append(f"  - sizes: {', '.join(sizes)}")
+        if required_props:
+            comp_info.append(f"  - required: {', '.join(required_props)}")
+        if optional_props:
+            comp_info.append(f"  - optional: {', '.join(optional_props[:5])}")  # 최대 5개
+
+        result.append("\n".join(comp_info))
+
+    return "\n\n".join(result)
 
 

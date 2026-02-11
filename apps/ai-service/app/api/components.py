@@ -621,7 +621,74 @@ When updating existing code, you MUST:
 - Scan JSX first → List components → Import exactly those
 - Example: `<Button>`, `<Select>` used → `import { Button, Select } from '@/components'`
 
-{design_tokens_section}## 💎 PREMIUM VISUAL STANDARDS
+{design_tokens_section}
+
+## 🎨 DESIGN SYSTEM COMPLIANCE (MANDATORY)
+
+### ⛔ FORBIDDEN: Hard-coded Colors/Spacing (CRITICAL)
+**NEVER use arbitrary color values or custom spacing. ALWAYS use design tokens.**
+
+❌❌❌ FORBIDDEN (These will be REJECTED):
+```tsx
+<div className="bg-blue-500">          // ❌ NO - arbitrary color
+<div className="text-gray-600">        // ❌ NO - arbitrary color
+<div className="border-red-400">       // ❌ NO - arbitrary color
+<div className="p-[24px]">             // ❌ NO - arbitrary spacing
+<div className="mt-[32px]">            // ❌ NO - arbitrary spacing
+<div className="gap-[16px]">           // ❌ NO - arbitrary spacing
+<Button className="bg-emerald-500">    // ❌ NO - custom color on component
+<Badge className="text-green-600">    // ❌ NO - custom color on component
+```
+
+✅✅✅ REQUIRED (Use Component Props + Design Tokens):
+```tsx
+// 색상: 컴포넌트 variant 사용
+<Button variant="primary">             // ✅ CORRECT - uses design system
+<Badge type="status" statusVariant="success">  // ✅ CORRECT
+<Alert variant="error">                // ✅ CORRECT
+
+// 간격: 표준 Tailwind 스케일만 사용 (4px 단위)
+<div className="p-4">                  // ✅ CORRECT - 16px (4×4)
+<div className="mt-6">                 // ✅ CORRECT - 24px (4×6)
+<div className="gap-4">                // ✅ CORRECT - 16px
+<div className="mb-8">                 // ✅ CORRECT - 32px (4×8)
+
+// 배경/테두리: 중립 색상만
+<div className="bg-white">             // ✅ CORRECT
+<div className="bg-gray-50">           // ✅ CORRECT
+<div className="border-gray-300">      // ✅ CORRECT
+<div className="text-gray-900">        // ✅ CORRECT
+```
+
+### 📏 Spacing Scale (ONLY use these values)
+**Standard Tailwind scale (4px unit):**
+- `p-2` (8px), `p-4` (16px), `p-6` (24px), `p-8` (32px)
+- `gap-2`, `gap-4`, `gap-6`, `gap-8`
+- `mt-4`, `mb-6`, `mx-8`
+
+❌ NEVER: `p-[18px]`, `mt-[25px]`, `gap-[12px]` (arbitrary values)
+✅ ALWAYS: Use standard scale above
+
+### 🎨 Color Rules
+**Use component variants for ALL colored elements:**
+- Buttons: `variant="primary" | "secondary" | "tertiary"`
+- Badges: `type="status" statusVariant="success|info|warning|error"`
+- Alerts: `variant="default|error|info|success|warning"`
+
+**For backgrounds/borders (non-semantic):**
+- ✅ `bg-white`, `bg-gray-50`, `bg-gray-100` (neutral only)
+- ✅ `border-gray-300`, `text-gray-900`, `text-gray-600`
+- ❌ NEVER use colored backgrounds (`bg-blue-500`, `bg-green-100`) - use components instead
+
+### 🚨 Verification Checklist (BEFORE submitting code)
+**Search your code for these BANNED patterns:**
+1. `-[` (arbitrary values) → Should be ZERO matches
+2. `bg-blue`, `bg-green`, `bg-red`, `bg-yellow`, `bg-purple` → Should be ZERO matches
+3. `text-blue`, `text-green`, `text-red` (except gray) → Should be ZERO matches
+
+**If found: Replace with component variants or standard scale.**
+
+## 💎 PREMIUM VISUAL STANDARDS
 - **Containerization (NO FLOATING TEXT)**:
   - ALL content must be inside a white card: `<div className="bg-white rounded-xl border border-gray-300 shadow-sm p-6">`
   - NEVER place naked text or buttons directly on the gray background.
@@ -805,7 +872,16 @@ PRE_GENERATION_CHECKLIST = """
    - ❌ NEVER use: Member, User, Item, Card, Container, Heading (these don't exist)
    - **If unsure, use native HTML: `<div>`, `<h1>`, `<span>`**
 
-3. **Import Only What You Use**:
+3. **Design System Components MANDATORY** (USE components, NOT native HTML):
+   - ❌ `<button>` → ✅ Use `<Button>`
+   - ❌ `<input>` → ✅ Use `<Field>`
+   - ❌ `<select>` → ✅ Use `<Select>`
+   - ❌ `<input type="checkbox">` → ✅ Use `<Checkbox>`
+   - ❌ `<input type="radio">` → ✅ Use `<Radio>`
+   - **Exception**: `<div>`, `<span>`, `<h1>`, `<p>`, `<table>` are OK (no component alternative)
+   - **Before submitting**: List ALL design system components you used in your response
+
+4. **Import Only What You Use**:
    - ❌ NEVER import types: HTMLInputElement, ChangeEvent, MouseEvent
    - ✅ ONLY import components you actually render in JSX
 
@@ -819,10 +895,13 @@ RESPONSE_FORMAT_INSTRUCTIONS = """
 
 ## FORMAT
 1. 간단한 한글 설명 (1-2문장)
-2. `<file path="src/...">코드</file>` 태그
+2. **사용된 디자인 시스템 컴포넌트 목록** (검증용)
+3. `<file path="src/...">코드</file>` 태그
 
 ### Example:
 로그인 폼입니다.
+
+**사용된 컴포넌트:** Button, Field
 
 <file path="src/pages/Login.tsx">
 import { Button, Field } from '@/components';
@@ -1046,17 +1125,47 @@ Always respond in Korean.
 **Current Date: {current_date}**
 
 ## Your Task
-Analyze the provided UI design image(s) and generate production-ready React + TypeScript code.
+Analyze the provided UI design image(s) and generate production-ready React + TypeScript code that EXACTLY matches the design.
 
 ## Image Analysis Guidelines
 When analyzing the image, identify:
 1. **Layout Structure**: Flex/Grid containers, spacing, alignment, responsive breakpoints
-2. **Components**: Map visual elements to available design system components
-3. **Colors**: Extract color palette and map to design tokens if available
+2. **Components**: Map visual elements to available design system components (Button, Field, Badge, etc.)
+3. **Colors**: Extract color palette and map to design tokens (CRITICAL: Use component variants, NOT custom colors)
 4. **Typography**: Font sizes, weights, line heights
-5. **Spacing**: Margins, paddings, gaps (use consistent scale)
+5. **Spacing**: Margins, paddings, gaps (use standard 4px scale: p-4, p-6, p-8)
 6. **States**: Hover, active, disabled states if visible
 7. **Interactions**: Buttons, inputs, clickable areas
+
+## 🎨 DESIGN SYSTEM COMPLIANCE (MANDATORY)
+
+### ⛔ FORBIDDEN: Hard-coded Colors/Spacing
+**NEVER use arbitrary color values. ALWAYS use component variants.**
+
+❌❌❌ FORBIDDEN:
+```tsx
+<div className="bg-blue-500">          // ❌ NO - arbitrary color
+<Button className="bg-emerald-500">    // ❌ NO - custom color
+<div className="p-[24px]">             // ❌ NO - arbitrary spacing
+```
+
+✅✅✅ REQUIRED:
+```tsx
+<Button variant="primary">             // ✅ CORRECT - uses design system
+<Badge type="status" statusVariant="success">  // ✅ CORRECT
+<div className="p-6">                  // ✅ CORRECT - standard scale
+```
+
+### 🔨 Component Usage Rules (CRITICAL)
+**Use design system components, NOT native HTML:**
+
+❌ `<button>` → ✅ Use `<Button>`
+❌ `<input>` → ✅ Use `<Field>`
+❌ `<select>` → ✅ Use `<Select>`
+❌ `<input type="checkbox">` → ✅ Use `<Checkbox>`
+❌ `<input type="radio">` → ✅ Use `<Radio>`
+
+**Exception**: `<div>`, `<span>`, `<h1>`, `<p>`, `<table>` are OK (no component alternative)
 
 ## Code Generation Rules
 - Use TypeScript with proper type annotations
@@ -1067,8 +1176,14 @@ When analyzing the image, identify:
 - Follow React best practices (hooks, functional components)
 - Use React.useState, React.useEffect directly (no imports)
 - Add data-instance-id to every component
+- **List all design system components used at the end**
 
 {design_tokens_section}
+
+## ⚠️ CRITICAL: Field Component
+**Field renders `<input>` internally. NEVER put ANYTHING between `<Field>` tags.**
+- ✅ `<Field type="text" label="이름" />`
+- ❌ `<Field>content</Field>` ← CRASH!
 """
 
 async def get_vision_system_prompt(

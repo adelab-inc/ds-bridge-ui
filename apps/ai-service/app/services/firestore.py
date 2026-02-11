@@ -26,11 +26,15 @@ DEFAULT_SCHEMA_KEY = "exports/default/component-schema.json"
 # Type Definitions
 # ============================================================================
 
+# 정렬 순서 타입
+SortOrder = Literal["asc", "desc"]
+
 
 class RoomData(TypedDict, total=False):
     """채팅방 문서 타입"""
 
     id: str
+    room_title: str | None
     storybook_url: str | None
     schema_key: str | None
     user_id: str
@@ -56,6 +60,15 @@ class PaginatedMessages(TypedDict):
     """페이지네이션된 메시지 응답"""
 
     messages: list[MessageData]
+    next_cursor: int | None
+    has_more: bool
+    total_count: int
+
+
+class PaginatedRooms(TypedDict):
+    """페이지네이션된 채팅방 응답"""
+
+    rooms: list[RoomData]
     next_cursor: int | None
     has_more: bool
     total_count: int
@@ -201,6 +214,7 @@ def _messages_by_room_query(room_id: str):
 @handle_firestore_error("채팅방 생성 실패")
 async def create_chat_room(
     user_id: str,
+    room_title: str | None = None,
     storybook_url: str | None = None,
 ) -> RoomData:
     """
@@ -208,6 +222,7 @@ async def create_chat_room(
 
     Args:
         user_id: 사용자 ID
+        room_title: 채팅방 제목 (선택)
         storybook_url: Storybook URL (참고용, 선택)
 
     Returns:
@@ -221,6 +236,7 @@ async def create_chat_room(
 
     room_data: RoomData = {
         "id": room_id,
+        "room_title": room_title,
         "storybook_url": storybook_url,
         "schema_key": DEFAULT_SCHEMA_KEY,
         "user_id": user_id,
@@ -262,6 +278,7 @@ async def get_chat_room(room_id: str) -> RoomData | None:
 @handle_firestore_error("채팅방 업데이트 실패")
 async def update_chat_room(
     room_id: str,
+    room_title: str | None = None,
     storybook_url: str | None = None,
     schema_key: str | None = None,
 ) -> RoomData:
@@ -270,6 +287,7 @@ async def update_chat_room(
 
     Args:
         room_id: 채팅방 ID
+        room_title: 채팅방 제목 (선택)
         storybook_url: Storybook URL (선택)
         schema_key: Firebase Storage 스키마 경로 (선택)
 
@@ -288,6 +306,8 @@ async def update_chat_room(
     db = get_firestore_client()
 
     update_data: dict[str, str | None] = {}
+    if room_title is not None:
+        update_data["room_title"] = room_title
     if storybook_url is not None:
         update_data["storybook_url"] = storybook_url
     if schema_key is not None:
@@ -300,6 +320,80 @@ async def update_chat_room(
     # 업데이트된 문서 반환
     updated_room = await get_chat_room(room_id)
     return updated_room  # type: ignore[return-value]
+
+
+@handle_firestore_error("채팅방 목록 조회 실패")
+async def get_rooms_paginated(
+    user_id: str | None = None,
+    limit: int = 20,
+    cursor: int | None = None,
+    order: SortOrder = "desc",
+) -> PaginatedRooms:
+    """
+    채팅방 목록 페이지네이션 조회
+
+    Args:
+        user_id: 사용자 ID로 필터링 (선택)
+        limit: 페이지당 채팅방 수 (기본 20, 최대 100)
+        cursor: 페이지네이션 커서 (created_at timestamp)
+        order: 정렬 순서 ("asc" 또는 "desc", 기본 "desc" - 최신순)
+
+    Returns:
+        PaginatedRooms: 채팅방 목록, 다음 커서, 더 있는지 여부, 총 개수
+    """
+    db = get_firestore_client()
+    limit = min(limit, 100)  # 최대 100개로 제한
+
+    # 정렬 방향 설정
+    direction = Query.DESCENDING if order == "desc" else Query.ASCENDING
+
+    # 기본 쿼리 구성
+    query = db.collection(CHAT_ROOMS_COLLECTION)
+
+    # user_id 필터링
+    if user_id:
+        query = query.where(filter=FieldFilter("user_id", "==", user_id))
+
+    # 정렬 추가
+    query = query.order_by("created_at", direction=direction)
+
+    # 커서가 있으면 해당 시점 이후부터 조회
+    if cursor is not None:
+        if order == "desc":
+            query = query.where(filter=FieldFilter("created_at", "<", cursor))
+        else:
+            query = query.where(filter=FieldFilter("created_at", ">", cursor))
+
+    # limit + 1로 조회하여 다음 페이지 존재 여부 확인
+    query = query.limit(limit + 1)
+
+    # 병렬 실행: count 쿼리와 데이터 쿼리를 동시에
+    async def get_count():
+        count_query = db.collection(CHAT_ROOMS_COLLECTION)
+        if user_id:
+            count_query = count_query.where(filter=FieldFilter("user_id", "==", user_id))
+        result = await count_query.count().get()
+        return result[0][0].value if result else 0
+
+    async def get_docs():
+        return [doc.to_dict() async for doc in query.stream()]
+
+    total_count, docs = await asyncio.gather(get_count(), get_docs())
+
+    has_more = len(docs) > limit
+    rooms = docs[:limit]  # 실제 반환할 채팅방
+
+    # 다음 커서 설정
+    next_cursor = None
+    if has_more and rooms:
+        next_cursor = rooms[-1]["created_at"]
+
+    return PaginatedRooms(
+        rooms=rooms,  # type: ignore[typeddict-item]
+        next_cursor=next_cursor,
+        has_more=has_more,
+        total_count=total_count,
+    )
 
 
 # ============================================================================
@@ -441,10 +535,6 @@ async def get_messages_until(
     return [doc.to_dict() async for doc in docs]  # type: ignore[misc]
 
 
-# 정렬 순서 타입
-SortOrder = Literal["asc", "desc"]
-
-
 @handle_firestore_error("메시지 페이지네이션 조회 실패")
 async def get_messages_paginated(
     room_id: str,
@@ -543,3 +633,46 @@ async def update_chat_message(
 
     await db.collection(CHAT_MESSAGES_COLLECTION).document(message_id).update(update_data)
     logger.debug("Chat message updated", extra={"message_id": message_id, "fields": list(update_data.keys())})
+
+
+# ============================================================================
+# Delete Operations
+# ============================================================================
+
+
+@handle_firestore_error("채팅방 삭제 실패")
+async def delete_chat_room(room_id: str) -> None:
+    """
+    채팅방 및 관련 메시지 삭제 (Cascade Delete)
+
+    Args:
+        room_id: 채팅방 ID
+
+    Raises:
+        RoomNotFoundError: 채팅방을 찾을 수 없음
+        FirestoreError: Firestore 작업 실패
+    """
+    # 먼저 존재 여부 확인
+    room = await get_chat_room(room_id)
+    if room is None:
+        raise RoomNotFoundError(f"채팅방을 찾을 수 없습니다: {room_id}")
+
+    db = get_firestore_client()
+
+    # 1. 해당 채팅방의 모든 메시지 삭제
+    messages_query = _messages_by_room_query(room_id)
+    message_docs = messages_query.stream()
+
+    deleted_message_count = 0
+    async for doc in message_docs:
+        await doc.reference.delete()
+        deleted_message_count += 1
+
+    logger.info(
+        "Messages deleted",
+        extra={"room_id": room_id, "count": deleted_message_count},
+    )
+
+    # 2. 채팅방 문서 삭제
+    await db.collection(CHAT_ROOMS_COLLECTION).document(room_id).delete()
+    logger.info("Chat room deleted", extra={"room_id": room_id})
