@@ -32,11 +32,15 @@ export function useCreateRoom(mutationOptions?: UseCreateRoomOptions) {
       data: CreateRoomRequest
     ): Promise<CreateRoomResponse> => {
       const token = await useAuthStore.getState().getIdToken();
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
       const response = await fetch('/api/rooms', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(data),
       });
