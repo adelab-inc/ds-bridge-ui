@@ -2,6 +2,10 @@ import { NextRequest } from 'next/server';
 import type { paths } from '@ds-hub/shared-types/typescript/api/schema';
 import { verifyFirebaseToken } from '@/lib/auth/verify-token';
 
+// Vercel Serverless Function 타임아웃 확장 (기본 10초 → 300초)
+// Hobby: 최대 60초, Pro: 최대 300초
+export const maxDuration = 300;
+
 type ChatStreamRequest =
   paths['/chat/stream']['post']['requestBody']['content']['application/json'];
 

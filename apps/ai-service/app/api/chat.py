@@ -1,5 +1,3 @@
-import asyncio
-import html
 import json
 import logging
 import re
@@ -9,7 +7,6 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
 from app.api.components import (
-    AVAILABLE_COMPONENTS_WHITELIST,
     generate_system_prompt,
     get_schema,
     get_vision_system_prompt,
@@ -158,36 +155,47 @@ async def resolve_system_prompt(
     except Exception as e:
         logger.warning("Component definitions not loaded", extra={"error": str(e)})
 
-    # 레이아웃 비활성화 - 시스템 프롬프트 토큰 절감 (~15K tokens)
-    # layouts: list[dict] = []
-    # try:
-    #     layouts = await fetch_all_layouts_from_storage()
-    #     if layouts:
-    #         logger.info("Layouts loaded", extra={"count": len(layouts)})
-    # except Exception as e:
-    #     logger.warning("Layouts not loaded", extra={"error": str(e)})
-    layouts = None
-
-    # 기본 프롬프트 생성 - 항상 Firebase Storage 사용
-    # schema_key가 없으면 default 경로 사용
-    DEFAULT_COMPONENT_SCHEMA_KEY = "exports/default/component-schema.json"
-    schema_key_to_use = schema_key or DEFAULT_COMPONENT_SCHEMA_KEY
-
+    # 레이아웃 로드 (실패 시 빈 리스트, 프롬프트에서 생략됨)
+    layouts: list[dict] = []
     try:
-        schema = await fetch_schema_from_storage(schema_key_to_use)
-        base_prompt = generate_system_prompt(
-            schema, design_tokens, ag_grid_schema, ag_grid_tokens, layouts, component_definitions
-        )
-    except FileNotFoundError:
-        logger.error("Schema not found in Firebase Storage", extra={"schema_key": schema_key_to_use})
-        raise HTTPException(
-            status_code=404, detail=f"Schema not found: {schema_key_to_use}"
-        )
+        layouts = await fetch_all_layouts_from_storage()
+        if layouts:
+            logger.info("Layouts loaded", extra={"count": len(layouts)})
     except Exception as e:
-        logger.error("Failed to fetch schema", extra={"schema_key": schema_key_to_use, "error": str(e)})
-        raise HTTPException(
-            status_code=500, detail="Failed to load schema from storage. Please try again."
-        ) from e
+        logger.warning("Layouts not loaded", extra={"error": str(e)})
+
+    # 기본 프롬프트 생성
+    if not schema_key:
+        # 로컬 스키마 사용
+        local_schema = get_schema()
+        if not local_schema:
+            raise HTTPException(
+                status_code=500, detail="No schema available. Please upload a schema first."
+            )
+        base_prompt = generate_system_prompt(
+            local_schema, design_tokens, ag_grid_schema, ag_grid_tokens, layouts, component_definitions
+        )
+    else:
+        try:
+            schema = await fetch_schema_from_storage(schema_key)
+            base_prompt = generate_system_prompt(
+                schema, design_tokens, ag_grid_schema, ag_grid_tokens, layouts, component_definitions
+            )
+        except FileNotFoundError:
+            logger.warning("Schema not found, using local", extra={"schema_key": schema_key})
+            local_schema = get_schema()
+            if not local_schema:
+                raise HTTPException(
+                    status_code=404, detail=f"Schema not found: {schema_key}"
+                )
+            base_prompt = generate_system_prompt(
+                local_schema, design_tokens, ag_grid_schema, ag_grid_tokens, layouts, component_definitions
+            )
+        except Exception as e:
+            logger.error("Failed to fetch schema", extra={"schema_key": schema_key, "error": str(e)})
+            raise HTTPException(
+                status_code=500, detail="Failed to load schema from storage. Please try again."
+            ) from e
 
     # 인스턴스 편집 모드면 컨텍스트 추가
     if current_composition and selected_instance_id:
@@ -284,97 +292,6 @@ async def build_conversation_history(
 
 FILE_TAG_PATTERN = re.compile(r'<file\s+path="([^"]+)">([\s\S]*?)</file>')
 
-# ============================================================================
-# React Error #137 방지 - Sanitizer
-# ============================================================================
-
-# JSX 속성 매칭: {} 블록(1단계 중첩 포함) 안의 > 를 태그 끝으로 오인하지 않도록 처리
-_JSX_ATTRS = r"(?:[^/>{}]*|\{(?:[^{}]|\{[^}]*\})*\})*"
-
-# children을 가질 수 없는 컴포넌트 (내부에서 <input> 렌더링)
-_SELF_CLOSING_COMPONENTS = "Field|ToggleSwitch"
-_SELF_CLOSING_WITH_CHILDREN = re.compile(
-    rf"<({_SELF_CLOSING_COMPONENTS})\b({_JSX_ATTRS})>[\s\S]*?</\1>",
-)
-
-# <Radio ...>TEXT</Radio> → <label><Radio ... /><span>TEXT</span></label>
-_RADIO_WITH_CHILDREN = re.compile(rf"<Radio\b({_JSX_ATTRS})>([^<]+)</Radio>")
-_CHECKBOX_WITH_CHILDREN = re.compile(rf"<Checkbox\b({_JSX_ATTRS})>([^<]+)</Checkbox>")
-
-# void element에 children이 있는 패턴 ([\s\S]*?로 모든 내용 매칭)
-_VOID_TAGS = "area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr"
-_VOID_WITH_CHILDREN = re.compile(rf"<({_VOID_TAGS})\b({_JSX_ATTRS})>[\s\S]*?</\1>")
-# fallback: 위 정규식이 놓친 void closing tag 제거
-_VOID_CLOSING_TAG = re.compile(rf"</({_VOID_TAGS})>")
-# fallback: self-closing 컴포넌트 closing tag 제거
-_SELF_CLOSING_CLOSING_TAG = re.compile(rf"</({_SELF_CLOSING_COMPONENTS})>")
-
-
-_IMPORT_PATTERN = re.compile(
-    r"(import\s+\{)([^}]*?)(\}\s+from\s+['\"]@/components['\"];?)"
-)
-_JSX_COMPONENT_USAGE = re.compile(r"<([A-Z][a-zA-Z]+)")
-
-
-def fix_missing_imports(code: str) -> str:
-    """
-    JSX에서 사용된 컴포넌트가 import에 누락되어 있으면 자동 추가.
-    화이트리스트에 있는 컴포넌트만 대상.
-    """
-    import_match = _IMPORT_PATTERN.search(code)
-    if not import_match:
-        return code
-
-    # 현재 import된 컴포넌트
-    imported = {c.strip() for c in import_match.group(2).split(",") if c.strip()}
-
-    # JSX에서 사용된 컴포넌트
-    used = set(_JSX_COMPONENT_USAGE.findall(code))
-
-    # 화이트리스트에 있고, 사용되었지만 import 안 된 것
-    missing = (used & AVAILABLE_COMPONENTS_WHITELIST) - imported
-
-    if not missing:
-        return code
-
-    logger.info("Auto-fixing missing imports", extra={"missing": sorted(missing)})
-
-    # import에 추가
-    all_imports = sorted(imported | missing)
-    new_import_list = ", ".join(all_imports)
-    return _IMPORT_PATTERN.sub(
-        rf"\g<1> {new_import_list} \g<3>",
-        code,
-    )
-
-
-def sanitize_void_elements(code: str) -> str:
-    """
-    React Error #137 방지
-
-    1. <Radio ...>Y</Radio> → <label><Radio ... /><span>Y</span></label>
-    2. <Checkbox ...>동의</Checkbox> → <label><Checkbox ... /><span>동의</span></label>
-    3. <Field/ToggleSwitch ...>text</Field> → <Field ... />
-    4. <input ...>text</input> → <input ... />
-    """
-    # 1. Radio/Checkbox: children을 label 래퍼로 변환
-    code = _RADIO_WITH_CHILDREN.sub(
-        r'<label className="inline-flex items-center gap-2 cursor-pointer"><Radio\1 /><span className="text-sm text-gray-800">\2</span></label>',
-        code,
-    )
-    code = _CHECKBOX_WITH_CHILDREN.sub(
-        r'<label className="inline-flex items-center gap-2 cursor-pointer"><Checkbox\1 /><span className="text-sm text-gray-800">\2</span></label>',
-        code,
-    )
-    # 2. Self-closing 컴포넌트: children 제거 (Field, ToggleSwitch)
-    code = _SELF_CLOSING_WITH_CHILDREN.sub(r"<\1\2 />", code)
-    # 3. void elements: self-closing으로 변환
-    code = _VOID_WITH_CHILDREN.sub(r"<\1\2 />", code)
-    # 4. fallback: 남은 closing tag 제거
-    code = _VOID_CLOSING_TAG.sub("", code)
-    code = _SELF_CLOSING_CLOSING_TAG.sub("", code)
-    return code
-
 
 def parse_ai_response(content: str) -> ParsedResponse:
     """
@@ -390,15 +307,10 @@ def parse_ai_response(content: str) -> ParsedResponse:
 
     # <file path="...">...</file> 태그 추출
     for match in FILE_TAG_PATTERN.finditer(content):
-        # HTML 엔티티 디코딩 (&lt; → <, &gt; → >, &amp; → &)
-        decoded_content = html.unescape(match.group(2).strip())
-        # 후처리: void element 수정 + import 누락 자동 추가
-        decoded_content = sanitize_void_elements(decoded_content)
-        decoded_content = fix_missing_imports(decoded_content)
         files.append(
             FileContent(
                 path=match.group(1),
-                content=decoded_content,
+                content=match.group(2).strip(),
             )
         )
 
@@ -467,16 +379,11 @@ class StreamingParser:
                 if end_match:
                     # 파일 내용 완성
                     self.current_file_content += self.buffer[: end_match.start()]
-                    # HTML 엔티티 디코딩 (&lt; → <, &gt; → >, &amp; → &)
-                    decoded_content = html.unescape(self.current_file_content.strip())
-                    # 후처리: void element 수정 + import 누락 자동 추가
-                    decoded_content = sanitize_void_elements(decoded_content)
-                    decoded_content = fix_missing_imports(decoded_content)
                     events.append(
                         {
                             "type": "code",
                             "path": self.current_file_path,
-                            "content": decoded_content,
+                            "content": self.current_file_content.strip(),
                         }
                     )
 
@@ -494,23 +401,9 @@ class StreamingParser:
     def flush(self) -> list[dict]:
         """남은 버퍼 처리 (스트리밍 종료 시 호출)"""
         events: list[dict] = []
-        if self.inside_file and self.current_file_path:
-            # 파일 태그가 닫히지 않은 채 스트림 종료 (토큰 제한 등)
-            # 버퍼링된 코드를 그대로 전송
-            raw_content = (self.current_file_content + self.buffer).strip()
-            if raw_content:
-                decoded_content = html.unescape(raw_content)
-                decoded_content = sanitize_void_elements(decoded_content)
-                decoded_content = fix_missing_imports(decoded_content)
-                events.append({
-                    "type": "code",
-                    "path": self.current_file_path,
-                    "content": decoded_content,
-                })
-        else:
-            remaining = self.buffer.strip()
-            if remaining:
-                events.append({"type": "chat", "text": remaining})
+        remaining = self.buffer.strip()
+        if remaining and not self.inside_file:
+            events.append({"type": "chat", "text": remaining})
         return events
 
 
@@ -814,27 +707,16 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
                 else:
                     stream = provider.chat_stream(messages)
 
-                event_count = 0
-                last_event_time = asyncio.get_event_loop().time()
                 async for chunk in stream:
                     events = parser.process_chunk(chunk)
-                    if events:
-                        for event in events:
-                            event_count += 1
-                            if event["type"] == "chat":
-                                collected_text += event.get("text", "")
-                            elif event["type"] == "code":
-                                collected_files.append(event)
-                            yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
-                        last_event_time = asyncio.get_event_loop().time()
-                    else:
-                        # 파일 버퍼링 중 - 10초마다 keep-alive 전송
-                        now = asyncio.get_event_loop().time()
-                        if now - last_event_time > 10:
-                            yield ": keep-alive\n\n"
-                            last_event_time = now
+                    for event in events:
+                        # 이벤트 수집
+                        if event["type"] == "chat":
+                            collected_text += event.get("text", "")
+                        elif event["type"] == "code":
+                            collected_files.append(event)
 
-                logger.info("Stream done", extra={"events": event_count})
+                        yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
 
                 # 남은 버퍼 처리
                 final_events = parser.flush()

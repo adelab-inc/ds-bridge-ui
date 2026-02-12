@@ -202,7 +202,7 @@ def format_design_tokens(tokens: dict | None) -> str:
     bg_selection = colors.get("bg-selection", "#ecf0fa")
 
     # 전체 색상 토큰 JSON (사용자가 토큰 이름으로 요청 시 참조용)
-    all_colors_json = json.dumps(colors, ensure_ascii=False, separators=(",", ":"))
+    all_colors_json = json.dumps(colors, ensure_ascii=False, indent=2)
 
     # 폰트 크기/두께 추출 (Mapping to smaller tokens for better density)
     # Page Title (h1) -> Use Heading LG token
@@ -371,23 +371,31 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("")
 
     # 셀 렌더러
-    lines.append("### Cell Renderers")
+    lines.append("### Cell Renderers (⚠️ ONLY these 3 — NO inline functions)")
+    lines.append("**NEVER use inline cellRenderer functions. They SILENTLY KILL the entire grid.**")
     lines.append("")
-    lines.append("**⚠️ CRITICAL: cellRenderer CANNOT use inline JSX**")
-    lines.append("- ❌ WRONG: `cellRenderer: (params) => <Badge>{params.value}</Badge>` (crashes - inline JSX not supported)")
-    lines.append("- ❌ WRONG: `cellRenderer: (params) => <Radio checked={...}>Y</Radio>` (crashes - inline JSX not supported)")
-    lines.append("- ✅ CORRECT: `cellRenderer: (params) => params.value === 'Y' ? 'Y' : 'N'` (return string/HTML)")
-    lines.append("- ✅ CORRECT: `cellRenderer: ButtonCellRenderer` (use predefined cell renderer)")
+    lines.append("- **ButtonCellRenderer**: Action button in cell. Passes row `data` to onClick.")
+    lines.append("- **CheckboxCellRenderer**: Checkbox in cell. `cellRendererParams: { onCheckboxChange: (data, checked) => ... }`")
+    lines.append("- **ImageCellRenderer**: Thumbnail image from field value (30x30)")
     lines.append("")
-    lines.append("**Available Predefined Cell Renderers:**")
-    lines.append("- **ButtonCellRenderer**: `cellRenderer: ButtonCellRenderer, cellRendererParams: { onClick: (data) => ... }`")
-    lines.append("- **CheckboxCellRenderer**: `cellRenderer: CheckboxCellRenderer, cellRendererParams: { onCheckboxChange: (data, checked) => ... }`")
-    lines.append("- **ImageCellRenderer**: `cellRenderer: ImageCellRenderer` (renders 30x30 image from field value)")
+    lines.append("**Action Button Column Pattern (e.g., '상세', '수정', '삭제'):**")
+    lines.append("```tsx")
+    lines.append("// ✅ CORRECT — Use ButtonCellRenderer with onClick handler")
+    lines.append("{")
+    lines.append("  headerName: '상세',")
+    lines.append("  width: 100,")
+    lines.append("  cellRenderer: ButtonCellRenderer,")
+    lines.append("  cellRendererParams: {")
+    lines.append("    onClick: (data: any) => {")
+    lines.append("      setSelectedItem(data);")
+    lines.append("      setIsDetailOpen(true);")
+    lines.append("    }")
+    lines.append("  }")
+    lines.append("}")
     lines.append("")
-    lines.append("**For Badge/Radio/Complex UI in cells:**")
-    lines.append("- Use HTML table (`<table>`) instead of DataGrid")
-    lines.append("- Or return HTML string: `cellRenderer: (p) => '<span class=\"text-green-600\">Y</span>'`")
-    lines.append("- Or use simple text: `cellRenderer: (p) => p.value === 'Y' ? '사용' : '미사용'`")
+    lines.append("// ❌ FATAL — inline cellRenderer KILLS the grid (no error, just empty)")
+    lines.append("// cellRenderer: (params) => <Button onClick={() => setSelectedItem(params.data)}>상세</Button>")
+    lines.append("```")
     lines.append("")
 
     # AgGridUtils
@@ -401,7 +409,7 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("")
 
     # 사용 예시
-    lines.append("### Usage Example")
+    lines.append("### Usage Example (Basic)")
     lines.append("```tsx")
     lines.append("import { DataGrid, COLUMN_TYPES } from '@aplus/ui';")
     lines.append("import { ColDef } from 'ag-grid-community';")
@@ -413,19 +421,55 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("  { field: 'status', headerName: '상태', width: 100 },")
     lines.append("];")
     lines.append("")
-    lines.append("const rowData = [")
-    lines.append("  { name: '김민수', email: 'kim@example.com', salary: 5000000, status: '활성' },")
-    lines.append("  { name: '이지은', email: 'lee@example.com', salary: 4500000, status: '비활성' },")
+    lines.append("<DataGrid rowData={rowData} columnDefs={columnDefs} height={400} pagination paginationPageSize={10} />")
+    lines.append("```")
+    lines.append("")
+    lines.append("### Usage Example (Complex - Many Columns + Action Button)")
+    lines.append("```tsx")
+    lines.append("import { DataGrid, COLUMN_TYPES, ButtonCellRenderer } from '@aplus/ui';")
+    lines.append("")
+    lines.append("// For grouped headers, use headerName prefix instead of column groups")
+    lines.append("const columnDefs: ColDef[] = [")
+    lines.append("  { field: 'empNo', headerName: '사번', width: 100, pinned: 'left' },")
+    lines.append("  { field: 'name', headerName: '성명', width: 120, pinned: 'left' },")
+    lines.append("  { field: 'dept', headerName: '[인사] 부서', flex: 1 },")
+    lines.append("  { field: 'position', headerName: '[인사] 직급', width: 100 },")
+    lines.append("  { field: 'joinDate', headerName: '[인사] 입사일', ...COLUMN_TYPES.dateColumn },")
+    lines.append("  { field: 'baseSalary', headerName: '[급여] 기본급', ...COLUMN_TYPES.currencyColumn },")
+    lines.append("  { field: 'bonus', headerName: '[급여] 상여금', ...COLUMN_TYPES.currencyColumn },")
+    lines.append("  { field: 'status', headerName: '상태', width: 100,")
+    lines.append("    valueFormatter: (params) => params.value === 'active' ? '재직' : '퇴직' },")
+    lines.append("  // Action button — MUST use ButtonCellRenderer, NEVER inline function")
+    lines.append("  { headerName: '상세', width: 100, pinned: 'right',")
+    lines.append("    cellRenderer: ButtonCellRenderer,")
+    lines.append("    cellRendererParams: { onClick: (data: any) => { setSelectedItem(data); setIsDetailOpen(true); } } },")
     lines.append("];")
     lines.append("")
-    lines.append("<DataGrid")
-    lines.append("  rowData={rowData}")
-    lines.append("  columnDefs={columnDefs}")
-    lines.append("  height={400}")
-    lines.append("  pagination")
-    lines.append("  paginationPageSize={10}")
-    lines.append("/>")
+    lines.append("<DataGrid rowData={rowData} columnDefs={columnDefs} height={600} pagination paginationPageSize={20} />")
     lines.append("```")
+    lines.append("")
+
+    # columnDefs 안전 규칙
+    lines.append("### ⚠️ CRITICAL: columnDefs Rules (VIOLATION = SILENT GRID FAILURE)")
+    lines.append("AG Grid will **silently fail to render** (empty container, no error) if columnDefs are invalid.")
+    lines.append("")
+    lines.append("**1. FLAT columnDefs ONLY — NO column groups:**")
+    lines.append("- ❌ `{ headerName: '인사정보', children: [{ field: 'name' }, { field: 'dept' }] }` — GRID DIES SILENTLY")
+    lines.append("- ❌ `marryChildren: true` — NOT SUPPORTED")
+    lines.append("- ✅ Use flat columns: `{ field: 'name', headerName: '이름' }, { field: 'dept', headerName: '부서' }`")
+    lines.append("- To visually group headers, use `headerName` prefix: `'[인사] 이름'`, `'[인사] 부서'`")
+    lines.append("")
+    lines.append("**2. cellRenderer — ONLY use named components:**")
+    lines.append("- ❌ `cellRenderer: (params) => <span>{params.value}</span>` — INLINE FUNCTION KILLS GRID")
+    lines.append("- ❌ `cellRenderer: (params) => { return <div>...</div> }` — ALSO KILLS GRID")
+    lines.append("- ✅ `cellRenderer: ButtonCellRenderer` — Named component from @aplus/ui")
+    lines.append("- ✅ `cellRenderer: CheckboxCellRenderer` — Named component from @aplus/ui")
+    lines.append("- ✅ `cellRenderer: ImageCellRenderer` — Named component from @aplus/ui")
+    lines.append("- For custom display, use `valueFormatter` instead: `valueFormatter: (params) => params.value ? '활성' : '비활성'`")
+    lines.append("")
+    lines.append("**3. pinned — ONLY on top-level columns:**")
+    lines.append("- ✅ `{ field: 'name', pinned: 'left' }` — Works on flat column")
+    lines.append("- ❌ Pinned inside column group children — GRID DIES")
     lines.append("")
 
     # 금지 사항
@@ -434,8 +478,6 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("- ❌ `import { dsRuntimeTheme } from '@/themes/agGridTheme'` — Does NOT exist")
     lines.append("- ❌ `<div style={{ height: 500 }}><DataGrid ... /></div>` — Use `height` prop instead")
     lines.append("- ❌ `style={{ '--ag-header-background-color': 'red' }}` — Do NOT override theme tokens")
-    lines.append("- ❌ `cellRenderer: (params) => <Badge>...</Badge>` — NO inline JSX in cellRenderer")
-    lines.append("- ❌ `cellRenderer: (params) => <div><Radio>Y</Radio></div>` — NO inline JSX in cellRenderer")
     lines.append("")
 
     return "\n".join(lines)
@@ -460,7 +502,7 @@ def format_ag_grid_tokens(tokens: dict | None) -> str:
         return ""
 
     # 전체 토큰을 JSON으로 포함
-    tokens_json = json.dumps(grid_tokens, ensure_ascii=False, separators=(",", ":"))
+    tokens_json = json.dumps(grid_tokens, ensure_ascii=False, indent=2)
 
     return f"""### AG Grid Styling Tokens
 
@@ -486,7 +528,7 @@ def format_component_definitions(definitions: dict | None) -> str:
     if not definitions:
         return ""
 
-    definitions_json = json.dumps(definitions, ensure_ascii=False, separators=(",", ":"))
+    definitions_json = json.dumps(definitions, ensure_ascii=False, indent=2)
 
     return f"""## 🧩 Component Definitions (CSS Variant Structure)
 Below are the Tailwind CSS variant definitions for each component. Use these to understand component structure, available variants, and their visual styles.
@@ -577,30 +619,64 @@ When updating existing code, you MUST:
 - ❌ User asks to modify one field → You modify all fields
 - ✅ Surgical precision: Change ONLY what user asked, nothing else
 
-## 🔥 FATAL RULES (VIOLATION = APP CRASH)
+## 🔥🔥🔥 FATAL ERRORS - STOP AND READ (APP CRASHES = TOTAL FAILURE) 🔥🔥🔥
 
-### ⛔ Field Component (React Error #137)
-- Field renders `<input>` internally. **ALWAYS self-closing `<Field ... />`**
-- ❌ `<Field>text</Field>`, `<Field><input /></Field>`, `<Field>{x}</Field>` → ALL CRASH
-- ✅ `<Field type="text" label="이름" />`, `<Field value={v} onChange={fn} />`
+### ⛔⛔⛔ #1 MOST COMMON MISTAKE: Field Component (80% BUG RATE)
+**READ THIS 3 TIMES. THIS IS THE #1 REASON APPS CRASH.**
 
-### ⛔ Radio/Checkbox (React Error #137)
-- Radio/Checkbox pass `{...props}` to internal `<input>`. **Children get spread to `<input>` → CRASH**
-- ❌ `<Radio>Y</Radio>`, `<Checkbox>동의</Checkbox>` → CRASH
-- ✅ Wrap with `<label>`:
+**`<Field>` is NOT a wrapper. It renders `<input>` internally. NEVER put ANYTHING between `<Field>` tags.**
+
+❌❌❌ THESE PATTERNS CRASH THE APP (React Error #137):
 ```tsx
-<label className="inline-flex items-center gap-2 cursor-pointer">
-  <Radio checked={status === 'Y'} onChange={() => setStatus('Y')} />
-  <span className="text-sm text-gray-800">Y</span>
-</label>
+<Field>content</Field>           // 🔥 CRASH - NO text between tags
+<Field><input /></Field>          // 🔥 CRASH - NO input inside Field
+<Field>{variable}</Field>         // 🔥 CRASH - NO variables between tags
+<Field placeholder="..." />       // 🔥 CRASH - NO closing tag, even without children
+  ...
+</Field>
 ```
 
-### ⛔ Component Whitelist
-- ONLY use: Button, Field, Select, Badge, Checkbox, Radio, Dialog, Tag, Chip, Tooltip, Divider, ToggleSwitch, DataGrid, etc.
-- ❌ `<Member />`, `<Card />`, `<Input />`, `<DatePicker />` → don't exist. Use `<div>` + Tailwind or `<Field type="date" />`
+✅✅✅ THE ONLY CORRECT WAY (self-closing with />):
+```tsx
+<Field type="text" label="이름" />              // ✅ CORRECT
+<Field value={v} onChange={fn} />               // ✅ CORRECT
+<Field type="email" label="이메일" className="w-full" />  // ✅ CORRECT
+```
 
-### ⛔ Import Rules
-- ONLY import components you render in JSX. ❌ types, unused components
+**🚨 VERIFICATION CHECKLIST (DO THIS EVERY TIME):**
+1. Count `<Field` in your code → Count must equal `/>` endings
+2. Search for `</Field>` → MUST BE ZERO RESULTS
+3. Every `<Field` line MUST end with `/>`
+
+### ⛔ #2 STRICT COMPONENT WHITELIST (NO HALLUCINATIONS)
+**ONLY use components from the whitelist below. DO NOT create or import custom components.**
+
+❌❌❌ NEVER use these (they don't exist):
+```tsx
+<Member />          // ❌ NO - not in whitelist
+<User />            // ❌ NO - not in whitelist
+<Item />            // ❌ NO - not in whitelist
+<Card />            // ❌ NO - use <div> with Tailwind
+<Input />           // ❌ NO - use <Field />
+<DatePicker />      // ❌ NO - use <Field type="date" />
+```
+
+✅ ONLY use: Button, Field, Select, Badge, Checkbox, Radio, Dialog, etc. (see whitelist)
+
+### ⛔ #3 Import Only JSX Components (NO TYPES)
+❌ NEVER import: `HTMLInputElement`, `ChangeEvent`, `MouseEvent`, interfaces, types
+✅ ONLY import: `Button`, `Field`, `Select` (actual components you render in JSX)
+
+## 🚫 IMPORT RULES (CRITICAL)
+**Import ONLY components you use in JSX. Unused imports = CRASH.**
+
+❌ NEVER import:
+- Unused components (Option, OptionGroup when using Select with `options` prop)
+- TypeScript types (HTMLInputElement, ChangeEvent - define inline instead)
+
+✅ ALWAYS:
+- Scan JSX first → List components → Import exactly those
+- Example: `<Button>`, `<Select>` used → `import { Button, Select } from '@/components'`
 
 {design_tokens_section}## 💎 PREMIUM VISUAL STANDARDS
 - **Containerization (NO FLOATING TEXT)**:
@@ -645,7 +721,8 @@ When updating existing code, you MUST:
     - **Default Selection**: Use option's `value` (NOT `label`) for `defaultValue`:
       - ✅ `<Select defaultValue="all" options={[{ label: '전체', value: 'all' }, ...]} />`
       - ❌ `<Select defaultValue="전체" options={...} />` (using label - WRONG)
-  - **Radio/Checkbox/ToggleSwitch**: See FATAL RULES above. Use `<label>` wrapper, `checked` + `onChange`, NO children.
+  - **Radio/Checkbox/ToggleSwitch**: Use `checked` with `onChange` handler for controlled state:
+    - ✅ `<Checkbox checked={isChecked} onChange={(e) => setIsChecked(e.target.checked)} />`
   - **Inputs**: internal inputs MUST be `className="w-full"`. NEVER use fixed pixels like `w-[300px]` inside a grid.
   - **Z-Index**: Dropdowns/Modals must have `z-50` or higher to float above content.
 
@@ -680,8 +757,29 @@ When updating existing code, you MUST:
     ```
   - **For icons**: Use text symbols or the design system's icon component (if available), NOT image files.
   - **Exception**: Only use `<img>` if the user explicitly provides a real image URL.
-- **Void Elements**: `<input>`, `<br>`, `<hr>`, `<img>` MUST be self-closing. NEVER use native `<input>` — use `<Field />`, `<Radio />`, `<Checkbox />`.
-- **Non-existent Components**: `DatePicker` → `<Field type="date" />` | `Input` → `<Field />` | `TextArea` → `<Field multiline />`
+- **HTML Void Elements — SELF-CLOSING (CRITICAL: VIOLATION = APP CRASH)**:
+  - Void elements (`input`, `br`, `hr`, `img`, etc.) MUST end with `/>` and NEVER have children:
+    - ✅ `<input value={v} onChange={fn} />` | `<br />` | `<img src={url} alt="" />`
+    - ❌ `<input>text</input>` — FATAL ERROR (React Error #137)
+- **⛔ ABSOLUTE RULE: Field Component (CRITICAL: PREVENTS REACT ERROR #137)**:
+  - **Field renders `<input>` internally. NEVER EVER put ANYTHING between `<Field>` tags.**
+  - Field is NOT a wrapper. It's a self-contained input component.
+  - **BEFORE writing `<Field>`: Verify it ends with `/>` and has ZERO content between tags.**
+  - ✅ CORRECT:
+    - `<Field type="text" label="이름" />`
+    - `<Field type="number" value={count} onChange={fn} />`
+    - `<Field multiline label="설명" rowsVariant="flexible" />`
+  - ❌ FATAL ERROR (crashes app):
+    - `<Field><input type="number" /></Field>` — NO! Field already has input inside
+    - `<Field label="검색">검색어 입력</Field>` — NO! No text between tags
+    - `<Field>{someContent}</Field>` — NO! Field doesn't accept children
+  - ❌ `<input type="text" placeholder="이름" />` — NO! Always use Field, never native input
+- **Non-existent Components — DO NOT import or use**:
+  - `DatePicker`, `DateInput`, `Calendar` → Use `<Field type="date" />`
+  - `TimePicker`, `TimeInput` → Use `<Field type="time" />`
+  - `NumberInput`, `TextInput` → Use `<Field type="number" />`, `<Field type="text" />`
+  - `TextArea`, `Textarea` → Use `<Field multiline />`
+  - `Input` → Use `<Field />` (Input is NOT in the whitelist)
 - **Spacing**:
   - **섹션 간**: `mb-8` (32px)
   - **폼 행 간**: `mb-6` (24px)
@@ -692,16 +790,6 @@ When updating existing code, you MUST:
     - **3 items**: `col-span-4` each (4 × 3 = 12)
     - **2 items**: `col-span-6` each (6 × 2 = 12)
     - **Mixed layout**: Combine different spans (e.g., `col-span-8` + `col-span-4` for main + sidebar)
-  - **Grid Layout Ratios (CUSTOM PROPORTIONS)**:
-    - When user requests ratio layouts (e.g., "3/6/3", "2/8/2", "1/10/1"), convert to col-span
-    - **Examples**:
-      - "3/6/3 비율로 나눠줘" → `<div className="grid grid-cols-12 gap-4"><div className="col-span-3">...</div><div className="col-span-6">...</div><div className="col-span-3">...</div></div>`
-      - "2/8/2 비율" → `col-span-2` + `col-span-8` + `col-span-2` = 12
-      - "4/4/4 비율" → `col-span-4` each = 12
-      - "1/10/1 비율" → `col-span-1` + `col-span-10` + `col-span-1` = 12
-      - "3/9 비율" → `col-span-3` + `col-span-9` = 12
-    - **Rule**: Sum of all col-span values MUST equal 12
-    - **Validation**: Always check that ratio numbers add up to 12 (e.g., 2+8+2=12 ✅, 3+5+3=11 ❌)
   - **Simple Grid (for equal divisions)**:
     - **4 items**: `grid-cols-4` | **3 items**: `grid-cols-3` | **2 items**: `grid-cols-2`
     - Use this when all items have equal width (simpler than 12-column)
@@ -759,12 +847,26 @@ PRE_GENERATION_CHECKLIST = """
 
 ---
 
-## ⚠️ FINAL CHECKLIST (before writing code)
-- [ ] Every `<Field` ends with `/>` (NO closing tag, NO children)
-- [ ] Radio/Checkbox: NO children, use `<label>` wrapper with `<span>` for text
-- [ ] All components are from the whitelist (unknown → use `<div>` + Tailwind)
-- [ ] Only import components rendered in JSX (NO type imports)
-- [ ] Radio/Checkbox have both `checked={condition}` and `onChange={handler}`
+## ⚠️⚠️⚠️ BEFORE YOU GENERATE CODE - FINAL CHECKLIST ⚠️⚠️⚠️
+
+**STOP. Read this before writing ANY code:**
+
+1. **Field Component** (90% of bugs come from this):
+   - ✅ Every `<Field` MUST end with `/>`
+   - ❌ NEVER `</Field>` closing tag
+   - ❌ NEVER put ANYTHING between `<Field>` tags
+   - **Count check**: Number of `<Field` = Number of `/>`
+
+2. **Component Whitelist** (NO hallucinations):
+   - ✅ ONLY use: Button, Field, Select, Badge, Checkbox, Radio, Dialog, Tag, Chip, etc.
+   - ❌ NEVER use: Member, User, Item, Card, Container, Heading (these don't exist)
+   - **If unsure, use native HTML: `<div>`, `<h1>`, `<span>`**
+
+3. **Import Only What You Use**:
+   - ❌ NEVER import types: HTMLInputElement, ChangeEvent, MouseEvent
+   - ✅ ONLY import components you actually render in JSX
+
+**If you violate these rules, the app will CRASH immediately.**
 
 ---
 
@@ -808,23 +910,61 @@ export default Login;
 """
 
 SYSTEM_PROMPT_FOOTER = """
-## 🚨 OUTPUT QUALITY RULES
+## 🚨 CRITICAL RULES - VIOLATION = FAILURE
 
 ### 1. FILE COMPLETENESS
 - NEVER truncate code (no `// ...` or `// rest of code`). All buttons need `onClick`, all inputs need `value` + `onChange`.
-- **PROPS VALIDATION**: Use exact enum values (`variant="primary"` NOT `variant="blue"`).
-- **INSTANCE IDs**: All design system components MUST have `data-instance-id`.
-- **IMPORT CHECK**: Verify all used components are imported.
 
-### 2. DESIGN SYSTEM CONSISTENCY (CONTEXT-AWARE SPACING)
+### 2. COMPONENT USAGE (NO HALLUCINATIONS)
+- **STRICT WHITELIST**: Only use components listed in "Available Components" section above. **NEVER create custom components.**
+  - ❌ `<Member />`, `<User />`, `<Item />`, `<Card />` → These don't exist!
+  - ❌ `<Heading />`, `<Container />`, `<Section />` → Use `<h1>`, `<div>` instead
+  - ✅ Only: Button, Field, Select, Badge, Checkbox, Dialog, etc. (check whitelist)
+  - **If you need a component not in whitelist, use native HTML + Tailwind CSS**
+- **PROPS VALIDATION**: Use exact enum values (`variant="primary"` NOT `variant="blue"`). Don't hallucinate props.
+- **INSTANCE IDs**: All design system components MUST have `data-instance-id` (e.g., `<Button data-instance-id="submit-btn">`).
+- **IMPORT CHECK**: Verify all used components are imported (e.g., `Select` usage without import = ReferenceError).
 
-- **Page Background**: `className="min-h-screen bg-gray-50 p-6"`
-- **White Card**: `className="bg-white rounded-xl border border-gray-300 shadow-sm p-6"`
-- **Spacing**: sections `mb-6`, form fields `mb-5`, related items `mb-3`~`mb-4`, filters `gap-3`~`gap-4`, cards `gap-4`~`gap-6`
-- **Colors**: Only `bg-gray-50`, `bg-white`, `text-gray-800`, `border-gray-300` etc. No arbitrary hex.
-- **Typography**: Page title `text-2xl font-bold`, Section `text-lg font-semibold`, Body `text-sm`
-- **Shadows**: `shadow-sm` only. **Borders**: `border border-gray-300` only.
-- **Consistency**: Same element types = same spacing/styling on a page.
+### 3. TECHNICAL CONSTRAINTS
+- TAILWIND CSS ONLY: Use `className="..."`. Use `style={{}}` ONLY for dynamic JS variables. Don't create custom CSS.
+- NO EXTERNAL LIBS: Don't import `lucide-react` or `framer-motion`.
+- REACT HOOKS: Use `React.useState`, `React.useEffect` directly (no imports).
+- VOID ELEMENTS (REACT ERROR #137): `<input>`, `<br>`, `<hr>`, `<img>` MUST end with `/>`. ❌ `<input>text</input>` crashes.
+- **⛔ FIELD NO CHILDREN (REACT ERROR #137 - FATAL)**: Field is NOT a wrapper. NEVER put anything between `<Field>` tags. ❌ `<Field><input /></Field>` | ❌ `<Field>text</Field>` | ❌ `<Field>{content}</Field>` ALL CRASH. ✅ `<Field type="text" label="이름" />` self-closing only.
+- NO HALLUCINATED COMPONENTS: `DatePicker` → `<Field type="date" />` | `Input` → `<Field type="text" />`
+- Checkbox/Radio/ToggleSwitch MUST have onChange: ❌ `<Checkbox checked={true} />` (read-only) ✅ `<Checkbox checked={isChecked} onChange={(e) => setIsChecked(e.target.checked)} />`
+
+### 4. DESIGN SYSTEM CONSISTENCY (CRITICAL - CONTEXT-AWARE SPACING)
+**Apply consistent styles based on context. Choose appropriate values for each situation.**
+
+- **Page Background**: `className="min-h-screen bg-gray-50 p-6"` (ALWAYS)
+- **White Card Container**: `className="bg-white rounded-xl border border-gray-300 shadow-sm p-6"` (STANDARD)
+
+- **Spacing Guidelines (choose based on visual hierarchy)**:
+  - **Major sections** (cards, panels): `mb-6` (24px) - clear visual separation
+  - **Form fields** (inputs in forms): `mb-5` (20px) - grouped but distinct
+  - **Related items** (label + field, button groups): `mb-4` or `mb-3` - tight grouping
+  - **Grid gaps**:
+    - Filters/controls: `gap-3` or `gap-4` (compact)
+    - Cards/items: `gap-6` or `gap-4` (spacious)
+  - **Consistency rule**: Use same spacing for same element types on a page
+    - Example: All form fields → all `mb-5`, all section cards → all `mb-6`
+
+- **Colors (USE DESIGN TOKENS ONLY)**:
+  - ✅ **Standard tokens**: `bg-gray-50`, `bg-white`, `text-gray-800`, `border-gray-300`
+  - ❌ **Never use**: `bg-gray-100`, `bg-[#f5f5f5]`, `text-black`, arbitrary hex colors
+  - **Principle**: Stick to design system tokens. No custom colors.
+
+- **Typography (context-based)**:
+  - **Page Title**: `text-2xl font-bold text-gray-800 mb-6`
+  - **Section Title**: `text-lg font-semibold text-gray-800 mb-4`
+  - **Body text**: `text-sm text-gray-700` (default size)
+
+- **Shadows/Borders (FIXED VALUES)**:
+  - Card shadow: `shadow-sm` ONLY (never `shadow`, `shadow-md`, `shadow-lg`)
+  - Border: `border border-gray-300` ONLY (never other gray shades like 200, 400)
+
+**Key principle**: Be consistent within each page. Same element types = same spacing/styling.
 
 Create a premium, completed result."""
 

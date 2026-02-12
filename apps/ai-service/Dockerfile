@@ -14,6 +14,7 @@ RUN uv sync --frozen --no-dev --no-install-project
 
 # Copy application code
 COPY app/ ./app/
+COPY component-schema.json ./
 
 # Install the project itself
 RUN uv sync --frozen --no-dev
@@ -32,6 +33,7 @@ COPY --from=builder --chown=appuser:appuser /app/.venv /app/.venv
 
 # Copy application files
 COPY --from=builder --chown=appuser:appuser /app/app ./app
+COPY --from=builder --chown=appuser:appuser /app/component-schema.json ./
 
 # Set environment variables
 ENV PATH="/app/.venv/bin:$PATH"
