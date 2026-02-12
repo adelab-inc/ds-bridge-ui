@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 from functools import lru_cache
@@ -143,16 +144,18 @@ async def fetch_schema_from_storage(schema_key: str, use_cache: bool = True) -> 
     # Firebase 초기화
     init_firebase()
 
-    try:
+    def _sync_fetch() -> dict:
         bucket = storage.bucket()
         blob = bucket.blob(schema_key)
 
         if not blob.exists():
             raise FileNotFoundError(f"Schema not found in storage: {schema_key}")
 
-        # 다운로드 및 파싱
         content = blob.download_as_string()
-        schema = json.loads(content.decode("utf-8"))
+        return json.loads(content.decode("utf-8"))
+
+    try:
+        schema = await asyncio.to_thread(_sync_fetch)
 
         # 캐시 저장 (크기 제한 적용)
         if use_cache:
@@ -205,17 +208,22 @@ async def fetch_design_tokens_from_storage(
     # Firebase 초기화
     init_firebase()
 
-    try:
+    def _sync_fetch() -> dict | None:
         bucket = storage.bucket()
         blob = bucket.blob(tokens_key)
 
         if not blob.exists():
-            logger.warning("Design tokens not found", extra={"tokens_key": tokens_key})
             return None
 
-        # 다운로드 및 파싱
         content = blob.download_as_string()
-        tokens = json.loads(content.decode("utf-8"))
+        return json.loads(content.decode("utf-8"))
+
+    try:
+        tokens = await asyncio.to_thread(_sync_fetch)
+
+        if tokens is None:
+            logger.warning("Design tokens not found", extra={"tokens_key": tokens_key})
+            return None
 
         # 캐시 저장
         _design_tokens_cache = tokens
@@ -253,17 +261,22 @@ async def fetch_ag_grid_tokens_from_storage(
     # Firebase 초기화
     init_firebase()
 
-    try:
+    def _sync_fetch() -> dict | None:
         bucket = storage.bucket()
         blob = bucket.blob(tokens_key)
 
         if not blob.exists():
-            logger.warning("AG Grid tokens not found", extra={"tokens_key": tokens_key})
             return None
 
-        # 다운로드 및 파싱
         content = blob.download_as_string()
-        tokens = json.loads(content.decode("utf-8"))
+        return json.loads(content.decode("utf-8"))
+
+    try:
+        tokens = await asyncio.to_thread(_sync_fetch)
+
+        if tokens is None:
+            logger.warning("AG Grid tokens not found", extra={"tokens_key": tokens_key})
+            return None
 
         # 캐시 저장
         _ag_grid_tokens_cache = tokens
@@ -301,17 +314,22 @@ async def fetch_component_definitions_from_storage(
     # Firebase 초기화
     init_firebase()
 
-    try:
+    def _sync_fetch() -> dict | None:
         bucket = storage.bucket()
         blob = bucket.blob(definitions_key)
 
         if not blob.exists():
-            logger.warning("Component definitions not found", extra={"definitions_key": definitions_key})
             return None
 
-        # 다운로드 및 파싱
         content = blob.download_as_string()
-        definitions = json.loads(content.decode("utf-8"))
+        return json.loads(content.decode("utf-8"))
+
+    try:
+        definitions = await asyncio.to_thread(_sync_fetch)
+
+        if definitions is None:
+            logger.warning("Component definitions not found", extra={"definitions_key": definitions_key})
+            return None
 
         # 캐시 저장
         _component_definitions_cache = definitions
@@ -347,13 +365,14 @@ async def upload_schema_to_storage(schema_key: str, schema_data: dict) -> str:
     # Firebase 초기화
     init_firebase()
 
-    try:
+    def _sync_upload() -> None:
         bucket = storage.bucket()
         blob = bucket.blob(schema_key)
-
-        # JSON으로 직렬화하여 업로드
         content = json.dumps(schema_data, ensure_ascii=False, indent=2)
         blob.upload_from_string(content, content_type="application/json")
+
+    try:
+        await asyncio.to_thread(_sync_upload)
 
         logger.info("Schema uploaded", extra={"schema_key": schema_key})
 
@@ -432,16 +451,15 @@ async def upload_image_to_storage(
     extension = _get_extension_from_media_type(media_type)
     storage_path = f"{USER_UPLOADS_PATH}/{room_id}/{timestamp}_{file_uuid}.{extension}"
 
-    try:
+    def _sync_upload() -> str:
         bucket = storage.bucket()
         blob = bucket.blob(storage_path)
-
-        # 업로드
         blob.upload_from_string(image_data, content_type=media_type)
-
-        # Public URL 생성
         blob.make_public()
-        public_url = blob.public_url
+        return blob.public_url
+
+    try:
+        public_url = await asyncio.to_thread(_sync_upload)
 
         logger.info("Image uploaded", extra={"storage_path": storage_path, "media_type": media_type, "room_id": room_id})
 
@@ -548,25 +566,25 @@ async def fetch_all_layouts_from_storage(
     # Firebase 초기화
     init_firebase()
 
-    layouts: list[dict] = []
-
-    try:
+    def _sync_fetch() -> list[dict]:
+        result: list[dict] = []
         bucket = storage.bucket()
         blobs = bucket.list_blobs(prefix=folder_path)
 
         for blob in blobs:
-            # .json 파일만 처리
             if not blob.name.endswith(".json"):
                 continue
-
             try:
                 content = blob.download_as_string()
                 layout = json.loads(content.decode("utf-8"))
-                layouts.append(layout)
-                logger.debug("Layout loaded", extra={"path": blob.name})
+                result.append(layout)
             except json.JSONDecodeError as e:
                 logger.warning("Invalid JSON in layout", extra={"path": blob.name, "error": str(e)})
                 continue
+        return result
+
+    try:
+        layouts = await asyncio.to_thread(_sync_fetch)
 
         # 캐시 저장
         if use_cache:

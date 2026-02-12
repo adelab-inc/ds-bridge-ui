@@ -42,7 +42,7 @@ load_env() {
         log_info "Loading environment from .env file..."
 
         # .env 파일에서 환경변수 로드 (주석과 빈 줄 제외)
-        while IFS='=' read -r key value; do
+        while IFS='=' read -r key value || [ -n "$key" ]; do
             # 주석, 빈 줄 스킵
             [[ -z "$key" || "$key" =~ ^[[:space:]]*# ]] && continue
 
@@ -192,8 +192,8 @@ deploy_simple() {
         --project "${PROJECT_ID}" \
         --allow-unauthenticated \
         --port 8080 \
-        --memory 1Gi \
-        --cpu 1 \
+        --memory 2Gi \
+        --cpu 2 \
         --min-instances 1 \
         --max-instances 5 \
         --timeout 300 \
