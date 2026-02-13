@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { paths } from '@ds-hub/shared-types/typescript/api/schema';
-import { verifyFirebaseToken } from '@/lib/auth/verify-token';
 
 type CreateRoomRequest =
   paths['/rooms']['post']['requestBody']['content']['application/json'];
@@ -9,26 +8,8 @@ type CreateRoomResponse =
 
 export async function POST(request: NextRequest) {
   try {
-    // Firebase Auth 토큰 검증
-    const decodedToken = await verifyFirebaseToken(
-      request.headers.get('authorization')
-    );
-    if (!decodedToken) {
-      return NextResponse.json(
-        {
-          detail: [
-            { loc: ['header'], msg: 'Unauthorized', type: 'auth_error' },
-          ],
-        },
-        { status: 401 }
-      );
-    }
-
     // 요청 body 파싱
     const body: CreateRoomRequest = await request.json();
-
-    // 인증된 uid로 user_id 강제 교체
-    body.user_id = decodedToken.uid;
 
     if (!body.storybook_url || !body.user_id) {
       return NextResponse.json(

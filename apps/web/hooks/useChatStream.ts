@@ -1,6 +1,5 @@
 import { useCallback, useState, useRef, useEffect } from 'react';
 import { ChatStreamRequestWithImages, SSEEvent, CodeEvent } from '@/types/chat';
-import { useAuthStore } from '@/stores/useAuthStore';
 
 interface UseChatStreamOptions {
   onStart?: (messageId: string) => void;
@@ -30,12 +29,10 @@ export function useChatStream(options: UseChatStreamOptions = {}) {
       setGeneratedFiles([]);
 
       try {
-        const token = await useAuthStore.getState().getIdToken();
         const response = await fetch('/api/chat/stream', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify(request),
         });

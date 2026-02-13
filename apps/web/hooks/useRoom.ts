@@ -3,7 +3,6 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useGetRoom } from '@/hooks/api/useRoomQuery';
 import type { components } from '@ds-hub/shared-types/typescript/api/schema';
 import { useCreateRoom } from './api/useCreateRoom';
-import { useAuthStore } from '@/stores/useAuthStore';
 
 type RoomResponse = components['schemas']['RoomResponse'];
 
@@ -23,8 +22,6 @@ export function useRoom(options: UseRoomOptions = {}): UseRoomReturn {
   const searchParams = useSearchParams();
   const router = useRouter();
   const hasTriedCreate = useRef(false);
-  const authUser = useAuthStore((s) => s.user);
-  const isAuthLoading = useAuthStore((s) => s.isLoading);
 
   // 1. 쿼리 파라미터에서 crid 확인
   const crid = searchParams.get('crid');
@@ -43,11 +40,6 @@ export function useRoom(options: UseRoomOptions = {}): UseRoomReturn {
 
   // 4. 룸 생성 로직
   useEffect(() => {
-    // Auth 상태 초기화 대기 (onAuthStateChanged 완료 전까지 스킵)
-    if (isAuthLoading) {
-      return;
-    }
-
     // 이미 생성 시도했거나, 생성 중이거나, 이미 생성된 경우 스킵
     if (
       hasTriedCreate.current ||
@@ -80,7 +72,7 @@ export function useRoom(options: UseRoomOptions = {}): UseRoomReturn {
         {
           storybook_url:
             options.storybookUrl || 'https://storybook.example.com',
-          user_id: options.userId || authUser?.uid || 'anonymous',
+          user_id: options.userId || 'anonymous',
         },
         {
           onSuccess: (newRoom) => {
@@ -97,7 +89,6 @@ export function useRoom(options: UseRoomOptions = {}): UseRoomReturn {
       );
     }
   }, [
-    isAuthLoading,
     crid,
     isFetching,
     existingRoom,
@@ -105,13 +96,12 @@ export function useRoom(options: UseRoomOptions = {}): UseRoomReturn {
     createRoomMutation,
     options.storybookUrl,
     options.userId,
-    authUser?.uid,
     searchParams,
     router,
   ]);
 
   // 5. 통합 상태 계산
-  const isLoading = isAuthLoading || isFetching || createRoomMutation.isPending;
+  const isLoading = isFetching || createRoomMutation.isPending;
   const error =
     fetchError?.message || createRoomMutation.error?.message || null;
   const room = existingRoom || createRoomMutation.data || null;
