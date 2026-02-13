@@ -25,7 +25,7 @@ export function parseFigmaUrl(url: string): FigmaUrlInfo {
   // 1. URL 파싱
   try {
     parsedUrl = new URL(url);
-  } catch (error) {
+  } catch {
     throw new Error(`유효하지 않은 URL 형식: ${url}`);
   }
 

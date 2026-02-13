@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Image from 'next/image';
 import type { AttachedImage } from '@/types/chat';
 import { cn } from '@/lib/utils';
 
@@ -22,10 +23,12 @@ function ImagePreview({ images, onRemove }: ImagePreviewProps) {
               image.status === 'error' && 'border-destructive'
             )}
           >
-            <img
+            <Image
               src={image.previewUrl}
               alt="첨부 이미지"
               className="size-full object-cover"
+              fill
+              unoptimized
             />
             {/* 업로드 진행 중 오버레이 */}
             {(image.status === 'pending' || image.status === 'uploading') && (

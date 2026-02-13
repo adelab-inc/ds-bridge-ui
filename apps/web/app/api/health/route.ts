@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import type { paths } from '@ds-hub/shared-types/typescript/api/schema';
 
 type HealthResponse =
   paths['/health']['get']['responses']['200']['content']['application/json'];
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // AI 서버 URL 가져오기
     const aiServerUrl = process.env.AI_SERVER_URL;

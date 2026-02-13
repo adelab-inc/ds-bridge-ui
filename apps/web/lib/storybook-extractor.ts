@@ -13,7 +13,6 @@ import type {
   PropInfo,
   StorybookIndex,
   StoryEntry,
-  StoryInfo,
   ComponentInfo,
   ExtractWarning,
 } from '@/types/ds-extraction';

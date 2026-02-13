@@ -18,16 +18,9 @@ import { useCodeGenerationStore } from '@/stores/useCodeGenerationStore';
 
 // Feature components
 import { ChatSection } from '@/components/features/chat/chat-section';
-import { ComponentListSection } from '@/components/features/component-list/component-list-section';
-import { ActionsSection } from '@/components/features/actions/actions-section';
 import { PreviewSection } from '@/components/features/preview/preview-section';
 
-interface DesktopLayoutProps {
-  onURLSubmit?: (url: string) => void;
-  onJSONUpload?: (file: File) => void;
-}
-
-function DesktopLayout({ onURLSubmit, onJSONUpload }: DesktopLayoutProps) {
+function DesktopLayout() {
   const leftPanelRef = usePanelRef();
   const [isCollapsed, setIsCollapsed] = React.useState(false);
   const [leftPanelWidth, setLeftPanelWidth] = React.useState(0);
@@ -152,4 +145,3 @@ function DesktopLayout({ onURLSubmit, onJSONUpload }: DesktopLayoutProps) {
 }
 
 export { DesktopLayout };
-export type { DesktopLayoutProps };
