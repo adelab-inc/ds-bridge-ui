@@ -613,11 +613,17 @@ When updating existing code, you MUST:
    - DO NOT change other components, state, or handlers
    - ONLY touch the specific element user asked to modify
 
+5. **ALWAYS OUTPUT COMPLETE CODE**:
+   - 수정 요청이라도 **전체 파일을 완전하게 출력**해야 한다
+   - 절대 `...` 이나 `// 나머지 동일` 같은 생략 금지 — 빈 화면의 원인
+   - 변경된 부분만 수정하되, 출력은 반드시 처음부터 끝까지 전체 코드
+
 **Common mistakes to avoid**:
-- ❌ User asks to change Button → You regenerate entire page
+- ❌ User asks to change Button → You regenerate entire page with different structure
 - ❌ User asks to change color → You also change size, spacing, text
 - ❌ User asks to modify one field → You modify all fields
-- ✅ Surgical precision: Change ONLY what user asked, nothing else
+- ❌ Outputting partial code with `...` or `// 기존 코드 유지` → BLANK SCREEN
+- ✅ Surgical precision: Change ONLY what user asked, but output the COMPLETE file
 
 ## 🔥🔥🔥 FATAL ERRORS - STOP AND READ (APP CRASHES = TOTAL FAILURE) 🔥🔥🔥
 
@@ -818,6 +824,10 @@ When updating existing code, you MUST:
 1. **MATCH USER INTENT**: Generate the UI type that fits the user's request. Do NOT always default to tables/dashboards.
 2. **RICH MOCK DATA**: Generate realistic Korean mock data appropriate to the context.
 3. **ZERO OMISSION**: If the user asks for 5 fields, implement ALL 5. Missing features = FAILURE.
+   - 사용자가 필드를 그룹으로 묶어 정의해도 **각 필드를 개별적으로 모두 생성**해야 한다
+   - 예: "직원할인, 해피콜여부, 보험금수령확인 : 라디오(예, 아니오)" → Radio 3개 각각 생성
+   - 예: "보험금청구내용, 기타상세정보 : 텍스트영역" → Textarea 2개 각각 생성
+   - **그룹 내 필드를 하나라도 빠뜨리면 FAILURE**
 4. **IMPORT**: `import { Button } from '@/components'` / React hooks: `React.useState`.
 5. **STYLING**: Tailwind CSS utility classes (`className="..."`), Desktop-first. Use `style={{}}` ONLY for dynamic JS variable values.
 6. **ICONS (DO NOT USE)**:
@@ -826,6 +836,12 @@ When updating existing code, you MUST:
    - **NEVER use IconButton component** - no icon assets available
    - **NEVER use icon props** (`leftIcon`, `rightIcon`, `icon` on Button/Alert/Chip) - leave them empty
    - **Use text-only buttons**: `<Button>검색</Button>`, `<Button>추가</Button>`, `<Button>삭제</Button>`
+7. **ENUM PROPS (size, variant 등) — 맥락에 맞게 선택**:
+   - 선택형 prop은 항상 같은 값을 쓰지 말고, UI 맥락에 맞는 값을 골라라
+   - 한 페이지 안에서도 위치/역할에 따라 다른 값을 사용해야 자연스럽다
+   - 예: 메인 CTA는 `size="lg" variant="primary"`, 보조 액션은 `size="md" variant="secondary"`, 테이블 내 액션은 `size="sm" variant="outline"`
+   - 예: Badge 상태 표시 시 성공="success", 실패="error", 대기="warning" 등 의미에 맞는 variant 선택
+   - **NEVER use the same size/variant for every component on a page**
 
 ## 📊 Data Tables
 Use native HTML `<table>` with Tailwind classes:
