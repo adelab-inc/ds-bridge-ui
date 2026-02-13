@@ -18,10 +18,8 @@ export default function Page() {
 
   return (
     <div className="bg-background flex h-screen flex-col overflow-hidden">
-      {/* Header: Client Component (useSearchParams → Suspense 필요) */}
-      <Suspense fallback={null}>
-        <Header />
-      </Suspense>
+      {/* Header: Client Component */}
+      <Header />
 
       {/* Main Content: Server에서 구조 렌더링 */}
       <main className="relative flex flex-1 overflow-hidden">
