@@ -15,11 +15,6 @@ import { ComponentListSection } from '@/components/features/component-list/compo
 import { ActionsSection } from '@/components/features/actions/actions-section';
 import { PreviewSection } from '@/components/features/preview/preview-section';
 
-interface MobileLayoutProps {
-  onURLSubmit?: (url: string) => void;
-  onJSONUpload?: (file: File) => void;
-}
-
 // Skeleton for SSR fallback
 function MobileLayoutSkeleton() {
   return (
@@ -33,7 +28,7 @@ function MobileLayoutSkeleton() {
 }
 
 // Content component - hooks are called here (client only)
-function MobileLayoutContent({ onURLSubmit, onJSONUpload }: MobileLayoutProps) {
+function MobileLayoutContent() {
   const { roomId, isLoading, error } = useRoom({
     storybookUrl: 'https://microsoft.github.io/vscode-webview-ui-toolkit',
     userId: 'anonymous',
@@ -104,13 +99,12 @@ function MobileLayoutContent({ onURLSubmit, onJSONUpload }: MobileLayoutProps) {
 }
 
 // Main component - wraps content with ClientOnly
-function MobileLayout(props: MobileLayoutProps) {
+function MobileLayout() {
   return (
     <ClientOnly fallback={<MobileLayoutSkeleton />}>
-      <MobileLayoutContent {...props} />
+      <MobileLayoutContent />
     </ClientOnly>
   );
 }
 
 export { MobileLayout };
-export type { MobileLayoutProps };

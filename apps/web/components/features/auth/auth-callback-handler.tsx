@@ -60,7 +60,6 @@ export function AuthCallbackHandler() {
       // 다른 브라우저: 이메일 입력 필요
       setStatus('need-email');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleEmailSubmit = async (e: React.FormEvent) => {

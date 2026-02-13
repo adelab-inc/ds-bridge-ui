@@ -54,7 +54,6 @@ interface ChatSectionProps extends React.ComponentProps<'section'> {
 
 function ChatSection({
   roomId,
-  schemaKey,
   onCodeGenerated,
   onStreamStart,
   onStreamEnd,
@@ -101,92 +100,91 @@ function ChatSection({
     uploadedUrls,
   } = useImageUpload(roomId);
 
-  const { sendMessage, isLoading, error, accumulatedText, generatedFiles } =
-    useChatStream({
-      onStart: (messageId) => {
-        // 서버에서 실제 message_id를 받으면 임시 ID를 교체
-        const tempId = currentMessageIdRef.current;
-        if (tempId) {
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === tempId ? { ...msg, id: messageId } : msg
-            )
-          );
-          currentMessageIdRef.current = messageId;
-        }
-      },
-      onChat: (text) => {
-        // 스트리밍 중 현재 메시지의 text 업데이트
-        if (currentMessageIdRef.current) {
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === currentMessageIdRef.current
-                ? { ...msg, text: msg.text + text, status: 'GENERATING' }
-                : msg
-            )
-          );
-        }
-      },
-      onCode: (code: CodeEvent) => {
-        // 코드 생성 시 현재 메시지의 content, path 업데이트
-        if (currentMessageIdRef.current) {
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === currentMessageIdRef.current
-                ? { ...msg, content: code.content, path: code.path }
-                : msg
-            )
-          );
-          // 현재 스트리밍 중인 메시지를 선택 상태로 설정
-          updateSelectedMessageId(currentMessageIdRef.current);
-        }
-        // 부모 컴포넌트에 코드 생성 알림
-        onCodeGenerated?.(code);
-      },
-      onDone: (messageId) => {
-        // 스트리밍 완료 시 status를 DONE으로 변경
-        const finalId = messageId || currentMessageIdRef.current;
-        if (finalId) {
-          const now = Date.now();
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === finalId
-                ? {
-                    ...msg,
-                    status: 'DONE' as const,
-                    answer_created_at: now,
-                  }
-                : msg
-            )
-          );
-          currentMessageIdRef.current = null;
-        }
-        // 부모 컴포넌트에 스트리밍 종료 알림
-        onStreamEnd?.();
-      },
-      onError: (errorMsg) => {
-        const messageId = currentMessageIdRef.current;
-        // 에러 발생 시 status를 ERROR로 변경
-        if (messageId) {
-          const now = Date.now();
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === messageId
-                ? {
-                    ...msg,
-                    text: `Error: ${errorMsg}`,
-                    status: 'ERROR' as const,
-                    answer_created_at: now,
-                  }
-                : msg
-            )
-          );
-          currentMessageIdRef.current = null;
-        }
-        // 부모 컴포넌트에 스트리밍 종료 알림
-        onStreamEnd?.();
-      },
-    });
+  const { sendMessage, isLoading, error } = useChatStream({
+    onStart: (messageId) => {
+      // 서버에서 실제 message_id를 받으면 임시 ID를 교체
+      const tempId = currentMessageIdRef.current;
+      if (tempId) {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === tempId ? { ...msg, id: messageId } : msg
+          )
+        );
+        currentMessageIdRef.current = messageId;
+      }
+    },
+    onChat: (text) => {
+      // 스트리밍 중 현재 메시지의 text 업데이트
+      if (currentMessageIdRef.current) {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === currentMessageIdRef.current
+              ? { ...msg, text: msg.text + text, status: 'GENERATING' }
+              : msg
+          )
+        );
+      }
+    },
+    onCode: (code: CodeEvent) => {
+      // 코드 생성 시 현재 메시지의 content, path 업데이트
+      if (currentMessageIdRef.current) {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === currentMessageIdRef.current
+              ? { ...msg, content: code.content, path: code.path }
+              : msg
+          )
+        );
+        // 현재 스트리밍 중인 메시지를 선택 상태로 설정
+        updateSelectedMessageId(currentMessageIdRef.current);
+      }
+      // 부모 컴포넌트에 코드 생성 알림
+      onCodeGenerated?.(code);
+    },
+    onDone: (messageId) => {
+      // 스트리밍 완료 시 status를 DONE으로 변경
+      const finalId = messageId || currentMessageIdRef.current;
+      if (finalId) {
+        const now = Date.now();
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === finalId
+              ? {
+                  ...msg,
+                  status: 'DONE' as const,
+                  answer_created_at: now,
+                }
+              : msg
+          )
+        );
+        currentMessageIdRef.current = null;
+      }
+      // 부모 컴포넌트에 스트리밍 종료 알림
+      onStreamEnd?.();
+    },
+    onError: (errorMsg) => {
+      const messageId = currentMessageIdRef.current;
+      // 에러 발생 시 status를 ERROR로 변경
+      if (messageId) {
+        const now = Date.now();
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === messageId
+              ? {
+                  ...msg,
+                  text: `Error: ${errorMsg}`,
+                  status: 'ERROR' as const,
+                  answer_created_at: now,
+                }
+              : msg
+          )
+        );
+        currentMessageIdRef.current = null;
+      }
+      // 부모 컴포넌트에 스트리밍 종료 알림
+      onStreamEnd?.();
+    },
+  });
 
   // 메시지 클릭 시 해당 메시지의 content를 미리보기에 표시
   const handleMessageClick = React.useCallback(

@@ -8,7 +8,6 @@ import type {
   DSJson,
   DSComponent,
   PropInfo,
-  StoryInfo,
   ComponentSchemaJson,
   LegacyComponentSchema,
   LegacyPropSchema,
@@ -70,15 +69,6 @@ function convertProp(prop: PropInfo): LegacyPropSchema {
     defaultValue: prop.defaultValue ?? undefined,
     description: prop.description ?? undefined,
   };
-}
-
-/**
- * 스토리 ID 생성 (컴포넌트명--스토리명)
- */
-function generateStoryId(componentName: string, storyName: string): string {
-  const normalizedComponent = componentName.toLowerCase().replace(/\s+/g, '-');
-  const normalizedStory = storyName.toLowerCase().replace(/\s+/g, '-');
-  return `${normalizedComponent}--${normalizedStory}`;
 }
 
 // =============================================================================

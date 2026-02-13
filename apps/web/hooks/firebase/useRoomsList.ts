@@ -27,20 +27,28 @@ export function useRoomsList(): UseRoomsListReturn {
   const user = useAuthStore((s) => s.user);
   const isAuthLoading = useAuthStore((s) => s.isLoading);
 
-  useEffect(() => {
-    if (isAuthLoading || !user?.uid) {
-      setIsLoading(false);
-      setRooms([]);
-      return;
-    }
+  const uid = user?.uid;
+  const shouldSubscribe = !isAuthLoading && !!uid;
 
+  // uid 변경 시 상태 리셋 (렌더 중 상태 조정 패턴)
+  // https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
+  const [prevUid, setPrevUid] = useState(uid);
+  if (uid !== prevUid) {
+    setPrevUid(uid);
+    setRooms([]);
     setIsLoading(true);
     setError(null);
+  }
+
+  useEffect(() => {
+    if (!shouldSubscribe || !uid) {
+      return;
+    }
 
     const collectionRef = collection(firebaseFirestore, COLLECTIONS.CHAT_ROOMS);
     const q = query(
       collectionRef,
-      where('user_id', '==', user.uid),
+      where('user_id', '==', uid),
       orderBy('created_at', 'desc')
     );
 
@@ -62,7 +70,12 @@ export function useRoomsList(): UseRoomsListReturn {
     );
 
     return () => unsubscribe();
-  }, [user?.uid, isAuthLoading]);
+  }, [shouldSubscribe, uid]);
+
+  // 구독 대상이 아니면 빈 상태 반환
+  if (!shouldSubscribe) {
+    return { rooms: [], isLoading: false, error: null };
+  }
 
   return { rooms, isLoading, error };
 }
