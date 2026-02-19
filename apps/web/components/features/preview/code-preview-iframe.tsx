@@ -92,7 +92,10 @@ function CodePreviewIframe({
         : [];
 
       // 2-2. DataGrid 사용 감지 → AG Grid CDN 로딩 필요 여부
-      const hasDataGrid = aplusUiComponents.includes('DataGrid');
+      // @aplus/ui와 @/components 양쪽 모두 체크
+      const hasDataGrid =
+        aplusUiComponents.includes('DataGrid') ||
+        importedComponents.includes('DataGrid');
       const needsAgGrid = hasAgGrid || hasDataGrid;
 
       // 2-3. AG Grid 관련 exports는 커스텀 래퍼로 주입 → UMD 매핑에서 제외
@@ -108,6 +111,10 @@ function CodePreviewIframe({
       const nonAgGridAplusComponents = aplusUiComponents.filter(
         (c) => !agGridRelatedExports.includes(c)
       );
+      // @/components import에서도 AG Grid 관련 컴포넌트 필터링 (const 중복 선언 방지)
+      const nonAgGridImportedComponents = needsAgGrid
+        ? importedComponents.filter((c) => !agGridRelatedExports.includes(c))
+        : importedComponents;
 
       // 3. import 문 제거
       let processedCode = code
@@ -199,14 +206,45 @@ function CodePreviewIframe({
           const containerRef = React.useRef(null);
           const gridApiRef = React.useRef(null);
 
-          // columnDefs 전처리 - cellRenderer 제거 (vanilla JS API에서 React 컴포넌트 미지원)
+          // React cellRenderer → AG Grid vanilla 클래스 어댑터
+          // createGrid() API는 React 컴포넌트를 직접 사용 불가하므로,
+          // ReactDOM.createRoot()로 셀 내부에 React 컴포넌트를 렌더링
+          function createReactCellRenderer(ReactComp) {
+            function Adapter() {}
+            Adapter.prototype.init = function(params) {
+              this.eGui = document.createElement('div');
+              this.eGui.style.display = 'contents';
+              this.root = ReactDOM.createRoot(this.eGui);
+              this.root.render(React.createElement(ReactComp, params));
+            };
+            Adapter.prototype.getGui = function() {
+              return this.eGui;
+            };
+            Adapter.prototype.destroy = function() {
+              if (this.root) {
+                this.root.unmount();
+                this.root = null;
+              }
+            };
+            return Adapter;
+          }
+
+          // columnDefs 전처리 - React cellRenderer를 vanilla 어댑터 클래스로 래핑
           // 컬럼 그룹의 children까지 재귀적으로 처리
           function sanitizeColumnDefs(cols) {
             return (cols || []).map(function(col) {
               var rest = Object.assign({}, col);
-              delete rest.cellRenderer;
+              var renderer = rest.cellRenderer;
+              if (typeof renderer === 'function') {
+                // React 컴포넌트/함수를 AG Grid vanilla 클래스로 래핑
+                rest.cellRenderer = createReactCellRenderer(renderer);
+                // cellRendererParams는 보존 (AG Grid가 params에 머지하여 렌더러에 전달)
+              } else if (typeof renderer === 'string') {
+                // 문자열 렌더러 이름은 지원 불가 → 제거
+                delete rest.cellRenderer;
+                delete rest.cellRendererParams;
+              }
               delete rest.cellRendererFramework;
-              delete rest.cellRendererParams;
               if (rest.children) {
                 rest.children = sanitizeColumnDefs(rest.children);
               }
@@ -215,48 +253,71 @@ function CodePreviewIframe({
           }
 
           React.useEffect(() => {
-            if (!containerRef.current || !window.agGrid) {
-              console.error('[AgGridReact] AG Grid not loaded');
-              return;
+            if (!containerRef.current) return;
+            var destroyed = false;
+            var pollTimer = null;
+            var pollCount = 0;
+            var MAX_POLLS = 300; // 100ms × 300 = 30초
+
+            function tryInit() {
+              if (destroyed) return;
+              if (!window.agGrid) {
+                pollCount++;
+                if (pollCount < MAX_POLLS) {
+                  pollTimer = setTimeout(tryInit, 100);
+                } else {
+                  console.error('[AgGridReact] AG Grid CDN 로딩 타임아웃 (30초)');
+                }
+                return;
+              }
+              createGridInstance();
             }
 
-            const { AllCommunityModule, ModuleRegistry, createGrid, themeQuartz } = window.agGrid;
+            function createGridInstance() {
+              if (destroyed || !containerRef.current) return;
 
-            // 모듈 등록 (v34 필수, 한 번만 실행)
-            if (!window.__AG_GRID_REGISTERED__) {
-              ModuleRegistry.registerModules([AllCommunityModule]);
-              window.__AG_GRID_REGISTERED__ = true;
+              const { AllCommunityModule, ModuleRegistry, createGrid, themeQuartz } = window.agGrid;
+
+              // 모듈 등록 (v34 필수, 한 번만 실행)
+              if (!window.__AG_GRID_REGISTERED__) {
+                ModuleRegistry.registerModules([AllCommunityModule]);
+                window.__AG_GRID_REGISTERED__ = true;
+              }
+
+              var sanitizedColumnDefs = sanitizeColumnDefs(props.columnDefs);
+
+              // 그리드 옵션 구성
+              const gridOptions = {
+                rowData: props.rowData || [],
+                columnDefs: sanitizedColumnDefs,
+                pagination: props.pagination,
+                paginationPageSize: props.paginationPageSize || 20,
+                paginationPageSizeSelector: props.paginationPageSizeSelector || [10, 20, 50, 100],
+                rowSelection: props.rowSelection,
+                animateRows: props.animateRows !== false,
+                theme: props.theme || themeQuartz,
+                defaultColDef: props.defaultColDef || { flex: 1, filter: true, sortable: true, resizable: true },
+                onGridReady: function(params) {
+                  gridApiRef.current = params.api;
+                  if (props.onGridReady) props.onGridReady(params);
+                },
+                onSelectionChanged: props.onSelectionChanged,
+                onCellClicked: props.onCellClicked,
+                onRowSelected: props.onRowSelected,
+                onFilterChanged: props.onFilterChanged,
+                onSortChanged: props.onSortChanged,
+              };
+
+              // 그리드 생성
+              const api = createGrid(containerRef.current, gridOptions);
+              gridApiRef.current = api;
             }
 
-            var sanitizedColumnDefs = sanitizeColumnDefs(props.columnDefs);
-
-            // 그리드 옵션 구성
-            const gridOptions = {
-              rowData: props.rowData || [],
-              columnDefs: sanitizedColumnDefs,
-              pagination: props.pagination,
-              paginationPageSize: props.paginationPageSize || 20,
-              paginationPageSizeSelector: props.paginationPageSizeSelector || [10, 20, 50, 100],
-              rowSelection: props.rowSelection,
-              animateRows: props.animateRows !== false,
-              theme: props.theme || themeQuartz,
-              defaultColDef: props.defaultColDef || { flex: 1, filter: true, sortable: true, resizable: true },
-              onGridReady: function(params) {
-                gridApiRef.current = params.api;
-                if (props.onGridReady) props.onGridReady(params);
-              },
-              onSelectionChanged: props.onSelectionChanged,
-              onCellClicked: props.onCellClicked,
-              onRowSelected: props.onRowSelected,
-              onFilterChanged: props.onFilterChanged,
-              onSortChanged: props.onSortChanged,
-            };
-
-            // 그리드 생성
-            const api = createGrid(containerRef.current, gridOptions);
-            gridApiRef.current = api;
+            tryInit();
 
             return function() {
+              destroyed = true;
+              if (pollTimer) clearTimeout(pollTimer);
               if (gridApiRef.current) {
                 gridApiRef.current.destroy();
                 gridApiRef.current = null;
@@ -286,8 +347,8 @@ function CodePreviewIframe({
           });
         });
 
-        // dsRuntimeTheme - AG Grid Quartz 테마 사용
-        const dsRuntimeTheme = window.agGrid.themeQuartz;
+        // dsRuntimeTheme - AG Grid Quartz 테마 사용 (CDN 미로딩 시 안전 접근)
+        const dsRuntimeTheme = (window.agGrid && window.agGrid.themeQuartz) || null;
 
         // ag-grid-community exports 매핑
         const ModuleRegistry = window.agGrid.ModuleRegistry;
@@ -296,6 +357,11 @@ function CodePreviewIframe({
         // DataGrid 래퍼 - @aplus/ui DataGrid의 프리뷰 버전
         // 내부적으로 위에서 정의한 AgGridReact 커스텀 래퍼를 사용
         const DataGrid = function DataGrid(props) {
+          var wrapperRef = React.useRef(null);
+          var measuredH = React.useState(null);
+          var setMeasuredH = measuredH[1];
+          measuredH = measuredH[0];
+
           var rowData = props.rowData;
           var columnDefs = props.columnDefs;
           var height = props.height !== undefined ? props.height : 400;
@@ -319,12 +385,42 @@ function CodePreviewIframe({
           var onCellValueChanged = props.onCellValueChanged;
           var onColumnMoved = props.onColumnMoved;
 
+          // 퍼센트 높이가 flex 컨텍스트에서 해결되지 않을 때 부모의 실제 높이를 측정
+          React.useEffect(function() {
+            if (!wrapperRef.current) return;
+            var parent = wrapperRef.current.parentElement;
+            if (!parent) return;
+
+            function measure() {
+              var h = parent.clientHeight;
+              if (h > 50) setMeasuredH(function(prev) { return prev === h ? prev : h; });
+            }
+
+            requestAnimationFrame(measure);
+
+            var observer = null;
+            if (window.ResizeObserver) {
+              observer = new ResizeObserver(measure);
+              observer.observe(parent);
+            }
+
+            return function() {
+              if (observer) observer.disconnect();
+            };
+          }, []);
+
           var mergedDefaultColDef = Object.assign(
             { sortable: enableSorting, filter: enableFilter, resizable: true },
             defaultColDef || {}
           );
 
-          return React.createElement('div', { className: className, style: { height: height, width: width } },
+          // 퍼센트 높이인 경우 측정된 부모 높이(px)를 사용
+          var effectiveHeight = height;
+          if (typeof height === 'string' && height.indexOf('%') !== -1 && measuredH) {
+            effectiveHeight = measuredH;
+          }
+
+          return React.createElement('div', { ref: wrapperRef, className: className, style: { height: effectiveHeight, width: width } },
             React.createElement(AgGridReact, {
               rowData: rowData,
               columnDefs: columnDefs,
@@ -424,11 +520,12 @@ function CodePreviewIframe({
         const { useState, useEffect, useCallback, useMemo, useRef, forwardRef } = React;
 
         // @aplus/ui 컴포넌트 (없는 컴포넌트는 div로 폴백)
+        // AG Grid 관련 컴포넌트는 커스텀 래퍼로 주입되므로 제외
         const AplusUI = window.AplusUI || {};
         const missingComponents = [];
         ${
-          importedComponents.length > 0
-            ? importedComponents
+          nonAgGridImportedComponents.length > 0
+            ? nonAgGridImportedComponents
                 .map(
                   (comp) =>
                     `const ${comp} = AplusUI.${comp} || (function() { missingComponents.push('${comp}'); return function(props) { return React.createElement('div', { style: { padding: '8px', border: '1px dashed #ccc', borderRadius: '4px', background: '#f9f9f9' }, ...props }, props.children || '[${comp}]'); }; })();`
