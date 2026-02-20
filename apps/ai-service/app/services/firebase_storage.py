@@ -173,6 +173,7 @@ async def fetch_schema_from_storage(schema_key: str, use_cache: bool = True) -> 
 # Design Tokens
 # ============================================================================
 
+DEFAULT_SCHEMA_KEY = "exports/default/component-schema.json"
 DEFAULT_DESIGN_TOKENS_KEY = "exports/default/design-tokens.json"
 DEFAULT_AG_GRID_SCHEMA_KEY = "exports/default/ag-grid/ag-grid-component.storybook.json"
 DEFAULT_AG_GRID_TOKENS_KEY = "exports/default/ag-grid/ag-grid-tokens.json"

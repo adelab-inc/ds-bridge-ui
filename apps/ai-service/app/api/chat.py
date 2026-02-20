@@ -8,7 +8,6 @@ from fastapi.responses import StreamingResponse
 
 from app.api.components import (
     generate_system_prompt,
-    get_schema,
     get_vision_system_prompt,
 )
 from app.core.auth import verify_api_key
@@ -25,6 +24,7 @@ from app.schemas.chat import (
 from app.services.ai_provider import get_ai_provider
 from app.services.firebase_storage import (
     DEFAULT_AG_GRID_SCHEMA_KEY,
+    DEFAULT_SCHEMA_KEY,
     fetch_ag_grid_tokens_from_storage,
     fetch_all_layouts_from_storage,
     fetch_component_definitions_from_storage,
@@ -39,7 +39,6 @@ from app.services.firestore import (
     get_chat_room,
     get_message_by_id,
     get_messages_by_room,
-    get_messages_until,
     get_timestamp_ms,
     update_chat_message,
 )
@@ -129,7 +128,7 @@ async def resolve_system_prompt(
     schema_key 여부에 따라 시스템 프롬프트 반환
 
     Args:
-        schema_key: Firebase Storage 스키마 경로 (None이면 로컬 스키마 사용)
+        schema_key: Firebase Storage 스키마 경로 (None이면 디폴트 경로 사용)
         current_composition: 현재 렌더링된 컴포넌트 구조 (인스턴스 편집용)
         selected_instance_id: 선택된 인스턴스 ID (인스턴스 편집용)
 
@@ -164,38 +163,23 @@ async def resolve_system_prompt(
     except Exception as e:
         logger.warning("Layouts not loaded", extra={"error": str(e)})
 
-    # 기본 프롬프트 생성
-    if not schema_key:
-        # 로컬 스키마 사용
-        local_schema = get_schema()
-        if not local_schema:
-            raise HTTPException(
-                status_code=500, detail="No schema available. Please upload a schema first."
-            )
+    # 스키마 로드 (schema_key 없으면 Firebase 디폴트 경로 사용)
+    effective_key = schema_key or DEFAULT_SCHEMA_KEY
+    try:
+        schema = await fetch_schema_from_storage(effective_key)
         base_prompt = generate_system_prompt(
-            local_schema, design_tokens, ag_grid_schema, ag_grid_tokens, layouts, component_definitions
+            schema, design_tokens, ag_grid_schema, ag_grid_tokens, layouts, component_definitions
         )
-    else:
-        try:
-            schema = await fetch_schema_from_storage(schema_key)
-            base_prompt = generate_system_prompt(
-                schema, design_tokens, ag_grid_schema, ag_grid_tokens, layouts, component_definitions
-            )
-        except FileNotFoundError:
-            logger.warning("Schema not found, using local", extra={"schema_key": schema_key})
-            local_schema = get_schema()
-            if not local_schema:
-                raise HTTPException(
-                    status_code=404, detail=f"Schema not found: {schema_key}"
-                )
-            base_prompt = generate_system_prompt(
-                local_schema, design_tokens, ag_grid_schema, ag_grid_tokens, layouts, component_definitions
-            )
-        except Exception as e:
-            logger.error("Failed to fetch schema", extra={"schema_key": schema_key, "error": str(e)})
-            raise HTTPException(
-                status_code=500, detail="Failed to load schema from storage. Please try again."
-            ) from e
+    except FileNotFoundError:
+        logger.warning("Schema not found in Firebase", extra={"schema_key": effective_key})
+        raise HTTPException(
+            status_code=404, detail=f"Schema not found: {effective_key}"
+        )
+    except Exception as e:
+        logger.error("Failed to fetch schema", extra={"schema_key": effective_key, "error": str(e)})
+        raise HTTPException(
+            status_code=500, detail="Failed to load schema from storage. Please try again."
+        ) from e
 
     # 인스턴스 편집 모드면 컨텍스트 추가
     if current_composition and selected_instance_id:
@@ -215,72 +199,67 @@ async def build_conversation_history(
     from_message_id: str | None = None,
 ) -> list[Message]:
     """
-    이전 대화 내역을 포함한 메시지 리스트 생성
+    코드 기반 컨텍스트로 메시지 리스트 생성 (대화 히스토리 제거)
+
+    전략: "코드가 곧 컨텍스트"
+    - 이전 대화 히스토리를 넣지 않고, 최신 코드 + 현재 요청만 전달
+    - 오래된 코드 버전에 의한 컨텍스트 오염 방지
+    - 단계별 빌드(레이아웃 → 버튼 → 세부사항) 시 일관성 유지
 
     Args:
         room_id: 채팅방 ID
         system_prompt: 시스템 프롬프트
         current_message: 현재 사용자 메시지
-        from_message_id: 특정 메시지의 코드를 기준으로 수정 + 해당 시점까지 컨텍스트 포함
+        from_message_id: 특정 메시지의 코드를 기준으로 수정
 
     Returns:
         AI에 전달할 메시지 리스트
     """
-    settings = get_settings()
-    max_history = settings.max_history_count
-
     messages = [Message(role="system", content=system_prompt)]
 
-    # 기준 코드 컨텍스트 (from_message_id가 있을 때)
-    base_code_context = ""
+    # 기준 코드 결정: from_message_id > 방의 마지막 메시지 코드
+    base_code: dict | None = None
 
-    # 이전 메시지 조회
     if from_message_id:
-        # 롤백 모드: 특정 메시지까지만 조회
-        previous_messages = await get_messages_until(
-            room_id=room_id,
-            until_message_id=from_message_id,
-            limit=max_history,
-        )
-        logger.info(
-            "Base code edit mode enabled",
-            extra={"room_id": room_id, "from_message_id": from_message_id, "message_count": len(previous_messages)},
-        )
-
-        # 기준 메시지의 코드 가져오기
+        # 명시적 기준 메시지 지정
         base_message = await get_message_by_id(from_message_id)
         if base_message is None:
             raise ValueError(f"Message not found: {from_message_id}")
-
         if base_message.get("content"):
-            base_code_context = f'''현재 코드 (이 코드를 기반으로 수정해주세요):
-<file path="{base_message.get("path", "src/Component.tsx")}">{base_message["content"]}</file>
-
-요청: '''
+            base_code = {
+                "path": base_message.get("path", "src/Component.tsx"),
+                "content": base_message["content"],
+            }
             logger.info(
-                "Base code context added",
-                extra={"from_message_id": from_message_id, "path": base_message.get("path")},
+                "Code context from specified message",
+                extra={"from_message_id": from_message_id, "path": base_code["path"]},
             )
     else:
-        # 일반 모드: 최근 N개 조회
-        previous_messages = await get_messages_by_room(room_id)
-        previous_messages = previous_messages[-max_history:]
+        # 방의 최신 메시지에서 코드 추출
+        recent_messages = await get_messages_by_room(room_id)
+        # 최신 메시지부터 역순으로 코드가 있는 메시지 찾기
+        for msg in reversed(recent_messages):
+            if msg.get("content") and msg.get("path"):
+                base_code = {
+                    "path": msg["path"],
+                    "content": msg["content"],
+                }
+                logger.info(
+                    "Code context from latest message",
+                    extra={"room_id": room_id, "path": base_code["path"]},
+                )
+                break
 
-    for msg in previous_messages:
-        # 사용자 질문
-        if msg.get("question"):
-            messages.append(Message(role="user", content=msg["question"]))
+    # 사용자 메시지 구성: 기존 코드가 있으면 포함
+    if base_code:
+        final_message = f'''현재 코드 (이 코드를 기반으로 수정해주세요):
+<file path="{base_code["path"]}">{base_code["content"]}</file>
 
-        # AI 응답 (텍스트 + 코드 결합)
-        assistant_content = msg.get("text", "")
-        if msg.get("content") and msg.get("path"):
-            assistant_content += f'\n\n<file path="{msg["path"]}">{msg["content"]}</file>'
+요청: {current_message}'''
+    else:
+        # 첫 메시지 — 코드 없이 요청만
+        final_message = current_message
 
-        if assistant_content.strip():
-            messages.append(Message(role="assistant", content=assistant_content.strip()))
-
-    # 현재 사용자 메시지 추가 (기준 코드 컨텍스트 포함)
-    final_message = base_code_context + current_message
     messages.append(Message(role="user", content=final_message))
 
     return messages
