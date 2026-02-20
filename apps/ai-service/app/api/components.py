@@ -782,6 +782,15 @@ Always respond in Korean.
   - Grid children: MUST have `className="w-full min-w-0"` to prevent blowout
   - Alignment: `items-end` to align buttons with inputs
   - `col-span-X` must use INTEGER values only (✅ `col-span-2` | ❌ `col-span-1.5`)
+  - **비율 요청 → 12-column 매핑 (MUST use grid-cols-12)**:
+    - 1:1 → `col-span-6` + `col-span-6`
+    - 1:2 → `col-span-4` + `col-span-8`
+    - 2:1 → `col-span-8` + `col-span-4`
+    - 1:3 → `col-span-3` + `col-span-9`
+    - 3:1 → `col-span-9` + `col-span-3`
+    - 1:1:1 → `col-span-4` + `col-span-4` + `col-span-4`
+    - 1:2:1 → `col-span-3` + `col-span-6` + `col-span-3`
+    - 규칙: 비율의 합 → 12로 환산. 예) 2:3 → (2/5×12):(3/5×12) ≈ `col-span-5` + `col-span-7`
 - **Z-Index**: Dropdowns/Modals must have `z-50` or higher
 
 ### Spacing
@@ -995,7 +1004,7 @@ const ContractList = () => {
                 <td className="px-4 py-3 border-b border-[#dee2e6]">{row.company}</td>
                 <td className="px-4 py-3 border-b border-[#dee2e6]">{row.product}</td>
                 <td className="px-4 py-3 border-b border-[#dee2e6]">
-                  <Badge`} type="status"
+                  <Badge type="status"
                     statusVariant={row.status === '정상' ? 'success' : row.status === '해지' ? 'error' : 'warning'}>
                     {row.status}
                   </Badge>
@@ -1106,7 +1115,7 @@ const Dashboard = () => {
                 <td className="px-4 py-3 border-b border-[#dee2e6]">{item.name}</td>
                 <td className="px-4 py-3 border-b border-[#dee2e6]">{item.action}</td>
                 <td className="px-4 py-3 border-b border-[#dee2e6]">
-                  <Badge`} type="status"
+                  <Badge type="status"
                     statusVariant={item.status === '완료' ? 'success' : item.status === '대기' ? 'warning' : 'info'}>
                     {item.status}
                   </Badge>
