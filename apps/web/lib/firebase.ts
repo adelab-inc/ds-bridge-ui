@@ -1,5 +1,10 @@
 import { initializeApp, getApps, type FirebaseApp } from 'firebase/app';
-import { getAuth, type Auth } from 'firebase/auth';
+import {
+  getAuth,
+  initializeAuth,
+  browserLocalPersistence,
+  type Auth,
+} from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
 
@@ -31,8 +36,13 @@ if (getApps().length === 0) {
 
 /**
  * Firebase 서비스 인스턴스
+ * - initializeAuth: 탭 종료 후에도 로그인 유지 (browserLocalPersistence)
+ * - getAuth: 이미 초기화된 경우 재사용
  */
-export const firebaseAuth: Auth = getAuth(app);
+export const firebaseAuth: Auth =
+  typeof window !== 'undefined'
+    ? initializeAuth(app, { persistence: browserLocalPersistence })
+    : getAuth(app);
 export const firebaseFirestore: Firestore = getFirestore(app);
 export const firebaseStorage: FirebaseStorage = getStorage(app);
 
