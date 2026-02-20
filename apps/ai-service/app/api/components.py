@@ -49,7 +49,6 @@ def load_component_schema() -> tuple[dict | None, str | None]:
 AVAILABLE_COMPONENTS_WHITELIST = {
     # Basic
     "Button",
-    "IconButton",
     "Link",
     # Display
     "Alert",
@@ -169,10 +168,11 @@ def format_component_docs(schema: dict) -> str:
                 header += f" - {description}"
             lines.append(header)
 
-            # props 포맷팅 (children 제외)
+            # props 포맷팅 (children, icon 관련 제외)
+            _HIDDEN_PROPS = {"children", "icon", "leftIcon", "rightIcon", "hasIcon"}
             prop_lines = []
             for prop_name, prop_info in props.items():
-                if prop_name == "children":
+                if prop_name in _HIDDEN_PROPS:
                     continue
 
                 prop_type = prop_info.get("type", "any")
@@ -744,6 +744,9 @@ Always respond in Korean.
 - options는 최소 4-6개의 현실적 항목
 - ⚠️ className="w-full" 필수 (기본 240px 고정폭 → 오버플로우 방지)
 - defaultValue는 option의 value 사용 (label 아님): ✅ `defaultValue="all"` ❌ `defaultValue="전체"`
+- ⚠️ onChange 시그니처: `onChange={(value) => setValue(value)}` — value를 직접 받음 (event 아님)
+  - ✅ `<Select onChange={(v) => setStatus(v)} />`
+  - ❌ `<Select onChange={(e) => setStatus(e.target.value)} />` — e.target.value 없음
 
 ### Badge
 - type="status" + statusVariant: 상태 표시 전용
@@ -760,7 +763,10 @@ Always respond in Korean.
 
 ### Checkbox / Radio / ToggleSwitch
 - MUST use `checked` + `onChange` handler for controlled state
-- ✅ `<Checkbox checked={{isChecked}} onChange={{(e) => setIsChecked(e.target.checked)}} />`
+- ⚠️ NO `label` prop exists. Use `<label>` wrapper with text:
+  - ✅ `<label className="flex items-center gap-2 cursor-pointer"><Radio checked={{v}} onChange={{fn}} /><span className="text-sm">예</span></label>`
+  - ❌ `<Radio label="예" />` — `label` prop DOES NOT EXIST
+- ✅ `<label className="flex items-center gap-2 cursor-pointer"><Checkbox checked={{isChecked}} onChange={{(e) => setIsChecked(e.target.checked)}} /><span className="text-sm">동의합니다</span></label>`
 
 ### Pagination
 - 테이블 하단 페이지네이션: `<Pagination currentPage={{page}} totalCount={{100}} pageSize={{10}} onPageChange={{setPage}} />`
