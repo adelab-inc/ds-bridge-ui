@@ -8,7 +8,6 @@ from fastapi.responses import StreamingResponse
 
 from app.api.components import (
     generate_system_prompt,
-    get_schema,
     get_vision_system_prompt,
 )
 from app.core.auth import verify_api_key
@@ -25,6 +24,7 @@ from app.schemas.chat import (
 from app.services.ai_provider import get_ai_provider
 from app.services.firebase_storage import (
     DEFAULT_AG_GRID_SCHEMA_KEY,
+    DEFAULT_SCHEMA_KEY,
     fetch_ag_grid_tokens_from_storage,
     fetch_all_layouts_from_storage,
     fetch_component_definitions_from_storage,
@@ -128,7 +128,7 @@ async def resolve_system_prompt(
     schema_key 여부에 따라 시스템 프롬프트 반환
 
     Args:
-        schema_key: Firebase Storage 스키마 경로 (None이면 로컬 스키마 사용)
+        schema_key: Firebase Storage 스키마 경로 (None이면 디폴트 경로 사용)
         current_composition: 현재 렌더링된 컴포넌트 구조 (인스턴스 편집용)
         selected_instance_id: 선택된 인스턴스 ID (인스턴스 편집용)
 
@@ -163,38 +163,23 @@ async def resolve_system_prompt(
     except Exception as e:
         logger.warning("Layouts not loaded", extra={"error": str(e)})
 
-    # 기본 프롬프트 생성
-    if not schema_key:
-        # 로컬 스키마 사용
-        local_schema = get_schema()
-        if not local_schema:
-            raise HTTPException(
-                status_code=500, detail="No schema available. Please upload a schema first."
-            )
+    # 스키마 로드 (schema_key 없으면 Firebase 디폴트 경로 사용)
+    effective_key = schema_key or DEFAULT_SCHEMA_KEY
+    try:
+        schema = await fetch_schema_from_storage(effective_key)
         base_prompt = generate_system_prompt(
-            local_schema, design_tokens, ag_grid_schema, ag_grid_tokens, layouts, component_definitions
+            schema, design_tokens, ag_grid_schema, ag_grid_tokens, layouts, component_definitions
         )
-    else:
-        try:
-            schema = await fetch_schema_from_storage(schema_key)
-            base_prompt = generate_system_prompt(
-                schema, design_tokens, ag_grid_schema, ag_grid_tokens, layouts, component_definitions
-            )
-        except FileNotFoundError:
-            logger.warning("Schema not found, using local", extra={"schema_key": schema_key})
-            local_schema = get_schema()
-            if not local_schema:
-                raise HTTPException(
-                    status_code=404, detail=f"Schema not found: {schema_key}"
-                )
-            base_prompt = generate_system_prompt(
-                local_schema, design_tokens, ag_grid_schema, ag_grid_tokens, layouts, component_definitions
-            )
-        except Exception as e:
-            logger.error("Failed to fetch schema", extra={"schema_key": schema_key, "error": str(e)})
-            raise HTTPException(
-                status_code=500, detail="Failed to load schema from storage. Please try again."
-            ) from e
+    except FileNotFoundError:
+        logger.warning("Schema not found in Firebase", extra={"schema_key": effective_key})
+        raise HTTPException(
+            status_code=404, detail=f"Schema not found: {effective_key}"
+        )
+    except Exception as e:
+        logger.error("Failed to fetch schema", extra={"schema_key": effective_key, "error": str(e)})
+        raise HTTPException(
+            status_code=500, detail="Failed to load schema from storage. Please try again."
+        ) from e
 
     # 인스턴스 편집 모드면 컨텍스트 추가
     if current_composition and selected_instance_id:
