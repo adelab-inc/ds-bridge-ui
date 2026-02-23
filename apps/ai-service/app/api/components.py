@@ -869,12 +869,6 @@ When user asks to modify specific elements (e.g., "버튼 색상 바꿔줘"):
 
 ## ⚠️ TECHNICAL CONSTRAINTS
 
-### Field Component (React Error #137 방지)
-Field renders `<input>` internally. NEVER put ANYTHING between `<Field>` tags.
-- ✅ `<Field type="text" label="이름" />` — self-closing ONLY
-- ❌ `<Field>content</Field>`, `<Field><input /></Field>`, `<Field>{{var}}</Field>` — ALL CRASH
-- **Verification**: Count `<Field` must equal `/>` endings. `</Field>` must be ZERO.
-
 ### Component Whitelist
 ONLY use components from the Available Components list below. DO NOT create or import custom ones.
 - ❌ `<Card />`, `<Input />`, `<DatePicker />`, `<Member />`, `<User />`, `<Heading />` — don't exist
@@ -949,7 +943,7 @@ export default Login;
 SYSTEM_PROMPT_FOOTER = """## 🎯 DESIGN CONSISTENCY CHECKLIST
 
 - **Same element types = same styling**: All form fields → same spacing, all cards → same shadow
-- **Page background**: ALWAYS `min-h-screen bg-[#f4f6f8]` + `p-6` or `p-8`
+- **Page background**: ALWAYS `min-h-screen bg-[#f4f6f8] p-8`
 - **White card**: ALWAYS `bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6`
 - **Spacing**: Major sections `mb-6`~`mb-8`, form fields `mb-5`, related items `mb-3`~`mb-4`
 - **Colors**: Use ONLY hex values from the color token table. NEVER invent hex codes.
@@ -1052,8 +1046,8 @@ const MemberDetail = () => {
           <div>
             <label className="text-sm font-medium text-[#212529] mb-2 block">성별</label>
             <div className="flex gap-4">
-              <Radio checked={gender==='male'} onChange={() => setGender('male')} label="남성" />
-              <Radio checked={gender==='female'} onChange={() => setGender('female')} label="여성" />
+              <label className="flex items-center gap-2 cursor-pointer"><Radio checked={gender==='male'} onChange={() => setGender('male')} /><span className="text-sm">남성</span></label>
+              <label className="flex items-center gap-2 cursor-pointer"><Radio checked={gender==='female'} onChange={() => setGender('female')} /><span className="text-sm">여성</span></label>
             </div>
           </div>
         </div>
@@ -1170,6 +1164,7 @@ def format_layouts(layouts: list[dict]) -> str:
     """
     레이아웃 JSON 리스트를 프롬프트용 문자열로 포맷팅
     extractedComponents, styles 등 노이즈를 제거하고 layout 트리만 전달
+    componentProps 내 Figma 내부 ID(# 포함 키)를 정리
 
     Args:
         layouts: Figma에서 추출한 레이아웃 JSON 리스트
@@ -1179,6 +1174,35 @@ def format_layouts(layouts: list[dict]) -> str:
     """
     if not layouts:
         return ""
+
+    def _clean_component_props(props: dict) -> dict:
+        """componentProps에서 Figma 내부 ID를 정리하고 유용한 값만 남김"""
+        cleaned = {}
+        for key, value in props.items():
+            if "#" not in key:
+                # Size, Type, Disabled 등 유용한 props → 그대로 유지
+                cleaned[key] = value
+            else:
+                # Label#307:254 → "Label" 키로 값 보존 (버튼 텍스트 등)
+                base_key = key.split("#")[0].strip()
+                if base_key.lower() in ("label", "title", "text", "placeholder"):
+                    cleaned[base_key] = value
+                # icon, show 관련은 제거 (아이콘 사용 금지 규칙과 일치)
+        return cleaned
+
+    def _clean_node(node: dict) -> dict:
+        """layout 트리 노드에서 불필요한 필드를 제거"""
+        cleaned = {}
+        for key, value in node.items():
+            if key == "componentProps":
+                props = _clean_component_props(value)
+                if props:
+                    cleaned["componentProps"] = props
+            elif key == "children":
+                cleaned["children"] = [_clean_node(child) for child in value]
+            else:
+                cleaned[key] = value
+        return cleaned
 
     section = """
 
@@ -1198,15 +1222,12 @@ Below are reference layouts extracted from Figma. Use these as structural guides
 """
     for i, layout in enumerate(layouts, 1):
         name = layout.get("layout", {}).get("name", f"Layout {i}")
-        # layout 트리만 추출 (extractedComponents, styles 등 노이즈 제거)
-        clean_layout = {"layout": layout.get("layout", {})}
-        # metadata가 있으면 버전/소스 정보만 포함
-        if "metadata" in layout:
-            meta = layout["metadata"]
-            clean_layout["metadata"] = {
-                k: meta[k] for k in ("version", "sourceUrl") if k in meta
-            }
-        layout_json = json.dumps(clean_layout, ensure_ascii=False, separators=(",", ":"))
+        # layout 트리만 추출 + 노드 정리
+        raw_layout = layout.get("layout", {})
+        clean_layout = _clean_node(raw_layout)
+        layout_json = json.dumps(
+            {"layout": clean_layout}, ensure_ascii=False, separators=(",", ":")
+        )
         section += f"### {name}\n```json\n{layout_json}\n```\n\n"
 
     return section
