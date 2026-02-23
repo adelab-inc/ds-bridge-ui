@@ -846,10 +846,10 @@ Always respond in Korean.
    - 예: "직원할인, 해피콜여부, 보험금수령확인 : 라디오(예, 아니오)" → Radio 3개 각각 생성
 8. **FILE COMPLETENESS**: NEVER truncate code (no `// ...` or `// rest of code`). All buttons need `onClick`, all inputs need `value` + `onChange`.
 
-### HTML Data Tables
-- Table: `<table className="w-full border-collapse text-sm">`
-- Header: `<th className="px-4 py-3 bg-[#f4f6f8] font-semibold border-b-2 border-[#dee2e6] text-left">`
-- Cells: `<td className="px-4 py-3 border-b border-[#dee2e6]">`
+### Data Tables (⚠️ MUST use DataGrid)
+- **테이블/목록 데이터 → 항상 `<DataGrid>` 사용. HTML `<table>` 절대 금지.**
+- ❌ `<table>`, `<thead>`, `<tbody>`, `<tr>`, `<td>` — 사용 금지
+- ✅ `<DataGrid rowData={{data}} columnDefs={{cols}} height={{400}} />` — 유일한 테이블 구현 방법
 - Use `Badge` for status columns, always 10+ rows of mock data
 
 ## ⚠️ PRESERVE PREVIOUS CODE (수정 요청 시)
@@ -954,74 +954,9 @@ SYSTEM_PROMPT_FOOTER = """## 🎯 DESIGN CONSISTENCY CHECKLIST
 Create a premium, completed result."""
 
 UI_PATTERN_EXAMPLES = """
-## 📐 UI PATTERN REFERENCES
+## 📐 UI PATTERN REFERENCE
 
-### Pattern 1: Data Management (필터 + 테이블)
-```tsx
-import { Button, Field, Select, Badge } from '@/components';
-
-const ContractList = () => {
-  const [search, setSearch] = React.useState('');
-  const [statusFilter, setStatusFilter] = React.useState('all');
-
-  const contracts = [
-    { id: 1, name: '김민준', company: '삼성생명', product: '종신보험', status: '정상', date: '2024-01-15', amount: '50,000원' },
-    { id: 2, name: '이서연', company: '한화손보', product: '자동차보험', status: '심사중', date: '2024-02-20', amount: '35,000원' },
-    { id: 3, name: '박지호', company: 'DB손보', product: '화재보험', status: '해지', date: '2024-03-10', amount: '28,000원' },
-    // ... 10+ rows of diverse data
-  ];
-
-  return (
-    <div className="min-h-screen bg-[#f4f6f8] p-8">
-      <h1 className="text-2xl font-bold text-[#212529] mb-6">계약 관리</h1>
-      <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6">
-        {/* Filter Bar — filters + table in SAME card */}
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4 items-end mb-6">
-          <Select label="상태" placeholder="전체" className="w-full"
-            options={[{label:'전체',value:'all'},{label:'정상',value:'active'},{label:'심사중',value:'review'},{label:'해지',value:'cancel'},{label:'미납',value:'unpaid'}]}
-            value={statusFilter} onChange={(v) => setStatusFilter(v)} />
-          <Field type="text" label="검색" placeholder="이름 또는 증권번호" value={search} onChange={(e) => setSearch(e.target.value)} className="w-full" />
-          <div className="flex gap-2">
-            <Button variant="primary">조회</Button>
-            <Button variant="outline">초기화</Button>
-          </div>
-        </div>
-        {/* Table — use Badge for status */}
-        <table className="w-full border-collapse text-sm">
-          <thead>
-            <tr>
-              <th className="px-4 py-3 bg-[#f4f6f8] font-semibold border-b-2 border-[#dee2e6] text-left">이름</th>
-              <th className="px-4 py-3 bg-[#f4f6f8] font-semibold border-b-2 border-[#dee2e6] text-left">보험사</th>
-              <th className="px-4 py-3 bg-[#f4f6f8] font-semibold border-b-2 border-[#dee2e6] text-left">상품</th>
-              <th className="px-4 py-3 bg-[#f4f6f8] font-semibold border-b-2 border-[#dee2e6] text-left">상태</th>
-              <th className="px-4 py-3 bg-[#f4f6f8] font-semibold border-b-2 border-[#dee2e6] text-left">가입일</th>
-            </tr>
-          </thead>
-          <tbody>
-            {contracts.map(row => (
-              <tr key={row.id}>
-                <td className="px-4 py-3 border-b border-[#dee2e6]">{row.name}</td>
-                <td className="px-4 py-3 border-b border-[#dee2e6]">{row.company}</td>
-                <td className="px-4 py-3 border-b border-[#dee2e6]">{row.product}</td>
-                <td className="px-4 py-3 border-b border-[#dee2e6]">
-                  <Badge type="status"
-                    statusVariant={row.status === '정상' ? 'success' : row.status === '해지' ? 'error' : 'warning'}>
-                    {row.status}
-                  </Badge>
-                </td>
-                <td className="px-4 py-3 border-b border-[#dee2e6]">{row.date}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-};
-export default ContractList;
-```
-
-### Pattern 2: Detail / Form Page
+### Form Page (폼 + 다양한 컴포넌트 조합)
 ```tsx
 import { Button, Field, Select, Radio } from '@/components';
 
@@ -1064,72 +999,6 @@ const MemberDetail = () => {
   );
 };
 export default MemberDetail;
-```
-
-### Pattern 3: Card Dashboard
-```tsx
-import { Badge } from '@/components';
-
-const Dashboard = () => {
-  const summaryCards = [
-    { label: '총 계약', value: '1,234건', change: '+12%', up: true },
-    { label: '신규 접수', value: '56건', change: '+5%', up: true },
-    { label: '심사 대기', value: '23건', change: '-3%', up: false },
-    { label: '월 매출', value: '12.5억원', change: '+8%', up: true },
-  ];
-
-  const recentActivities = [
-    { name: '김민준', action: '신규 계약 등록', status: '완료', time: '10분 전' },
-    { name: '이서연', action: '보험금 청구', status: '심사중', time: '30분 전' },
-    { name: '박지호', action: '계약 해지 요청', status: '대기', time: '1시간 전' },
-  ];
-
-  return (
-    <div className="min-h-screen bg-[#f4f6f8] p-8">
-      <h1 className="text-2xl font-bold text-[#212529] mb-6">대시보드</h1>
-      {/* Summary Cards — grid-cols-4 */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
-        {summaryCards.map((card, i) => (
-          <div key={i} className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6">
-            <p className="text-sm text-[#495057] mb-1">{card.label}</p>
-            <p className="text-2xl font-bold text-[#212529]">{card.value}</p>
-            <p className={`text-sm mt-1 ${card.up ? 'text-green-600' : 'text-red-500'}`}>{card.change}</p>
-          </div>
-        ))}
-      </div>
-      {/* Recent Activity */}
-      <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6">
-        <h2 className="text-lg font-semibold text-[#212529] mb-4">최근 활동</h2>
-        <table className="w-full border-collapse text-sm">
-          <thead>
-            <tr>
-              <th className="px-4 py-3 bg-[#f4f6f8] font-semibold border-b-2 border-[#dee2e6] text-left">담당자</th>
-              <th className="px-4 py-3 bg-[#f4f6f8] font-semibold border-b-2 border-[#dee2e6] text-left">내용</th>
-              <th className="px-4 py-3 bg-[#f4f6f8] font-semibold border-b-2 border-[#dee2e6] text-left">상태</th>
-              <th className="px-4 py-3 bg-[#f4f6f8] font-semibold border-b-2 border-[#dee2e6] text-left">시간</th>
-            </tr>
-          </thead>
-          <tbody>
-            {recentActivities.map((item, i) => (
-              <tr key={i}>
-                <td className="px-4 py-3 border-b border-[#dee2e6]">{item.name}</td>
-                <td className="px-4 py-3 border-b border-[#dee2e6]">{item.action}</td>
-                <td className="px-4 py-3 border-b border-[#dee2e6]">
-                  <Badge type="status"
-                    statusVariant={item.status === '완료' ? 'success' : item.status === '대기' ? 'warning' : 'info'}>
-                    {item.status}
-                  </Badge>
-                </td>
-                <td className="px-4 py-3 border-b border-[#dee2e6] text-[#6c757d]">{item.time}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-};
-export default Dashboard;
 ```
 """
 
