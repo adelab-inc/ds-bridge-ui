@@ -26,7 +26,9 @@ from app.services.firestore import (
     RoomData,
     RoomNotFoundError,
     create_chat_room,
+    delete_chat_message,
     get_chat_room,
+    get_message_by_id,
     get_messages_paginated,
     update_chat_room,
 )
@@ -505,3 +507,22 @@ async def get_room_messages(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred. Please try again.",
         ) from e
+
+
+@router.delete(
+    "/{room_id}/messages/{message_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    operation_id="deleteRoomMessage",
+    summary="채팅 메시지 삭제",
+)
+async def delete_room_message(
+    room_id: str,
+    message_id: str,
+    _room: RoomData = Depends(get_room_or_404),
+):
+    message = await get_message_by_id(message_id)
+    if message is None:
+        raise HTTPException(status_code=404, detail="Message not found.")
+    if message.get("room_id") != room_id:
+        raise HTTPException(status_code=404, detail="Message not found in this room.")
+    await delete_chat_message(message_id)
