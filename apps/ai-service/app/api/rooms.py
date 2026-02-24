@@ -16,18 +16,21 @@ from app.schemas.chat import (
     SchemaResponse,
     UpdateRoomRequest,
 )
-from app.services.firebase_storage import (
+from app.services.supabase_storage import (
     fetch_schema_from_storage,
     upload_image_to_storage,
     upload_schema_to_storage,
 )
-from app.services.firestore import (
-    FirestoreError,
+from app.services.supabase_db import (
+    DatabaseError,
     RoomData,
     RoomNotFoundError,
     create_chat_room,
+    delete_chat_message,
+    delete_chat_room,
     get_chat_room,
     get_messages_paginated,
+    list_rooms_by_user,
     update_chat_room,
 )
 
@@ -56,6 +59,50 @@ async def get_room_or_404(room_id: str) -> RoomData:
             detail=f"Room not found: {room_id}",
         )
     return room
+
+
+
+@router.get(
+    "",
+    response_model=dict,
+    operation_id="listRooms",
+    summary="채팅방 목록 조회",
+    description="""
+유저의 채팅방 목록을 최신순으로 조회합니다.
+
+## Query Parameters
+- `user_id` (필수): 사용자 ID
+- `limit`: 페이지당 개수 (기본 50, 최대 100)
+- `cursor`: 페이지네이션 커서 (이전 응답의 next_cursor 값)
+
+## 응답
+```json
+{
+  "rooms": [...],
+  "next_cursor": 1771836645038,
+  "has_more": true
+}
+```
+""",
+    responses={
+        200: {"description": "조회 성공"},
+        500: {"description": "서버 오류"},
+    },
+)
+async def list_rooms(
+    user_id: str = Query(..., description="사용자 ID"),
+    limit: int = Query(50, ge=1, le=100, description="페이지당 개수"),
+    cursor: int | None = Query(None, description="페이지네이션 커서 (created_at)"),
+) -> dict:
+    """유저의 채팅방 목록 조회 (최신순)"""
+    try:
+        return await list_rooms_by_user(user_id=user_id, limit=limit, cursor=cursor)
+    except DatabaseError as e:
+        logger.error("Failed to list rooms", extra={"user_id": user_id, "error": str(e)})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database error. Please try again.",
+        ) from e
 
 
 @router.post(
@@ -108,7 +155,7 @@ async def create_room(request: CreateRoomRequest) -> RoomResponse:
         )
 
         return RoomResponse(**room_data)
-    except FirestoreError as e:
+    except DatabaseError as e:
         logger.error("Failed to create room", extra={"error": str(e), "user_id": request.user_id})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -148,7 +195,7 @@ async def get_room(room_id: str) -> RoomResponse:
         return RoomResponse(**room_data)
     except HTTPException:
         raise
-    except FirestoreError as e:
+    except DatabaseError as e:
         logger.error("Failed to get room", extra={"room_id": room_id, "error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -202,7 +249,7 @@ async def update_room(room_id: str, request: UpdateRoomRequest) -> RoomResponse:
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Room not found.",
         ) from e
-    except FirestoreError as e:
+    except DatabaseError as e:
         logger.error("Failed to update room", extra={"room_id": room_id, "error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -493,7 +540,7 @@ async def get_room_messages(
 
     except HTTPException:
         raise
-    except FirestoreError as e:
+    except DatabaseError as e:
         logger.error("Failed to get messages", extra={"room_id": room_id, "error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -504,4 +551,71 @@ async def get_room_messages(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred. Please try again.",
+        ) from e
+
+
+@router.delete(
+    "/{room_id}",
+    status_code=status.HTTP_200_OK,
+    operation_id="deleteRoom",
+    summary="채팅방 삭제",
+    description="""
+채팅방과 해당 방의 모든 메시지를 삭제합니다.
+(DB의 ON DELETE CASCADE로 메시지도 함께 삭제됩니다.)
+""",
+    responses={
+        200: {"description": "삭제 성공"},
+        404: {"description": "채팅방을 찾을 수 없음"},
+        500: {"description": "서버 오류"},
+    },
+)
+async def delete_room(
+    room_id: str,
+    _room: RoomData = Depends(get_room_or_404),
+) -> dict:
+    """채팅방 삭제 (메시지도 CASCADE 삭제)"""
+    try:
+        await delete_chat_room(room_id)
+        return {"message": f"Room {room_id} deleted successfully"}
+    except DatabaseError as e:
+        logger.error("Failed to delete room", extra={"room_id": room_id, "error": str(e)})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database error. Please try again.",
+        ) from e
+
+
+@router.delete(
+    "/{room_id}/messages/{message_id}",
+    status_code=status.HTTP_200_OK,
+    operation_id="deleteMessage",
+    summary="메시지 삭제",
+    description="채팅방의 특정 메시지를 삭제합니다.",
+    responses={
+        200: {"description": "삭제 성공"},
+        404: {"description": "채팅방 또는 메시지를 찾을 수 없음"},
+        500: {"description": "서버 오류"},
+    },
+)
+async def delete_message(
+    room_id: str,
+    message_id: str,
+    _room: RoomData = Depends(get_room_or_404),
+) -> dict:
+    """개별 메시지 삭제"""
+    try:
+        deleted = await delete_chat_message(message_id)
+        if not deleted:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Message not found: {message_id}",
+            )
+        return {"message": f"Message {message_id} deleted successfully"}
+    except HTTPException:
+        raise
+    except DatabaseError as e:
+        logger.error("Failed to delete message", extra={"room_id": room_id, "message_id": message_id, "error": str(e)})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database error. Please try again.",
         ) from e

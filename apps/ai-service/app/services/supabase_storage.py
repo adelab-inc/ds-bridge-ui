@@ -3,51 +3,29 @@ import logging
 from functools import lru_cache
 from pathlib import Path
 
-import firebase_admin
-from firebase_admin import credentials, storage
-
 from app.core.config import get_settings
+from app.services.supabase_db import get_supabase_client
 
 logger = logging.getLogger(__name__)
 
-# 로컬 개발용 서비스 계정 키 경로
-SERVICE_ACCOUNT_KEY_PATH = Path(__file__).parent.parent.parent / "service-account-key.json"
 
 # ============================================================================
-# Firebase Initialization
+# Bucket Mapping
 # ============================================================================
 
-_firebase_initialized = False
+BUCKET_PREFIXES: dict[str, str] = {
+    "exports/": "exports",
+    "user_uploads/": "user-uploads",
+}
 
 
-def init_firebase() -> None:
-    """Firebase Admin SDK 초기화"""
-    global _firebase_initialized
-
-    if _firebase_initialized:
-        return
-
-    settings = get_settings()
-
-    try:
-        # 이미 초기화된 경우 스킵
-        firebase_admin.get_app()
-        _firebase_initialized = True
-        return
-    except ValueError:
-        pass
-
-    # 로컬: 서비스 계정 키 파일 사용
-    # Cloud Run: 기본 자격증명 사용 (GCP 서비스 계정)
-    if SERVICE_ACCOUNT_KEY_PATH.exists():
-        cred = credentials.Certificate(str(SERVICE_ACCOUNT_KEY_PATH))
-        firebase_admin.initialize_app(cred, {"storageBucket": settings.firebase_storage_bucket})
-        logger.info("Firebase initialized", extra={"auth": "service_account", "bucket": settings.firebase_storage_bucket})
-    else:
-        firebase_admin.initialize_app(options={"storageBucket": settings.firebase_storage_bucket})
-        logger.info("Firebase initialized", extra={"auth": "default_credentials", "bucket": settings.firebase_storage_bucket})
-
-    _firebase_initialized = True
+def _resolve_bucket_and_path(storage_path: str) -> tuple[str, str]:
+    """스토리지 경로를 (bucket_name, path_within_bucket)으로 분리"""
+    for prefix, bucket in BUCKET_PREFIXES.items():
+        if storage_path.startswith(prefix):
+            return bucket, storage_path[len(prefix):]
+    # Default to exports bucket
+    return "exports", storage_path
 
 
 # ============================================================================
@@ -73,20 +51,17 @@ def _evict_oldest_cache() -> None:
         logger.debug("Cache evicted", extra={"key": oldest_key})
 
 
-def cleanup_firebase() -> None:
-    """Firebase 리소스 정리 (서버 종료 시 호출)"""
-    global _firebase_initialized, _schema_cache, _component_definitions_cache
+def cleanup_supabase() -> None:
+    """Supabase 리소스 정리 (서버 종료 시 호출)"""
+    global _schema_cache, _component_definitions_cache
+    global _design_tokens_cache, _ag_grid_tokens_cache, _layouts_cache
 
-    try:
-        firebase_admin.delete_app(firebase_admin.get_app())
-        logger.info("Firebase app deleted")
-    except ValueError:
-        pass  # 앱이 없으면 무시
-
-    _firebase_initialized = False
     _schema_cache = {}
+    _design_tokens_cache = None
+    _ag_grid_tokens_cache = None
     _component_definitions_cache = None
-    logger.info("Firebase cleanup completed")
+    _layouts_cache = None
+    logger.info("Supabase cleanup completed")
 
 
 # ============================================================================
@@ -119,10 +94,10 @@ def _validate_schema_key(schema_key: str) -> None:
 
 async def fetch_schema_from_storage(schema_key: str, use_cache: bool = True) -> dict:
     """
-    Firebase Storage에서 컴포넌트 스키마 다운로드
+    Supabase Storage에서 컴포넌트 스키마 다운로드
 
     Args:
-        schema_key: Storage 내 파일 경로 (예: "schemas/v1/component-schema.json")
+        schema_key: Storage 내 파일 경로 (예: "exports/default/component-schema.json")
         use_cache: 캐시 사용 여부
 
     Returns:
@@ -140,18 +115,10 @@ async def fetch_schema_from_storage(schema_key: str, use_cache: bool = True) -> 
         logger.debug("Schema cache hit", extra={"schema_key": schema_key})
         return _schema_cache[schema_key]
 
-    # Firebase 초기화
-    init_firebase()
-
     try:
-        bucket = storage.bucket()
-        blob = bucket.blob(schema_key)
-
-        if not blob.exists():
-            raise FileNotFoundError(f"Schema not found in storage: {schema_key}")
-
-        # 다운로드 및 파싱
-        content = blob.download_as_string()
+        client = await get_supabase_client()
+        bucket, path = _resolve_bucket_and_path(schema_key)
+        content = await client.storage.from_(bucket).download(path)
         schema = json.loads(content.decode("utf-8"))
 
         # 캐시 저장 (크기 제한 적용)
@@ -165,6 +132,9 @@ async def fetch_schema_from_storage(schema_key: str, use_cache: bool = True) -> 
     except json.JSONDecodeError as e:
         raise ValueError(f"Invalid JSON in schema: {schema_key}") from e
     except Exception as e:
+        error_str = str(e).lower()
+        if "not found" in error_str or "404" in error_str or "object not found" in error_str:
+            raise FileNotFoundError(f"Schema not found in storage: {schema_key}") from e
         logger.error("Failed to fetch schema", extra={"schema_key": schema_key, "error": str(e)})
         raise
 
@@ -188,10 +158,10 @@ async def fetch_design_tokens_from_storage(
     tokens_key: str = DEFAULT_DESIGN_TOKENS_KEY,
 ) -> dict | None:
     """
-    Firebase Storage에서 디자인 토큰 다운로드
+    Supabase Storage에서 디자인 토큰 다운로드
 
     Args:
-        tokens_key: Storage 내 파일 경로 (기본: "exports/design-tokens.json")
+        tokens_key: Storage 내 파일 경로 (기본: "exports/default/design-tokens.json")
 
     Returns:
         파싱된 디자인 토큰 dict 또는 None (파일이 없는 경우)
@@ -203,19 +173,10 @@ async def fetch_design_tokens_from_storage(
         logger.debug("Design tokens cache hit")
         return _design_tokens_cache
 
-    # Firebase 초기화
-    init_firebase()
-
     try:
-        bucket = storage.bucket()
-        blob = bucket.blob(tokens_key)
-
-        if not blob.exists():
-            logger.warning("Design tokens not found", extra={"tokens_key": tokens_key})
-            return None
-
-        # 다운로드 및 파싱
-        content = blob.download_as_string()
+        client = await get_supabase_client()
+        bucket, path = _resolve_bucket_and_path(tokens_key)
+        content = await client.storage.from_(bucket).download(path)
         tokens = json.loads(content.decode("utf-8"))
 
         # 캐시 저장
@@ -236,10 +197,10 @@ async def fetch_ag_grid_tokens_from_storage(
     tokens_key: str = DEFAULT_AG_GRID_TOKENS_KEY,
 ) -> dict | None:
     """
-    Firebase Storage에서 AG Grid 토큰 다운로드
+    Supabase Storage에서 AG Grid 토큰 다운로드
 
     Args:
-        tokens_key: Storage 내 파일 경로 (기본: "exports/ag-grid-tokens.json")
+        tokens_key: Storage 내 파일 경로 (기본: "exports/default/ag-grid/ag-grid-tokens.json")
 
     Returns:
         파싱된 AG Grid 토큰 dict 또는 None (파일이 없는 경우)
@@ -251,19 +212,10 @@ async def fetch_ag_grid_tokens_from_storage(
         logger.debug("AG Grid tokens cache hit")
         return _ag_grid_tokens_cache
 
-    # Firebase 초기화
-    init_firebase()
-
     try:
-        bucket = storage.bucket()
-        blob = bucket.blob(tokens_key)
-
-        if not blob.exists():
-            logger.warning("AG Grid tokens not found", extra={"tokens_key": tokens_key})
-            return None
-
-        # 다운로드 및 파싱
-        content = blob.download_as_string()
+        client = await get_supabase_client()
+        bucket, path = _resolve_bucket_and_path(tokens_key)
+        content = await client.storage.from_(bucket).download(path)
         tokens = json.loads(content.decode("utf-8"))
 
         # 캐시 저장
@@ -284,7 +236,7 @@ async def fetch_component_definitions_from_storage(
     definitions_key: str = DEFAULT_COMPONENT_DEFINITIONS_KEY,
 ) -> dict | None:
     """
-    Firebase Storage에서 컴포넌트 정의(Tailwind CSS variants) 다운로드
+    Supabase Storage에서 컴포넌트 정의(Tailwind CSS variants) 다운로드
 
     Args:
         definitions_key: Storage 내 파일 경로 (기본: "exports/default/component-definitions.json")
@@ -299,19 +251,10 @@ async def fetch_component_definitions_from_storage(
         logger.debug("Component definitions cache hit")
         return _component_definitions_cache
 
-    # Firebase 초기화
-    init_firebase()
-
     try:
-        bucket = storage.bucket()
-        blob = bucket.blob(definitions_key)
-
-        if not blob.exists():
-            logger.warning("Component definitions not found", extra={"definitions_key": definitions_key})
-            return None
-
-        # 다운로드 및 파싱
-        content = blob.download_as_string()
+        client = await get_supabase_client()
+        bucket, path = _resolve_bucket_and_path(definitions_key)
+        content = await client.storage.from_(bucket).download(path)
         definitions = json.loads(content.decode("utf-8"))
 
         # 캐시 저장
@@ -330,14 +273,14 @@ async def fetch_component_definitions_from_storage(
 
 async def upload_schema_to_storage(schema_key: str, schema_data: dict) -> str:
     """
-    Firebase Storage에 스키마 업로드
+    Supabase Storage에 스키마 업로드
 
     Args:
-        schema_key: Storage 내 파일 경로 (예: "schemas/storybook/my-schema.json")
+        schema_key: Storage 내 파일 경로 (예: "exports/storybook/my-schema.json")
         schema_data: 업로드할 스키마 dict
 
     Returns:
-        업로드된 파일의 public URL 또는 gs:// 경로
+        업로드된 파일의 schema_key 경로
 
     Raises:
         ValueError: 유효하지 않은 경로
@@ -345,16 +288,15 @@ async def upload_schema_to_storage(schema_key: str, schema_data: dict) -> str:
     # 경로 검증
     _validate_schema_key(schema_key)
 
-    # Firebase 초기화
-    init_firebase()
-
     try:
-        bucket = storage.bucket()
-        blob = bucket.blob(schema_key)
+        client = await get_supabase_client()
+        bucket, path = _resolve_bucket_and_path(schema_key)
 
         # JSON으로 직렬화하여 업로드
-        content = json.dumps(schema_data, ensure_ascii=False, indent=2)
-        blob.upload_from_string(content, content_type="application/json")
+        content = json.dumps(schema_data, ensure_ascii=False, indent=2).encode("utf-8")
+        await client.storage.from_(bucket).upload(
+            path, content, {"content-type": "application/json", "x-upsert": "true"}
+        )
 
         logger.info("Schema uploaded", extra={"schema_key": schema_key})
 
@@ -374,6 +316,7 @@ async def upload_schema_to_storage(schema_key: str, schema_data: dict) -> str:
 # ============================================================================
 
 USER_UPLOADS_PATH = "user_uploads"
+SIGNED_URL_EXPIRY = 7 * 24 * 60 * 60  # 7일 (초)
 
 
 def _detect_media_type(data: bytes) -> str:
@@ -407,7 +350,7 @@ async def upload_image_to_storage(
     media_type: str | None = None,
 ) -> tuple[str, str]:
     """
-    Firebase Storage에 이미지 업로드
+    Supabase Storage에 이미지 업로드
 
     Args:
         room_id: 채팅방 ID
@@ -415,13 +358,12 @@ async def upload_image_to_storage(
         media_type: MIME 타입 (None이면 자동 감지)
 
     Returns:
-        (public_url, storage_path) 튜플
+        (signed_url, storage_path) 튜플
     """
     import time
     import uuid
 
-    # Firebase 초기화
-    init_firebase()
+    client = await get_supabase_client()
 
     # 미디어 타입 자동 감지
     if media_type is None:
@@ -434,19 +376,21 @@ async def upload_image_to_storage(
     storage_path = f"{USER_UPLOADS_PATH}/{room_id}/{timestamp}_{file_uuid}.{extension}"
 
     try:
-        bucket = storage.bucket()
-        blob = bucket.blob(storage_path)
+        bucket, path_in_bucket = _resolve_bucket_and_path(storage_path)
+        storage_bucket = client.storage.from_(bucket)
 
         # 업로드
-        blob.upload_from_string(image_data, content_type=media_type)
+        await storage_bucket.upload(
+            path_in_bucket, image_data, {"content-type": media_type}
+        )
 
-        # Public URL 생성
-        blob.make_public()
-        public_url = blob.public_url
+        # Signed URL 생성 (7일 유효)
+        signed = await storage_bucket.create_signed_url(path_in_bucket, SIGNED_URL_EXPIRY)
+        signed_url = signed["signedURL"]
 
         logger.info("Image uploaded", extra={"storage_path": storage_path, "media_type": media_type, "room_id": room_id})
 
-        return public_url, storage_path
+        return signed_url, storage_path
 
     except Exception as e:
         logger.error("Failed to upload image", extra={"storage_path": storage_path, "error": str(e)})
@@ -458,7 +402,7 @@ async def fetch_image_from_url(url: str) -> tuple[bytes, str]:
     URL에서 이미지 다운로드
 
     Args:
-        url: 이미지 URL (Firebase Storage 또는 외부 URL)
+        url: 이미지 URL (Supabase Storage 또는 외부 URL)
 
     Returns:
         (image_bytes, media_type) 튜플
@@ -474,7 +418,6 @@ async def fetch_image_from_url(url: str) -> tuple[bytes, str]:
             content_type = response.headers.get("content-type", "")
 
             # Content-Type에서 media_type만 추출 (charset 등 제거)
-            # 예: "image/png; charset=utf-8" → "image/png"
             media_type = content_type.split(";")[0].strip()
 
             # Content-Type이 없거나 불명확하면 자동 감지
@@ -484,7 +427,6 @@ async def fetch_image_from_url(url: str) -> tuple[bytes, str]:
             # 지원하는 이미지 타입 확인
             supported_types = {"image/jpeg", "image/png", "image/gif", "image/webp"}
             if media_type not in supported_types:
-                # 바이트 시그니처로 재감지
                 media_type = _detect_media_type(image_data)
 
             logger.info("Image fetched", extra={"url": url, "media_type": media_type, "size_bytes": len(image_data)})
@@ -530,7 +472,7 @@ async def fetch_all_layouts_from_storage(
     use_cache: bool = True,
 ) -> list[dict]:
     """
-    Firebase Storage 폴더에서 모든 레이아웃 JSON 파일 다운로드
+    Supabase Storage 폴더에서 모든 레이아웃 JSON 파일 다운로드
 
     Args:
         folder_path: Storage 내 폴더 경로 (기본: "exports/default/layout")
@@ -546,27 +488,27 @@ async def fetch_all_layouts_from_storage(
         logger.debug("Layouts cache hit")
         return _layouts_cache
 
-    # Firebase 초기화
-    init_firebase()
-
     layouts: list[dict] = []
 
     try:
-        bucket = storage.bucket()
-        blobs = bucket.list_blobs(prefix=folder_path)
+        client = await get_supabase_client()
+        bucket, folder_in_bucket = _resolve_bucket_and_path(folder_path)
+        files = await client.storage.from_(bucket).list(folder_in_bucket)
 
-        for blob in blobs:
+        for file_info in files:
+            file_name = file_info.get("name", "")
             # .json 파일만 처리
-            if not blob.name.endswith(".json"):
+            if not file_name.endswith(".json"):
                 continue
 
             try:
-                content = blob.download_as_string()
+                file_path = f"{folder_in_bucket}/{file_name}"
+                content = await client.storage.from_(bucket).download(file_path)
                 layout = json.loads(content.decode("utf-8"))
                 layouts.append(layout)
-                logger.debug("Layout loaded", extra={"path": blob.name})
+                logger.debug("Layout loaded", extra={"path": file_path})
             except json.JSONDecodeError as e:
-                logger.warning("Invalid JSON in layout", extra={"path": blob.name, "error": str(e)})
+                logger.warning("Invalid JSON in layout", extra={"path": file_name, "error": str(e)})
                 continue
 
         # 캐시 저장
@@ -586,23 +528,3 @@ def clear_layouts_cache() -> None:
     global _layouts_cache
     _layouts_cache = None
     logger.info("Layouts cache cleared")
-
-
-@lru_cache(maxsize=20)
-def get_cached_schema_sync(schema_key: str) -> dict:
-    """
-    동기 버전 스키마 캐시 (lru_cache 사용)
-
-    Note: 이 함수는 초기 로딩 시에만 사용하고,
-          런타임에는 fetch_schema_from_storage 사용 권장
-    """
-    init_firebase()
-
-    bucket = storage.bucket()
-    blob = bucket.blob(schema_key)
-
-    if not blob.exists():
-        raise FileNotFoundError(f"Schema not found: {schema_key}")
-
-    content = blob.download_as_string()
-    return json.loads(content.decode("utf-8"))

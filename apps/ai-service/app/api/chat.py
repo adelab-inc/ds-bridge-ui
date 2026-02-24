@@ -22,7 +22,7 @@ from app.schemas.chat import (
     ParsedResponse,
 )
 from app.services.ai_provider import get_ai_provider
-from app.services.firebase_storage import (
+from app.services.supabase_storage import (
     DEFAULT_AG_GRID_SCHEMA_KEY,
     DEFAULT_SCHEMA_KEY,
     fetch_ag_grid_tokens_from_storage,
@@ -32,8 +32,8 @@ from app.services.firebase_storage import (
     fetch_image_as_base64,
     fetch_schema_from_storage,
 )
-from app.services.firestore import (
-    FirestoreError,
+from app.services.supabase_db import (
+    DatabaseError,
     RoomNotFoundError,
     create_chat_message,
     get_chat_room,
@@ -171,7 +171,7 @@ async def resolve_system_prompt(
             schema, design_tokens, ag_grid_schema, ag_grid_tokens, layouts, component_definitions
         )
     except FileNotFoundError:
-        logger.warning("Schema not found in Firebase", extra={"schema_key": effective_key})
+        logger.warning("Schema not found in storage", extra={"schema_key": effective_key})
         raise HTTPException(
             status_code=404, detail=f"Schema not found: {effective_key}"
         )
@@ -480,7 +480,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
         response_message, usage = await provider.chat(messages)
         parsed = parse_ai_response(response_message.content)
 
-        # Firestore에 메시지 저장 (question + text + code 하나의 문서로)
+        # DB에 메시지 저장 (question + text + code 하나의 문서로)
         first_file = parsed.files[0] if parsed.files else None
         await create_chat_message(
             room_id=request.room_id,
@@ -499,8 +499,8 @@ async def chat(request: ChatRequest) -> ChatResponse:
         raise HTTPException(status_code=404, detail="Chat room not found.") from e
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
-    except FirestoreError as e:
-        logger.error("Firestore error in chat", extra={"room_id": request.room_id, "error": str(e)})
+    except DatabaseError as e:
+        logger.error("Database error in chat", extra={"room_id": request.room_id, "error": str(e)})
         raise HTTPException(status_code=500, detail="Database error. Please try again.") from e
     except Exception as e:
         logger.error("Unexpected error in chat", extra={"room_id": request.room_id, "error": str(e)})
@@ -748,8 +748,8 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
         raise HTTPException(status_code=404, detail="Chat room not found.") from e
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
-    except FirestoreError as e:
-        logger.error("Firestore error in chat_stream", extra={"room_id": request.room_id, "error": str(e)})
+    except DatabaseError as e:
+        logger.error("Database error in chat_stream", extra={"room_id": request.room_id, "error": str(e)})
         raise HTTPException(status_code=500, detail="Database error. Please try again.") from e
     except Exception as e:
         logger.error("Unexpected error in chat_stream", extra={"room_id": request.room_id, "error": str(e)})
