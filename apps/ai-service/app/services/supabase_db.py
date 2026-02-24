@@ -674,3 +674,32 @@ async def delete_chat_message(message_id: str) -> bool:
     if deleted:
         logger.info("Chat message deleted", extra={"message_id": message_id})
     return deleted
+
+
+@handle_db_error("최신 코드 메시지 조회 실패")
+async def get_latest_code_message(room_id: str) -> MessageData | None:
+    """
+    채팅방에서 코드가 포함된 가장 최근 메시지 조회.
+
+    content와 path가 비어있지 않은 메시지 중 가장 최근 것을 반환합니다.
+
+    Args:
+        room_id: 채팅방 ID
+
+    Returns:
+        코드가 포함된 최신 메시지 또는 None
+    """
+    client = await get_supabase_client()
+    result = await (
+        client.table("chat_messages")
+        .select("*")
+        .eq("room_id", room_id)
+        .neq("content", "")
+        .neq("path", "")
+        .order("answer_created_at", desc=True)
+        .limit(1)
+        .execute()
+    )
+    if result.data:
+        return result.data[0]  # type: ignore[return-value]
+    return None
