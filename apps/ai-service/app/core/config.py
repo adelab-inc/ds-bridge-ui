@@ -33,9 +33,9 @@ class Settings(BaseSettings):
     # CORS
     cors_origins: str = "http://localhost:3000,http://localhost:5173"
 
-    # Firebase
-    firebase_project_id: str = ""
-    firebase_storage_bucket: str = ""
+    # Supabase
+    supabase_url: str = ""
+    supabase_service_role_key: str = ""
 
     # Chat Settings
     max_history_count: int = 10  # 대화 컨텍스트에 포함할 최대 메시지 수

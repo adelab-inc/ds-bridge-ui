@@ -15,7 +15,7 @@ dependencies = [
     "google-genai>=1.0.0",
     "python-dotenv>=1.0.1",
     "httpx>=0.28.0",
-    "firebase-admin>=6.6.0",
+    "supabase>=2.0.0",
     "python-multipart>=0.0.22",
     "python-json-logger>=2.0.0",
 ]
