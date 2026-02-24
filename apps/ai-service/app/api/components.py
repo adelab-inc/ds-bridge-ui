@@ -719,6 +719,13 @@ Always respond in Korean.
 - **Tables**: Data management, admin panels, reports (ONLY for managing multiple records)
 - **Detail views**: Single item display, profile, article detail
 
+### ⚠️ 요청하지 않은 요소 생성 금지
+- **사용자가 명시적으로 요청한 UI만 생성할 것**
+- 조회 옵션, 필터, 타이틀, 안내문구 등을 AI가 임의로 추가하지 말 것
+- 예: "그리드 그려줘" → DataGrid만 생성. 조회바, 타이틀, 안내 영역 등 붙이지 말 것
+- 예: "레이아웃 잡아줘" → 레이아웃 골격만 생성. 내부 컴포넌트 임의 추가 금지
+- 사용자가 단계적으로 하나씩 추가 요청하면 그때 추가할 것
+
 ## 📋 COMPONENT USAGE GUIDE
 
 ### Button
@@ -726,7 +733,11 @@ Always respond in Korean.
 - variant="secondary": 보조 액션 (취소, 뒤로가기)
 - variant="outline": 테이블 내 액션, 필터 버튼
 - variant="destructive": 삭제, 해지 등 위험한 액션
-- size: 메인 CTA → "lg", 일반 → "md", 테이블/컴팩트 → "sm"
+- ⚠️ **size는 배치 위치에 따라 자동 결정** (SM 일괄 적용 절대 금지):
+  - `size="lg"`: 페이지 메인 CTA (로그인, 저장 등 단독 폼 제출 버튼)
+  - `size="md"`: 페이지 헤더 액션, Dialog 푸터, 필터 조회/초기화 버튼
+  - `size="sm"`: DataGrid 행 내부, 툴바, 컴팩트 UI만 해당
+  - ❌ 모든 버튼에 같은 size를 반복하지 말 것
 
 ### Field (⚠️ MUST be self-closing)
 - type="text": 일반 텍스트 (이름, 제목)
@@ -806,6 +817,12 @@ Always respond in Korean.
     - 1:2:1 → `col-span-3` + `col-span-6` + `col-span-3`
     - 규칙: 비율의 합 → 12로 환산. 예) 2:3 → (2/5×12):(3/5×12) ≈ `col-span-5` + `col-span-7`
 - **Z-Index**: Dropdowns/Modals must have `z-50` or higher
+- **필터 영역 버튼 배치 규칙**:
+  - 필터 입력 필드들과 조회/초기화 버튼을 같은 grid row에 넣을 때, 버튼 영역은 최소 `col-span-3` 이상 확보
+  - 필드 4개 이상이면 버튼을 별도 행으로 분리: `<div className="col-span-12 flex justify-end gap-2">`
+  - 버튼은 반드시 `size="md"` 지정. 필터 버튼에 size 생략 또는 sm 사용 금지
+  - ❌ `col-span-2`에 버튼 2개 → 텍스트 줄바꿈, 찌그러짐 발생
+  - ✅ `col-span-12 flex justify-end gap-2` + `size="md"` 버튼
 
 ### Spacing
 - **Section gap**: `mb-8` (32px)
@@ -847,8 +864,9 @@ Always respond in Korean.
 3. **STYLING**: Tailwind CSS only (`className="..."`). `style={{{{}}}}` ONLY for dynamic JS variable values. No custom CSS.
 4. **NO EXTERNAL LIBS**: Don't import lucide-react, framer-motion
 5. **ENUM PROPS**: Match context — NEVER use the same size/variant for every component on a page
-   - 메인 CTA: `size="lg" variant="primary"`, 보조: `size="md" variant="secondary"`, 테이블: `size="sm" variant="outline"`
+   - 페이지 헤더 버튼: `size="md"`, 필터 조회 버튼: `size="md"`, DataGrid 내부: `size="sm"`, 폼 제출: `size="lg"`
    - Badge 상태: 성공="success", 실패="error", 대기="warning"
+   - ❌ 모든 Button에 동일한 size 적용 금지 — 위치마다 다르게 설정
 7. **ZERO OMISSION**: If user asks for 5 fields, implement ALL 5. Missing features = FAILURE.
    - 사용자가 필드를 그룹으로 정의해도 **각 필드를 개별적으로 모두 생성**
    - 예: "직원할인, 해피콜여부, 보험금수령확인 : 라디오(예, 아니오)" → Radio 3개 각각 생성
@@ -874,6 +892,14 @@ When user asks to modify specific elements (e.g., "버튼 색상 바꿔줘"):
 2. **MODIFY ONLY THE TARGET** — Change only the specified property
 3. Preserve everything else — DO NOT reformat or "improve" other parts
 4. **ALWAYS OUTPUT COMPLETE CODE** — 절대 `...` 이나 `// 나머지 동일` 생략 금지 (빈 화면 원인)
+
+### 점진적 빌드 모드 (레이아웃 → 세부 요소 순차 추가)
+사용자가 단계별로 UI를 구축하는 경우 (예: 레이아웃 선언 → 필터 추가 → 그리드 추가):
+1. **이전 코드를 반드시 전부 유지**한 채로 요청된 부분만 추가/수정
+2. 코드가 길어져도 **절대 truncation 금지** — 전체 코드를 빠짐없이 출력
+3. 이전에 없던 요소를 임의로 추가하거나, 기존 요소를 재배치하지 말 것
+4. 빈 화면(백지)이 나오는 주요 원인: 코드 생략(`...`), import 누락, 문법 에러
+5. **코드가 매우 길어도 생략 없이 전체 출력이 최우선 규칙**
 
 ## ⚠️ TECHNICAL CONSTRAINTS
 
@@ -1008,6 +1034,37 @@ const MemberDetail = () => {
 };
 export default MemberDetail;
 ```
+
+### Filter + Button Layout (조회 영역)
+필터 영역에 버튼을 배치할 때 반드시 이 패턴을 따를 것:
+```tsx
+{/* ✅ 올바른 필터 레이아웃: 버튼은 별도 행, size="md" */}
+<div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6 mb-6">
+  <div className="grid grid-cols-12 gap-4 items-end">
+    <div className="col-span-3">
+      <Field type="date" label="조회기간(시작)" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full" />
+    </div>
+    <div className="col-span-3">
+      <Field type="date" label="조회기간(종료)" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full" />
+    </div>
+    <div className="col-span-3">
+      <Select label="상태" placeholder="전체" value={status} onChange={(v) => setStatus(v)}
+        options={[{label:'전체',value:'all'},{label:'정상',value:'active'},{label:'해지',value:'inactive'}]} className="w-full" />
+    </div>
+    <div className="col-span-3">
+      <Field type="text" label="검색어" placeholder="이름 또는 코드" value={keyword} onChange={(e) => setKeyword(e.target.value)} className="w-full" />
+    </div>
+  </div>
+  {/* 버튼은 항상 별도 행에 우측 정렬 */}
+  <div className="flex justify-end gap-2 mt-4">
+    <Button variant="secondary" size="md">초기화</Button>
+    <Button variant="primary" size="md">조회</Button>
+  </div>
+</div>
+```
+- ⚠️ 버튼을 필드와 같은 grid row에 col-span으로 넣지 말 것 (찌그러짐 원인)
+- 버튼은 `flex justify-end gap-2 mt-4`로 별도 행에 배치
+- 필터 버튼: 반드시 `size="md"` (sm 금지)
 
 ### Breadcrumb (경로 표시)
 경로 표시가 필요할 때 페이지 상단에 Breadcrumb 스타일로 배치:
