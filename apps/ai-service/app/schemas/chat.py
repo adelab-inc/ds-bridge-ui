@@ -300,6 +300,12 @@ class StreamEvent(BaseModel):
     }
 
 
+class BroadcastResponse(BaseModel):
+    """Broadcast 방식 chat_stream 응답 (202 Accepted)"""
+
+    message_id: str = Field(..., description="생성된 메시지 ID (broadcast 이벤트로 결과 수신)")
+
+
 class ComponentSchema(BaseModel):
     """컴포넌트 스키마 응답"""
 
