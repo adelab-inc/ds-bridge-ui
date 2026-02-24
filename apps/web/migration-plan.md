@@ -317,13 +317,14 @@ pnpm remove firebase firebase-admin --filter web
 ## TODO LIST
 
 ### Phase 0: Supabase 프로젝트 세팅
-- [ ] Supabase 프로젝트 생성
-- [ ] Magic Link 인증 활성화 + Redirect URL 등록
-- [ ] `chat_rooms` 테이블 생성
-- [ ] `chat_messages` 테이블 생성
-- [ ] 인덱스 생성 (room_id+created_at, user_id+created_at)
-- [ ] RLS 정책 설정
-- [ ] Realtime 활성화 (Database > Replication)
+- [x] Supabase 프로젝트 생성
+- [x] Magic Link 인증 활성화 + Redirect URL 등록
+- [x] `chat_rooms` 테이블 생성
+- [x] `chat_messages` 테이블 생성
+- [x] 인덱스 생성 (room_id+created_at, user_id+created_at)
+- [x] RLS 정책 설정 (`::text` 캐스팅 적용 — user_id가 text 타입)
+- [x] Realtime 활성화 (Database > Replication)
+- [x] `.env.local` Supabase 환경변수 추가
 
 ### Phase 1: 인증 마이그레이션
 - [ ] `@supabase/supabase-js`, `@supabase/ssr` 패키지 설치
