@@ -34,6 +34,21 @@ function CodePreviewIframe({
   className,
   ...props
 }: CodePreviewIframeProps) {
+  // 부모 페이지에서 UMD 번들/CSS를 fetch (인증 쿠키가 자동 포함됨)
+  // sandbox iframe은 쿠키를 전송할 수 없으므로, 부모에서 가져와 인라인 삽입
+  const [umdBundle, setUmdBundle] = React.useState<string | null>(null);
+  const [umdCss, setUmdCss] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    Promise.all([
+      fetch('/api/ui-bundle').then((r) => (r.ok ? r.text() : '')),
+      fetch('/api/ui-bundle/css').then((r) => (r.ok ? r.text() : '')),
+    ]).then(([js, css]) => {
+      setUmdBundle(js);
+      setUmdCss(css);
+    });
+  }, []);
+
   // ResizeObserver로 컨테이너 크기 측정 (fit/transform 모드용)
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = React.useState({
@@ -496,8 +511,8 @@ function CodePreviewIframe({
   `
       : ''
   }
-  <script src="/api/ui-bundle"></script>
-  <link href="/api/ui-bundle/css" rel="stylesheet">
+  ${umdBundle ? `<script>${umdBundle}</script>` : ''}
+  ${umdCss ? `<style>${umdCss}</style>` : ''}
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     body {
@@ -577,7 +592,7 @@ function CodePreviewIframe({
         error: err instanceof Error ? err.message : '트랜스파일 에러',
       };
     }
-  }, [code, viewMode]);
+  }, [code, viewMode, umdBundle, umdCss]);
 
   // 에러 상태 렌더링
   if (error) {
