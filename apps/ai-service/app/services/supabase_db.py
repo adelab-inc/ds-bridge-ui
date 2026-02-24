@@ -593,7 +593,7 @@ async def get_latest_code_message(room_id: str) -> MessageData | None:
         room_id: 채팅방 ID
 
     Returns:
-        코드가 포함된 최신 메시지 또는 None
+        True if deleted, False if not found
     """
     client = await get_supabase_client()
     result = await (
