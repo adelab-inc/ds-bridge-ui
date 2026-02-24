@@ -760,6 +760,14 @@ Always respond in Korean.
 - size="sm": 확인/취소 간단 알림
 - size="md": 폼 입력 (기본)
 - size="lg": 복잡한 폼, 상세 정보
+- ⚠️ Dialog 내부 padding은 `p-5` 사용. `p-6` 이상은 마진이 과도해 보임
+- Dialog body 내 폼 필드 간격: `gap-4` 또는 `mb-4` (mb-5 이상 금지)
+
+### Tooltip (롤오버 메시지)
+- 아이콘이나 텍스트에 마우스 오버 시 설명 표시용
+- ✅ `<Tooltip label="설명 텍스트"><span>호버 대상</span></Tooltip>`
+- ⚠️ 토스트/알림을 요청받으면 Tooltip과 혼동하지 말 것
+- ⚠️ Tooltip만 요청 시 별도 박스/카드 UI를 추가로 생성하지 말 것. Tooltip 컴포넌트만 적용
 
 ### Checkbox / Radio / ToggleSwitch
 - MUST use `checked` + `onChange` handler for controlled state
@@ -1000,6 +1008,41 @@ const MemberDetail = () => {
 };
 export default MemberDetail;
 ```
+
+### Breadcrumb (경로 표시)
+경로 표시가 필요할 때 페이지 상단에 Breadcrumb 스타일로 배치:
+```tsx
+{/* Breadcrumb — 페이지 타이틀 위에 배치 */}
+<nav className="flex items-center gap-1.5 text-sm text-[#868e96] mb-3">
+  <span className="hover:text-[#495057] cursor-pointer">홈</span>
+  <span>/</span>
+  <span className="hover:text-[#495057] cursor-pointer">인사관리</span>
+  <span>/</span>
+  <span className="text-[#212529] font-medium">발령등록</span>
+</nav>
+<h1 className="text-2xl font-bold text-[#212529] mb-6">발령등록</h1>
+```
+- 마지막 항목만 `text-[#212529] font-medium` (현재 페이지)
+- 구분자: `/` 또는 `>`
+- 위치: 항상 페이지 타이틀(h1) 바로 위
+
+### DataGrid 선택 액션 바
+그리드에서 체크박스 선택 시 상단에 액션 바를 표시:
+```tsx
+{/* 선택 액션 바 — 체크된 항목이 있을 때만 표시 */}
+{selectedRows.length > 0 && (
+  <div className="flex items-center gap-3 bg-[#e7f5ff] border border-[#339af0] rounded-lg px-4 py-2.5 mb-4">
+    <span className="text-sm font-medium text-[#1971c2]">{selectedRows.length}건 선택</span>
+    <div className="flex gap-2 ml-auto">
+      <Button variant="outline" size="sm">일괄 승인</Button>
+      <Button variant="destructive" size="sm">일괄 삭제</Button>
+    </div>
+  </div>
+)}
+```
+- 배경: `bg-[#e7f5ff]` + `border-[#339af0]` (파란 계열 강조)
+- 위치: DataGrid 바로 위
+- 선택 건수 표시 + 우측에 액션 버튼
 """
 
 

@@ -252,10 +252,16 @@ async def build_conversation_history(
 
     # 사용자 메시지 구성: 기존 코드가 있으면 포함
     if base_code:
-        final_message = f'''현재 코드 (이 코드를 기반으로 수정해주세요):
+        final_message = f'''현재 코드:
 <file path="{base_code["path"]}">{base_code["content"]}</file>
 
-요청: {current_message}'''
+요청: {current_message}
+
+⚠️ 수정 규칙:
+- 위 요청에 해당하는 부분만 정확히 수정할 것
+- 요청과 무관한 텍스트, 색상, 레이아웃, 스타일, 컴포넌트 구조는 절대 변경하지 말 것
+- 변수명, 함수명, import, 더미 데이터도 기존 그대로 유지할 것
+- 수정 전 코드를 그대로 출력하되, 요청된 변경사항만 반영할 것'''
     else:
         # 첫 메시지 — 코드 없이 요청만
         final_message = current_message
