@@ -674,6 +674,7 @@ async def chat_stream(request: ChatRequest) -> JSONResponse:
             _run_broadcast_generation(
                 room_id=request.room_id,
                 message_id=message_id,
+                user_id=request.user_id,
                 provider=provider,
                 messages=messages,
                 images=images,
@@ -707,6 +708,7 @@ async def _run_broadcast_generation(
     *,
     room_id: str,
     message_id: str,
+    user_id: str | None,
     provider,
     messages: list,
     images: list[ImageContent],
@@ -719,7 +721,7 @@ async def _run_broadcast_generation(
 
     try:
         # start 이벤트
-        await broadcast_event(room_id, "ai_response", {"type": "start", "message_id": message_id})
+        await broadcast_event(room_id, "start", {"message_id": message_id, "user_id": user_id})
 
         # Vision/일반 모드에 따라 스트리밍 호출
         if is_vision_mode:
@@ -730,19 +732,21 @@ async def _run_broadcast_generation(
         async for chunk in stream:
             events = parser.process_chunk(chunk)
             for event in events:
-                if event["type"] == "chat":
+                event_type = event.pop("type")
+                if event_type == "chat":
                     collected_text += event.get("text", "")
-                elif event["type"] == "code":
+                elif event_type == "code":
                     collected_files.append(event)
 
-                await broadcast_event(room_id, "ai_response", event)
+                await broadcast_event(room_id, "chunk", {"type": event_type, **event})
 
         # 남은 버퍼 처리
         final_events = parser.flush()
         for event in final_events:
-            if event["type"] == "chat":
+            event_type = event.pop("type")
+            if event_type == "chat":
                 collected_text += event.get("text", "")
-            await broadcast_event(room_id, "ai_response", event)
+            await broadcast_event(room_id, "chunk", {"type": event_type, **event})
 
         # 완료 시 DONE으로 업데이트
         first_file = collected_files[0] if collected_files else None
@@ -754,15 +758,15 @@ async def _run_broadcast_generation(
             status="DONE",
         )
 
-        await broadcast_event(room_id, "ai_response", {"type": "done", "message_id": message_id})
+        await broadcast_event(room_id, "done", {"message_id": message_id})
 
     except NotImplementedError:
         logger.error("Vision not supported", extra={"room_id": room_id, "provider": get_settings().ai_provider})
         await update_chat_message(message_id=message_id, status="ERROR")
         await broadcast_event(
             room_id,
-            "ai_response",
-            {"type": "error", "error": "현재 AI 프로바이더는 Vision 기능을 지원하지 않습니다."},
+            "error",
+            {"error": "현재 AI 프로바이더는 Vision 기능을 지원하지 않습니다."},
         )
     except Exception as e:
         logger.error(
@@ -773,8 +777,8 @@ async def _run_broadcast_generation(
             await update_chat_message(message_id=message_id, status="ERROR")
             await broadcast_event(
                 room_id,
-                "ai_response",
-                {"type": "error", "error": "An error occurred during generation. Please try again."},
+                "error",
+                {"error": "An error occurred during generation. Please try again."},
             )
         except Exception:
             logger.exception("Failed to send error broadcast", extra={"room_id": room_id, "message_id": message_id})

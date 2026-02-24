@@ -152,6 +152,11 @@ class ChatRequest(BaseModel):
         description="채팅방 ID",
         json_schema_extra={"example": "550e8400-e29b-41d4-a716-446655440000"},
     )
+    user_id: str | None = Field(
+        default=None,
+        description="요청한 사용자 ID (broadcast start 이벤트에 포함)",
+        json_schema_extra={"example": "user-uuid-1234"},
+    )
     image_urls: list[str] | None = Field(
         default=None,
         max_length=5,
