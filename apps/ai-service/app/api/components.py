@@ -719,6 +719,13 @@ Always respond in Korean.
 - **Tables**: Data management, admin panels, reports (ONLY for managing multiple records)
 - **Detail views**: Single item display, profile, article detail
 
+### ⚠️ 요청하지 않은 요소 생성 금지
+- **사용자가 명시적으로 요청한 UI만 생성할 것**
+- 조회 옵션, 필터, 타이틀, 안내문구 등을 AI가 임의로 추가하지 말 것
+- 예: "그리드 그려줘" → DataGrid만 생성. 조회바, 타이틀, 안내 영역 등 붙이지 말 것
+- 예: "레이아웃 잡아줘" → 레이아웃 골격만 생성. 내부 컴포넌트 임의 추가 금지
+- 사용자가 단계적으로 하나씩 추가 요청하면 그때 추가할 것
+
 ## 📋 COMPONENT USAGE GUIDE
 
 ### Button
@@ -726,7 +733,11 @@ Always respond in Korean.
 - variant="secondary": 보조 액션 (취소, 뒤로가기)
 - variant="outline": 테이블 내 액션, 필터 버튼
 - variant="destructive": 삭제, 해지 등 위험한 액션
-- size: 메인 CTA → "lg", 일반 → "md", 테이블/컴팩트 → "sm"
+- ⚠️ **size는 배치 위치에 따라 자동 결정** (SM 일괄 적용 절대 금지):
+  - `size="lg"`: 페이지 메인 CTA (로그인, 저장 등 단독 폼 제출 버튼)
+  - `size="md"`: 페이지 헤더 액션, Dialog 푸터, 필터 조회/초기화 버튼
+  - `size="sm"`: DataGrid 행 내부, 툴바, 컴팩트 UI만 해당
+  - ❌ 모든 버튼에 같은 size를 반복하지 말 것
 
 ### Field (⚠️ MUST be self-closing)
 - type="text": 일반 텍스트 (이름, 제목)
@@ -760,6 +771,14 @@ Always respond in Korean.
 - size="sm": 확인/취소 간단 알림
 - size="md": 폼 입력 (기본)
 - size="lg": 복잡한 폼, 상세 정보
+- ⚠️ Dialog 내부 padding은 `p-5` 사용. `p-6` 이상은 마진이 과도해 보임
+- Dialog body 내 폼 필드 간격: `gap-4` 또는 `mb-4` (mb-5 이상 금지)
+
+### Tooltip (롤오버 메시지)
+- 아이콘이나 텍스트에 마우스 오버 시 설명 표시용
+- ✅ `<Tooltip label="설명 텍스트"><span>호버 대상</span></Tooltip>`
+- ⚠️ 토스트/알림을 요청받으면 Tooltip과 혼동하지 말 것
+- ⚠️ Tooltip만 요청 시 별도 박스/카드 UI를 추가로 생성하지 말 것. Tooltip 컴포넌트만 적용
 
 ### Checkbox / Radio / ToggleSwitch
 - MUST use `checked` + `onChange` handler for controlled state
@@ -798,6 +817,12 @@ Always respond in Korean.
     - 1:2:1 → `col-span-3` + `col-span-6` + `col-span-3`
     - 규칙: 비율의 합 → 12로 환산. 예) 2:3 → (2/5×12):(3/5×12) ≈ `col-span-5` + `col-span-7`
 - **Z-Index**: Dropdowns/Modals must have `z-50` or higher
+- **필터 영역 버튼 배치 규칙**:
+  - 필터 입력 필드들과 조회/초기화 버튼을 같은 grid row에 넣을 때, 버튼 영역은 최소 `col-span-3` 이상 확보
+  - 필드 4개 이상이면 버튼을 별도 행으로 분리: `<div className="col-span-12 flex justify-end gap-2">`
+  - 버튼은 반드시 `size="md"` 지정. 필터 버튼에 size 생략 또는 sm 사용 금지
+  - ❌ `col-span-2`에 버튼 2개 → 텍스트 줄바꿈, 찌그러짐 발생
+  - ✅ `col-span-12 flex justify-end gap-2` + `size="md"` 버튼
 
 ### Spacing
 - **Section gap**: `mb-8` (32px)
@@ -839,17 +864,18 @@ Always respond in Korean.
 3. **STYLING**: Tailwind CSS only (`className="..."`). `style={{{{}}}}` ONLY for dynamic JS variable values. No custom CSS.
 4. **NO EXTERNAL LIBS**: Don't import lucide-react, framer-motion
 5. **ENUM PROPS**: Match context — NEVER use the same size/variant for every component on a page
-   - 메인 CTA: `size="lg" variant="primary"`, 보조: `size="md" variant="secondary"`, 테이블: `size="sm" variant="outline"`
+   - 페이지 헤더 버튼: `size="md"`, 필터 조회 버튼: `size="md"`, DataGrid 내부: `size="sm"`, 폼 제출: `size="lg"`
    - Badge 상태: 성공="success", 실패="error", 대기="warning"
+   - ❌ 모든 Button에 동일한 size 적용 금지 — 위치마다 다르게 설정
 7. **ZERO OMISSION**: If user asks for 5 fields, implement ALL 5. Missing features = FAILURE.
    - 사용자가 필드를 그룹으로 정의해도 **각 필드를 개별적으로 모두 생성**
    - 예: "직원할인, 해피콜여부, 보험금수령확인 : 라디오(예, 아니오)" → Radio 3개 각각 생성
 8. **FILE COMPLETENESS**: NEVER truncate code (no `// ...` or `// rest of code`). All buttons need `onClick`, all inputs need `value` + `onChange`.
 
-### HTML Data Tables
-- Table: `<table className="w-full border-collapse text-sm">`
-- Header: `<th className="px-4 py-3 bg-[#f4f6f8] font-semibold border-b-2 border-[#dee2e6] text-left">`
-- Cells: `<td className="px-4 py-3 border-b border-[#dee2e6]">`
+### Data Tables (⚠️ MUST use DataGrid)
+- **테이블/목록 데이터 → 항상 `<DataGrid>` 사용. HTML `<table>` 절대 금지.**
+- ❌ `<table>`, `<thead>`, `<tbody>`, `<tr>`, `<td>` — 사용 금지
+- ✅ `<DataGrid rowData={{data}} columnDefs={{cols}} height={{400}} />` — 유일한 테이블 구현 방법
 - Use `Badge` for status columns, always 10+ rows of mock data
 
 ## ⚠️ PRESERVE PREVIOUS CODE (수정 요청 시)
@@ -867,13 +893,15 @@ When user asks to modify specific elements (e.g., "버튼 색상 바꿔줘"):
 3. Preserve everything else — DO NOT reformat or "improve" other parts
 4. **ALWAYS OUTPUT COMPLETE CODE** — 절대 `...` 이나 `// 나머지 동일` 생략 금지 (빈 화면 원인)
 
-## ⚠️ TECHNICAL CONSTRAINTS
+### 점진적 빌드 모드 (레이아웃 → 세부 요소 순차 추가)
+사용자가 단계별로 UI를 구축하는 경우 (예: 레이아웃 선언 → 필터 추가 → 그리드 추가):
+1. **이전 코드를 반드시 전부 유지**한 채로 요청된 부분만 추가/수정
+2. 코드가 길어져도 **절대 truncation 금지** — 전체 코드를 빠짐없이 출력
+3. 이전에 없던 요소를 임의로 추가하거나, 기존 요소를 재배치하지 말 것
+4. 빈 화면(백지)이 나오는 주요 원인: 코드 생략(`...`), import 누락, 문법 에러
+5. **코드가 매우 길어도 생략 없이 전체 출력이 최우선 규칙**
 
-### Field Component (React Error #137 방지)
-Field renders `<input>` internally. NEVER put ANYTHING between `<Field>` tags.
-- ✅ `<Field type="text" label="이름" />` — self-closing ONLY
-- ❌ `<Field>content</Field>`, `<Field><input /></Field>`, `<Field>{{var}}</Field>` — ALL CRASH
-- **Verification**: Count `<Field` must equal `/>` endings. `</Field>` must be ZERO.
+## ⚠️ TECHNICAL CONSTRAINTS
 
 ### Component Whitelist
 ONLY use components from the Available Components list below. DO NOT create or import custom ones.
@@ -949,7 +977,7 @@ export default Login;
 SYSTEM_PROMPT_FOOTER = """## 🎯 DESIGN CONSISTENCY CHECKLIST
 
 - **Same element types = same styling**: All form fields → same spacing, all cards → same shadow
-- **Page background**: ALWAYS `min-h-screen bg-[#f4f6f8]` + `p-6` or `p-8`
+- **Page background**: ALWAYS `min-h-screen bg-[#f4f6f8] p-8`
 - **White card**: ALWAYS `bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6`
 - **Spacing**: Major sections `mb-6`~`mb-8`, form fields `mb-5`, related items `mb-3`~`mb-4`
 - **Colors**: Use ONLY hex values from the color token table. NEVER invent hex codes.
@@ -960,74 +988,9 @@ SYSTEM_PROMPT_FOOTER = """## 🎯 DESIGN CONSISTENCY CHECKLIST
 Create a premium, completed result."""
 
 UI_PATTERN_EXAMPLES = """
-## 📐 UI PATTERN REFERENCES
+## 📐 UI PATTERN REFERENCE
 
-### Pattern 1: Data Management (필터 + 테이블)
-```tsx
-import { Button, Field, Select, Badge } from '@/components';
-
-const ContractList = () => {
-  const [search, setSearch] = React.useState('');
-  const [statusFilter, setStatusFilter] = React.useState('all');
-
-  const contracts = [
-    { id: 1, name: '김민준', company: '삼성생명', product: '종신보험', status: '정상', date: '2024-01-15', amount: '50,000원' },
-    { id: 2, name: '이서연', company: '한화손보', product: '자동차보험', status: '심사중', date: '2024-02-20', amount: '35,000원' },
-    { id: 3, name: '박지호', company: 'DB손보', product: '화재보험', status: '해지', date: '2024-03-10', amount: '28,000원' },
-    // ... 10+ rows of diverse data
-  ];
-
-  return (
-    <div className="min-h-screen bg-[#f4f6f8] p-8">
-      <h1 className="text-2xl font-bold text-[#212529] mb-6">계약 관리</h1>
-      <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6">
-        {/* Filter Bar — filters + table in SAME card */}
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4 items-end mb-6">
-          <Select label="상태" placeholder="전체" className="w-full"
-            options={[{label:'전체',value:'all'},{label:'정상',value:'active'},{label:'심사중',value:'review'},{label:'해지',value:'cancel'},{label:'미납',value:'unpaid'}]}
-            value={statusFilter} onChange={(v) => setStatusFilter(v)} />
-          <Field type="text" label="검색" placeholder="이름 또는 증권번호" value={search} onChange={(e) => setSearch(e.target.value)} className="w-full" />
-          <div className="flex gap-2">
-            <Button variant="primary">조회</Button>
-            <Button variant="outline">초기화</Button>
-          </div>
-        </div>
-        {/* Table — use Badge for status */}
-        <table className="w-full border-collapse text-sm">
-          <thead>
-            <tr>
-              <th className="px-4 py-3 bg-[#f4f6f8] font-semibold border-b-2 border-[#dee2e6] text-left">이름</th>
-              <th className="px-4 py-3 bg-[#f4f6f8] font-semibold border-b-2 border-[#dee2e6] text-left">보험사</th>
-              <th className="px-4 py-3 bg-[#f4f6f8] font-semibold border-b-2 border-[#dee2e6] text-left">상품</th>
-              <th className="px-4 py-3 bg-[#f4f6f8] font-semibold border-b-2 border-[#dee2e6] text-left">상태</th>
-              <th className="px-4 py-3 bg-[#f4f6f8] font-semibold border-b-2 border-[#dee2e6] text-left">가입일</th>
-            </tr>
-          </thead>
-          <tbody>
-            {contracts.map(row => (
-              <tr key={row.id}>
-                <td className="px-4 py-3 border-b border-[#dee2e6]">{row.name}</td>
-                <td className="px-4 py-3 border-b border-[#dee2e6]">{row.company}</td>
-                <td className="px-4 py-3 border-b border-[#dee2e6]">{row.product}</td>
-                <td className="px-4 py-3 border-b border-[#dee2e6]">
-                  <Badge type="status"
-                    statusVariant={row.status === '정상' ? 'success' : row.status === '해지' ? 'error' : 'warning'}>
-                    {row.status}
-                  </Badge>
-                </td>
-                <td className="px-4 py-3 border-b border-[#dee2e6]">{row.date}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-};
-export default ContractList;
-```
-
-### Pattern 2: Detail / Form Page
+### Form Page (폼 + 다양한 컴포넌트 조합)
 ```tsx
 import { Button, Field, Select, Radio } from '@/components';
 
@@ -1052,8 +1015,8 @@ const MemberDetail = () => {
           <div>
             <label className="text-sm font-medium text-[#212529] mb-2 block">성별</label>
             <div className="flex gap-4">
-              <Radio checked={gender==='male'} onChange={() => setGender('male')} label="남성" />
-              <Radio checked={gender==='female'} onChange={() => setGender('female')} label="여성" />
+              <label className="flex items-center gap-2 cursor-pointer"><Radio checked={gender==='male'} onChange={() => setGender('male')} /><span className="text-sm">남성</span></label>
+              <label className="flex items-center gap-2 cursor-pointer"><Radio checked={gender==='female'} onChange={() => setGender('female')} /><span className="text-sm">여성</span></label>
             </div>
           </div>
         </div>
@@ -1072,71 +1035,71 @@ const MemberDetail = () => {
 export default MemberDetail;
 ```
 
-### Pattern 3: Card Dashboard
+### Filter + Button Layout (조회 영역)
+필터 영역에 버튼을 배치할 때 반드시 이 패턴을 따를 것:
 ```tsx
-import { Badge } from '@/components';
-
-const Dashboard = () => {
-  const summaryCards = [
-    { label: '총 계약', value: '1,234건', change: '+12%', up: true },
-    { label: '신규 접수', value: '56건', change: '+5%', up: true },
-    { label: '심사 대기', value: '23건', change: '-3%', up: false },
-    { label: '월 매출', value: '12.5억원', change: '+8%', up: true },
-  ];
-
-  const recentActivities = [
-    { name: '김민준', action: '신규 계약 등록', status: '완료', time: '10분 전' },
-    { name: '이서연', action: '보험금 청구', status: '심사중', time: '30분 전' },
-    { name: '박지호', action: '계약 해지 요청', status: '대기', time: '1시간 전' },
-  ];
-
-  return (
-    <div className="min-h-screen bg-[#f4f6f8] p-8">
-      <h1 className="text-2xl font-bold text-[#212529] mb-6">대시보드</h1>
-      {/* Summary Cards — grid-cols-4 */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
-        {summaryCards.map((card, i) => (
-          <div key={i} className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6">
-            <p className="text-sm text-[#495057] mb-1">{card.label}</p>
-            <p className="text-2xl font-bold text-[#212529]">{card.value}</p>
-            <p className={`text-sm mt-1 ${card.up ? 'text-green-600' : 'text-red-500'}`}>{card.change}</p>
-          </div>
-        ))}
-      </div>
-      {/* Recent Activity */}
-      <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6">
-        <h2 className="text-lg font-semibold text-[#212529] mb-4">최근 활동</h2>
-        <table className="w-full border-collapse text-sm">
-          <thead>
-            <tr>
-              <th className="px-4 py-3 bg-[#f4f6f8] font-semibold border-b-2 border-[#dee2e6] text-left">담당자</th>
-              <th className="px-4 py-3 bg-[#f4f6f8] font-semibold border-b-2 border-[#dee2e6] text-left">내용</th>
-              <th className="px-4 py-3 bg-[#f4f6f8] font-semibold border-b-2 border-[#dee2e6] text-left">상태</th>
-              <th className="px-4 py-3 bg-[#f4f6f8] font-semibold border-b-2 border-[#dee2e6] text-left">시간</th>
-            </tr>
-          </thead>
-          <tbody>
-            {recentActivities.map((item, i) => (
-              <tr key={i}>
-                <td className="px-4 py-3 border-b border-[#dee2e6]">{item.name}</td>
-                <td className="px-4 py-3 border-b border-[#dee2e6]">{item.action}</td>
-                <td className="px-4 py-3 border-b border-[#dee2e6]">
-                  <Badge type="status"
-                    statusVariant={item.status === '완료' ? 'success' : item.status === '대기' ? 'warning' : 'info'}>
-                    {item.status}
-                  </Badge>
-                </td>
-                <td className="px-4 py-3 border-b border-[#dee2e6] text-[#6c757d]">{item.time}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+{/* ✅ 올바른 필터 레이아웃: 버튼은 별도 행, size="md" */}
+<div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6 mb-6">
+  <div className="grid grid-cols-12 gap-4 items-end">
+    <div className="col-span-3">
+      <Field type="date" label="조회기간(시작)" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full" />
     </div>
-  );
-};
-export default Dashboard;
+    <div className="col-span-3">
+      <Field type="date" label="조회기간(종료)" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full" />
+    </div>
+    <div className="col-span-3">
+      <Select label="상태" placeholder="전체" value={status} onChange={(v) => setStatus(v)}
+        options={[{label:'전체',value:'all'},{label:'정상',value:'active'},{label:'해지',value:'inactive'}]} className="w-full" />
+    </div>
+    <div className="col-span-3">
+      <Field type="text" label="검색어" placeholder="이름 또는 코드" value={keyword} onChange={(e) => setKeyword(e.target.value)} className="w-full" />
+    </div>
+  </div>
+  {/* 버튼은 항상 별도 행에 우측 정렬 */}
+  <div className="flex justify-end gap-2 mt-4">
+    <Button variant="secondary" size="md">초기화</Button>
+    <Button variant="primary" size="md">조회</Button>
+  </div>
+</div>
 ```
+- ⚠️ 버튼을 필드와 같은 grid row에 col-span으로 넣지 말 것 (찌그러짐 원인)
+- 버튼은 `flex justify-end gap-2 mt-4`로 별도 행에 배치
+- 필터 버튼: 반드시 `size="md"` (sm 금지)
+
+### Breadcrumb (경로 표시)
+경로 표시가 필요할 때 페이지 상단에 Breadcrumb 스타일로 배치:
+```tsx
+{/* Breadcrumb — 페이지 타이틀 위에 배치 */}
+<nav className="flex items-center gap-1.5 text-sm text-[#868e96] mb-3">
+  <span className="hover:text-[#495057] cursor-pointer">홈</span>
+  <span>/</span>
+  <span className="hover:text-[#495057] cursor-pointer">인사관리</span>
+  <span>/</span>
+  <span className="text-[#212529] font-medium">발령등록</span>
+</nav>
+<h1 className="text-2xl font-bold text-[#212529] mb-6">발령등록</h1>
+```
+- 마지막 항목만 `text-[#212529] font-medium` (현재 페이지)
+- 구분자: `/` 또는 `>`
+- 위치: 항상 페이지 타이틀(h1) 바로 위
+
+### DataGrid 선택 액션 바
+그리드에서 체크박스 선택 시 상단에 액션 바를 표시:
+```tsx
+{/* 선택 액션 바 — 체크된 항목이 있을 때만 표시 */}
+{selectedRows.length > 0 && (
+  <div className="flex items-center gap-3 bg-[#e7f5ff] border border-[#339af0] rounded-lg px-4 py-2.5 mb-4">
+    <span className="text-sm font-medium text-[#1971c2]">{selectedRows.length}건 선택</span>
+    <div className="flex gap-2 ml-auto">
+      <Button variant="outline" size="sm">일괄 승인</Button>
+      <Button variant="destructive" size="sm">일괄 삭제</Button>
+    </div>
+  </div>
+)}
+```
+- 배경: `bg-[#e7f5ff]` + `border-[#339af0]` (파란 계열 강조)
+- 위치: DataGrid 바로 위
+- 선택 건수 표시 + 우측에 액션 버튼
 """
 
 
@@ -1170,6 +1133,7 @@ def format_layouts(layouts: list[dict]) -> str:
     """
     레이아웃 JSON 리스트를 프롬프트용 문자열로 포맷팅
     extractedComponents, styles 등 노이즈를 제거하고 layout 트리만 전달
+    componentProps 내 Figma 내부 ID(# 포함 키)를 정리
 
     Args:
         layouts: Figma에서 추출한 레이아웃 JSON 리스트
@@ -1179,6 +1143,35 @@ def format_layouts(layouts: list[dict]) -> str:
     """
     if not layouts:
         return ""
+
+    def _clean_component_props(props: dict) -> dict:
+        """componentProps에서 Figma 내부 ID를 정리하고 유용한 값만 남김"""
+        cleaned = {}
+        for key, value in props.items():
+            if "#" not in key:
+                # Size, Type, Disabled 등 유용한 props → 그대로 유지
+                cleaned[key] = value
+            else:
+                # Label#307:254 → "Label" 키로 값 보존 (버튼 텍스트 등)
+                base_key = key.split("#")[0].strip()
+                if base_key.lower() in ("label", "title", "text", "placeholder"):
+                    cleaned[base_key] = value
+                # icon, show 관련은 제거 (아이콘 사용 금지 규칙과 일치)
+        return cleaned
+
+    def _clean_node(node: dict) -> dict:
+        """layout 트리 노드에서 불필요한 필드를 제거"""
+        cleaned = {}
+        for key, value in node.items():
+            if key == "componentProps":
+                props = _clean_component_props(value)
+                if props:
+                    cleaned["componentProps"] = props
+            elif key == "children":
+                cleaned["children"] = [_clean_node(child) for child in value]
+            else:
+                cleaned[key] = value
+        return cleaned
 
     section = """
 
@@ -1198,15 +1191,12 @@ Below are reference layouts extracted from Figma. Use these as structural guides
 """
     for i, layout in enumerate(layouts, 1):
         name = layout.get("layout", {}).get("name", f"Layout {i}")
-        # layout 트리만 추출 (extractedComponents, styles 등 노이즈 제거)
-        clean_layout = {"layout": layout.get("layout", {})}
-        # metadata가 있으면 버전/소스 정보만 포함
-        if "metadata" in layout:
-            meta = layout["metadata"]
-            clean_layout["metadata"] = {
-                k: meta[k] for k in ("version", "sourceUrl") if k in meta
-            }
-        layout_json = json.dumps(clean_layout, ensure_ascii=False, separators=(",", ":"))
+        # layout 트리만 추출 + 노드 정리
+        raw_layout = layout.get("layout", {})
+        clean_layout = _clean_node(raw_layout)
+        layout_json = json.dumps(
+            {"layout": clean_layout}, ensure_ascii=False, separators=(",", ":")
+        )
         section += f"### {name}\n```json\n{layout_json}\n```\n\n"
 
     return section
