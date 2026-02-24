@@ -16,7 +16,7 @@ Firebase 문서 쓰기/읽기 과금 문제와 실시간 스트리밍 동기화 
       Client ←onSnapshot→ Firestore ←write← AI Server
 
 변경: Client ←Broadcast→ Supabase ←Broadcast← BFF ←SSE→ AI Server
-      Client ←Postgres Changes→ Supabase DB ←write← BFF
+      Client ←DB fetch→ Supabase DB ←write← BFF
 ```
 BFF가 AI 서버의 SSE를 읽고, Supabase Broadcast로 중계 + DB에 최종 저장.
 
@@ -45,7 +45,8 @@ CREATE TABLE chat_messages (
   path TEXT NOT NULL DEFAULT '',
   question_created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::BIGINT,
   answer_created_at BIGINT NOT NULL DEFAULT 0,
-  status TEXT NOT NULL DEFAULT 'GENERATING' CHECK (status IN ('GENERATING', 'DONE', 'ERROR'))
+  status TEXT NOT NULL DEFAULT 'GENERATING' CHECK (status IN ('GENERATING', 'DONE', 'ERROR')),
+  is_bookmarked BOOLEAN NOT NULL DEFAULT false
 );
 
 CREATE INDEX idx_messages_room_created ON chat_messages(room_id, question_created_at DESC);
@@ -159,76 +160,43 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...
 
 ## Phase 2: 스트리밍 + 실시간 데이터 마이그레이션
 
+> 채팅 데이터 흐름, State 관리, Broadcast 이벤트 스펙, 다중 유저 시나리오,
+> 페이지네이션, 검색/북마크, 에러 처리 등 상세 구현 로직은 **[chat-logic.md](chat-logic.md)** 참조.
+
 ### 2.1 Supabase Broadcast 스트리밍 (핵심 변경)
 
-**수정**: `apps/web/app/api/chat/stream/route.ts`
+**수정 파일:**
 
-현재: `return new Response(aiResponse.body, ...)` (SSE 패스스루)
+| 파일 | 현재 | 변경 |
+|------|------|------|
+| `app/api/chat/stream/route.ts` | SSE 패스스루 | SSE 수신 → Broadcast 중계 + DB INSERT + 채널 닫기 |
+| `hooks/useChatStream.ts` | fetch + ReadableStream + SSE 파싱 | POST 트리거만 + Broadcast 구독으로 chunk 수신 |
 
-변경:
-```
-1. AI 서버에서 SSE 스트림 받기
-2. 스트림을 chunk 단위로 읽기
-3. 각 chunk를 Supabase Broadcast로 전송
-4. 텍스트/코드 누적
-5. 스트리밍 완료 시 chat_messages 테이블에 최종 결과 INSERT
-6. HTTP 응답 반환 (성공/실패)
-```
-
-서버에서 `service_role` key로 Supabase 클라이언트 생성 → Broadcast + DB 쓰기.
-
-**수정**: `apps/web/hooks/useChatStream.ts`
-
-현재: `fetch` → `ReadableStream` → SSE 파싱
-
-변경:
-```
-1. Supabase channel(`room:${roomId}`) 구독 (이미 useEffect에서 구독 중)
-2. fetch('/api/chat/stream') 호출 (트리거 역할만, body 읽지 않음)
-3. Broadcast 이벤트로 chunk 수신 → state 업데이트
-4. 'ai-done' 이벤트 → 스트리밍 완료 처리
-```
-
-SSE 파싱 로직 제거, Broadcast 구독으로 대체.
+- 서버: `service_role` key로 Supabase 클라이언트 생성, 채널은 **질문-답변 단위**로 열고 닫음
+- 클라이언트: **room 단위**로 채널 구독 유지
+- ai-done 수신 시 DB fetch로 최신 메시지 동기화 (로컬 변환 없음)
 
 ### 2.2 Room 생성 시 Supabase DB 쓰기
 
-**수정**: `apps/web/app/api/rooms/route.ts`
+**수정**: `app/api/rooms/route.ts`
 
-현재: AI 서버에만 프록시
+현재: AI 서버에만 프록시 → 변경: AI 서버 프록시 + **Supabase chat_rooms INSERT**
 
-변경: AI 서버 프록시 + **Supabase chat_rooms 테이블에도 INSERT**
-- AI 서버가 반환한 room 데이터를 Supabase에도 저장
-- 클라이언트가 Supabase Realtime으로 rooms 목록을 구독할 수 있도록
-
-### 2.3 실시간 Hooks 교체 (3개 파일 신규)
+### 2.3 실시간 Hooks 교체
 
 | 신규 파일 | 대체 대상 | 역할 |
 |-----------|-----------|------|
-| `hooks/supabase/useRealtimeMessages.ts` | `hooks/firebase/useRealtimeMessages.ts` | Postgres Changes 구독 + 초기 fetch |
-| `hooks/supabase/useGetPaginatedMessages.ts` | `hooks/firebase/useGetPaginatedFbMessages.ts` | `supabase.from().select().range()` + useInfiniteQuery |
-| `hooks/supabase/useRoomsList.ts` | `hooks/firebase/useRoomsList.ts` | Postgres Changes 구독 + 초기 fetch |
-
-**차이점**: Firestore `onSnapshot`은 초기 데이터 + 변경을 한 번에 전달. Supabase Realtime은 변경만 전달하므로 초기 데이터는 별도 `select()` 쿼리 필요.
+| `hooks/supabase/useGetPaginatedMessages.ts` | `hooks/firebase/useGetPaginatedFbMessages.ts` | cursor 기반 페이지네이션 (20개/페이지) + useInfiniteQuery |
+| `hooks/supabase/useRoomsList.ts` | `hooks/firebase/useRoomsList.ts` | DB fetch 기반 방 목록 |
+| `hooks/supabase/useRoomChannel.ts` | (신규) | Room 단위 Broadcast 채널 관리 (subscribe/unsubscribe) |
 
 ### 2.4 Consumer 파일 import 변경
 
 | 파일 | 변경 |
 |------|------|
-| `apps/web/components/features/chat/chat-section.tsx` | `useGetPaginatedFbMessages` → `useGetPaginatedMessages` |
-| `apps/web/components/features/chat/chat-message-list.tsx` | `ChatMessage` import 경로 변경 |
-| `apps/web/components/layout/header.tsx` | `useRoomsList` import 경로 변경 |
-
-### 2.5 Room 채널 관리 Hook (신규)
-
-**생성**: `hooks/supabase/useRoomChannel.ts`
-
-Room 단위 Broadcast 채널 관리:
-```typescript
-// room 입장 시 subscribe, 이동 시 unsubscribe
-// ai-chunk, ai-done 이벤트 수신
-// useChatStream과 통합
-```
+| `components/features/chat/chat-section.tsx` | `useGetPaginatedFbMessages` → `useGetPaginatedMessages` |
+| `components/features/chat/chat-message-list.tsx` | `ChatMessage` import 경로 변경 |
+| `components/layout/header.tsx` | `useRoomsList` import 경로 변경 |
 
 ---
 
@@ -282,19 +250,17 @@ pnpm remove firebase firebase-admin --filter web
 
 ## 파일 변경 요약
 
-### 신규 생성 (8개)
+### 신규 생성 (6개)
 | 파일 | Phase |
 |------|-------|
 | `apps/web/lib/supabase/client.ts` | 1 |
 | `apps/web/lib/supabase/server.ts` | 1 |
 | `apps/web/lib/supabase/middleware.ts` | 1 |
-| `apps/web/hooks/supabase/useRealtimeMessages.ts` | 2 |
 | `apps/web/hooks/supabase/useGetPaginatedMessages.ts` | 2 |
 | `apps/web/hooks/supabase/useRoomsList.ts` | 2 |
 | `apps/web/hooks/supabase/useRoomChannel.ts` | 2 |
-| `apps/web/hooks/supabase/messageUtils.ts` | 2 |
 
-### 수정 (19개)
+### 수정 (18개)
 | 파일 | Phase | 변경 규모 |
 |------|-------|-----------|
 | `lib/auth/actions.ts` | 1 | 전면 재작성 |
@@ -304,7 +270,6 @@ pnpm remove firebase firebase-admin --filter web
 | `stores/useAuthStore.ts` | 1 | cookie 로직 제거 |
 | `components/providers/auth-initializer.tsx` | 1 | listener 교체 |
 | `components/features/auth/auth-callback-handler.tsx` | 1 | PKCE 교환으로 변경 |
-| `components/features/auth/login-form.tsx` | 1 | 변경 없음 (actions.ts가 동일 인터페이스) |
 | `middleware.ts` | 1 | 전면 재작성 |
 | `app/api/chat/route.ts` | 1 | import 변경 |
 | `app/api/chat/stream/route.ts` | 1+2 | Phase 1: import 변경, Phase 2: Broadcast 로직 추가 |
@@ -338,9 +303,10 @@ pnpm remove firebase firebase-admin --filter web
 ### Phase 2 검증
 1. Room 생성 → Supabase DB에 저장 확인
 2. 질문 전송 → Broadcast로 chunk 수신 → UI 실시간 렌더링 확인
-3. 스트리밍 완료 → chat_messages 테이블에 최종 메시지 저장 확인
-4. 방 목록 실시간 업데이트 확인 (새 방 생성 시 자동 반영)
-5. 메시지 페이지네이션 (무한 스크롤) 확인
+3. ai-done 수신 → DB fetch 동기화 → 최종 메시지 정상 표시 확인
+4. 메시지 페이지네이션 (20개 단위 무한 스크롤) 확인
+5. 텍스트 검색 → 메시지 점프 → scrollIntoView 확인
+6. 북마크 토글 → 북마크 목록 → 점프 확인
 
 ### Phase 3-4 검증
 1. `pnpm build` 성공 확인 (Firebase import 없음)
@@ -383,23 +349,24 @@ pnpm remove firebase firebase-admin --filter web
 - [ ] Phase 1 검증: API Route 토큰 검증 테스트
 - [ ] Phase 1 검증: Middleware 리다이렉트 테스트
 
-### Phase 2: 스트리밍 + 실시간 데이터
+### Phase 2: 스트리밍 + 실시간 데이터 (상세: [chat-logic.md](chat-logic.md))
 - [ ] `hooks/supabase/useRoomChannel.ts` 생성 (Broadcast 채널 관리)
 - [ ] `app/api/chat/stream/route.ts` 재작성 (SSE → Broadcast 중계 + DB 저장)
-- [ ] `hooks/useChatStream.ts` 수정 (SSE 파싱 → Broadcast 구독)
+- [ ] `hooks/useChatStream.ts` 수정 (POST 트리거만 + Broadcast 구독)
 - [ ] `app/api/rooms/route.ts` 수정 (Supabase DB 쓰기 추가)
-- [ ] `hooks/supabase/useRealtimeMessages.ts` 생성
-- [ ] `hooks/supabase/useGetPaginatedMessages.ts` 생성
-- [ ] `hooks/supabase/useRoomsList.ts` 생성
-- [ ] `hooks/supabase/messageUtils.ts` 생성
+- [ ] `hooks/supabase/useGetPaginatedMessages.ts` 생성 (20개/페이지 cursor 기반)
+- [ ] `hooks/supabase/useRoomsList.ts` 생성 (DB fetch 기반)
 - [ ] `components/features/chat/chat-section.tsx` import 변경
 - [ ] `components/features/chat/chat-message-list.tsx` import 변경
 - [ ] `components/layout/header.tsx` import 변경
+- [ ] ai-done 시 DB fetch 동기화 로직 구현
+- [ ] 메시지 검색 (ILIKE) + 점프 로직 구현
+- [ ] 북마크 기능 구현 (`is_bookmarked` 컬럼)
 - [ ] Phase 2 검증: Room 생성 → Supabase DB 저장 확인
 - [ ] Phase 2 검증: Broadcast 스트리밍 수신 확인
-- [ ] Phase 2 검증: 최종 메시지 DB 저장 확인
-- [ ] Phase 2 검증: 방 목록 실시간 업데이트 확인
-- [ ] Phase 2 검증: 메시지 페이지네이션 확인
+- [ ] Phase 2 검증: ai-done → DB fetch 동기화 확인
+- [ ] Phase 2 검증: 메시지 페이지네이션 (20개 단위) 확인
+- [ ] Phase 2 검증: 검색 + 메시지 점프 확인
 
 ### Phase 3: Shared Types 정리
 - [ ] `packages/shared-types/firebase/` → `database/` 리네이밍
