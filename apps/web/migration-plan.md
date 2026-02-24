@@ -53,7 +53,42 @@ CREATE INDEX idx_messages_room_created ON chat_messages(room_id, question_create
 CREATE INDEX idx_rooms_user_created ON chat_rooms(user_id, created_at DESC);
 ```
 
-4. RLS 정책 설정
+4. RLS 정책 설정:
+
+```sql
+-- chat_rooms: 본인 데이터만 접근
+ALTER TABLE chat_rooms ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own rooms"
+  ON chat_rooms FOR SELECT
+  USING (user_id = auth.uid());
+
+CREATE POLICY "Users can create own rooms"
+  ON chat_rooms FOR INSERT
+  WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Users can delete own rooms"
+  ON chat_rooms FOR DELETE
+  USING (user_id = auth.uid());
+
+-- chat_messages: room 소유자만 접근
+ALTER TABLE chat_messages ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view messages in own rooms"
+  ON chat_messages FOR SELECT
+  USING (room_id IN (SELECT id FROM chat_rooms WHERE user_id = auth.uid()));
+
+CREATE POLICY "Users can insert messages in own rooms"
+  ON chat_messages FOR INSERT
+  WITH CHECK (room_id IN (SELECT id FROM chat_rooms WHERE user_id = auth.uid()));
+
+CREATE POLICY "Users can update messages in own rooms"
+  ON chat_messages FOR UPDATE
+  USING (room_id IN (SELECT id FROM chat_rooms WHERE user_id = auth.uid()));
+```
+
+> **참고**: BFF의 `service_role` key는 RLS를 bypass하므로, 서버 측 DB 쓰기(Broadcast 후 INSERT)는 RLS 영향 없음.
+
 5. Realtime 활성화 (Database > Replication)
 
 ---
@@ -190,13 +225,23 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...
 | `hooks/supabase/useRoomsList.ts` | `hooks/firebase/useRoomsList.ts` | DB fetch 기반 방 목록 |
 | `hooks/supabase/useRoomChannel.ts` | (신규) | Room 단위 Broadcast 채널 관리 (subscribe/unsubscribe) |
 
+> **참고 (pageSize 변경)**: 현재 `chat-section.tsx`에서 `pageSize: 10`을 사용 중이나, Supabase 전환 시 **20개/페이지**로 변경. Firestore 문서 읽기 과금이 없어지므로 한 번에 더 많이 가져오는 것이 UX에 유리.
+
 ### 2.4 Consumer 파일 import 변경
 
 | 파일 | 변경 |
 |------|------|
 | `components/features/chat/chat-section.tsx` | `useGetPaginatedFbMessages` → `useGetPaginatedMessages` |
 | `components/features/chat/chat-message-list.tsx` | `ChatMessage` import 경로 변경 |
+| `components/features/chat/chat-message.tsx` | `ChatMessage` type import 경로 변경 |
 | `components/layout/header.tsx` | `useRoomsList` import 경로 변경 |
+
+### 2.5 기존 `useBookmarks` 훅 수정
+
+**수정**: `hooks/useBookmarks.ts`
+- 현재 로직 → Supabase `chat_messages.is_bookmarked` 컬럼 기반 UPDATE/SELECT로 전환
+- 북마크 토글: `supabase.from('chat_messages').update({ is_bookmarked }).eq('id', messageId)`
+- 북마크 목록: `supabase.from('chat_messages').select('*').eq('room_id', roomId).eq('is_bookmarked', true)`
 
 ---
 
@@ -205,21 +250,62 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...
 ### 3.1 디렉토리 리네이밍
 
 ```
-packages/shared-types/typescript/firebase/ → packages/shared-types/typescript/database/
 packages/shared-types/firebase/            → packages/shared-types/database/
+packages/shared-types/typescript/firebase/ → packages/shared-types/typescript/database/
+packages/shared-types/python/firebase/     → packages/shared-types/python/database/
 ```
 
 - `COLLECTIONS` → `TABLES`
 - 타입 자체(`ChatRoom`, `ChatMessage`)는 변경 없음 (이미 provider-agnostic)
+- `STORAGE_PATHS`는 유지 (AI 서버 전용 — 아래 3.4 참조)
 
 ### 3.2 코드 생성 스크립트 수정
 
 **수정**: `packages/shared-types/scripts/generate-typescript.js`
-- 입출력 경로 변경
+- `FIREBASE_DIR` → `DATABASE_DIR`, `OUTPUT_DIR` 경로 `firebase/` → `database/`
+
+**수정**: `packages/shared-types/scripts/generate-python.py`
+- 동일하게 입출력 경로 `firebase/` → `database/` 변경
 
 ### 3.3 import 경로 일괄 업데이트
 
-`@ds-hub/shared-types/typescript/firebase/` → `@ds-hub/shared-types/typescript/database/`
+`@packages/shared-types/typescript/firebase/` → `@packages/shared-types/typescript/database/`
+
+> **주의**: 실제 코드베이스는 `@packages/shared-types` path alias를 사용 (`tsconfig.json` path mapping). `@ds-hub/shared-types`가 아님.
+
+**대상 파일 전체 목록 (20개):**
+
+| 파일 | import 대상 |
+|------|------------|
+| `hooks/firebase/messageUtils.ts` | `COLLECTIONS`, `ChatMessage` |
+| `hooks/firebase/useRealtimeMessages.ts` | `ChatMessage`, `MESSAGES_COLLECTION` |
+| `hooks/firebase/useGetPaginatedFbMessages.ts` | `ChatMessage`, `MESSAGES_COLLECTION` |
+| `hooks/firebase/useRoomsList.ts` | `ChatRoom`, `COLLECTIONS` |
+| `hooks/useRoom.ts` | shared-types firebase |
+| `hooks/api/useRoomQuery.ts` | shared-types firebase |
+| `hooks/api/useCreateRoom.ts` | shared-types firebase |
+| `hooks/api/useChatQuery.ts` | shared-types firebase |
+| `types/chat.ts` | shared-types firebase |
+| `components/features/chat/chat-section.tsx` | `ChatMessage` |
+| `components/features/chat/chat-message.tsx` | `ChatMessage` |
+| `components/features/chat/chat-message-list.tsx` | `ChatMessage` |
+| `app/api/chat/route.ts` | shared-types |
+| `app/api/chat/stream/route.ts` | shared-types |
+| `app/api/rooms/route.ts` | shared-types |
+| `app/api/rooms/[room_id]/route.ts` | shared-types |
+| `app/api/rooms/[room_id]/schemas/route.ts` | shared-types |
+| `app/api/health/route.ts` | shared-types |
+| `tsconfig.json` | path alias 정의 |
+| `CLAUDE.md` | 문서 참조 |
+
+### 3.4 Firebase Storage 처리
+
+현재 `lib/firebase.ts`에서 `firebaseStorage`를 export하고, `STORAGE_PATHS` (screenshots, assets, user_uploads, exports)가 정의되어 있으나:
+
+- **프론트엔드에서 Firebase Storage를 직접 사용하지 않음** — 이미지 업로드는 `app/api/rooms/[room_id]/images/route.ts`에서 AI 서버로 프록시
+- AI 서버가 Storage를 직접 관리하므로 **클라이언트 코드 변경 불필요**
+- `STORAGE_PATHS` 상수는 AI 서버(Python) 측에서 Supabase Storage 전환 시 별도 처리
+- Phase 4에서 `firebaseStorage` export 삭제 시 import 참조가 없는지 확인 필요
 
 ---
 
@@ -229,10 +315,13 @@ packages/shared-types/firebase/            → packages/shared-types/database/
 
 | 삭제 대상 | 이유 |
 |-----------|------|
-| `apps/web/lib/firebase.ts` | `lib/supabase/client.ts`로 대체 |
-| `apps/web/hooks/firebase/` (전체) | `hooks/supabase/`로 대체 |
+| `apps/web/lib/firebase.ts` | `lib/supabase/client.ts`로 대체 (`firebaseStorage` export 포함 — 프론트엔드 미사용 확인됨) |
+| `apps/web/hooks/firebase/` (전체 4개 파일) | `hooks/supabase/`로 대체. `messageUtils.ts`, `useGetPaginatedFbMessages.ts`, `useRealtimeMessages.ts`, `useRoomsList.ts` |
 | `packages/shared-types/typescript/firebase/` | `database/`로 이동 |
+| `packages/shared-types/python/firebase/` | `database/`로 이동 |
 | `packages/shared-types/firebase/` | `database/`로 이동 |
+
+> **참고**: `useRealtimeMessages.ts`는 현재 컴포넌트에서 직접 사용되지 않으나, Firestore `onSnapshot` 기반 훅임. Broadcast 채널(`useRoomChannel.ts`)이 이 역할을 대체.
 
 ### 4.2 패키지 제거
 
@@ -260,7 +349,7 @@ pnpm remove firebase firebase-admin --filter web
 | `apps/web/hooks/supabase/useRoomsList.ts` | 2 |
 | `apps/web/hooks/supabase/useRoomChannel.ts` | 2 |
 
-### 수정 (18개)
+### 수정 (27개)
 | 파일 | Phase | 변경 규모 |
 |------|-------|-----------|
 | `lib/auth/actions.ts` | 1 | 전면 재작성 |
@@ -278,9 +367,18 @@ pnpm remove firebase firebase-admin --filter web
 | `app/api/rooms/[room_id]/images/route.ts` | 1 | import 변경 |
 | `app/api/rooms/[room_id]/schemas/route.ts` | 1 | import 변경 |
 | `hooks/useChatStream.ts` | 2 | SSE 파싱 → Broadcast 구독으로 변경 |
+| `hooks/useBookmarks.ts` | 2 | Supabase DB 기반으로 전환 |
 | `components/features/chat/chat-section.tsx` | 2 | hook import 변경 |
+| `components/features/chat/chat-message.tsx` | 2+3 | type import 경로 변경 |
 | `components/features/chat/chat-message-list.tsx` | 2 | type import 변경 |
 | `components/layout/header.tsx` | 2 | hook import 변경 |
+| `hooks/useRoom.ts` | 3 | import 경로 변경 |
+| `hooks/api/useRoomQuery.ts` | 3 | import 경로 변경 |
+| `hooks/api/useCreateRoom.ts` | 3 | import 경로 변경 |
+| `hooks/api/useChatQuery.ts` | 3 | import 경로 변경 |
+| `types/chat.ts` | 3 | import 경로 변경 |
+| `app/api/health/route.ts` | 3 | import 경로 변경 |
+| `packages/shared-types/scripts/generate-python.py` | 3 | 입출력 경로 변경 |
 
 ### 삭제 (5개 + 디렉토리)
 | 파일 | Phase |
@@ -288,6 +386,7 @@ pnpm remove firebase firebase-admin --filter web
 | `apps/web/lib/firebase.ts` | 4 |
 | `apps/web/hooks/firebase/` (4개 파일) | 4 |
 | `packages/shared-types/typescript/firebase/` | 3 |
+| `packages/shared-types/python/firebase/` | 3 |
 | `packages/shared-types/firebase/` | 3 |
 
 ---
@@ -355,9 +454,11 @@ pnpm remove firebase firebase-admin --filter web
 - [ ] `app/api/chat/stream/route.ts` 재작성 (SSE → Broadcast 중계 + DB 저장)
 - [ ] `hooks/useChatStream.ts` 수정 (POST 트리거만 + Broadcast 구독)
 - [ ] `app/api/rooms/route.ts` 수정 (Supabase DB 쓰기 추가)
-- [ ] `hooks/supabase/useGetPaginatedMessages.ts` 생성 (20개/페이지 cursor 기반)
+- [ ] `hooks/supabase/useGetPaginatedMessages.ts` 생성 (20개/페이지 cursor 기반, 기존 pageSize 10→20 변경)
 - [ ] `hooks/supabase/useRoomsList.ts` 생성 (DB fetch 기반)
+- [ ] `hooks/useBookmarks.ts` 수정 (Supabase DB 기반 `is_bookmarked` 컬럼 활용)
 - [ ] `components/features/chat/chat-section.tsx` import 변경
+- [ ] `components/features/chat/chat-message.tsx` type import 경로 변경
 - [ ] `components/features/chat/chat-message-list.tsx` import 변경
 - [ ] `components/layout/header.tsx` import 변경
 - [ ] ai-done 시 DB fetch 동기화 로직 구현
@@ -368,22 +469,33 @@ pnpm remove firebase firebase-admin --filter web
 - [ ] Phase 2 검증: ai-done → DB fetch 동기화 확인
 - [ ] Phase 2 검증: 메시지 페이지네이션 (20개 단위) 확인
 - [ ] Phase 2 검증: 검색 + 메시지 점프 확인
+- [ ] Phase 2 검증: 북마크 토글 + 북마크 목록 + 점프 확인
 
 ### Phase 3: Shared Types 정리
 - [ ] `packages/shared-types/firebase/` → `database/` 리네이밍
 - [ ] `packages/shared-types/typescript/firebase/` → `database/` 리네이밍
+- [ ] `packages/shared-types/python/firebase/` → `database/` 리네이밍
 - [ ] `COLLECTIONS` → `TABLES` 상수명 변경
-- [ ] 코드 생성 스크립트 경로 수정
-- [ ] import 경로 일괄 업데이트
+- [ ] `generate-typescript.js` 경로 수정 (`firebase/` → `database/`)
+- [ ] `generate-python.py` 경로 수정 (`firebase/` → `database/`)
+- [ ] import 경로 일괄 업데이트 (`@packages/shared-types/typescript/firebase/` → `database/`, 대상 20개 파일)
+- [ ] `hooks/useRoom.ts` import 경로 변경
+- [ ] `hooks/api/useRoomQuery.ts` import 경로 변경
+- [ ] `hooks/api/useCreateRoom.ts` import 경로 변경
+- [ ] `hooks/api/useChatQuery.ts` import 경로 변경
+- [ ] `types/chat.ts` import 경로 변경
+- [ ] `app/api/health/route.ts` import 경로 변경
+- [ ] `tsconfig.json` path alias 확인 (필요 시 수정)
 
 ### Phase 4: 정리
-- [ ] `apps/web/lib/firebase.ts` 삭제
-- [ ] `apps/web/hooks/firebase/` 디렉토리 삭제
+- [ ] `apps/web/lib/firebase.ts` 삭제 (`firebaseStorage` export 포함 — 프론트엔드 미사용 확인됨)
+- [ ] `apps/web/hooks/firebase/` 디렉토리 삭제 (messageUtils, useGetPaginatedFbMessages, useRealtimeMessages, useRoomsList)
 - [ ] `packages/shared-types/typescript/firebase/` 삭제 (이동 완료 후)
+- [ ] `packages/shared-types/python/firebase/` 삭제 (이동 완료 후)
 - [ ] `packages/shared-types/firebase/` 삭제 (이동 완료 후)
 - [ ] `firebase`, `firebase-admin` 패키지 제거
 - [ ] `.env.local.example` 업데이트
-- [ ] `CLAUDE.md` 업데이트
+- [ ] `CLAUDE.md` 업데이트 (Firebase 참조 → Supabase 전면 교체)
 - [ ] `VERCEL_DEPLOY.md` 업데이트
-- [ ] `pnpm build` 성공 확인
+- [ ] `pnpm build` 성공 확인 (Firebase import 잔존 여부 grep 검증)
 - [ ] `pnpm dev` → 전체 플로우 최종 검증
