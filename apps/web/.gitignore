@@ -36,6 +36,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# UMD bundles (prebuild에서 자동 생성)
+/public/ui-bundle.js
+/public/ui-bundle.css
+
 # tools
 .serena/
 
