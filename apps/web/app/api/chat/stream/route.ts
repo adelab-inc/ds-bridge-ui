@@ -125,8 +125,8 @@ export async function POST(request: NextRequest) {
     return new Response(aiResponse.body, {
       headers: {
         'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        Connection: 'keep-alive',
+        'Cache-Control': 'no-cache, no-transform',
+        'X-Accel-Buffering': 'no',
       },
     });
   } catch (error) {

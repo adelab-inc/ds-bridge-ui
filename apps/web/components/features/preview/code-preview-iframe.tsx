@@ -34,15 +34,25 @@ function CodePreviewIframe({
   className,
   ...props
 }: CodePreviewIframeProps) {
-  // 부모 페이지에서 UMD 번들/CSS를 fetch (인증 쿠키가 자동 포함됨)
-  // sandbox iframe은 쿠키를 전송할 수 없으므로, 부모에서 가져와 인라인 삽입
+  // 부모 페이지에서 UMD 번들/CSS를 fetch하여 인라인 삽입
+  // public/ 정적 파일로 서빙 → Deployment Protection 영향 없음, CDN 직접 서빙
   const [umdBundle, setUmdBundle] = React.useState<string | null>(null);
   const [umdCss, setUmdCss] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     Promise.all([
-      fetch('/api/ui-bundle').then((r) => (r.ok ? r.text() : '')),
-      fetch('/api/ui-bundle/css').then((r) => (r.ok ? r.text() : '')),
+      fetch('/ui-bundle.js').then((r) => {
+        if (!r.ok) return '';
+        const ct = r.headers.get('content-type') || '';
+        if (!ct.includes('javascript')) return '';
+        return r.text();
+      }),
+      fetch('/ui-bundle.css').then((r) => {
+        if (!r.ok) return '';
+        const ct = r.headers.get('content-type') || '';
+        if (!ct.includes('css')) return '';
+        return r.text();
+      }),
     ]).then(([js, css]) => {
       setUmdBundle(js);
       setUmdCss(css);
@@ -511,7 +521,7 @@ function CodePreviewIframe({
   `
       : ''
   }
-  ${umdBundle ? `<script>${umdBundle}</script>` : ''}
+  ${umdBundle ? `<script>${umdBundle.replace(/<\/script>/gi, '<\\/script>')}</script>` : ''}
   ${umdCss ? `<style>${umdCss}</style>` : ''}
   <style>
     *, *::before, *::after { box-sizing: border-box; }
