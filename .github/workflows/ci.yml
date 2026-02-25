@@ -15,7 +15,7 @@ jobs:
           node-version-file: ".nvmrc"
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
-      - run: pnpm lint
+      - run: pnpm --filter @ds-hub/web lint
 
   typecheck:
     runs-on: ubuntu-latest
@@ -27,4 +27,4 @@ jobs:
           node-version-file: ".nvmrc"
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
-      - run: pnpm typecheck
+      - run: pnpm --filter @ds-hub/web typecheck

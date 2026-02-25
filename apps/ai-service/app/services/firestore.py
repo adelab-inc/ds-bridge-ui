@@ -543,3 +543,48 @@ async def update_chat_message(
 
     await db.collection(CHAT_MESSAGES_COLLECTION).document(message_id).update(update_data)
     logger.debug("Chat message updated", extra={"message_id": message_id, "fields": list(update_data.keys())})
+
+
+@handle_firestore_error("메시지 삭제 실패")
+async def delete_chat_message(message_id: str) -> None:
+    """
+    채팅 메시지 삭제
+
+    Args:
+        message_id: 메시지 ID
+
+    Raises:
+        FirestoreError: Firestore 작업 실패
+    """
+    db = get_firestore_client()
+    await db.collection(CHAT_MESSAGES_COLLECTION).document(message_id).delete()
+    logger.debug("Chat message deleted", extra={"message_id": message_id})
+
+
+@handle_firestore_error("채팅방 삭제 실패")
+async def delete_chat_room(room_id: str) -> None:
+    """
+    채팅방 및 소속 메시지 일괄 삭제
+
+    Args:
+        room_id: 채팅방 ID
+
+    Raises:
+        FirestoreError: Firestore 작업 실패
+    """
+    db = get_firestore_client()
+
+    # 소속 메시지 일괄 삭제
+    messages = _messages_by_room_query(room_id)
+    docs = messages.stream()
+    deleted_count = 0
+    async for doc in docs:
+        await doc.reference.delete()
+        deleted_count += 1
+
+    # 채팅방 문서 삭제
+    await db.collection(CHAT_ROOMS_COLLECTION).document(room_id).delete()
+    logger.debug(
+        "Chat room deleted",
+        extra={"room_id": room_id, "deleted_messages": deleted_count},
+    )

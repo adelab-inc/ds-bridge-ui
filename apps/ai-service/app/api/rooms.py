@@ -26,7 +26,10 @@ from app.services.firestore import (
     RoomData,
     RoomNotFoundError,
     create_chat_room,
+    delete_chat_message,
+    delete_chat_room,
     get_chat_room,
+    get_message_by_id,
     get_messages_paginated,
     update_chat_room,
 )
@@ -214,6 +217,25 @@ async def update_room(room_id: str, request: UpdateRoomRequest) -> RoomResponse:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred. Please try again.",
         ) from e
+
+
+@router.delete(
+    "/{room_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    operation_id="deleteRoom",
+    summary="채팅방 삭제",
+    description="채팅방과 소속 메시지를 모두 삭제합니다.",
+    responses={
+        204: {"description": "삭제 성공"},
+        404: {"description": "채팅방을 찾을 수 없음"},
+        500: {"description": "서버 오류"},
+    },
+)
+async def delete_room(
+    room_id: str,
+    _room: RoomData = Depends(get_room_or_404),
+):
+    await delete_chat_room(room_id)
 
 
 # ============================================================================
@@ -505,3 +527,22 @@ async def get_room_messages(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred. Please try again.",
         ) from e
+
+
+@router.delete(
+    "/{room_id}/messages/{message_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    operation_id="deleteRoomMessage",
+    summary="채팅 메시지 삭제",
+)
+async def delete_room_message(
+    room_id: str,
+    message_id: str,
+    _room: RoomData = Depends(get_room_or_404),
+):
+    message = await get_message_by_id(message_id)
+    if message is None:
+        raise HTTPException(status_code=404, detail="Message not found.")
+    if message.get("room_id") != room_id:
+        raise HTTPException(status_code=404, detail="Message not found in this room.")
+    await delete_chat_message(message_id)
