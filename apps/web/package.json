@@ -11,6 +11,7 @@
     "dev": "next dev --port 5555",
     "prebuild": "cd ../../storybook-standalone/packages/ui && pnpm install && pnpm build:umd",
     "build": "next build",
+    "postbuild": "cp ../../storybook-standalone/packages/ui/dist/ui.umd.js public/ui-bundle.js && cp ../../storybook-standalone/packages/ui/dist/ui.css public/ui-bundle.css",
     "start": "next start",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
