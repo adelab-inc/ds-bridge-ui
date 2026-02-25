@@ -101,6 +101,7 @@ function Header({
 
   const currentRoomId = searchParams.get('crid');
 
+  const [createDialog, setCreateDialog] = React.useState(false);
   const [deleteDialog, setDeleteDialog] = React.useState<{
     open: boolean;
     roomId: string | null;
@@ -123,20 +124,20 @@ function Header({
     }
   }, []);
 
-  const handleCreateRoom = () => {
-    createRoomMutation.mutate(
-      {
+  const handleCreateRoom = async () => {
+    try {
+      const newRoom = await createRoomMutation.mutateAsync({
         storybook_url: 'https://storybook.example.com',
         user_id: authUser?.uid || 'anonymous',
-      },
-      {
-        onSuccess: (newRoom) => {
-          const params = new URLSearchParams(searchParams.toString());
-          params.set('crid', newRoom.id);
-          router.push(`?${params.toString()}`);
-        },
-      }
-    );
+      });
+      setCreateDialog(false);
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete('mid');
+      params.set('crid', newRoom.id);
+      router.push(`?${params.toString()}`);
+    } catch (error) {
+      console.error('Failed to create room:', error);
+    }
   };
 
   const handleDeleteRoom = async () => {
@@ -152,6 +153,7 @@ function Header({
           user_id: authUser?.uid || 'anonymous',
         });
         const params = new URLSearchParams(searchParams.toString());
+        params.delete('mid');
         params.set('crid', newRoom.id);
         router.push(`?${params.toString()}`);
       }
@@ -320,25 +322,27 @@ function Header({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* New Project Button with Confirm Dialog */}
-            <AlertDialog>
-              <AlertDialogTrigger
-                render={
-                  <Button
-                    variant="default"
-                    size="sm"
-                    disabled={createRoomMutation.isPending}
-                    className="gap-1.5"
-                  />
-                }
-              >
-                <HugeiconsIcon
-                  icon={Add01Icon}
-                  strokeWidth={2}
-                  className="size-4"
-                />
-                <span className="hidden sm:inline">새 프로젝트 생성</span>
-              </AlertDialogTrigger>
+            {/* New Project Button */}
+            <Button
+              variant="default"
+              size="sm"
+              disabled={createRoomMutation.isPending}
+              className="gap-1.5"
+              onClick={() => setCreateDialog(true)}
+            >
+              <HugeiconsIcon
+                icon={Add01Icon}
+                strokeWidth={2}
+                className="size-4"
+              />
+              <span className="hidden sm:inline">새 프로젝트 생성</span>
+            </Button>
+
+            {/* New Project Confirm Dialog */}
+            <AlertDialog
+              open={createDialog}
+              onOpenChange={setCreateDialog}
+            >
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>새 프로젝트 생성</AlertDialogTitle>
