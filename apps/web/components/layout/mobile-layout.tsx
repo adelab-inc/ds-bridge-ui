@@ -41,7 +41,13 @@ function MobileLayoutContent() {
     onStreamStart,
     onStreamEnd,
     onCodeGenerated,
+    reset: resetCodeGeneration,
   } = useCodeGenerationStore();
+
+  // roomId 변경 시 프리뷰 상태 초기화
+  React.useEffect(() => {
+    resetCodeGeneration();
+  }, [roomId, resetCodeGeneration]);
 
   // 채팅 컨텐츠 렌더링
   const chatContent = React.useMemo(() => {
@@ -62,6 +68,7 @@ function MobileLayoutContent() {
     if (roomId) {
       return (
         <ChatSection
+          key={roomId}
           roomId={roomId}
           onCodeGenerated={onCodeGenerated}
           onStreamStart={onStreamStart}
