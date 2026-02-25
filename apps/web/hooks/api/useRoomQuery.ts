@@ -35,9 +35,13 @@ export const useGetRoom = <T = GetRoomResponse>(
       }
 
       const token = await useAuthStore.getState().getIdToken();
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
       const response = await fetch(`/api/rooms/${roomId}`, {
         headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          Authorization: `Bearer ${token}`,
         },
       });
 

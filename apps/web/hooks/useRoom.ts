@@ -35,7 +35,7 @@ export function useRoom(options: UseRoomOptions = {}): UseRoomReturn {
     isLoading: isFetching,
     error: fetchError,
   } = useGetRoom(crid, {
-    enabled: !!crid,
+    enabled: !!crid && !isAuthLoading,
   });
 
   // 3. 채팅방 생성 mutation
