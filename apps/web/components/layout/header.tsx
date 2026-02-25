@@ -141,30 +141,25 @@ function Header({
     );
   };
 
-  const handleDeleteRoom = () => {
+  const handleDeleteRoom = async () => {
     const roomIdToDelete = deleteDialog.roomId;
     if (!roomIdToDelete) return;
-    deleteRoomMutation.mutate(roomIdToDelete, {
-      onSuccess: () => {
-        setDeleteDialog({ open: false, roomId: null });
-        if (roomIdToDelete === currentRoomId) {
-          // 현재 룸이 삭제되면 새 룸 생성
-          createRoomMutation.mutate(
-            {
-              storybook_url: 'https://storybook.example.com',
-              user_id: authUser?.uid || 'anonymous',
-            },
-            {
-              onSuccess: (newRoom) => {
-                const params = new URLSearchParams(searchParams.toString());
-                params.set('crid', newRoom.id);
-                router.push(`?${params.toString()}`);
-              },
-            }
-          );
-        }
-      },
-    });
+    try {
+      await deleteRoomMutation.mutateAsync(roomIdToDelete);
+      setDeleteDialog({ open: false, roomId: null });
+      if (roomIdToDelete === currentRoomId) {
+        // 현재 룸이 삭제되면 새 룸 생성
+        const newRoom = await createRoomMutation.mutateAsync({
+          storybook_url: 'https://storybook.example.com',
+          user_id: authUser?.uid || 'anonymous',
+        });
+        const params = new URLSearchParams(searchParams.toString());
+        params.set('crid', newRoom.id);
+        router.push(`?${params.toString()}`);
+      }
+    } catch (error) {
+      console.error('Failed to delete room:', error);
+    }
   };
 
   const handleSelectRoom = (roomId: string) => {
