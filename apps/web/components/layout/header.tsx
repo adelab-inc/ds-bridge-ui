@@ -12,12 +12,14 @@ import {
   Delete02Icon,
   Copy01Icon,
   Tick01Icon,
+  PencilEdit02Icon,
 } from '@hugeicons/core-free-icons';
 
 import { cn } from '@/lib/utils';
 import { HeaderLogo } from '@/components/layout/header-logo';
 import { ClientOnly } from '@/components/ui/client-only';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   InputGroup,
   InputGroupAddon,
@@ -55,6 +57,7 @@ import { UserMenu } from '@/components/features/auth/user-menu';
 import { useRoomsList } from '@/hooks/firebase/useRoomsList';
 import { useCreateRoom } from '@/hooks/api/useCreateRoom';
 import { useDeleteRoom } from '@/hooks/api/useDeleteRoom';
+import { useUpdateRoom } from '@/hooks/api/useUpdateRoom';
 import { useAuthStore } from '@/stores/useAuthStore';
 
 /**
@@ -97,6 +100,7 @@ function Header({
   const { rooms, isLoading: isRoomsLoading } = useRoomsList();
   const createRoomMutation = useCreateRoom();
   const deleteRoomMutation = useDeleteRoom();
+  const updateRoomMutation = useUpdateRoom();
   const authUser = useAuthStore((s) => s.user);
 
   const currentRoomId = searchParams.get('crid');
@@ -106,6 +110,11 @@ function Header({
     open: boolean;
     roomId: string | null;
   }>({ open: false, roomId: null });
+  const [editDialog, setEditDialog] = React.useState<{
+    open: boolean;
+    roomId: string | null;
+    storybookUrl: string;
+  }>({ open: false, roomId: null, storybookUrl: '' });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -159,6 +168,19 @@ function Header({
       }
     } catch (error) {
       console.error('Failed to delete room:', error);
+    }
+  };
+
+  const handleEditRoom = async () => {
+    if (!editDialog.roomId || !editDialog.storybookUrl.trim()) return;
+    try {
+      await updateRoomMutation.mutateAsync({
+        roomId: editDialog.roomId,
+        storybook_url: editDialog.storybookUrl.trim(),
+      });
+      setEditDialog({ open: false, roomId: null, storybookUrl: '' });
+    } catch (error) {
+      console.error('Failed to update room:', error);
     }
   };
 
@@ -230,11 +252,7 @@ function Header({
             {/* URL 복사 버튼 */}
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handleCopyUrl}
-                >
+                <Button variant="outline" size="icon" onClick={handleCopyUrl}>
                   <HugeiconsIcon
                     icon={urlCopied ? Tick01Icon : Copy01Icon}
                     strokeWidth={2}
@@ -301,21 +319,42 @@ function Header({
                           {formatDate(room.created_at)}
                         </span>
                       </div>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeleteDialog({ open: true, roomId: room.id });
-                        }}
-                        className="text-muted-foreground hover:text-destructive shrink-0 rounded-full p-0.5 transition-colors"
-                        aria-label="프로젝트 삭제"
-                      >
-                        <HugeiconsIcon
-                          icon={Delete02Icon}
-                          className="size-3.5"
-                          strokeWidth={2}
-                        />
-                      </button>
+                      <div className="flex shrink-0 items-center gap-0.5">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditDialog({
+                              open: true,
+                              roomId: room.id,
+                              storybookUrl: room.storybook_url || '',
+                            });
+                          }}
+                          className="text-muted-foreground hover:text-foreground shrink-0 rounded-full p-0.5 transition-colors"
+                          aria-label="프로젝트 수정"
+                        >
+                          <HugeiconsIcon
+                            icon={PencilEdit02Icon}
+                            className="size-3.5"
+                            strokeWidth={2}
+                          />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteDialog({ open: true, roomId: room.id });
+                          }}
+                          className="text-muted-foreground hover:text-destructive shrink-0 rounded-full p-0.5 transition-colors"
+                          aria-label="프로젝트 삭제"
+                        >
+                          <HugeiconsIcon
+                            icon={Delete02Icon}
+                            className="size-3.5"
+                            strokeWidth={2}
+                          />
+                        </button>
+                      </div>
                     </DropdownMenuItem>
                   ))
                 )}
@@ -339,10 +378,7 @@ function Header({
             </Button>
 
             {/* New Project Confirm Dialog */}
-            <AlertDialog
-              open={createDialog}
-              onOpenChange={setCreateDialog}
-            >
+            <AlertDialog open={createDialog} onOpenChange={setCreateDialog}>
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>새 프로젝트 생성</AlertDialogTitle>
@@ -382,6 +418,53 @@ function Header({
                     disabled={deleteRoomMutation.isPending}
                   >
                     삭제
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Room Edit Dialog */}
+            <AlertDialog
+              open={editDialog.open}
+              onOpenChange={(open) => {
+                if (!open)
+                  setEditDialog({ open: false, roomId: null, storybookUrl: '' });
+              }}
+            >
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>프로젝트 URL 수정</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Storybook URL을 수정하세요.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <Input
+                  value={editDialog.storybookUrl}
+                  onChange={(e) =>
+                    setEditDialog((prev) => ({
+                      ...prev,
+                      storybookUrl: e.target.value,
+                    }))
+                  }
+                  placeholder="https://storybook.example.com"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleEditRoom();
+                    }
+                  }}
+                  autoFocus
+                />
+                <AlertDialogFooter>
+                  <AlertDialogCancel>취소</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleEditRoom}
+                    disabled={
+                      updateRoomMutation.isPending ||
+                      !editDialog.storybookUrl.trim()
+                    }
+                  >
+                    저장
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
