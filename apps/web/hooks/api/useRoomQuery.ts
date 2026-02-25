@@ -1,5 +1,6 @@
 import { useQuery, UseQueryOptions } from '@tanstack/react-query';
 import type { paths } from '@ds-hub/shared-types/typescript/api/schema';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 type GetRoomResponse =
   paths['/rooms/{room_id}']['get']['responses']['200']['content']['application/json'];
@@ -33,7 +34,12 @@ export const useGetRoom = <T = GetRoomResponse>(
         throw new Error('Room ID is required');
       }
 
-      const response = await fetch(`/api/rooms/${roomId}`);
+      const token = await useAuthStore.getState().getIdToken();
+      const response = await fetch(`/api/rooms/${roomId}`, {
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
 
       if (!response.ok) {
         if (response.status === 404) {

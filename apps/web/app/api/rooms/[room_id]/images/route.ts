@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyFirebaseToken } from '@/lib/auth/verify-token';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
@@ -8,6 +9,21 @@ export async function POST(
   { params }: { params: Promise<{ room_id: string }> }
 ) {
   try {
+    // Firebase Auth 토큰 검증
+    const decodedToken = await verifyFirebaseToken(
+      request.headers.get('authorization')
+    );
+    if (!decodedToken) {
+      return NextResponse.json(
+        {
+          detail: [
+            { loc: ['header'], msg: 'Unauthorized', type: 'auth_error' },
+          ],
+        },
+        { status: 401 }
+      );
+    }
+
     const { room_id } = await params;
 
     if (!room_id) {
