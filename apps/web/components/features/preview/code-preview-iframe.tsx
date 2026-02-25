@@ -8,6 +8,43 @@ import { cn } from '@/lib/utils';
 // AG Grid CDN URL (v34.2.0 고정)
 const AG_GRID_CDN = 'https://cdn.jsdelivr.net/npm/ag-grid-community@34.2.0';
 
+// ── Module-level UMD 번들 캐시 ──
+// 컴포넌트 언마운트/재마운트에도 캐시 유지.
+// 모듈 import 시 eager fetch → 컴포넌트 마운트 전 head start 확보.
+// Promise 완료 후 동기 캐시에 저장하여 useState 초기값으로 즉시 사용 가능.
+let _umdBundleCache: string | null = null;
+let _umdCssCache: string | null = null;
+let _umdFetchPromise: Promise<void> | null = null;
+
+function fetchUmdBundle(): Promise<void> {
+  if (_umdFetchPromise) return _umdFetchPromise;
+
+  _umdFetchPromise = Promise.all([
+    fetch('/ui-bundle.js').then((r) => {
+      if (!r.ok) return '';
+      const ct = r.headers.get('content-type') || '';
+      if (!ct.includes('javascript')) return '';
+      return r.text();
+    }),
+    fetch('/ui-bundle.css').then((r) => {
+      if (!r.ok) return '';
+      const ct = r.headers.get('content-type') || '';
+      if (!ct.includes('css')) return '';
+      return r.text();
+    }),
+  ]).then(([js, css]) => {
+    _umdBundleCache = js;
+    _umdCssCache = css;
+  });
+
+  return _umdFetchPromise;
+}
+
+// 모듈 import 시 즉시 fetch 시작 (SSR 환경 제외)
+if (typeof window !== 'undefined') {
+  fetchUmdBundle();
+}
+
 type PreviewViewMode = 'fit' | 'transform' | 'viewport';
 
 interface CodePreviewIframeProps extends React.ComponentProps<'div'> {
@@ -34,28 +71,23 @@ function CodePreviewIframe({
   className,
   ...props
 }: CodePreviewIframeProps) {
-  // 부모 페이지에서 UMD 번들/CSS를 fetch하여 인라인 삽입
-  // public/ 정적 파일로 서빙 → Deployment Protection 영향 없음, CDN 직접 서빙
-  const [umdBundle, setUmdBundle] = React.useState<string | null>(null);
-  const [umdCss, setUmdCss] = React.useState<string | null>(null);
+  // Module-level 동기 캐시에서 초기값 제공 → 재마운트 시 즉시 사용 가능
+  const [umdBundle, setUmdBundle] = React.useState<string | null>(
+    _umdBundleCache
+  );
+  const [umdCss, setUmdCss] = React.useState<string | null>(_umdCssCache);
 
   React.useEffect(() => {
-    Promise.all([
-      fetch('/ui-bundle.js').then((r) => {
-        if (!r.ok) return '';
-        const ct = r.headers.get('content-type') || '';
-        if (!ct.includes('javascript')) return '';
-        return r.text();
-      }),
-      fetch('/ui-bundle.css').then((r) => {
-        if (!r.ok) return '';
-        const ct = r.headers.get('content-type') || '';
-        if (!ct.includes('css')) return '';
-        return r.text();
-      }),
-    ]).then(([js, css]) => {
-      setUmdBundle(js);
-      setUmdCss(css);
+    // 이미 캐시된 경우 (재마운트) → state 동기화만
+    if (_umdBundleCache !== null && _umdCssCache !== null) {
+      setUmdBundle(_umdBundleCache);
+      setUmdCss(_umdCssCache);
+      return;
+    }
+    // 아직 fetch 중 → 완료 대기
+    fetchUmdBundle().then(() => {
+      setUmdBundle(_umdBundleCache);
+      setUmdCss(_umdCssCache);
     });
   }, []);
 
@@ -375,9 +407,9 @@ function CodePreviewIframe({
         // dsRuntimeTheme - AG Grid Quartz 테마 사용 (CDN 미로딩 시 안전 접근)
         const dsRuntimeTheme = (window.agGrid && window.agGrid.themeQuartz) || null;
 
-        // ag-grid-community exports 매핑
-        const ModuleRegistry = window.agGrid.ModuleRegistry;
-        const AllCommunityModule = window.agGrid.AllCommunityModule;
+        // ag-grid-community exports 매핑 (CDN 미로딩 시 안전 접근)
+        const ModuleRegistry = window.agGrid ? window.agGrid.ModuleRegistry : null;
+        const AllCommunityModule = window.agGrid ? window.agGrid.AllCommunityModule : null;
 
         // DataGrid 래퍼 - @aplus/ui DataGrid의 프리뷰 버전
         // 내부적으로 위에서 정의한 AgGridReact 커스텀 래퍼를 사용
@@ -603,6 +635,25 @@ function CodePreviewIframe({
       };
     }
   }, [code, viewMode, umdBundle, umdCss]);
+
+  // UMD 번들 미로딩 시 깨진 iframe 대신 로딩 표시
+  // 첫 페이지 로드 + 느린 네트워크에서만 잠깐 표시됨
+  if (umdBundle === null) {
+    return (
+      <div
+        data-slot="code-preview-iframe"
+        className={cn(
+          'flex h-full flex-1 flex-col items-center justify-center gap-2',
+          className
+        )}
+        {...props}
+      >
+        <div className="text-muted-foreground text-sm">
+          UI 컴포넌트 로딩 중...
+        </div>
+      </div>
+    );
+  }
 
   // 에러 상태 렌더링
   if (error) {
