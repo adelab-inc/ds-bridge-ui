@@ -8,7 +8,7 @@ import {
   Delete02Icon,
   Tick01Icon,
 } from '@hugeicons/core-free-icons';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 
 import { cn } from '@/lib/utils';
 import { ChatMessageList } from './chat-message-list';
@@ -69,7 +69,6 @@ function ChatSection({
   });
 
   const searchParams = useSearchParams();
-  const router = useRouter();
 
   const [messages, setMessages] = React.useState<ChatMessage[]>([]);
   const currentMessageIdRef = React.useRef<string | null>(null);
@@ -78,6 +77,9 @@ function ChatSection({
   const selectedMessageId = searchParams.get('mid');
 
   // URL의 mid 파라미터 업데이트
+  // window.history.replaceState 사용 — router.replace와 달리
+  // 서버측 RSC fetch를 트리거하지 않아 Production CDN 지연/간섭 방지
+  // Next.js가 replaceState를 패치하여 useSearchParams() 동기화 유지
   const updateSelectedMessageId = React.useCallback(
     (messageId: string | null) => {
       const url = new URL(window.location.href);
@@ -86,9 +88,13 @@ function ChatSection({
       } else {
         url.searchParams.delete('mid');
       }
-      router.replace(url.pathname + url.search, { scroll: false });
+      window.history.replaceState(
+        window.history.state,
+        '',
+        url.pathname + url.search
+      );
     },
-    [router]
+    []
   );
 
   const {
