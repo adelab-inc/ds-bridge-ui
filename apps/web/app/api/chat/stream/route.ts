@@ -2,6 +2,9 @@ import { NextRequest } from 'next/server';
 import type { paths } from '@ds-hub/shared-types/typescript/api/schema';
 import { verifyFirebaseToken } from '@/lib/auth/verify-token';
 
+// Vercel Production CDN 캐싱/정적 최적화 방지
+export const dynamic = 'force-dynamic';
+
 type ChatStreamRequest =
   paths['/chat/stream']['post']['requestBody']['content']['application/json'];
 
@@ -121,12 +124,42 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // AI 서버의 SSE 스트림을 클라이언트에게 전달
-    return new Response(aiResponse.body, {
+    // AI 서버의 SSE 스트림을 TransformStream으로 재구성하여 전달
+    // Vercel Production CDN이 원본 ReadableStream을 버퍼링/압축하는 것을 방지
+    const { readable, writable } = new TransformStream();
+
+    (async () => {
+      const writer = writable.getWriter();
+      const encoder = new TextEncoder();
+
+      try {
+        // 초기 SSE 코멘트로 CDN 버퍼 flush + 연결 확립
+        await writer.write(encoder.encode(': connected\n\n'));
+
+        // AI 서버 응답을 청크 단위로 전달
+        const reader = aiResponse.body!.getReader();
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          await writer.write(value);
+        }
+      } catch {
+        // 클라이언트 연결 해제 등 스트림 에러
+      } finally {
+        try {
+          await writer.close();
+        } catch {
+          /* already closed */
+        }
+      }
+    })();
+
+    return new Response(readable, {
       headers: {
         'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache, no-transform',
+        'Cache-Control': 'no-cache, no-store, no-transform, must-revalidate',
         'X-Accel-Buffering': 'no',
+        Connection: 'keep-alive',
       },
     });
   } catch (error) {
