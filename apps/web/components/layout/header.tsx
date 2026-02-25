@@ -4,9 +4,9 @@ import * as React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
-  Link02Icon,
+  // Link02Icon,
   MoreVerticalIcon,
-  ArrowRight01Icon,
+  // ArrowRight01Icon,
   Add01Icon,
   FolderLibraryIcon,
   Delete02Icon,
@@ -20,13 +20,13 @@ import { HeaderLogo } from '@/components/layout/header-logo';
 import { ClientOnly } from '@/components/ui/client-only';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupInput,
-  InputGroupText,
-} from '@/components/ui/input-group';
+// import {
+//   InputGroup,
+//   InputGroupAddon,
+//   InputGroupButton,
+//   InputGroupInput,
+//   InputGroupText,
+// } from '@/components/ui/input-group';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -67,9 +67,9 @@ import { useAuthStore } from '@/stores/useAuthStore';
 function HeaderControlsSkeleton() {
   return (
     <>
-      {/* Input placeholder */}
-      <div className="flex max-w-xl flex-1 items-center gap-2">
-        <div className="border-input bg-background h-9 w-full rounded-md border" />
+      {/* Project name placeholder */}
+      <div className="flex min-w-0 flex-1 items-center">
+        <div className="bg-muted h-5 w-32 rounded" />
       </div>
       {/* Button placeholders */}
       <div className="flex shrink-0 items-center gap-1">
@@ -93,7 +93,7 @@ function Header({
   isLoading = false,
   ...props
 }: HeaderProps) {
-  const [url, setUrl] = React.useState('');
+  // const [url, setUrl] = React.useState('');
   const [urlCopied, setUrlCopied] = React.useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -104,6 +104,7 @@ function Header({
   const authUser = useAuthStore((s) => s.user);
 
   const currentRoomId = searchParams.get('crid');
+  const currentRoom = rooms.find((r) => r.id === currentRoomId);
 
   const [createDialog, setCreateDialog] = React.useState(false);
   const [deleteDialog, setDeleteDialog] = React.useState<{
@@ -116,12 +117,12 @@ function Header({
     storybookUrl: string;
   }>({ open: false, roomId: null, storybookUrl: '' });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (url.trim() && onURLSubmit) {
-      onURLSubmit(url.trim());
-    }
-  };
+  // const handleSubmit = (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   if (url.trim() && onURLSubmit) {
+  //     onURLSubmit(url.trim());
+  //   }
+  // };
 
   const handleCopyUrl = React.useCallback(async () => {
     try {
@@ -215,7 +216,22 @@ function Header({
       {/* Base UI 사용 영역 - ClientOnly로 래핑하여 hydration 이슈 방지 */}
       <ClientOnly fallback={<HeaderControlsSkeleton />}>
         <TooltipProvider>
-          {/* URL Input Form */}
+          {/* 프로젝트 이름 */}
+          <div className="border-border mx-1 h-5 w-px shrink-0 bg-current opacity-20" />
+          <div className="flex min-w-0 flex-1 items-center">
+            <span className="text-foreground truncate text-sm font-semibold">
+              {(() => {
+                if (!currentRoom?.storybook_url) return '새 프로젝트';
+                try {
+                  return new URL(currentRoom.storybook_url).hostname;
+                } catch {
+                  return currentRoom.storybook_url;
+                }
+              })()}
+            </span>
+          </div>
+
+          {/* URL Input Form - 추후 작업 예정
           <form
             onSubmit={handleSubmit}
             className="flex flex-1 items-center gap-2"
@@ -246,6 +262,7 @@ function Header({
               </InputGroupAddon>
             </InputGroup>
           </form>
+          */}
 
           {/* Actions */}
           <div className="flex shrink-0 items-center gap-1">
@@ -428,14 +445,18 @@ function Header({
               open={editDialog.open}
               onOpenChange={(open) => {
                 if (!open)
-                  setEditDialog({ open: false, roomId: null, storybookUrl: '' });
+                  setEditDialog({
+                    open: false,
+                    roomId: null,
+                    storybookUrl: '',
+                  });
               }}
             >
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>프로젝트 URL 수정</AlertDialogTitle>
+                  <AlertDialogTitle>프로젝트 이름 수정</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Storybook URL을 수정하세요.
+                    프로젝트를 구분할 수 있는 이름을 입력해 주세요.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <Input
