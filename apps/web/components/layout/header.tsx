@@ -5,12 +5,13 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
   Link02Icon,
-  Upload01Icon,
   MoreVerticalIcon,
   ArrowRight01Icon,
   Add01Icon,
   FolderLibraryIcon,
   Delete02Icon,
+  Copy01Icon,
+  Tick01Icon,
 } from '@hugeicons/core-free-icons';
 
 import { cn } from '@/lib/utils';
@@ -90,7 +91,7 @@ function Header({
   ...props
 }: HeaderProps) {
   const [url, setUrl] = React.useState('');
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [urlCopied, setUrlCopied] = React.useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const { rooms, isLoading: isRoomsLoading } = useRoomsList();
@@ -112,18 +113,15 @@ function Header({
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && onJSONUpload) {
-      onJSONUpload(file);
+  const handleCopyUrl = React.useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setUrlCopied(true);
+      setTimeout(() => setUrlCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy URL:', err);
     }
-    // Reset input
-    e.target.value = '';
-  };
-
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
+  }, []);
 
   const handleCreateRoom = () => {
     createRoomMutation.mutate(
@@ -227,28 +225,23 @@ function Header({
 
           {/* Actions */}
           <div className="flex shrink-0 items-center gap-1">
-            {/* Upload JSON Button */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".json"
-              onChange={handleFileChange}
-              className="hidden"
-            />
+            {/* URL 복사 버튼 */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={handleUploadClick}
-                  disabled={isLoading}
+                  onClick={handleCopyUrl}
                 >
-                  <HugeiconsIcon icon={Upload01Icon} strokeWidth={2} />
-                  <span className="sr-only">JSON 업로드</span>
+                  <HugeiconsIcon
+                    icon={urlCopied ? Tick01Icon : Copy01Icon}
+                    strokeWidth={2}
+                  />
+                  <span className="sr-only">URL 복사</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>ds.json 파일 업로드</p>
+                <p>{urlCopied ? '복사됨!' : 'URL 복사'}</p>
               </TooltipContent>
             </Tooltip>
 
