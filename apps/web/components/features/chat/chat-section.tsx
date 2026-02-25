@@ -18,6 +18,7 @@ import { useImageUpload } from '@/hooks/useImageUpload';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import type { CodeEvent } from '@/types/chat';
 import { useGetPaginatedFbMessages } from '@/hooks/firebase/useGetPaginatedFbMessages';
+import { useDeleteMessage } from '@/hooks/api/useDeleteMessage';
 import type { ChatMessage } from '@/hooks/firebase/messageUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -69,8 +70,13 @@ function ChatSection({
   });
 
   const searchParams = useSearchParams();
+  const deleteMessageMutation = useDeleteMessage();
 
   const [messages, setMessages] = React.useState<ChatMessage[]>([]);
+  const [deleteMessageDialog, setDeleteMessageDialog] = React.useState<{
+    open: boolean;
+    message: ChatMessage | null;
+  }>({ open: false, message: null });
   const currentMessageIdRef = React.useRef<string | null>(null);
 
   // URL의 mid 쿼리 파라미터에서 선택된 메시지 ID 읽기
@@ -319,6 +325,37 @@ function ChatSection({
   }>({ open: false, message: null });
   const [bookmarkLabel, setBookmarkLabel] = React.useState('');
 
+  // 메시지 삭제 아이콘 클릭
+  const handleDeleteIconClick = React.useCallback((message: ChatMessage) => {
+    setDeleteMessageDialog({ open: true, message });
+  }, []);
+
+  // 메시지 삭제 확인
+  const handleDeleteMessageConfirm = React.useCallback(() => {
+    if (!deleteMessageDialog.message) return;
+    const messageToDelete = deleteMessageDialog.message;
+    deleteMessageMutation.mutate(
+      { roomId, messageId: messageToDelete.id },
+      {
+        onSuccess: () => {
+          setDeleteMessageDialog({ open: false, message: null });
+          setMessages((prev) =>
+            prev.filter((msg) => msg.id !== messageToDelete.id)
+          );
+          if (selectedMessageId === messageToDelete.id) {
+            updateSelectedMessageId(null);
+          }
+        },
+      }
+    );
+  }, [
+    deleteMessageDialog.message,
+    deleteMessageMutation,
+    roomId,
+    selectedMessageId,
+    updateSelectedMessageId,
+  ]);
+
   // 북마크 아이콘 클릭: 미등록 → 다이얼로그 열기, 등록됨 → 삭제
   const handleBookmarkIconClick = React.useCallback(
     (message: ChatMessage) => {
@@ -464,6 +501,7 @@ function ChatSection({
           bookmarkedMessageIds={bookmarkedMessageIds}
           onMessageClick={handleMessageClick}
           onBookmarkClick={handleBookmarkIconClick}
+          onDeleteClick={handleDeleteIconClick}
           className="min-h-0 flex-1 overflow-y-auto"
         />
 
@@ -514,6 +552,32 @@ function ChatSection({
               disabled={!bookmarkLabel.trim()}
             >
               추가
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* 메시지 삭제 확인 다이얼로그 */}
+      <AlertDialog
+        open={deleteMessageDialog.open}
+        onOpenChange={(open) => {
+          if (!open) setDeleteMessageDialog({ open: false, message: null });
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>메시지 삭제</AlertDialogTitle>
+            <AlertDialogDescription>
+              이 메시지를 삭제하시겠습니까? 삭제된 메시지는 복구할 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteMessageConfirm}
+              disabled={deleteMessageMutation.isPending}
+            >
+              삭제
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

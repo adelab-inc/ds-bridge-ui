@@ -1,8 +1,17 @@
 name: Release
 
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
+    inputs:
+      bump_type:
+        description: '버전 bump 타입'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
 
 permissions:
   contents: write
@@ -28,7 +37,7 @@ jobs:
       - name: Bump version
         id: version
         run: |
-          NEW_VERSION=$(npm version patch --no-git-tag-version)
+          NEW_VERSION=$(npm version ${{ inputs.bump_type }} --no-git-tag-version)
           echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
       - name: Commit and tag

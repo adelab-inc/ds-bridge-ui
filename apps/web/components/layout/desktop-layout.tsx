@@ -47,7 +47,13 @@ function DesktopLayout() {
     onStreamStart,
     onStreamEnd,
     onCodeGenerated,
+    reset: resetCodeGeneration,
   } = useCodeGenerationStore();
+
+  // roomId 변경 시 프리뷰 상태 초기화
+  React.useEffect(() => {
+    resetCodeGeneration();
+  }, [roomId, resetCodeGeneration]);
 
   return (
     <ClientOnly
@@ -91,6 +97,7 @@ function DesktopLayout() {
                 </div>
               ) : roomId ? (
                 <ChatSection
+                  key={roomId}
                   roomId={roomId}
                   onCodeGenerated={onCodeGenerated}
                   onStreamStart={onStreamStart}
