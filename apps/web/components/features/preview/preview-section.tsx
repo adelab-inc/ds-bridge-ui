@@ -2,11 +2,7 @@
 
 import * as React from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import {
-  PlayIcon,
-  LayoutIcon,
-  SparklesIcon,
-} from '@hugeicons/core-free-icons';
+import { PlayIcon, LayoutIcon, SparklesIcon } from '@hugeicons/core-free-icons';
 
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
