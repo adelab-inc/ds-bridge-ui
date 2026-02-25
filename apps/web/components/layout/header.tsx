@@ -10,6 +10,7 @@ import {
   ArrowRight01Icon,
   Add01Icon,
   FolderLibraryIcon,
+  Delete02Icon,
 } from '@hugeicons/core-free-icons';
 
 import { cn } from '@/lib/utils';
@@ -52,6 +53,7 @@ import {
 import { UserMenu } from '@/components/features/auth/user-menu';
 import { useRoomsList } from '@/hooks/firebase/useRoomsList';
 import { useCreateRoom } from '@/hooks/api/useCreateRoom';
+import { useDeleteRoom } from '@/hooks/api/useDeleteRoom';
 import { useAuthStore } from '@/stores/useAuthStore';
 
 /**
@@ -93,9 +95,15 @@ function Header({
   const searchParams = useSearchParams();
   const { rooms, isLoading: isRoomsLoading } = useRoomsList();
   const createRoomMutation = useCreateRoom();
+  const deleteRoomMutation = useDeleteRoom();
   const authUser = useAuthStore((s) => s.user);
 
   const currentRoomId = searchParams.get('crid');
+
+  const [deleteDialog, setDeleteDialog] = React.useState<{
+    open: boolean;
+    roomId: string | null;
+  }>({ open: false, roomId: null });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,6 +139,32 @@ function Header({
         },
       }
     );
+  };
+
+  const handleDeleteRoom = () => {
+    const roomIdToDelete = deleteDialog.roomId;
+    if (!roomIdToDelete) return;
+    deleteRoomMutation.mutate(roomIdToDelete, {
+      onSuccess: () => {
+        setDeleteDialog({ open: false, roomId: null });
+        if (roomIdToDelete === currentRoomId) {
+          // 현재 룸이 삭제되면 새 룸 생성
+          createRoomMutation.mutate(
+            {
+              storybook_url: 'https://storybook.example.com',
+              user_id: authUser?.uid || 'anonymous',
+            },
+            {
+              onSuccess: (newRoom) => {
+                const params = new URLSearchParams(searchParams.toString());
+                params.set('crid', newRoom.id);
+                router.push(`?${params.toString()}`);
+              },
+            }
+          );
+        }
+      },
+    });
   };
 
   const handleSelectRoom = (roomId: string) => {
@@ -257,24 +291,41 @@ function Header({
                       key={room.id}
                       onClick={() => handleSelectRoom(room.id)}
                       className={cn(
-                        'flex flex-col items-start gap-0.5',
+                        'flex items-center gap-2',
                         room.id === currentRoomId && 'bg-accent'
                       )}
                     >
-                      <span className="truncate text-sm font-medium">
-                        {(() => {
-                          try {
-                            return room.storybook_url
-                              ? new URL(room.storybook_url).hostname
-                              : '새 프로젝트';
-                          } catch {
-                            return room.storybook_url || '새 프로젝트';
-                          }
-                        })()}
-                      </span>
-                      <span className="text-muted-foreground text-xs">
-                        {formatDate(room.created_at)}
-                      </span>
+                      <div className="min-w-0 flex-1 flex flex-col gap-0.5">
+                        <span className="truncate text-sm font-medium">
+                          {(() => {
+                            try {
+                              return room.storybook_url
+                                ? new URL(room.storybook_url).hostname
+                                : '새 프로젝트';
+                            } catch {
+                              return room.storybook_url || '새 프로젝트';
+                            }
+                          })()}
+                        </span>
+                        <span className="text-muted-foreground text-xs">
+                          {formatDate(room.created_at)}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteDialog({ open: true, roomId: room.id });
+                        }}
+                        className="text-muted-foreground hover:text-destructive shrink-0 rounded-full p-0.5 transition-colors"
+                        aria-label="프로젝트 삭제"
+                      >
+                        <HugeiconsIcon
+                          icon={Delete02Icon}
+                          className="size-3.5"
+                          strokeWidth={2}
+                        />
+                      </button>
                     </DropdownMenuItem>
                   ))
                 )}
@@ -312,6 +363,33 @@ function Header({
                   <AlertDialogCancel>취소</AlertDialogCancel>
                   <AlertDialogAction onClick={handleCreateRoom}>
                     생성
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Room Delete Confirm Dialog */}
+            <AlertDialog
+              open={deleteDialog.open}
+              onOpenChange={(open) => {
+                if (!open) setDeleteDialog({ open: false, roomId: null });
+              }}
+            >
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>프로젝트 삭제</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    이 프로젝트와 모든 대화 기록이 삭제됩니다. 삭제 후 새로운
+                    프로젝트가 자동으로 생성됩니다.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>취소</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDeleteRoom}
+                    disabled={deleteRoomMutation.isPending}
+                  >
+                    삭제
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
