@@ -8,35 +8,41 @@ import { cn } from '@/lib/utils';
 // AG Grid CDN URL (v34.2.0 고정)
 const AG_GRID_CDN = 'https://cdn.jsdelivr.net/npm/ag-grid-community@34.2.0';
 
-// Module-level UMD 번들 캐시
-// 컴포넌트 마운트(useEffect) 대신 모듈 로딩 시 즉시 fetch 시작
-// → 첫 렌더와 UMD 로딩 사이 race condition 시간 단축
-let umdBundlePromise: Promise<{ js: string; css: string }> | null = null;
+// ── Module-level UMD 번들 캐시 ──
+// 컴포넌트 언마운트/재마운트에도 캐시 유지.
+// 모듈 import 시 eager fetch → 컴포넌트 마운트 전 head start 확보.
+// Promise 완료 후 동기 캐시에 저장하여 useState 초기값으로 즉시 사용 가능.
+let _umdBundleCache: string | null = null;
+let _umdCssCache: string | null = null;
+let _umdFetchPromise: Promise<void> | null = null;
 
-function getUmdBundle() {
-  if (typeof window === 'undefined') return Promise.resolve({ js: '', css: '' });
-  if (!umdBundlePromise) {
-    umdBundlePromise = Promise.all([
-      fetch('/ui-bundle.js').then((r) => {
-        if (!r.ok) return '';
-        const ct = r.headers.get('content-type') || '';
-        if (!ct.includes('javascript')) return '';
-        return r.text();
-      }),
-      fetch('/ui-bundle.css').then((r) => {
-        if (!r.ok) return '';
-        const ct = r.headers.get('content-type') || '';
-        if (!ct.includes('css')) return '';
-        return r.text();
-      }),
-    ]).then(([js, css]) => ({ js, css }));
-  }
-  return umdBundlePromise;
+function fetchUmdBundle(): Promise<void> {
+  if (_umdFetchPromise) return _umdFetchPromise;
+
+  _umdFetchPromise = Promise.all([
+    fetch('/ui-bundle.js').then((r) => {
+      if (!r.ok) return '';
+      const ct = r.headers.get('content-type') || '';
+      if (!ct.includes('javascript')) return '';
+      return r.text();
+    }),
+    fetch('/ui-bundle.css').then((r) => {
+      if (!r.ok) return '';
+      const ct = r.headers.get('content-type') || '';
+      if (!ct.includes('css')) return '';
+      return r.text();
+    }),
+  ]).then(([js, css]) => {
+    _umdBundleCache = js;
+    _umdCssCache = css;
+  });
+
+  return _umdFetchPromise;
 }
 
-// 모듈 로딩 시 즉시 fetch 시작 (SSR 환경 제외)
+// 모듈 import 시 즉시 fetch 시작 (SSR 환경 제외)
 if (typeof window !== 'undefined') {
-  getUmdBundle();
+  fetchUmdBundle();
 }
 
 type PreviewViewMode = 'fit' | 'transform' | 'viewport';
@@ -65,15 +71,23 @@ function CodePreviewIframe({
   className,
   ...props
 }: CodePreviewIframeProps) {
-  // Module-level 캐시에서 UMD 번들/CSS 로딩
-  // 모듈 로딩 시 이미 fetch가 시작되어 있으므로 빠르게 resolve
-  const [umdBundle, setUmdBundle] = React.useState<string | null>(null);
-  const [umdCss, setUmdCss] = React.useState<string | null>(null);
+  // Module-level 동기 캐시에서 초기값 제공 → 재마운트 시 즉시 사용 가능
+  const [umdBundle, setUmdBundle] = React.useState<string | null>(
+    _umdBundleCache
+  );
+  const [umdCss, setUmdCss] = React.useState<string | null>(_umdCssCache);
 
   React.useEffect(() => {
-    getUmdBundle().then(({ js, css }) => {
-      setUmdBundle(js);
-      setUmdCss(css);
+    // 이미 캐시된 경우 (재마운트) → state 동기화만
+    if (_umdBundleCache !== null && _umdCssCache !== null) {
+      setUmdBundle(_umdBundleCache);
+      setUmdCss(_umdCssCache);
+      return;
+    }
+    // 아직 fetch 중 → 완료 대기
+    fetchUmdBundle().then(() => {
+      setUmdBundle(_umdBundleCache);
+      setUmdCss(_umdCssCache);
     });
   }, []);
 
@@ -621,6 +635,25 @@ function CodePreviewIframe({
       };
     }
   }, [code, viewMode, umdBundle, umdCss]);
+
+  // UMD 번들 미로딩 시 깨진 iframe 대신 로딩 표시
+  // 첫 페이지 로드 + 느린 네트워크에서만 잠깐 표시됨
+  if (umdBundle === null) {
+    return (
+      <div
+        data-slot="code-preview-iframe"
+        className={cn(
+          'flex h-full flex-1 flex-col items-center justify-center gap-2',
+          className
+        )}
+        {...props}
+      >
+        <div className="text-muted-foreground text-sm">
+          UI 컴포넌트 로딩 중...
+        </div>
+      </div>
+    );
+  }
 
   // 에러 상태 렌더링
   if (error) {
