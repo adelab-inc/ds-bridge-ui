@@ -69,6 +69,12 @@ export function useChatStream(options: UseChatStreamOptions = {}) {
                   break;
 
                 case 'code':
+                  console.debug(
+                    '[SSE] code event received, path:',
+                    event.path,
+                    'content length:',
+                    event.content?.length ?? 0
+                  );
                   setGeneratedFiles((prev) => [...prev, event]);
                   optionsRef.current.onCode?.(event);
                   break;
@@ -83,7 +89,12 @@ export function useChatStream(options: UseChatStreamOptions = {}) {
                   break;
               }
             } catch (parseError) {
-              console.error('Failed to parse SSE event:', parseError);
+              console.warn(
+                '[SSE] Failed to parse event. Error:',
+                parseError,
+                'Raw (first 500 chars):',
+                line.slice(0, 500)
+              );
             }
           }
         };
