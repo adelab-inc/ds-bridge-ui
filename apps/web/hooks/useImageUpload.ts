@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { AttachedImage, ImageUploadResponse } from '@/types/chat';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const MAX_IMAGES = 5;
@@ -21,7 +22,7 @@ export function useImageUpload(roomId: string) {
   );
 
   const uploadImage = useCallback(
-    (image: AttachedImage) => {
+    async (image: AttachedImage) => {
       const xhr = new XMLHttpRequest();
       xhrMapRef.current.set(image.id, xhr);
 
@@ -62,6 +63,12 @@ export function useImageUpload(roomId: string) {
       };
 
       xhr.open('POST', `/api/rooms/${roomId}/images`);
+
+      const token = await useAuthStore.getState().getIdToken();
+      if (token) {
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      }
+
       xhr.send(formData);
     },
     [roomId, updateImage]
