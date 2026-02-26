@@ -79,15 +79,21 @@ function ChatSection({
   }>({ open: false, message: null });
   const currentMessageIdRef = React.useRef<string | null>(null);
 
-  // URL의 mid 쿼리 파라미터에서 선택된 메시지 ID 읽기
-  const selectedMessageId = searchParams.get('mid');
+  // 선택된 메시지 ID — useState로 즉시 UI 반영, URL은 부가 동기화
+  const [selectedMessageId, setSelectedMessageId] = React.useState<
+    string | null
+  >(() => searchParams.get('mid'));
 
-  // URL의 mid 파라미터 업데이트
-  // window.history.replaceState 사용 — router.replace와 달리
-  // 서버측 RSC fetch를 트리거하지 않아 Production CDN 지연/간섭 방지
-  // Next.js가 replaceState를 패치하여 useSearchParams() 동기화 유지
+  // 외부 URL 변경 시 로컬 상태 동기화 (룸 전환 등)
+  const urlMid = searchParams.get('mid');
+  React.useEffect(() => {
+    setSelectedMessageId(urlMid);
+  }, [urlMid]);
+
+  // URL의 mid 파라미터 업데이트 + 로컬 상태 즉시 반영
   const updateSelectedMessageId = React.useCallback(
     (messageId: string | null) => {
+      setSelectedMessageId(messageId);
       const url = new URL(window.location.href);
       if (messageId) {
         url.searchParams.set('mid', messageId);
