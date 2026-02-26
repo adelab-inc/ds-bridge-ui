@@ -66,11 +66,11 @@ POST /api/chat/stream 수신
     │
     ├─ 4) SSE 스트림 읽기 + Broadcast 중계
     │     for chunk of stream:
-    │       channel.send('ai-chunk', { text, type, ... })
+    │       channel.send({ type: 'broadcast', event: 'ai-chunk', payload: { text, type, ... } })
     │       누적 텍스트/코드 저장
     │
     ├─ 5) 스트리밍 완료
-    │     channel.send('ai-done', { messageId })
+    │     channel.send({ type: 'broadcast', event: 'ai-done', payload: { messageId } })
     │
     ├─ 6) DB에 최종 메시지 INSERT
     │     supabase.from('chat_messages').insert({
@@ -80,7 +80,7 @@ POST /api/chat/stream 수신
     │     })
     │
     ├─ 7) Broadcast 채널 닫기
-    │     channel.unsubscribe()
+    │     supabase.removeChannel(channel)
     │
     └─ 8) HTTP 응답 반환 { ok: true }
 ```
@@ -120,7 +120,7 @@ Broadcast 'ai-done' 수신
 
 ```
 방 이동 시:
-    ├─ 현재 채널 unsubscribe (React cleanup)
+    ├─ supabase.removeChannel(channel) (React cleanup)
     └─ 새 방 채널 subscribe + 메시지 fetch
 
 새로고침 시:

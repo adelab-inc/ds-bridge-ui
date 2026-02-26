@@ -25,7 +25,7 @@ BFF가 AI 서버의 SSE를 읽고, Supabase Broadcast로 중계 + DB에 최종 �
 ## Phase 0: Supabase 프로젝트 세팅 (코드 변경 없음)
 
 1. Supabase 프로젝트 생성
-2. Auth 설정: Magic Link 활성화, Redirect URL 등록 (`localhost:5555/auth/callback`)
+2. Auth 설정: Magic Link 활성화, Redirect URL 등록 (`localhost:5555/auth/callback`), PKCE용 이메일 템플릿 설정
 3. DB 테이블 생성:
 
 ```sql
@@ -155,6 +155,17 @@ pnpm add @supabase/supabase-js @supabase/ssr --filter web
 - `verifyFirebaseToken()` → `verifySupabaseToken()`
 - `admin.auth().verifyIdToken()` → `supabase.auth.getUser(token)`
 - 함수 시그니처 동일 유지: `(authHeader) => Promise<{uid, email} | null>`
+- **참고 (성능 대안)**: API Route가 6개이므로, 매 요청마다 Auth 서버에 네트워크 호출하는 `getUser(token)` 대신 `jose` 라이브러리의 JWKS 기반 로컬 검증도 고려 가능:
+  ```typescript
+  import { createRemoteJWKSet, jwtVerify } from 'jose'
+  const JWKS = createRemoteJWKSet(
+    new URL('https://<project>.supabase.co/auth/v1/.well-known/jwks.json')
+  )
+  const { payload } = await jwtVerify(token, JWKS, {
+    issuer: 'https://<project>.supabase.co/auth/v1',
+    audience: 'authenticated',
+  })
+  ```
 
 ### 1.10 API Route 일괄 수정 (6개 파일)
 
@@ -172,8 +183,9 @@ pnpm add @supabase/supabase-js @supabase/ssr --filter web
 ### 1.11 Middleware 재작성
 
 **수정**: `apps/web/middleware.ts`
-- `__session` cookie 체크 → `updateSession(request)` + `supabase.auth.getUser()`
+- `__session` cookie 체크 → `updateSession(request)` + `supabase.auth.getClaims()`
 - Supabase SSR cookie 자동 갱신 처리
+- **주의**: 최신 공식 문서에서 Middleware에는 `getUser()` 대신 `getClaims()` 사용 권장. `getClaims()`는 로컬 JWT 파싱으로 네트워크 왕복 없이 빠르게 처리되며, `getUser()`를 사용하면 유저가 랜덤하게 로그아웃될 수 있음
 
 ### 1.12 환경변수
 
@@ -187,7 +199,7 @@ FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY, FIREBASE_SERVICE_ACCOUNT_KEY
 **추가** (3개):
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=eyJ...
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
 ```
 
@@ -207,7 +219,7 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...
 | `app/api/chat/stream/route.ts` | SSE 패스스루 | SSE 수신 → Broadcast 중계 + DB INSERT + 채널 닫기 |
 | `hooks/useChatStream.ts` | fetch + ReadableStream + SSE 파싱 | POST 트리거만 + Broadcast 구독으로 chunk 수신 |
 
-- 서버: `service_role` key로 Supabase 클라이언트 생성, 채널은 **질문-답변 단위**로 열고 닫음
+- 서버: `service_role` key로 Supabase 클라이언트 생성, 채널은 **질문-답변 단위**로 열고 닫음 (정리 시 `supabase.removeChannel(channel)` 사용)
 - 클라이언트: **room 단위**로 채널 구독 유지
 - ai-done 수신 시 DB fetch로 최신 메시지 동기화 (로컬 변환 없음)
 
@@ -418,84 +430,100 @@ pnpm remove firebase firebase-admin --filter web
 ### Phase 0: Supabase 프로젝트 세팅
 - [x] Supabase 프로젝트 생성
 - [x] Magic Link 인증 활성화 + Redirect URL 등록
+- [ ] PKCE용 이메일 템플릿 설정 (Magic Link가 `token_hash` 포함하도록 수정)
 - [x] `chat_rooms` 테이블 생성
 - [x] `chat_messages` 테이블 생성
 - [x] 인덱스 생성 (room_id+created_at, user_id+created_at)
 - [x] RLS 정책 설정 (`::text` 캐스팅 적용 — user_id가 text 타입)
 - [x] Realtime 활성화 (Database > Replication)
 - [x] `.env.local` Supabase 환경변수 추가
+- [ ] [BE] AI 서버에 Supabase 환경변수 설정 (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`)
 
 ### Phase 1: 인증 마이그레이션
-- [ ] `@supabase/supabase-js`, `@supabase/ssr` 패키지 설치
-- [ ] `lib/supabase/client.ts` 생성 (브라우저용)
-- [ ] `lib/supabase/server.ts` 생성 (API Route용)
-- [ ] `lib/supabase/middleware.ts` 생성 (토큰 갱신 helper)
-- [ ] `lib/auth/actions.ts` 재작성 (Firebase → Supabase OTP)
-- [ ] `lib/auth/config.ts` 수정 (Firebase 전용 설정 제거)
-- [ ] `types/auth.ts` 수정 (User import + toAuthUser 변환)
-- [ ] `stores/useAuthStore.ts` 수정 (cookie 로직 제거)
-- [ ] `components/providers/auth-initializer.tsx` 수정 (onAuthStateChange)
-- [ ] `components/features/auth/auth-callback-handler.tsx` 재작성 (PKCE)
-- [ ] `lib/auth/verify-token.ts` 재작성 (Supabase JWT 검증)
-- [ ] `app/api/chat/route.ts` import 변경
-- [ ] `app/api/chat/stream/route.ts` import 변경
-- [ ] `app/api/rooms/route.ts` import 변경
-- [ ] `app/api/rooms/[room_id]/route.ts` import 변경
-- [ ] `app/api/rooms/[room_id]/images/route.ts` import 변경
-- [ ] `app/api/rooms/[room_id]/schemas/route.ts` import 변경
-- [ ] `middleware.ts` 재작성 (Supabase SSR)
-- [ ] `.env.local` 환경변수 교체 (Firebase 제거, Supabase 추가)
+- [ ] [FE] `@supabase/supabase-js`, `@supabase/ssr` 패키지 설치
+- [ ] [FE] `lib/supabase/client.ts` 생성 (브라우저용)
+- [ ] [FE] `lib/supabase/server.ts` 생성 (API Route용)
+- [ ] [FE] `lib/supabase/middleware.ts` 생성 (토큰 갱신 helper)
+- [ ] [FE] `lib/auth/actions.ts` 재작성 (Firebase → Supabase OTP)
+- [ ] [FE] `lib/auth/config.ts` 수정 (Firebase 전용 설정 제거)
+- [ ] [FE] `types/auth.ts` 수정 (User import + toAuthUser 변환)
+- [ ] [FE] `stores/useAuthStore.ts` 수정 (cookie 로직 제거)
+- [ ] [FE] `components/providers/auth-initializer.tsx` 수정 (onAuthStateChange)
+- [ ] [FE] `components/features/auth/auth-callback-handler.tsx` 재작성 (PKCE)
+- [ ] [FE] `lib/auth/verify-token.ts` 재작성 (Supabase JWT 검증)
+- [ ] [FE] `app/api/chat/route.ts` import 변경
+- [ ] [FE] `app/api/chat/stream/route.ts` import 변경
+- [ ] [FE] `app/api/rooms/route.ts` import 변경
+- [ ] [FE] `app/api/rooms/[room_id]/route.ts` import 변경
+- [ ] [FE] `app/api/rooms/[room_id]/images/route.ts` import 변경
+- [ ] [FE] `app/api/rooms/[room_id]/schemas/route.ts` import 변경
+- [ ] [FE] `middleware.ts` 재작성 (Supabase SSR, `getClaims()` 사용)
+- [ ] [FE] `.env.local` 환경변수 교체 (Firebase 제거, Supabase 추가 — `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` 사용)
 - [ ] Phase 1 검증: Magic Link 로그인 플로우 테스트
 - [ ] Phase 1 검증: API Route 토큰 검증 테스트
 - [ ] Phase 1 검증: Middleware 리다이렉트 테스트
 
 ### Phase 2: 스트리밍 + 실시간 데이터 (상세: [chat-logic.md](chat-logic.md))
-- [ ] `hooks/supabase/useRoomChannel.ts` 생성 (Broadcast 채널 관리)
-- [ ] `app/api/chat/stream/route.ts` 재작성 (SSE → Broadcast 중계 + DB 저장)
-- [ ] `hooks/useChatStream.ts` 수정 (POST 트리거만 + Broadcast 구독)
-- [ ] `app/api/rooms/route.ts` 수정 (Supabase DB 쓰기 추가)
-- [ ] `hooks/supabase/useGetPaginatedMessages.ts` 생성 (20개/페이지 cursor 기반, 기존 pageSize 10→20 변경)
-- [ ] `hooks/supabase/useRoomsList.ts` 생성 (DB fetch 기반)
-- [ ] `hooks/useBookmarks.ts` 수정 (Supabase DB 기반 `is_bookmarked` 컬럼 활용)
-- [ ] `components/features/chat/chat-section.tsx` import 변경
-- [ ] `components/features/chat/chat-message.tsx` type import 경로 변경
-- [ ] `components/features/chat/chat-message-list.tsx` import 변경
-- [ ] `components/layout/header.tsx` import 변경
-- [ ] ai-done 시 DB fetch 동기화 로직 구현
-- [ ] 메시지 검색 (ILIKE) + 점프 로직 구현
-- [ ] 북마크 기능 구현 (`is_bookmarked` 컬럼)
-- [ ] Phase 2 검증: Room 생성 → Supabase DB 저장 확인
-- [ ] Phase 2 검증: Broadcast 스트리밍 수신 확인
-- [ ] Phase 2 검증: ai-done → DB fetch 동기화 확인
-- [ ] Phase 2 검증: 메시지 페이지네이션 (20개 단위) 확인
-- [ ] Phase 2 검증: 검색 + 메시지 점프 확인
-- [ ] Phase 2 검증: 북마크 토글 + 북마크 목록 + 점프 확인
+
+#### [FE] 프론트엔드 태스크
+- [ ] [FE] `app/api/chat/stream/route.ts` 단순화 (인증 + AI 서버 트리거 + 즉시 `{ ok: true }` 응답, fire-and-forget)
+- [ ] [FE] `app/api/rooms/route.ts` 단순화 (인증 + AI 서버 프록시만, Supabase 쓰기 제거)
+- [ ] [FE] `hooks/supabase/useRoomChannel.ts` 생성 (Broadcast 채널 구독)
+- [ ] [FE] `hooks/useChatStream.ts` 수정 (POST 트리거 + Broadcast 구독으로 chunk 수신)
+- [ ] [FE] `hooks/supabase/useGetPaginatedMessages.ts` 생성 (20개/페이지 cursor 기반, 기존 pageSize 10→20 변경)
+- [ ] [FE] `hooks/supabase/useRoomsList.ts` 생성 (DB fetch 기반)
+- [ ] [FE] `hooks/useBookmarks.ts` 수정 (Supabase DB 기반 `is_bookmarked` 컬럼 활용)
+- [ ] [FE] `components/features/chat/chat-section.tsx` import 변경
+- [ ] [FE] `components/features/chat/chat-message.tsx` type import 경로 변경
+- [ ] [FE] `components/features/chat/chat-message-list.tsx` import 변경
+- [ ] [FE] `components/layout/header.tsx` import 변경
+- [ ] [FE] ai-done 수신 시 DB fetch 동기화 로직 구현
+- [ ] [FE] 메시지 검색 (ILIKE) + 점프 로직 구현
+- [ ] [FE] 북마크 기능 구현 (`is_bookmarked` 컬럼)
+- [ ] [FE] `SUPABASE_SERVICE_ROLE_KEY` BFF 환경변수에서 제거
+
+#### [BE] 백엔드 태스크 (Python FastAPI)
+- [ ] [BE] Supabase Python SDK 설치 (`supabase-py`)
+- [ ] [BE] Supabase 클라이언트 초기화 (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`)
+- [ ] [BE] Broadcast 채널 관리: room 단위 채널 open/close (`supabase.removeChannel()`)
+- [ ] [BE] 스트리밍 시 Broadcast 이벤트 전송 (`ai-start`, `ai-chunk`, `ai-done`, `ai-error`)
+- [ ] [BE] 스트리밍 완료 후 `chat_messages` INSERT (Supabase DB)
+- [ ] [BE] Room 생성 시 `chat_rooms` INSERT (Supabase DB)
+- [ ] [BE] 에러 시 `ai-error` Broadcast + DB INSERT 재시도 (최대 3회)
+
+#### Phase 2 검증
+- [ ] Room 생성 → AI 서버가 Supabase DB 저장 확인
+- [ ] 질문 전송 → BFF 즉시 응답 + Broadcast 스트리밍 수신 확인
+- [ ] ai-done → DB fetch 동기화 확인
+- [ ] 메시지 페이지네이션 (20개 단위 무한 스크롤) 확인
+- [ ] 검색 + 메시지 점프 확인
+- [ ] 북마크 토글 + 북마크 목록 + 점프 확인
 
 ### Phase 3: Shared Types 정리
-- [ ] `packages/shared-types/firebase/` → `database/` 리네이밍
-- [ ] `packages/shared-types/typescript/firebase/` → `database/` 리네이밍
-- [ ] `packages/shared-types/python/firebase/` → `database/` 리네이밍
-- [ ] `COLLECTIONS` → `TABLES` 상수명 변경
-- [ ] `generate-typescript.js` 경로 수정 (`firebase/` → `database/`)
-- [ ] `generate-python.py` 경로 수정 (`firebase/` → `database/`)
-- [ ] import 경로 일괄 업데이트 (`@packages/shared-types/typescript/firebase/` → `database/`, 대상 20개 파일)
-- [ ] `hooks/useRoom.ts` import 경로 변경
-- [ ] `hooks/api/useRoomQuery.ts` import 경로 변경
-- [ ] `hooks/api/useCreateRoom.ts` import 경로 변경
-- [ ] `hooks/api/useChatQuery.ts` import 경로 변경
-- [ ] `types/chat.ts` import 경로 변경
-- [ ] `app/api/health/route.ts` import 경로 변경
-- [ ] `tsconfig.json` path alias 확인 (필요 시 수정)
+- [ ] [FE] `packages/shared-types/firebase/` → `database/` 리네이밍
+- [ ] [FE] `packages/shared-types/typescript/firebase/` → `database/` 리네이밍
+- [ ] [BE] `packages/shared-types/python/firebase/` → `database/` 리네이밍
+- [ ] [FE] `COLLECTIONS` → `TABLES` 상수명 변경
+- [ ] [FE] `generate-typescript.js` 경로 수정 (`firebase/` → `database/`)
+- [ ] [BE] `generate-python.py` 경로 수정 (`firebase/` → `database/`)
+- [ ] [FE] import 경로 일괄 업데이트 (`@packages/shared-types/typescript/firebase/` → `database/`, 대상 20개 파일)
+- [ ] [FE] `hooks/useRoom.ts` import 경로 변경
+- [ ] [FE] `hooks/api/useRoomQuery.ts` import 경로 변경
+- [ ] [FE] `hooks/api/useCreateRoom.ts` import 경로 변경
+- [ ] [FE] `hooks/api/useChatQuery.ts` import 경로 변경
+- [ ] [FE] `types/chat.ts` import 경로 변경
+- [ ] [FE] `app/api/health/route.ts` import 경로 변경
+- [ ] [FE] `tsconfig.json` path alias 확인 (필요 시 수정)
 
 ### Phase 4: 정리
-- [ ] `apps/web/lib/firebase.ts` 삭제 (`firebaseStorage` export 포함 — 프론트엔드 미사용 확인됨)
-- [ ] `apps/web/hooks/firebase/` 디렉토리 삭제 (messageUtils, useGetPaginatedFbMessages, useRealtimeMessages, useRoomsList)
-- [ ] `packages/shared-types/typescript/firebase/` 삭제 (이동 완료 후)
-- [ ] `packages/shared-types/python/firebase/` 삭제 (이동 완료 후)
-- [ ] `packages/shared-types/firebase/` 삭제 (이동 완료 후)
-- [ ] `firebase`, `firebase-admin` 패키지 제거
-- [ ] `.env.local.example` 업데이트
-- [ ] `CLAUDE.md` 업데이트 (Firebase 참조 → Supabase 전면 교체)
-- [ ] `VERCEL_DEPLOY.md` 업데이트
-- [ ] `pnpm build` 성공 확인 (Firebase import 잔존 여부 grep 검증)
+- [ ] [FE] `apps/web/lib/firebase.ts` 삭제 (`firebaseStorage` export 포함 — 프론트엔드 미사용 확인됨)
+- [ ] [FE] `apps/web/hooks/firebase/` 디렉토리 삭제 (messageUtils, useGetPaginatedFbMessages, useRealtimeMessages, useRoomsList)
+- [ ] [FE] `packages/shared-types/typescript/firebase/` 삭제 (이동 완료 후)
+- [ ] [BE] `packages/shared-types/python/firebase/` 삭제 (이동 완료 후)
+- [ ] [FE] `packages/shared-types/firebase/` 삭제 (이동 완료 후)
+- [ ] [FE] `firebase`, `firebase-admin` 패키지 제거
+- [ ] [FE] `.env.local.example` 업데이트
+- [ ] [FE] `CLAUDE.md` 업데이트 (Firebase 참조 → Supabase 전면 교체)
+- [ ] [FE] `VERCEL_DEPLOY.md` 업데이트
+- [ ] [FE] `pnpm build` 성공 확인 (Firebase import 잔존 여부 grep 검증)
 - [ ] `pnpm dev` → 전체 플로우 최종 검증
