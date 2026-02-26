@@ -1,5 +1,6 @@
 import json
 import logging
+import time
 from functools import lru_cache
 from pathlib import Path
 
@@ -33,7 +34,10 @@ def _resolve_bucket_and_path(storage_path: str) -> tuple[str, str]:
 # ============================================================================
 
 MAX_CACHE_SIZE = 10  # 최대 캐시 항목 수
-_schema_cache: dict[str, dict] = {}
+CACHE_TTL_SECONDS = 30 * 60  # 30분
+
+# (data, cached_at) 튜플로 저장
+_schema_cache: dict[str, tuple[dict, float]] = {}
 
 
 def clear_schema_cache() -> None:
@@ -44,11 +48,14 @@ def clear_schema_cache() -> None:
 
 
 def _evict_oldest_cache() -> None:
-    """캐시가 최대 크기를 초과하면 가장 오래된 항목 제거"""
-    while len(_schema_cache) >= MAX_CACHE_SIZE:
-        oldest_key = next(iter(_schema_cache))
-        del _schema_cache[oldest_key]
-        logger.debug("Cache evicted", extra={"key": oldest_key})
+    """캐시가 최대 크기를 초과하면 가장 오래된 항목 제거 (실패해도 메인 로직 중단 안함)"""
+    try:
+        while len(_schema_cache) >= MAX_CACHE_SIZE:
+            oldest_key = next(iter(_schema_cache))
+            del _schema_cache[oldest_key]
+            logger.debug("Cache evicted", extra={"key": oldest_key})
+    except Exception as e:
+        logger.warning("Cache eviction failed", extra={"error": str(e)})
 
 
 def cleanup_supabase() -> None:
@@ -110,10 +117,15 @@ async def fetch_schema_from_storage(schema_key: str, use_cache: bool = True) -> 
     # 경로 검증
     _validate_schema_key(schema_key)
 
-    # 캐시 확인
+    # 캐시 확인 (TTL 포함)
     if use_cache and schema_key in _schema_cache:
-        logger.debug("Schema cache hit", extra={"schema_key": schema_key})
-        return _schema_cache[schema_key]
+        cached_data, cached_at = _schema_cache[schema_key]
+        if (time.time() - cached_at) < CACHE_TTL_SECONDS:
+            logger.debug("Schema cache hit", extra={"schema_key": schema_key})
+            return cached_data
+        # TTL 만료 → 캐시에서 제거
+        del _schema_cache[schema_key]
+        logger.debug("Schema cache expired", extra={"schema_key": schema_key})
 
     try:
         client = await get_supabase_client()
@@ -124,7 +136,7 @@ async def fetch_schema_from_storage(schema_key: str, use_cache: bool = True) -> 
         # 캐시 저장 (크기 제한 적용)
         if use_cache:
             _evict_oldest_cache()
-            _schema_cache[schema_key] = schema
+            _schema_cache[schema_key] = (schema, time.time())
             logger.info("Schema cached", extra={"schema_key": schema_key, "cache_size": len(_schema_cache)})
 
         return schema
@@ -302,7 +314,7 @@ async def upload_schema_to_storage(schema_key: str, schema_data: dict) -> str:
 
         # 캐시 업데이트
         _evict_oldest_cache()
-        _schema_cache[schema_key] = schema_data
+        _schema_cache[schema_key] = (schema_data, time.time())
 
         return schema_key
 

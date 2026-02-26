@@ -23,7 +23,7 @@ from app.schemas.chat import (
     ParsedResponse,
 )
 from app.services.broadcast import broadcast_event, track_broadcast_task
-from app.services.ai_provider import get_ai_provider
+from app.services.ai_provider import AIProvider, get_ai_provider
 from app.services.supabase_storage import (
     DEFAULT_AG_GRID_SCHEMA_KEY,
     DEFAULT_SCHEMA_KEY,
@@ -39,8 +39,8 @@ from app.services.supabase_db import (
     RoomNotFoundError,
     create_chat_message,
     get_chat_room,
+    get_latest_code_message,
     get_message_by_id,
-    get_messages_by_room,
     get_timestamp_ms,
     update_chat_message,
 )
@@ -237,20 +237,17 @@ async def build_conversation_history(
                 extra={"from_message_id": from_message_id, "path": base_code["path"]},
             )
     else:
-        # 방의 최신 메시지에서 코드 추출
-        recent_messages = await get_messages_by_room(room_id)
-        # 최신 메시지부터 역순으로 코드가 있는 메시지 찾기
-        for msg in reversed(recent_messages):
-            if msg.get("content") and msg.get("path"):
-                base_code = {
-                    "path": msg["path"],
-                    "content": msg["content"],
-                }
-                logger.info(
-                    "Code context from latest message",
-                    extra={"room_id": room_id, "path": base_code["path"]},
-                )
-                break
+        # 방의 최신 코드 메시지 1건만 조회 (최적화)
+        latest_code_msg = await get_latest_code_message(room_id)
+        if latest_code_msg and latest_code_msg.get("content") and latest_code_msg.get("path"):
+            base_code = {
+                "path": latest_code_msg["path"],
+                "content": latest_code_msg["content"],
+            }
+            logger.info(
+                "Code context from latest message",
+                extra={"room_id": room_id, "path": base_code["path"]},
+            )
 
     # 사용자 메시지 구성: 기존 코드가 있으면 포함
     if base_code:
@@ -603,9 +600,18 @@ async def chat_stream(request: ChatRequest) -> JSONResponse:
         # 이미지 URL에서 base64로 변환 (Vision 모드인 경우)
         images: list[ImageContent] = []
         if is_vision_mode:
+            settings = get_settings()
             for url in request.image_urls:  # type: ignore
                 try:
                     base64_data, media_type = await fetch_image_as_base64(url)
+                    # base64 디코딩 없이 원본 크기 추정 (base64는 ~33% 오버헤드)
+                    estimated_size = len(base64_data) * 3 // 4
+                    if estimated_size > settings.max_image_size_bytes:
+                        logger.warning(
+                            "Image exceeds size limit, skipping",
+                            extra={"url": url, "size_mb": estimated_size / 1024 / 1024, "limit_mb": settings.max_image_size_mb},
+                        )
+                        continue
                     images.append(ImageContent(media_type=media_type, data=base64_data))
                 except Exception as e:
                     logger.warning("Failed to fetch image", extra={"url": url, "error": str(e)})
@@ -765,22 +771,37 @@ async def _run_broadcast_generation(
         # start 이벤트
         await broadcast_event(room_id, "start", {"message_id": message_id, "user_id": user_id})
 
-        # Vision/일반 모드에 따라 스트리밍 호출
-        if is_vision_mode:
-            stream = provider.chat_vision_stream(messages, images)
-        else:
-            stream = provider.chat_stream(messages)
+        async with asyncio.timeout(300):  # 5분 타임아웃
+            # Vision/일반 모드에 따라 스트리밍 호출
+            if is_vision_mode:
+                # Vision 미지원 프로바이더인지 확인 후 폴백
+                _supports_vision = type(provider).chat_vision_stream is not AIProvider.chat_vision_stream
+                if not _supports_vision:
+                    logger.warning(
+                        "Vision not supported, falling back to text-only",
+                        extra={"room_id": room_id, "provider": get_settings().ai_provider},
+                    )
+                    await broadcast_event(
+                        room_id,
+                        "warning",
+                        {"message": "현재 AI 프로바이더는 이미지 분석을 지원하지 않아 텍스트만으로 처리합니다."},
+                    )
+                    stream = provider.chat_stream(messages)
+                else:
+                    stream = provider.chat_vision_stream(messages, images)
+            else:
+                stream = provider.chat_stream(messages)
 
-        async for chunk in stream:
-            events = parser.process_chunk(chunk)
-            for event in events:
-                event_type = event.pop("type")
-                if event_type == "chat":
-                    collected_text += event.get("text", "")
-                elif event_type == "code":
-                    collected_files.append(event)
+            async for chunk in stream:
+                events = parser.process_chunk(chunk)
+                for event in events:
+                    event_type = event.pop("type")
+                    if event_type == "chat":
+                        collected_text += event.get("text", "")
+                    elif event_type == "code":
+                        collected_files.append(event)
 
-                await broadcast_event(room_id, "chunk", {"type": event_type, **event})
+                    await broadcast_event(room_id, "chunk", {"type": event_type, **event})
 
         # 남은 버퍼 처리
         final_events = parser.flush()
@@ -802,6 +823,24 @@ async def _run_broadcast_generation(
 
         await broadcast_event(room_id, "done", {"message_id": message_id})
 
+    except TimeoutError:
+        logger.error(
+            "Broadcast generation timed out",
+            extra={"room_id": room_id, "message_id": message_id, "timeout_seconds": 300},
+        )
+        try:
+            await _save_message_with_retry(
+                message_id=message_id,
+                text=collected_text.strip() if collected_text else None,
+                status="ERROR",
+            )
+            await broadcast_event(
+                room_id,
+                "error",
+                {"error": "응답 생성 시간이 초과되었습니다. 다시 시도해주세요."},
+            )
+        except Exception:
+            logger.exception("Failed to handle timeout", extra={"room_id": room_id, "message_id": message_id})
     except NotImplementedError:
         logger.error("Vision not supported", extra={"room_id": room_id, "provider": get_settings().ai_provider})
         await _save_message_with_retry(message_id=message_id, status="ERROR")

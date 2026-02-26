@@ -126,13 +126,21 @@ def handle_db_error(
 # ============================================================================
 
 _supabase_client: AsyncClient | None = None
+_supabase_client_lock = asyncio.Lock()
 
 
 async def get_supabase_client() -> AsyncClient:
-    """비동기 Supabase 클라이언트 반환 (싱글톤)"""
+    """비동기 Supabase 클라이언트 반환 (싱글톤, 동시성 안전)"""
     global _supabase_client
 
-    if _supabase_client is None:
+    if _supabase_client is not None:
+        return _supabase_client
+
+    async with _supabase_client_lock:
+        # double-checked locking
+        if _supabase_client is not None:
+            return _supabase_client
+
         settings = get_settings()
 
         try:
@@ -152,9 +160,10 @@ async def close_supabase_client() -> None:
     """Supabase 클라이언트 정리 (서버 종료 시 호출)"""
     global _supabase_client
 
-    if _supabase_client is not None:
-        _supabase_client = None
-        logger.info("Supabase client closed")
+    async with _supabase_client_lock:
+        if _supabase_client is not None:
+            _supabase_client = None
+            logger.info("Supabase client closed")
 
 
 # ============================================================================
@@ -329,7 +338,7 @@ async def create_chat_message(
         message_data["image_urls"] = image_urls
 
     await client.table("chat_messages").insert(message_data).execute()
-    logger.debug("Chat message created", extra={"message_id": message_id, "room_id": room_id})
+    logger.info("Chat message created", extra={"message_id": message_id, "room_id": room_id})
 
     return message_data
 
@@ -531,7 +540,7 @@ async def update_chat_message(
         update_data["status"] = status
 
     await client.table("chat_messages").update(update_data).eq("id", message_id).execute()
-    logger.debug("Chat message updated", extra={"message_id": message_id, "fields": list(update_data.keys())})
+    logger.info("Chat message updated", extra={"message_id": message_id, "fields": list(update_data.keys())})
 
 
 @handle_db_error("유저별 방 목록 조회 실패")
@@ -571,6 +580,62 @@ async def list_rooms_by_user(
         next_cursor = rooms[-1]["created_at"]
 
     return {"rooms": rooms, "next_cursor": next_cursor, "has_more": has_more}
+
+
+@handle_db_error("최신 코드 메시지 조회 실패")
+async def get_latest_code_message(room_id: str) -> MessageData | None:
+    """
+    채팅방에서 코드가 포함된 가장 최근 메시지 조회 (최적화).
+
+    전체 메시지를 로드하지 않고 DESC + neq 필터로 1건만 조회합니다.
+
+    Args:
+        room_id: 채팅방 ID
+
+    Returns:
+        코드가 포함된 최신 메시지 또는 None
+    """
+    client = await get_supabase_client()
+    result = await (
+        client.table("chat_messages")
+        .select("*")
+        .eq("room_id", room_id)
+        .neq("content", "")
+        .neq("path", "")
+        .order("answer_created_at", desc=True)
+        .limit(1)
+        .execute()
+    )
+    if result.data:
+        return result.data[0]  # type: ignore[return-value]
+    return None
+
+
+async def cleanup_stuck_generating_messages() -> int:
+    """
+    서버 시작 시 GENERATING 상태로 남아있는 고아 메시지를 ERROR로 전환.
+
+    Returns:
+        정리된 메시지 수
+    """
+    try:
+        client = await get_supabase_client()
+        result = await (
+            client.table("chat_messages")
+            .update({
+                "status": "ERROR",
+                "text": "서버 재시작으로 인해 중단됨",
+            })
+            .eq("status", "GENERATING")
+            .execute()
+        )
+        count = len(result.data)
+        if count > 0:
+            logger.info("Cleaned up stuck GENERATING messages", extra={"count": count})
+        return count
+    except Exception as e:
+        logger.error("Failed to cleanup stuck messages", extra={"error": str(e)})
+        return 0
 
 
 @handle_db_error("채팅방 삭제 실패")

@@ -6,6 +6,7 @@ httpx AsyncClient 싱글톤 패턴을 사용합니다.
 
 import asyncio
 import logging
+import threading
 from typing import Any
 
 import httpx
@@ -15,14 +16,22 @@ from app.core.config import get_settings
 logger = logging.getLogger(__name__)
 
 _broadcast_client: httpx.AsyncClient | None = None
+_broadcast_client_lock = threading.Lock()
 _active_broadcast_tasks: set[asyncio.Task] = set()
 
 
 def get_broadcast_client() -> httpx.AsyncClient:
-    """httpx AsyncClient 반환 (싱글톤, lazy 초기화)"""
+    """httpx AsyncClient 반환 (싱글톤, 동시성 안전)"""
     global _broadcast_client
 
-    if _broadcast_client is None:
+    if _broadcast_client is not None:
+        return _broadcast_client
+
+    with _broadcast_client_lock:
+        # double-checked locking
+        if _broadcast_client is not None:
+            return _broadcast_client
+
         settings = get_settings()
         _broadcast_client = httpx.AsyncClient(
             base_url=f"{settings.supabase_url}/realtime/v1/api",
@@ -31,6 +40,7 @@ def get_broadcast_client() -> httpx.AsyncClient:
                 "Content-Type": "application/json",
             },
             timeout=httpx.Timeout(10.0),
+            limits=httpx.Limits(max_connections=50, max_keepalive_connections=10),
         )
         logger.info("Broadcast client initialized")
 
@@ -41,10 +51,11 @@ async def close_broadcast_client() -> None:
     """Broadcast 클라이언트 정리 (서버 종료 시 호출)"""
     global _broadcast_client
 
-    if _broadcast_client is not None:
-        await _broadcast_client.aclose()
-        _broadcast_client = None
-        logger.info("Broadcast client closed")
+    with _broadcast_client_lock:
+        if _broadcast_client is not None:
+            await _broadcast_client.aclose()
+            _broadcast_client = None
+            logger.info("Broadcast client closed")
 
 
 async def broadcast_event(
