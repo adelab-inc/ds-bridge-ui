@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import type { paths } from '@ds-hub/shared-types/typescript/api/schema';
-import { verifyFirebaseToken } from '@/lib/auth/verify-token';
+import { verifySupabaseToken } from '@/lib/auth/verify-token';
 
 // Vercel Production CDN 캐싱/정적 최적화 방지
 export const dynamic = 'force-dynamic';
@@ -10,8 +10,8 @@ type ChatStreamRequest =
 
 export async function POST(request: NextRequest) {
   try {
-    // Firebase Auth 토큰 검증
-    const decodedToken = await verifyFirebaseToken(
+    // Supabase Auth 토큰 검증
+    const decodedToken = await verifySupabaseToken(
       request.headers.get('authorization')
     );
     if (!decodedToken) {

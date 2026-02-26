@@ -440,25 +440,25 @@ pnpm remove firebase firebase-admin --filter web
 - [ ] [BE] AI 서버에 Supabase 환경변수 설정 (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`)
 
 ### Phase 1: 인증 마이그레이션
-- [ ] [FE] `@supabase/supabase-js`, `@supabase/ssr` 패키지 설치
-- [ ] [FE] `lib/supabase/client.ts` 생성 (브라우저용)
-- [ ] [FE] `lib/supabase/server.ts` 생성 (API Route용)
-- [ ] [FE] `lib/supabase/middleware.ts` 생성 (토큰 갱신 helper)
-- [ ] [FE] `lib/auth/actions.ts` 재작성 (Firebase → Supabase OTP)
-- [ ] [FE] `lib/auth/config.ts` 수정 (Firebase 전용 설정 제거)
-- [ ] [FE] `types/auth.ts` 수정 (User import + toAuthUser 변환)
-- [ ] [FE] `stores/useAuthStore.ts` 수정 (cookie 로직 제거)
-- [ ] [FE] `components/providers/auth-initializer.tsx` 수정 (onAuthStateChange)
-- [ ] [FE] `components/features/auth/auth-callback-handler.tsx` 재작성 (PKCE)
-- [ ] [FE] `lib/auth/verify-token.ts` 재작성 (Supabase JWT 검증)
-- [ ] [FE] `app/api/chat/route.ts` import 변경
-- [ ] [FE] `app/api/chat/stream/route.ts` import 변경
-- [ ] [FE] `app/api/rooms/route.ts` import 변경
-- [ ] [FE] `app/api/rooms/[room_id]/route.ts` import 변경
-- [ ] [FE] `app/api/rooms/[room_id]/images/route.ts` import 변경
-- [ ] [FE] `app/api/rooms/[room_id]/schemas/route.ts` import 변경
-- [ ] [FE] `middleware.ts` 재작성 (Supabase SSR, `getClaims()` 사용)
-- [ ] [FE] `.env.local` 환경변수 교체 (Firebase 제거, Supabase 추가 — `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` 사용)
+- [x] [FE] `@supabase/supabase-js`, `@supabase/ssr` 패키지 설치
+- [x] [FE] `lib/supabase/client.ts` 생성 (브라우저용)
+- [x] [FE] `lib/supabase/server.ts` 생성 (API Route용)
+- [x] [FE] `lib/supabase/middleware.ts` 생성 (토큰 갱신 helper)
+- [x] [FE] `lib/auth/actions.ts` 재작성 (Firebase → Supabase OTP)
+- [x] [FE] `lib/auth/config.ts` 수정 (Firebase 전용 설정 제거)
+- [x] [FE] `types/auth.ts` 수정 (User import + toAuthUser 변환)
+- [x] [FE] `stores/useAuthStore.ts` 수정 (cookie 로직 제거)
+- [x] [FE] `components/providers/auth-initializer.tsx` 수정 (onAuthStateChange)
+- [x] [FE] `components/features/auth/auth-callback-handler.tsx` 재작성 (PKCE)
+- [x] [FE] `lib/auth/verify-token.ts` 재작성 (Supabase JWT 검증)
+- [x] [FE] `app/api/chat/route.ts` import 변경 (토큰 검증 미사용 — 변경 불필요)
+- [x] [FE] `app/api/chat/stream/route.ts` import 변경
+- [x] [FE] `app/api/rooms/route.ts` import 변경
+- [x] [FE] `app/api/rooms/[room_id]/route.ts` import 변경
+- [x] [FE] `app/api/rooms/[room_id]/images/route.ts` import 변경
+- [x] [FE] `app/api/rooms/[room_id]/schemas/route.ts` import 변경
+- [x] [FE] `middleware.ts` 재작성 (Supabase SSR, `updateSession()` 사용)
+- [x] [FE] `.env.local` 환경변수 교체 (Firebase 제거, Supabase 추가 — `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` 사용)
 - [ ] Phase 1 검증: Magic Link 로그인 플로우 테스트
 - [ ] Phase 1 검증: API Route 토큰 검증 테스트
 - [ ] Phase 1 검증: Middleware 리다이렉트 테스트

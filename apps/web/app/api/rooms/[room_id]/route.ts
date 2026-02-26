@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { paths } from '@ds-hub/shared-types/typescript/api/schema';
-import { verifyFirebaseToken } from '@/lib/auth/verify-token';
+import { verifySupabaseToken } from '@/lib/auth/verify-token';
 
 type GetRoomResponse =
   paths['/rooms/{room_id}']['get']['responses']['200']['content']['application/json'];
@@ -10,8 +10,8 @@ export async function GET(
   { params }: { params: Promise<{ room_id: string }> }
 ) {
   try {
-    // Firebase Auth 토큰 검증
-    const decodedToken = await verifyFirebaseToken(
+    // Supabase Auth 토큰 검증
+    const decodedToken = await verifySupabaseToken(
       request.headers.get('authorization')
     );
     if (!decodedToken) {
