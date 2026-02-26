@@ -41,7 +41,14 @@ if (getApps().length === 0) {
  */
 export const firebaseAuth: Auth =
   typeof window !== 'undefined'
-    ? initializeAuth(app, { persistence: browserLocalPersistence })
+    ? (() => {
+        try {
+          return initializeAuth(app, { persistence: browserLocalPersistence });
+        } catch {
+          // 이미 초기화된 경우 기존 인스턴스 반환
+          return getAuth(app);
+        }
+      })()
     : getAuth(app);
 export const firebaseFirestore: Firestore = getFirestore(app);
 export const firebaseStorage: FirebaseStorage = getStorage(app);

@@ -6,8 +6,8 @@ import {
   orderBy,
   onSnapshot,
 } from 'firebase/firestore';
-import { COLLECTIONS } from '@packages/shared-types/typescript/firebase/collections';
-import type { ChatRoom } from '@packages/shared-types/typescript/firebase/types';
+import { TABLES } from '@packages/shared-types/typescript/database/collections';
+import type { ChatRoom } from '@packages/shared-types/typescript/database/types';
 import { firebaseFirestore } from '@/lib/firebase';
 import { useAuthStore } from '@/stores/useAuthStore';
 
@@ -45,7 +45,7 @@ export function useRoomsList(): UseRoomsListReturn {
       return;
     }
 
-    const collectionRef = collection(firebaseFirestore, COLLECTIONS.CHAT_ROOMS);
+    const collectionRef = collection(firebaseFirestore, TABLES.CHAT_ROOMS);
     const q = query(
       collectionRef,
       where('user_id', '==', uid),

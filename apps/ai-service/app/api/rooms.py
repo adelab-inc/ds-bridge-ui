@@ -263,6 +263,25 @@ async def update_room(room_id: str, request: UpdateRoomRequest) -> RoomResponse:
         ) from e
 
 
+@router.delete(
+    "/{room_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    operation_id="deleteRoom",
+    summary="채팅방 삭제",
+    description="채팅방과 소속 메시지를 모두 삭제합니다.",
+    responses={
+        204: {"description": "삭제 성공"},
+        404: {"description": "채팅방을 찾을 수 없음"},
+        500: {"description": "서버 오류"},
+    },
+)
+async def delete_room(
+    room_id: str,
+    _room: RoomData = Depends(get_room_or_404),
+):
+    await delete_chat_room(room_id)
+
+
 # ============================================================================
 # Image Endpoints
 # ============================================================================

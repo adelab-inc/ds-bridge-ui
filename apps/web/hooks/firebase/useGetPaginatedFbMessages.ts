@@ -14,7 +14,7 @@ import {
   UndefinedInitialDataInfiniteOptions,
   useInfiniteQuery,
 } from '@tanstack/react-query';
-import { ChatMessage, MESSAGES_COLLECTION } from './messageUtils';
+import { ChatMessage, MESSAGES_TABLE } from './messageUtils';
 import { firebaseFirestore } from '@/lib/firebase';
 
 /**
@@ -45,7 +45,7 @@ const fetchMessages = async ({
   }
 
   const q = query(
-    collection(firebaseFirestore, MESSAGES_COLLECTION),
+    collection(firebaseFirestore, MESSAGES_TABLE),
     ...queryConstraints
   );
 

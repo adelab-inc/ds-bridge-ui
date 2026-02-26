@@ -10,6 +10,7 @@ from app.api.chat import router as chat_router
 from app.api.rooms import router as rooms_router
 from app.core.config import get_settings
 from app.core.logging import setup_logging
+from app.services.broadcast import close_broadcast_client, drain_broadcast_tasks
 from app.services.supabase_storage import cleanup_supabase
 from app.services.supabase_db import close_supabase_client
 
@@ -33,6 +34,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     yield
     # Shutdown
     logger.info("Shutting down DS Bridge AI Server...")
+    await drain_broadcast_tasks(timeout=30.0)
+    await close_broadcast_client()
     await close_supabase_client()
     cleanup_supabase()
     logger.info("Cleanup completed")
