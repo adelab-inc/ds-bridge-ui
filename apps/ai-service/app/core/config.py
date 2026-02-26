@@ -25,7 +25,7 @@ class Settings(BaseSettings):
 
     # Gemini
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-3.1-pro"
+    gemini_model: str = "gemini-3.1-pro-preview"
     gemini_thinking_level: str = "low"  # off(비활성), minimal, low, medium, high
 
     # API Authentication
