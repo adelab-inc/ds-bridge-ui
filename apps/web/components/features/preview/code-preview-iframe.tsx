@@ -177,7 +177,8 @@ function CodePreviewIframe({
       let processedCode = code
         // @/components import 제거
         .replace(/import\s+\{[^}]+\}\s+from\s+['"]@\/components['"];?\n?/g, '')
-        // react import 제거
+        // react import 제거 (default + named 혼합 패턴 우선 처리)
+        .replace(/import\s+React\s*,\s*\{[^}]+\}\s+from\s+['"]react['"];?\n?/g, '')
         .replace(/import\s+\{[^}]+\}\s+from\s+['"]react['"];?\n?/g, '')
         .replace(/import\s+\*\s+as\s+React\s+from\s+['"]react['"];?\n?/g, '')
         .replace(/import\s+React\s+from\s+['"]react['"];?\n?/g, '')
