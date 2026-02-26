@@ -704,6 +704,48 @@ async def chat_stream(request: ChatRequest) -> JSONResponse:
         ) from e
 
 
+
+_DB_MAX_RETRIES = 3
+_DB_BASE_DELAY = 0.5  # seconds
+
+
+async def _save_message_with_retry(
+    *,
+    message_id: str,
+    text: str | None = None,
+    content: str | None = None,
+    path: str | None = None,
+    status: str | None = None,
+) -> None:
+    """DB 메시지 저장을 재시도 포함으로 수행 (최대 3회, 지수 백오프)."""
+    last_error: Exception | None = None
+
+    for attempt in range(_DB_MAX_RETRIES):
+        try:
+            await update_chat_message(
+                message_id=message_id,
+                text=text,
+                content=content,
+                path=path,
+                status=status,
+            )
+            return
+        except Exception as e:
+            last_error = e
+            logger.warning(
+                "DB save failed (retrying)",
+                extra={"message_id": message_id, "attempt": attempt + 1, "error": str(e)},
+            )
+            if attempt < _DB_MAX_RETRIES - 1:
+                await asyncio.sleep(_DB_BASE_DELAY * (2 ** attempt))
+
+    logger.error(
+        "DB save failed after retries",
+        extra={"message_id": message_id, "max_retries": _DB_MAX_RETRIES},
+    )
+    raise last_error  # type: ignore[misc]
+
+
 async def _run_broadcast_generation(
     *,
     room_id: str,
@@ -748,9 +790,9 @@ async def _run_broadcast_generation(
                 collected_text += event.get("text", "")
             await broadcast_event(room_id, "chunk", {"type": event_type, **event})
 
-        # 완료 시 DONE으로 업데이트
+        # 완료 시 DB 저장 (재시도 포함)
         first_file = collected_files[0] if collected_files else None
-        await update_chat_message(
+        await _save_message_with_retry(
             message_id=message_id,
             text=collected_text.strip(),
             content=first_file.get("content", "") if first_file else "",
@@ -762,7 +804,7 @@ async def _run_broadcast_generation(
 
     except NotImplementedError:
         logger.error("Vision not supported", extra={"room_id": room_id, "provider": get_settings().ai_provider})
-        await update_chat_message(message_id=message_id, status="ERROR")
+        await _save_message_with_retry(message_id=message_id, status="ERROR")
         await broadcast_event(
             room_id,
             "error",
@@ -774,7 +816,7 @@ async def _run_broadcast_generation(
             extra={"room_id": room_id, "message_id": message_id, "error": str(e)},
         )
         try:
-            await update_chat_message(message_id=message_id, status="ERROR")
+            await _save_message_with_retry(message_id=message_id, status="ERROR")
             await broadcast_event(
                 room_id,
                 "error",

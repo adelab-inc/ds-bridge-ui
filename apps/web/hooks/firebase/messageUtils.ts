@@ -1,14 +1,14 @@
-import { COLLECTIONS } from '@packages/shared-types/typescript/firebase/collections';
-import { ChatMessage } from '@packages/shared-types/typescript/firebase/types';
+import { TABLES } from '@packages/shared-types/typescript/database/collections';
+import { ChatMessage } from '@packages/shared-types/typescript/database/types';
 
 /**
- * Firebase 메시지 관련 타입 및 유틸리티
+ * 메시지 관련 타입 및 유틸리티
  */
 
 /**
- * Firestore 메시지 컬렉션 이름
+ * 메시지 테이블 이름
  */
-export const MESSAGES_COLLECTION = COLLECTIONS.CHAT_MESSAGES;
+export const MESSAGES_TABLE = TABLES.CHAT_MESSAGES;
 
 /**
  * ChatMessage 타입 re-export

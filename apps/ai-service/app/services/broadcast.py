@@ -47,13 +47,22 @@ async def close_broadcast_client() -> None:
         logger.info("Broadcast client closed")
 
 
-async def broadcast_event(room_id: str, event_type: str, payload: dict[str, Any]) -> None:
-    """Supabase Realtime broadcast 이벤트 발행.
+async def broadcast_event(
+    room_id: str,
+    event_type: str,
+    payload: dict[str, Any],
+    *,
+    max_retries: int = 3,
+    base_delay: float = 0.5,
+) -> None:
+    """Supabase Realtime broadcast 이벤트 발행 (재시도 포함).
 
     Args:
         room_id: 채팅방 ID
         event_type: 이벤트 이름 (e.g. "ai_response")
         payload: 이벤트 데이터
+        max_retries: 최대 재시도 횟수 (기본 3)
+        base_delay: 재시도 간 기본 대기 시간(초), 지수 백오프 적용
     """
     client = get_broadcast_client()
 
@@ -67,18 +76,41 @@ async def broadcast_event(room_id: str, event_type: str, payload: dict[str, Any]
         ]
     }
 
-    try:
-        response = await client.post("/broadcast", json=body)
-        response.raise_for_status()
-    except httpx.HTTPStatusError as e:
-        logger.error(
-            "Broadcast HTTP error",
-            extra={"room_id": room_id, "status": e.response.status_code, "body": e.response.text},
-        )
-        raise
-    except httpx.RequestError as e:
-        logger.error("Broadcast request error", extra={"room_id": room_id, "error": str(e)})
-        raise
+    last_error: Exception | None = None
+
+    for attempt in range(max_retries):
+        try:
+            response = await client.post("/broadcast", json=body)
+            response.raise_for_status()
+            return
+        except httpx.HTTPStatusError as e:
+            last_error = e
+            if e.response.status_code < 500:
+                logger.error(
+                    "Broadcast HTTP error (non-retryable)",
+                    extra={"room_id": room_id, "status": e.response.status_code, "body": e.response.text},
+                )
+                raise
+            logger.warning(
+                "Broadcast HTTP error (retrying)",
+                extra={"room_id": room_id, "status": e.response.status_code, "attempt": attempt + 1},
+            )
+        except httpx.RequestError as e:
+            last_error = e
+            logger.warning(
+                "Broadcast request error (retrying)",
+                extra={"room_id": room_id, "error": str(e), "attempt": attempt + 1},
+            )
+
+        if attempt < max_retries - 1:
+            delay = base_delay * (2 ** attempt)
+            await asyncio.sleep(delay)
+
+    logger.error(
+        "Broadcast failed after retries",
+        extra={"room_id": room_id, "event_type": event_type, "max_retries": max_retries},
+    )
+    raise last_error  # type: ignore[misc]
 
 
 def track_broadcast_task(task: asyncio.Task) -> None:

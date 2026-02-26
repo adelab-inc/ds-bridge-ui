@@ -10,7 +10,7 @@ import {
   query,
   where,
 } from 'firebase/firestore';
-import { ChatMessage, MESSAGES_COLLECTION } from './messageUtils';
+import { ChatMessage, MESSAGES_TABLE } from './messageUtils';
 import { firebaseFirestore } from '@/lib/firebase';
 
 interface RealtimeMessagesCallbacks {
@@ -63,7 +63,7 @@ export const useRealtimeMessages = ({
       return;
     }
 
-    const collectionRef = collection(firebaseFirestore, MESSAGES_COLLECTION);
+    const collectionRef = collection(firebaseFirestore, MESSAGES_TABLE);
 
     const queryConstraints: (
       | QueryFieldFilterConstraint
