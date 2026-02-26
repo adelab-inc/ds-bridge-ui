@@ -25,7 +25,8 @@ class Settings(BaseSettings):
 
     # Gemini
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-3-flash-preview"
+    gemini_model: str = "gemini-3.1-pro"
+    gemini_thinking_level: str = "low"  # off(비활성), minimal, low, medium, high
 
     # API Authentication
     x_api_key: str = ""  # X-API-Key 헤더로 인증
