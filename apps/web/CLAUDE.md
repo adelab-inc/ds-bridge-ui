@@ -2,6 +2,24 @@
 
 > Next.js 16 기반 디자인 시스템 런타임 허브 프론트엔드
 
+## 도구 우선순위: Serena MCP 플러그인
+
+Serena MCP 플러그인이 활성화되어 있는 경우, 코드베이스 탐색 및 편집 시 **Serena 도구를 우선 활용**할 것.
+
+| 작업 | Serena 도구 | 비고 |
+| --- | --- | --- |
+| 심볼 탐색 | `get_symbols_overview`, `find_symbol` | 파일 전체를 읽기 전에 심볼 단위로 탐색 |
+| 심볼 관계 파악 | `find_referencing_symbols` | 참조/의존 관계 추적 |
+| 코드 편집 | `replace_symbol_body`, `insert_after_symbol`, `insert_before_symbol` | 심볼 단위 정밀 편집 |
+| 텍스트 치환 | `replace_content` | 부분 수정 시 regex 기반 치환 |
+| 파일/패턴 검색 | `find_file`, `search_for_pattern`, `list_dir` | 파일 시스템 탐색 |
+
+### 원칙
+
+- **심볼 우선 접근**: 파일 전체를 읽기보다 `get_symbols_overview` → `find_symbol(include_body=True)`로 필요한 부분만 읽을 것
+- **정밀 편집**: 전체 파일 재작성 대신 `replace_symbol_body`나 `replace_content`로 최소 범위만 수정
+- **참조 안전성**: 심볼 수정 전 `find_referencing_symbols`로 영향 범위를 확인하고, 하위 호환이 깨지면 참조도 함께 수정
+
 ## 기술 스택
 
 | 기술                   | 버전    | 용도                            |

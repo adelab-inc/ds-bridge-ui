@@ -16,9 +16,11 @@ import { ChatInput } from './chat-input';
 import { useChatStream } from '@/hooks/useChatStream';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import { useBookmarks } from '@/hooks/useBookmarks';
+import { useRoomChannel } from '@/hooks/supabase/useRoomChannel';
+import { useGetPaginatedMessages } from '@/hooks/supabase/useGetPaginatedMessages';
+import { useStreamingStore } from '@/stores/useStreamingStore';
 import type { CodeEvent } from '@/types/chat';
-import { useGetPaginatedFbMessages } from '@/hooks/firebase/useGetPaginatedFbMessages';
-import type { ChatMessage } from '@/hooks/firebase/messageUtils';
+import type { ChatMessage } from '@packages/shared-types/typescript/database/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -41,6 +43,9 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 
+/** 스트리밍 타임아웃 (120초) */
+const STREAM_TIMEOUT_MS = 120_000;
+
 interface ChatSectionProps extends React.ComponentProps<'section'> {
   roomId: string;
   schemaKey?: string;
@@ -60,9 +65,9 @@ function ChatSection({
   className,
   ...props
 }: ChatSectionProps) {
-  const { data } = useGetPaginatedFbMessages({
+  const { data, refetch: refetchMessages } = useGetPaginatedMessages({
     roomId,
-    pageSize: 10,
+    pageSize: 20,
     infiniteQueryOptions: {
       enabled: !!roomId,
     },
@@ -70,16 +75,22 @@ function ChatSection({
 
   const searchParams = useSearchParams();
 
-  const [messages, setMessages] = React.useState<ChatMessage[]>([]);
-  const currentMessageIdRef = React.useRef<string | null>(null);
+  // 스트리밍 중인 단일 메시지 (Zustand 외부 스토어로 관리)
+  // → React 배칭/동시성 렌더링에 의한 state 유실 방지
+  const streamingMessage = useStreamingStore((s) => s.message);
+  const setStreamingMessage = useStreamingStore((s) => s.setMessage);
+  const updateStreamingMessage = useStreamingStore((s) => s.updateMessage);
+
+  const timeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Broadcast 콜백에서 사용할 ref (state updater 밖에서 side effect 실행용)
+  const pendingQuestionRef = React.useRef<string>('');
+  const activeMessageIdRef = React.useRef<string | null>(null);
 
   // URL의 mid 쿼리 파라미터에서 선택된 메시지 ID 읽기
   const selectedMessageId = searchParams.get('mid');
 
   // URL의 mid 파라미터 업데이트
-  // window.history.replaceState 사용 — router.replace와 달리
-  // 서버측 RSC fetch를 트리거하지 않아 Production CDN 지연/간섭 방지
-  // Next.js가 replaceState를 패치하여 useSearchParams() 동기화 유지
   const updateSelectedMessageId = React.useCallback(
     (messageId: string | null) => {
       const url = new URL(window.location.href);
@@ -106,89 +117,123 @@ function ChatSection({
     uploadedUrls,
   } = useImageUpload(roomId);
 
-  const { sendMessage, isLoading, error } = useChatStream({
-    onStart: (messageId) => {
-      // 서버에서 실제 message_id를 받으면 임시 ID를 교체
-      const tempId = currentMessageIdRef.current;
-      if (tempId) {
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === tempId ? { ...msg, id: messageId } : msg
-          )
+  const { sendMessage, isLoading: isSending, error } = useChatStream();
+
+  // 타임아웃 클리어 헬퍼
+  const clearStreamTimeout = React.useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  }, []);
+
+  // 스트리밍 종료 헬퍼 (done/error 공통)
+  const finishStreaming = React.useCallback(() => {
+    clearStreamTimeout();
+    onStreamEnd?.();
+  }, [clearStreamTimeout, onStreamEnd]);
+
+  // === Broadcast 채널 구독 ===
+  useRoomChannel({
+    roomId,
+    enabled: !!roomId,
+    callbacks: {
+      onStart: (payload) => {
+        activeMessageIdRef.current = payload.message_id;
+        updateStreamingMessage((prev) => {
+          if (prev) {
+            return { ...prev, id: payload.message_id };
+          }
+          // handleSend의 state가 아직 반영되지 않은 경우 ref에서 질문 복원
+          return {
+            id: payload.message_id,
+            question: pendingQuestionRef.current,
+            text: '',
+            content: '',
+            path: '',
+            room_id: roomId,
+            question_created_at: Date.now(),
+            answer_created_at: 0,
+            status: 'GENERATING' as const,
+          };
+        });
+      },
+      onChunk: (payload) => {
+        // state updater는 순수 함수로 유지 (side effect 금지)
+        updateStreamingMessage((prev) => {
+          if (!prev) {
+            console.warn('[ChatSection] onChunk: prev is NULL, dropping chunk');
+            return prev;
+          }
+
+          if (payload.type === 'chat' && payload.text) {
+            return { ...prev, text: prev.text + payload.text };
+          }
+
+          if (payload.type === 'code') {
+            return {
+              ...prev,
+              content: payload.content ?? prev.content,
+              path: payload.path ?? prev.path,
+            };
+          }
+
+          console.warn('[ChatSection] onChunk: unknown type', payload);
+          return prev;
+        });
+
+        // side effect는 state updater 바깥에서 실행
+        if (payload.type === 'code' && payload.content) {
+          const msgId = activeMessageIdRef.current;
+          if (msgId) updateSelectedMessageId(msgId);
+          onCodeGenerated?.({
+            type: 'code',
+            content: payload.content,
+            path: payload.path ?? '',
+          });
+        }
+      },
+      onDone: () => {
+        activeMessageIdRef.current = null;
+
+        // 타임아웃 즉시 클리어 (ref 직접 접근)
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
+        onStreamEnd?.();
+
+        // 스트리밍 메시지를 DONE 상태로 전환 (refetch 전까지 화면 유지)
+        updateStreamingMessage((prev) =>
+          prev
+            ? {
+                ...prev,
+                status: 'DONE' as const,
+                answer_created_at: Date.now(),
+              }
+            : null
         );
-        currentMessageIdRef.current = messageId;
-      }
-    },
-    onChat: (text) => {
-      // 스트리밍 중 현재 메시지의 text 업데이트
-      if (currentMessageIdRef.current) {
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === currentMessageIdRef.current
-              ? { ...msg, text: msg.text + text, status: 'GENERATING' }
-              : msg
-          )
-        );
-      }
-    },
-    onCode: (code: CodeEvent) => {
-      // 코드 생성 시 현재 메시지의 content, path 업데이트
-      if (currentMessageIdRef.current) {
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === currentMessageIdRef.current
-              ? { ...msg, content: code.content, path: code.path }
-              : msg
-          )
-        );
-        // 현재 스트리밍 중인 메시지를 선택 상태로 설정
-        updateSelectedMessageId(currentMessageIdRef.current);
-      }
-      // 부모 컴포넌트에 코드 생성 알림
-      onCodeGenerated?.(code);
-    },
-    onDone: (messageId) => {
-      // 스트리밍 완료 시 status를 DONE으로 변경
-      const finalId = messageId || currentMessageIdRef.current;
-      if (finalId) {
+
+        // DB refetch 후 streamingMessage 제거 (DB 메시지로 교체)
+        refetchMessages()
+          .then(() => setStreamingMessage(null))
+          .catch(() => setStreamingMessage(null));
+      },
+      onError: (payload) => {
+        activeMessageIdRef.current = null;
         const now = Date.now();
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === finalId
-              ? {
-                  ...msg,
-                  status: 'DONE' as const,
-                  answer_created_at: now,
-                }
-              : msg
-          )
+        updateStreamingMessage((prev) =>
+          prev
+            ? {
+                ...prev,
+                text: `Error: ${payload.error}`,
+                status: 'ERROR' as const,
+                answer_created_at: now,
+              }
+            : prev
         );
-        currentMessageIdRef.current = null;
-      }
-      // 부모 컴포넌트에 스트리밍 종료 알림
-      onStreamEnd?.();
-    },
-    onError: (errorMsg) => {
-      const messageId = currentMessageIdRef.current;
-      // 에러 발생 시 status를 ERROR로 변경
-      if (messageId) {
-        const now = Date.now();
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === messageId
-              ? {
-                  ...msg,
-                  text: `Error: ${errorMsg}`,
-                  status: 'ERROR' as const,
-                  answer_created_at: now,
-                }
-              : msg
-          )
-        );
-        currentMessageIdRef.current = null;
-      }
-      // 부모 컴포넌트에 스트리밍 종료 알림
-      onStreamEnd?.();
+        finishStreaming();
+      },
     },
   });
 
@@ -208,14 +253,14 @@ function ChatSection({
   );
 
   const handleSend = async (message: string) => {
-    const messageId = crypto.randomUUID();
+    const tempId = crypto.randomUUID();
 
     // 업로드 완료된 이미지 URL 캡처
     const imageUrls = uploadedUrls.length > 0 ? [...uploadedUrls] : undefined;
 
-    // 새 메시지 생성 (질문과 빈 답변)
+    // Optimistic UI: streamingMessage 즉시 생성
     const newMessage: ChatMessage = {
-      id: messageId,
+      id: tempId,
       question: imageUrls
         ? `[이미지 ${imageUrls.length}개] ${message}`
         : message,
@@ -228,45 +273,90 @@ function ChatSection({
       status: 'GENERATING',
     };
 
-    setMessages((prev) => [...prev, newMessage]);
-    currentMessageIdRef.current = messageId;
+    pendingQuestionRef.current = newMessage.question;
+    activeMessageIdRef.current = tempId;
+
+    // Zustand store에 직접 설정 (React 배칭 영향 없음)
+    setStreamingMessage(newMessage);
 
     // 이미지 초기화 (전송 후)
     clearImages();
 
-    // 부모 컴포넌트에 스트리밍 시작 알림
+    // 부모 컴포넌트에 스트리밍 시작 알림 (Zustand store 업데이트)
     onStreamStart?.();
 
-    // AI에게 메시지 전송 (선택된 메시지가 있으면 해당 코드 기준으로 수정, 이미지 URL 포함)
-    await sendMessage({
+    // 타임아웃 설정 (120초)
+    clearStreamTimeout();
+    timeoutRef.current = setTimeout(() => {
+      activeMessageIdRef.current = null;
+      const now = Date.now();
+      updateStreamingMessage((prev) =>
+        prev
+          ? {
+              ...prev,
+              text: prev.text || 'Error: 응답 타임아웃 (120초)',
+              status: 'ERROR' as const,
+              answer_created_at: now,
+            }
+          : prev
+      );
+      onStreamEnd?.();
+    }, STREAM_TIMEOUT_MS);
+
+    // AI에게 메시지 전송
+    const messageId = await sendMessage({
       message,
       room_id: roomId,
       stream: true,
       from_message_id: selectedMessageId ?? undefined,
       image_urls: imageUrls,
     });
+
+    // POST 실패 시 에러 처리
+    if (!messageId) {
+      activeMessageIdRef.current = null;
+      const now = Date.now();
+      updateStreamingMessage((prev) =>
+        prev
+          ? {
+              ...prev,
+              text: 'Error: 메시지 전송 실패',
+              status: 'ERROR' as const,
+              answer_created_at: now,
+            }
+          : prev
+      );
+      clearStreamTimeout();
+      onStreamEnd?.();
+    }
   };
 
-  // Firebase 메시지 목록
-  const firebaseMessages = React.useMemo(() => {
+  // DB 메시지 목록
+  const dbMessages = React.useMemo(() => {
     if (!data) return [];
     return data.pages.flat();
   }, [data]);
 
-  // 표시할 메시지 목록 (Firebase 메시지 + 로컬 메시지)
+  // 표시할 메시지 목록 (DB 메시지 + 스트리밍 메시지, 중복 방지)
   const displayMessages = React.useMemo(() => {
-    return [...firebaseMessages, ...messages];
-  }, [firebaseMessages, messages]);
+    if (!streamingMessage) return dbMessages;
+    // DB에 이미 같은 ID가 있으면 streamingMessage가 우선 (refetch 직후 중복 방지)
+    const filtered = dbMessages.filter((msg) => msg.id !== streamingMessage.id);
+    return [...filtered, streamingMessage];
+  }, [dbMessages, streamingMessage]);
 
-  // Firebase 메시지 로드 시 초기 메시지 선택 처리
+  // isLoading: POST 중이거나 스트리밍 중일 때
+  const isLoading = isSending || !!streamingMessage;
+
+  // DB 메시지 로드 시 초기 메시지 선택 처리
   const initialSelectionRef = React.useRef(false);
   React.useEffect(() => {
     if (initialSelectionRef.current) return;
-    if (!firebaseMessages.length || isLoading) return;
+    if (!dbMessages.length || isLoading) return;
 
     // URL에 mid가 이미 있으면 해당 메시지를 찾아서 프리뷰 표시
     if (selectedMessageId) {
-      const targetMessage = firebaseMessages.find(
+      const targetMessage = dbMessages.find(
         (msg) => msg.id === selectedMessageId
       );
       if (targetMessage?.content?.trim()) {
@@ -281,7 +371,7 @@ function ChatSection({
     }
 
     // mid가 없으면 최신 content 있는 메시지 자동 선택 후 URL 업데이트
-    const latestWithContent = [...firebaseMessages]
+    const latestWithContent = [...dbMessages]
       .reverse()
       .find((msg) => msg.content && msg.content.trim());
 
@@ -295,12 +385,17 @@ function ChatSection({
       initialSelectionRef.current = true;
     }
   }, [
-    firebaseMessages,
+    dbMessages,
     isLoading,
     selectedMessageId,
     onCodeGenerated,
     updateSelectedMessageId,
   ]);
+
+  // 타임아웃 cleanup
+  React.useEffect(() => {
+    return () => clearStreamTimeout();
+  }, [clearStreamTimeout]);
 
   // ===== 북마크 기능 =====
   const { bookmarks, addBookmark, removeBookmark, isBookmarked } =
@@ -351,7 +446,10 @@ function ChatSection({
   // 북마크 클릭 → 해당 메시지로 이동
   const handleBookmarkClick = React.useCallback(
     (messageId: string) => {
-      const allMessages = [...firebaseMessages, ...messages];
+      const allMessages = [
+        ...dbMessages,
+        ...(streamingMessage ? [streamingMessage] : []),
+      ];
       const target = allMessages.find((msg) => msg.id === messageId);
       if (target?.content?.trim()) {
         updateSelectedMessageId(messageId);
@@ -362,7 +460,7 @@ function ChatSection({
         });
       }
     },
-    [firebaseMessages, messages, updateSelectedMessageId, onCodeGenerated]
+    [dbMessages, streamingMessage, updateSelectedMessageId, onCodeGenerated]
   );
 
   return (

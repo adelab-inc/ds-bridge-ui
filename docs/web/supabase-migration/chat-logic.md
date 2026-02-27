@@ -10,10 +10,10 @@ Supabase Broadcast + Postgres를 활용한 채팅 메시지 관리 로직.
 ## 데이터 흐름 요약
 
 ```
-방 입장 → DB에서 최근 20개 메시지 fetch → state 세팅
-질문 전송 → HTTP POST (트리거) → 서버가 Broadcast로 답변 중계
-스트리밍 중 → Broadcast chunk 수신 → 로컬 state 업데이트
-스트리밍 완료 → 서버가 DB INSERT → 클라이언트가 DB fetch로 동기화
+방 입장 → DB에서 최근 20개 메시지 fetch → state 세팅 + Broadcast 채널 구독
+질문 전송 → POST /api/chat/stream (BFF → AI 서버) → 202 { message_id } 즉시 반환
+스트리밍 중 → AI 서버가 Broadcast로 직접 이벤트 발행 → 클라이언트 수신 → state 업데이트
+스트리밍 완료 → AI 서버가 DB UPDATE (DONE) → 클라이언트가 DB fetch로 동기화
 새로고침 → DB에서 다시 fetch (저장된 메시지 포함)
 ```
 
@@ -35,7 +35,7 @@ Supabase Broadcast + Postgres를 활용한 채팅 메시지 관리 로직.
     │
     └─ 2) Broadcast 채널 구독
           channel(`room:${roomId}`).subscribe()
-          → ai-chunk, ai-done 이벤트 리스너 등록
+          → start, chunk, done, error 이벤트 리스너 등록
 ```
 
 ### 2. 질문 전송
@@ -48,56 +48,69 @@ Supabase Broadcast + Postgres를 활용한 채팅 메시지 관리 로직.
     │
     └─ 2) POST /api/chat/stream 호출 (트리거 역할)
           body: { room_id, message, ... }
-          → HTTP 응답 body는 읽지 않음 (답변은 Broadcast로 수신)
+          → 202 응답 + { message_id } 수신 → streamingMessage에 ID 설정
+          → 답변은 Broadcast로 수신
 ```
 
-### 3. 서버 처리 (API Route)
+### 3. 서버 처리
+
+#### 3-A. BFF (Next.js API Route) — 단순 프록시
 
 ```
 POST /api/chat/stream 수신
     │
     ├─ 1) 인증 검증 (verifySupabaseToken)
     │
-    ├─ 2) Broadcast 채널 열기
-    │     channel(`room:${roomId}`).subscribe()
-    │
-    ├─ 3) AI 서버에 SSE 요청
+    ├─ 2) AI 서버에 POST 요청 (JSON)
     │     fetch(`${AI_SERVER_URL}/chat/stream`, { body })
     │
-    ├─ 4) SSE 스트림 읽기 + Broadcast 중계
-    │     for chunk of stream:
-    │       channel.send({ type: 'broadcast', event: 'ai-chunk', payload: { text, type, ... } })
-    │       누적 텍스트/코드 저장
+    └─ 3) AI 서버 응답 그대로 반환
+          202 { message_id } → 클라이언트에 프록시
+```
+
+#### 3-B. AI 서버 (FastAPI) — Broadcast + DB 처리
+
+```
+POST /chat/stream 수신
     │
-    ├─ 5) 스트리밍 완료
-    │     channel.send({ type: 'broadcast', event: 'ai-done', payload: { messageId } })
+    ├─ 1) DB에 GENERATING 상태 메시지 INSERT
+    │     → message_id 생성
     │
-    ├─ 6) DB에 최종 메시지 INSERT
-    │     supabase.from('chat_messages').insert({
-    │       room_id, question, text, content, path,
-    │       status: 'DONE',
-    │       question_created_at, answer_created_at
-    │     })
+    ├─ 2) 202 즉시 응답 반환 { message_id }
     │
-    ├─ 7) Broadcast 채널 닫기
-    │     supabase.removeChannel(channel)
-    │
-    └─ 8) HTTP 응답 반환 { ok: true }
+    └─ 3) 백그라운드 태스크 시작
+          │
+          ├─ broadcast('start', { message_id, user_id })
+          │
+          ├─ AI 스트리밍 시작 → 청크마다:
+          │     broadcast('chunk', { type: 'chat', text })
+          │     broadcast('chunk', { type: 'code', path, content })
+          │
+          ├─ 스트리밍 완료 → DB UPDATE (status: 'DONE', text, content, path)
+          │     (재시도 3회, 지수 백오프)
+          │
+          ├─ broadcast('done', { message_id })
+          │
+          └─ 에러 시 → DB UPDATE (status: 'ERROR')
+                broadcast('error', { error })
 ```
 
 ### 4. 클라이언트 스트리밍 수신
 
 ```
-Broadcast 'ai-chunk' 수신
+Broadcast 'start' 수신
+    │
+    └─ streamingMessage에 message_id 확정
+
+Broadcast 'chunk' 수신
     │
     └─ 로컬 state 업데이트
-       switch (event.type):
-         case 'chat':  → accumulatedText += chunk.text
-         case 'code':  → generatedFiles.push(chunk)
-         case 'start': → messageId 세팅
+       switch (payload.type):
+         case 'chat':  → streamingMessage.text += chunk.text
+         case 'code':  → streamingMessage.content = chunk.content, .path = chunk.path
        → UI 실시간 렌더링
 
-Broadcast 'ai-done' 수신
+Broadcast 'done' 수신
     │
     ├─ 1) DB에서 최신 메시지 fetch (streamingMessage는 아직 화면에 유지)
     │     select * from chat_messages
@@ -163,11 +176,11 @@ interface MessageState {
   streamingMessage = { question: '...', text: '', status: 'GENERATING' }
   isLoading = true
 
-[ai-chunk 수신]
-  streamingMessage.accumulatedText += chunk.text
-  (또는 generatedFiles.push)
+[chunk 수신]
+  streamingMessage.text += chunk.text
+  (또는 streamingMessage.content = chunk.content)
 
-[ai-done 수신]
+[done 수신]
   1. DB fetch (streamingMessage 유지 중)
   2. fetch 완료 → batch update:
      messages.push(...fetched)
@@ -186,17 +199,17 @@ interface MessageState {
 ```
 유저 A 질문 전송
     │
-서버 → Broadcast 'ai-start' { userId: A }
+AI 서버 → Broadcast 'start' { message_id, user_id: A }
     │
     ├─ 유저 A: isLoading = true (본인 질문)
     └─ 유저 B: 스트리밍 관전 모드 (입력창 비활성화 가능)
 
-서버 → Broadcast 'ai-chunk' (반복)
+AI 서버 → Broadcast 'chunk' (반복)
     │
     ├─ 유저 A: streamingMessage 업데이트
     └─ 유저 B: streamingMessage 업데이트 (동일하게 표시)
 
-서버 → Broadcast 'ai-done'
+AI 서버 → Broadcast 'done'
     │
     ├─ 유저 A: streamingMessage 초기화 → DB fetch (최신 메시지) → messages에 append
     └─ 유저 B: streamingMessage 초기화 → DB fetch (최신 메시지) → messages에 append
@@ -212,7 +225,7 @@ interface MessageState {
     ├─ Broadcast 구독 시작 → 이후 chunk부터 수신
     ├─ 스트리밍 앞부분은 놓침 (부분 표시)
     │
-    └─ ai-done 수신 시:
+    └─ done 수신 시:
        DB fetch (lastMessageTimestamp 이후) → 완전한 메시지로 동기화
        → 새로고침 없이도 최종 결과 정상 표시
 ```
@@ -221,25 +234,39 @@ interface MessageState {
 
 ## Broadcast 이벤트 스펙
 
-### 서버 → 클라이언트
+채널: `room:{room_id}` — AI 서버가 Supabase Realtime REST API로 직접 발행
+
+### AI 서버 → 클라이언트
 
 | 이벤트 | payload | 설명 |
 |--------|---------|------|
-| `ai-start` | `{ messageId, userId }` | 스트리밍 시작, 다른 유저 입력 잠금용 |
-| `ai-chunk` | `{ type: 'chat'｜'code', text?, content?, path? }` | 스트리밍 chunk |
-| `ai-done` | `{ messageId }` | 스트리밍 완료, DB 저장 완료 |
-| `ai-error` | `{ error: string }` | 에러 발생 |
+| `start` | `{ message_id, user_id }` | 스트리밍 시작, 다른 유저 입력 잠금용 |
+| `chunk` | `{ type: 'chat'｜'code', text?, content?, path? }` | 스트리밍 chunk |
+| `done` | `{ message_id }` | 스트리밍 완료, DB 저장 완료 |
+| `error` | `{ error: string }` | 에러 발생 |
 
-### 이벤트 타입 (기존 SSE 이벤트와 동일)
+### Payload 타입 정의
 
 ```typescript
-// 기존 SSEEvent 타입을 Broadcast에서도 재사용
-type BroadcastEvent =
-  | { type: 'start'; message_id: string; user_id: string }
-  | { type: 'chat'; text: string }
-  | { type: 'code'; content: string; path: string }
-  | { type: 'done'; message_id: string }
-  | { type: 'error'; error: string }
+interface BroadcastStartPayload {
+  message_id: string;
+  user_id: string;
+}
+
+interface BroadcastChunkPayload {
+  type: 'chat' | 'code';
+  text?: string;      // type === 'chat'
+  content?: string;   // type === 'code'
+  path?: string;      // type === 'code'
+}
+
+interface BroadcastDonePayload {
+  message_id: string;
+}
+
+interface BroadcastErrorPayload {
+  error: string;
+}
 ```
 
 ---
@@ -352,12 +379,68 @@ const { data } = await supabase
 
 ---
 
+## Realtime Connection 제한 고려
+
+### 플랜별 Concurrent Connection 한도
+
+Supabase Realtime은 **채널 구독 단위**로 connection을 카운트한다.
+(WebSocket 연결 수가 아닌, 전체 클라이언트의 총 채널 구독 수)
+
+| 플랜 | Concurrent Connections |
+|------|----------------------|
+| Free | 200 |
+| Pro | 500 |
+| Pro (no spend cap) | 10,000 |
+| Team | 10,000 |
+| Enterprise | 10,000+ |
+
+### 현재 설계의 유저당 Connection 소비
+
+| 구독 | Connection | 비고 |
+|------|-----------|------|
+| 클라이언트 Broadcast (`room:${roomId}`) | 1 | 방 입장 시 구독, 퇴장 시 해제 |
+| AI 서버 Broadcast (REST API 방식) | 0 | HTTP 호출이므로 connection 소비 없음 |
+| **유저당 합계** | **1** | AI 서버는 REST API 호출이므로 connection 미소비 |
+
+Free 플랜 기준: 동시 접속 **약 200명** 가능
+
+### chat_messages에 Postgres Changes를 안 쓰는 이유
+
+`ai-done` 후 메시지 동기화를 Postgres Changes(Realtime DB 구독) 대신 **수동 DB fetch**로 처리한다.
+
+**Postgres Changes 방식의 문제점:**
+
+1. **타이밍 제어 불가** — DB INSERT 후 Postgres Changes 이벤트 도착까지 지연이 있을 수 있음
+2. **batch 처리 불가** — `streamingMessage → messages` 전환을 같은 tick에서 처리해야 깜빡임이 없는데, Postgres Changes는 이벤트 도착 시점을 보장 못함
+3. **Connection 추가 소비** — 별도 채널로 구독하면 유저당 +1 connection (같은 채널에 통합하면 회피 가능)
+
+**수동 fetch 방식의 장점:**
+
+1. `ai-done` 수신 → fetch → batch update를 **동기적으로 제어** 가능
+2. 추가 Realtime connection **소비 없음**
+3. 같은 messageId를 key로 사용하여 React 컴포넌트 리마운트 방지
+
+```
+// 현재 설계 (수동 fetch)
+ai-done 수신 → DB fetch → batch update (같은 tick)
+  → streamingMessage = null + messages.push(...fetched)
+  → 깜빡임 없는 전환 보장
+
+// Postgres Changes 방식 (채택하지 않음)
+ai-done 수신 → streamingMessage = null
+  ... (지연) ...
+Postgres Changes INSERT 이벤트 → messages.push(newMessage)
+  → 두 시점이 분리되어 깜빡임 발생 가능
+```
+
+---
+
 ## 에러 처리
 
 ### 서버 크래시 (스트리밍 중 서버 죽음)
 
 ```
-문제: 서버가 ai-done을 보내지 못하고 죽음
+문제: AI 서버가 done을 보내지 못하고 죽음
     → 클라이언트는 영원히 isLoading 상태
 
 해결:
@@ -393,7 +476,7 @@ const timeout = setTimeout(() => {
 
 해결:
   1. 서버에서 재시도 (최대 3회)
-  2. 실패 시 ai-error 이벤트로 클라이언트에 알림
+  2. 실패 시 error 이벤트로 클라이언트에 알림
   3. 클라이언트는 로컬 state에 이미 데이터 있으므로 표시는 유지
   4. 새로고침 시 해당 메시지 없음 (유실)
      → 중요한 경우 클라이언트 로컬 백업 고려
