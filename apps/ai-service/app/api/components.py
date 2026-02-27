@@ -842,10 +842,19 @@ Always respond in Korean.
 - **NO EMPTY STATES**: NEVER generate empty tables, lists, or selects
 
 ### Images & Icons
-- **NEVER use emoji as icons** (🔍, ⭐, 📁, 👤) — unprofessional
-- **NEVER use icon libraries** (material-icons, lucide-react) — not available
-- **NEVER use IconButton** or icon props (leftIcon, rightIcon, icon on Button/Alert/Chip)
-- **Use text-only buttons**: `<Button>검색</Button>`, `<Button>추가</Button>`
+- **⛔ ABSOLUTELY NO icon library imports** — lucide-react, material-icons, heroicons, react-icons 등 모두 설치되어 있지 않음. import 시 앱이 크래시남
+- **⛔ NEVER `import {{ ... }} from 'lucide-react'`** — THIS WILL CRASH THE APP
+- **⛔ NEVER use emoji as icons** (🔍, ⭐, 📁, 👤) — unprofessional
+- **⛔ NEVER use IconButton** or icon props (leftIcon, rightIcon, icon on Button/Alert/Chip)
+- **⛔ NEVER use inline SVG** (`<svg>`) — 코드가 불필요하게 길어짐
+- **⛔ NO ICONS AT ALL** — 이 프로젝트에는 아이콘이 없음. 아이콘 자리에는 반드시 텍스트로 대체
+- **✅ 텍스트로만 표현**:
+  - 버튼: `<Button>검색</Button>`, `<Button>추가</Button>`, `<Button>삭제</Button>`
+  - 브레드크럼 구분자: 텍스트 `>` 또는 `/` 사용
+  - 즐겨찾기: 텍스트 버튼 `<button>즐겨찾기</button>`
+  - 닫기: 텍스트 `<button>닫기</button>` 또는 `<button>×</button>`
+  - 외부링크: 텍스트만 `<Button>이미지시스템</Button>`
+  - 이미지 참조 UI에 아이콘이 보이더라도 텍스트로 대체할 것
 - **Profile images**: Initial Avatar — colored circle with first character
   - `<div className="w-10 h-10 rounded-full bg-[#0033a0] text-white flex items-center justify-center font-semibold text-sm">{{name.charAt(0)}}</div>`
   - Color by `name.charCodeAt(0) % 6` from design tokens: `['#0033a0','#8b5cf6','#ec4899','#ed6c02','#2e7d32','#0288d1']`
@@ -862,7 +871,7 @@ Always respond in Korean.
    - Unused imports = CRASH
 2. **REACT**: `React.useState`, `React.useEffect` directly (no import needed)
 3. **STYLING**: Tailwind CSS only (`className="..."`). `style={{{{}}}}` ONLY for dynamic JS variable values. No custom CSS.
-4. **NO EXTERNAL LIBS**: Don't import lucide-react, framer-motion
+4. **NO EXTERNAL LIBS**: ⛔ NEVER import lucide-react, heroicons, material-icons, react-icons, framer-motion — NOT INSTALLED, WILL CRASH. No icons — use text only.
 5. **ENUM PROPS**: Match context — NEVER use the same size/variant for every component on a page
    - 페이지 헤더 버튼: `size="md"`, 필터 조회 버튼: `size="md"`, DataGrid 내부: `size="sm"`, 폼 제출: `size="lg"`
    - Badge 상태: 성공="success", 실패="error", 대기="warning"
