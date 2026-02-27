@@ -8,6 +8,7 @@ from fastapi.responses import StreamingResponse
 
 from app.api.components import (
     generate_system_prompt,
+    get_description_system_prompt,
     get_vision_system_prompt,
 )
 from app.core.auth import verify_api_key
@@ -16,6 +17,8 @@ from app.schemas.chat import (
     ChatRequest,
     ChatResponse,
     CurrentComposition,
+    DescribeRequest,
+    DescribeResponse,
     FileContent,
     ImageContent,
     Message,
@@ -31,12 +34,14 @@ from app.services.firebase_storage import (
     fetch_design_tokens_from_storage,
     fetch_image_as_base64,
     fetch_schema_from_storage,
+    upload_description_to_storage,
 )
 from app.services.firestore import (
     FirestoreError,
     RoomNotFoundError,
     create_chat_message,
     get_chat_room,
+    get_latest_code_message,
     get_message_by_id,
     get_messages_by_room,
     get_timestamp_ms,
@@ -763,6 +768,112 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
         logger.error("Unexpected error in chat_stream", extra={"room_id": request.room_id, "error": str(e)})
         raise HTTPException(
             status_code=500, detail="An unexpected error occurred. Please try again."
+        ) from e
+
+
+# ============================================================================
+# Description Generation
+# ============================================================================
+
+
+@router.post(
+    "/describe",
+    response_model=DescribeResponse,
+    summary="화면 기술서 자동 생성",
+    description="""
+채팅방의 최신 코드를 분석하여 화면 기술서(디스크립션)를 마크다운으로 생성합니다.
+
+## 요청 예시
+```json
+{
+  "room_id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+## 응답 구조
+- `url`: 생성된 마크다운 파일의 다운로드 URL (Firebase Storage)
+- `content`: 마크다운 원본 텍스트
+""",
+    response_description="생성된 화면 기술서",
+    responses={
+        200: {"description": "성공"},
+        404: {"description": "채팅방 또는 코드를 찾을 수 없음"},
+        500: {"description": "AI API 호출 또는 업로드 실패"},
+    },
+)
+async def describe(request: DescribeRequest) -> DescribeResponse:
+    """
+    채팅방의 최신 코드를 분석하여 화면 기술서를 생성합니다.
+
+    1. 해당 방의 최신 코드 메시지를 DB에서 가져옴
+    2. 디스크립션 시스템 프롬프트 + 코드를 AI에 전달
+    3. AI 응답(마크다운)을 Firebase Storage에 업로드
+    4. 다운로드 URL과 원본 텍스트를 반환
+    """
+    try:
+        # 1. room 조회 및 검증
+        room = await get_chat_room(request.room_id)
+        if room is None:
+            raise RoomNotFoundError(f"채팅방을 찾을 수 없습니다: {request.room_id}")
+
+        # 2. 최신 코드 메시지 조회
+        code_message = await get_latest_code_message(request.room_id)
+        if code_message is None:
+            raise HTTPException(
+                status_code=404,
+                detail="해당 채팅방에 생성된 코드가 없습니다.",
+            )
+
+        code_content = code_message.get("content", "")
+        code_path = code_message.get("path", "")
+
+        # 3. AI에 디스크립션 생성 요청
+        provider = get_ai_provider()
+        system_prompt = get_description_system_prompt()
+
+        user_message = f"다음 React 코드를 분석하여 화면 기술서를 작성해주세요.\n\n파일: {code_path}\n\n```tsx\n{code_content}\n```"
+
+        messages = [
+            Message(role="system", content=system_prompt),
+            Message(role="user", content=user_message),
+        ]
+
+        response_message, _ = await provider.chat(messages)
+        description_md = response_message.content
+
+        # 4. Firebase Storage에 업로드
+        public_url, _ = await upload_description_to_storage(
+            room_id=request.room_id,
+            markdown_content=description_md,
+        )
+
+        logger.info(
+            "Description generated",
+            extra={"room_id": request.room_id, "url": public_url},
+        )
+
+        return DescribeResponse(url=public_url, content=description_md)
+
+    except HTTPException:
+        raise
+    except RoomNotFoundError as e:
+        raise HTTPException(status_code=404, detail="Chat room not found.") from e
+    except FirestoreError as e:
+        logger.error(
+            "Firestore error in describe",
+            extra={"room_id": request.room_id, "error": str(e)},
+        )
+        raise HTTPException(
+            status_code=500, detail="Database error. Please try again."
+        ) from e
+    except Exception as e:
+        logger.error(
+            "Unexpected error in describe",
+            extra={"room_id": request.room_id, "error": str(e)},
+        )
+        raise HTTPException(
+            status_code=500,
+            detail="An unexpected error occurred. Please try again.",
         ) from e
 
 

@@ -519,3 +519,26 @@ class SchemaResponse(BaseModel):
 
     schema_key: str
     data: dict[str, Any]
+
+
+class DescribeRequest(BaseModel):
+    """화면 기술서 생성 요청"""
+
+    room_id: str = Field(
+        ...,
+        description="채팅방 ID",
+        json_schema_extra={"example": "550e8400-e29b-41d4-a716-446655440000"},
+    )
+
+
+class DescribeResponse(BaseModel):
+    """화면 기술서 생성 응답"""
+
+    url: str = Field(
+        ...,
+        description="생성된 마크다운 파일의 다운로드 URL",
+    )
+    content: str = Field(
+        ...,
+        description="생성된 마크다운 원본 텍스트",
+    )

@@ -588,3 +588,29 @@ async def delete_chat_room(room_id: str) -> None:
         "Chat room deleted",
         extra={"room_id": room_id, "deleted_messages": deleted_count},
     )
+
+
+@handle_firestore_error("최신 코드 메시지 조회 실패")
+async def get_latest_code_message(room_id: str) -> MessageData | None:
+    """
+    채팅방에서 코드가 포함된 가장 최근 메시지 조회.
+
+    content와 path가 비어있지 않은 메시지 중 가장 최근 것을 반환합니다.
+
+    Args:
+        room_id: 채팅방 ID
+
+    Returns:
+        코드가 포함된 최신 메시지 또는 None
+    """
+    query = (
+        _messages_by_room_query(room_id)
+        .order_by("answer_created_at", direction="DESCENDING")
+        .limit(20)
+    )
+    docs = query.stream()
+    async for doc in docs:
+        data = doc.to_dict()
+        if data.get("content") and data.get("path"):
+            return data  # type: ignore[return-value]
+    return None

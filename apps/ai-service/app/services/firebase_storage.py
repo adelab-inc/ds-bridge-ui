@@ -606,3 +606,58 @@ def get_cached_schema_sync(schema_key: str) -> dict:
 
     content = blob.download_as_string()
     return json.loads(content.decode("utf-8"))
+
+
+# ============================================================================
+# Description Upload
+# ============================================================================
+
+DESCRIPTIONS_PATH = "descriptions"
+
+
+async def upload_description_to_storage(
+    room_id: str,
+    markdown_content: str,
+) -> tuple[str, str]:
+    """
+    Firebase Storage에 디스크립션 마크다운 파일 업로드
+
+    Args:
+        room_id: 채팅방 ID
+        markdown_content: 마크다운 텍스트
+
+    Returns:
+        (public_url, storage_path) 튜플
+    """
+    import time
+
+    init_firebase()
+
+    timestamp = int(time.time() * 1000)
+    storage_path = f"{DESCRIPTIONS_PATH}/{room_id}/{timestamp}.md"
+
+    try:
+        bucket = storage.bucket()
+        blob = bucket.blob(storage_path)
+
+        blob.upload_from_string(
+            markdown_content.encode("utf-8"),
+            content_type="text/markdown; charset=utf-8",
+        )
+
+        blob.make_public()
+        public_url = blob.public_url
+
+        logger.info(
+            "Description uploaded",
+            extra={"storage_path": storage_path, "room_id": room_id},
+        )
+
+        return public_url, storage_path
+
+    except Exception as e:
+        logger.error(
+            "Failed to upload description",
+            extra={"storage_path": storage_path, "error": str(e)},
+        )
+        raise
