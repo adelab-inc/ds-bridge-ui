@@ -243,3 +243,59 @@ supabase.auth.onAuthStateChange((event, session) => {
   // SIGNED_IN, SIGNED_OUT, TOKEN_REFRESHED, USER_UPDATED
 })
 ```
+
+---
+
+## 부록: Gmail SMTP 설정 가이드 (무료)
+
+Supabase Free Plan 내장 SMTP는 **시간당 4통**으로 제한됩니다.
+Gmail SMTP를 연결하면 **일 500통**까지 무료로 사용할 수 있고, 도메인 구매가 필요 없습니다.
+
+### 제한 비교
+
+| 서비스 | 무료 한도 | 도메인 필요 |
+|--------|----------|------------|
+| Supabase 내장 SMTP | 시간당 4통 | X |
+| **Gmail SMTP** | **500통/일** | **X** |
+| Brevo (Sendinblue) | 300통/일 | X |
+| Resend | 100통/일 | O (필수) |
+| SendGrid | 100통/일 | O (권장) |
+
+### 설정 방법
+
+#### 1단계: Google 앱 비밀번호 생성
+
+1. Google 계정 → [보안 설정](https://myaccount.google.com/security) 접속
+2. **2단계 인증** 활성화 (필수 선행 조건)
+3. [앱 비밀번호](https://myaccount.google.com/apppasswords) 페이지 접속
+4. 앱 이름 입력: `Supabase` → 생성
+5. 16자리 비밀번호 복사 (예: `abcd efgh ijkl mnop`)
+
+#### 2단계: Supabase Dashboard에서 SMTP 설정
+
+1. Supabase Dashboard → **Project Settings** → **Authentication** → **SMTP Settings**
+2. **Enable Custom SMTP** 토글 ON
+3. 아래 값 입력:
+
+| 필드 | 값 |
+|------|------|
+| Host | `smtp.gmail.com` |
+| Port | `465` |
+| Username | `yourname@gmail.com` |
+| Password | 앱 비밀번호 (공백 제거: `abcdefghijklmnop`) |
+| Sender email | `yourname@gmail.com` |
+| Sender name | `DS-Runtime Hub` |
+
+4. **Save** 클릭
+
+#### 3단계: 동작 확인
+
+- [ ] `/login`에서 Magic Link 발송 → 이메일 수신 확인
+- [ ] 발신자가 `DS-Runtime Hub <yourname@gmail.com>`으로 표시되는지 확인
+- [ ] 시간당 4통 제한 없이 연속 발송 가능한지 확인
+
+### 주의사항
+
+- Gmail 2단계 인증이 **반드시** 활성화되어 있어야 앱 비밀번호 생성 가능
+- 앱 비밀번호는 일반 Gmail 비밀번호와 다름 (별도 생성된 16자리)
+- 프로덕션 스케일 확대 시 커스텀 도메인 + Resend/SendGrid 전환 권장
