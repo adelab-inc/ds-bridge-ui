@@ -466,35 +466,38 @@ pnpm remove firebase firebase-admin --filter web
 ### Phase 2: 스트리밍 + 실시간 데이터 (상세: [chat-logic.md](chat-logic.md))
 
 #### [FE] 프론트엔드 태스크
-- [ ] [FE] `app/api/chat/stream/route.ts` 단순화 (인증 + AI 서버 트리거 + 즉시 `{ ok: true }` 응답, fire-and-forget)
-- [ ] [FE] `app/api/rooms/route.ts` 단순화 (인증 + AI 서버 프록시만, Supabase 쓰기 제거)
-- [ ] [FE] `hooks/supabase/useRoomChannel.ts` 생성 (Broadcast 채널 구독)
-- [ ] [FE] `hooks/useChatStream.ts` 수정 (POST 트리거 + Broadcast 구독으로 chunk 수신)
-- [ ] [FE] `hooks/supabase/useGetPaginatedMessages.ts` 생성 (20개/페이지 cursor 기반, 기존 pageSize 10→20 변경)
+- [x] [FE] `app/api/chat/stream/route.ts` 단순화 (인증 + AI 서버 트리거 + JSON 프록시 응답)
+- [x] [FE] `app/api/rooms/route.ts` 단순화 (인증 + AI 서버 프록시만, Supabase 쓰기 제거)
+- [x] [FE] `hooks/supabase/useRoomChannel.ts` 생성 (Broadcast 채널 구독 + 자동 재연결)
+- [x] [FE] `hooks/useChatStream.ts` 수정 (POST 트리거만, SSE 파싱 제거)
+- [x] [FE] `hooks/supabase/useGetPaginatedMessages.ts` 생성 (20개/페이지 cursor 기반)
 - [ ] [FE] `hooks/supabase/useRoomsList.ts` 생성 (DB fetch 기반)
 - [ ] [FE] `hooks/useBookmarks.ts` 수정 (Supabase DB 기반 `is_bookmarked` 컬럼 활용)
-- [ ] [FE] `components/features/chat/chat-section.tsx` import 변경
+- [x] [FE] `components/features/chat/chat-section.tsx` import 변경 + Zustand 스트리밍 스토어 적용
 - [ ] [FE] `components/features/chat/chat-message.tsx` type import 경로 변경
 - [ ] [FE] `components/features/chat/chat-message-list.tsx` import 변경
 - [ ] [FE] `components/layout/header.tsx` import 변경
-- [ ] [FE] ai-done 수신 시 DB fetch 동기화 로직 구현
+- [x] [FE] ai-done 수신 시 DB fetch 동기화 로직 구현
 - [ ] [FE] 메시지 검색 (ILIKE) + 점프 로직 구현
 - [ ] [FE] 북마크 기능 구현 (`is_bookmarked` 컬럼)
 - [ ] [FE] `SUPABASE_SERVICE_ROLE_KEY` BFF 환경변수에서 제거
+- [ ] [FE] 메시지 업데이트(스트리밍 chunk 수신) 시 채팅 스크롤 하단 자동 이동
+- [x] [FE] `types/chat.ts` Broadcast payload 타입 추가 (추가 작업)
+- [x] [FE] `stores/useStreamingStore.ts` 생성 (React state 유실 방지용 Zustand 스토어, 추가 작업)
 
 #### [BE] 백엔드 태스크 (Python FastAPI)
-- [ ] [BE] Supabase Python SDK 설치 (`supabase-py`)
-- [ ] [BE] Supabase 클라이언트 초기화 (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`)
-- [ ] [BE] Broadcast 채널 관리: room 단위 채널 open/close (`supabase.removeChannel()`)
-- [ ] [BE] 스트리밍 시 Broadcast 이벤트 전송 (`ai-start`, `ai-chunk`, `ai-done`, `ai-error`)
-- [ ] [BE] 스트리밍 완료 후 `chat_messages` INSERT (Supabase DB)
-- [ ] [BE] Room 생성 시 `chat_rooms` INSERT (Supabase DB)
-- [ ] [BE] 에러 시 `ai-error` Broadcast + DB INSERT 재시도 (최대 3회)
+- [x] [BE] Supabase Python SDK 설치 (`supabase-py`)
+- [x] [BE] Supabase 클라이언트 초기화 (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`)
+- [x] [BE] Broadcast 채널 관리: room 단위 채널 open/close (`supabase.removeChannel()`)
+- [x] [BE] 스트리밍 시 Broadcast 이벤트 전송 (`start`, `chunk`, `done`, `error`)
+- [x] [BE] 스트리밍 완료 후 `chat_messages` INSERT (Supabase DB)
+- [x] [BE] Room 생성 시 `chat_rooms` INSERT (Supabase DB)
+- [x] [BE] 에러 시 `error` Broadcast + DB INSERT 재시도 (최대 3회)
 
 #### Phase 2 검증
-- [ ] Room 생성 → AI 서버가 Supabase DB 저장 확인
-- [ ] 질문 전송 → BFF 즉시 응답 + Broadcast 스트리밍 수신 확인
-- [ ] ai-done → DB fetch 동기화 확인
+- [x] Room 생성 → AI 서버가 Supabase DB 저장 확인
+- [x] 질문 전송 → BFF 즉시 응답 + Broadcast 스트리밍 수신 확인
+- [x] ai-done → DB fetch 동기화 확인
 - [ ] 메시지 페이지네이션 (20개 단위 무한 스크롤) 확인
 - [ ] 검색 + 메시지 점프 확인
 - [ ] 북마크 토글 + 북마크 목록 + 점프 확인

@@ -28,13 +28,11 @@ function ChatMessageList({
   className,
   ...props
 }: ChatMessageListProps) {
-  const scrollRef = React.useRef<HTMLDivElement>(null);
+  const bottomRef = React.useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom when new messages arrive
+  // Auto-scroll to bottom when messages change (new message, streaming chunk)
   React.useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    bottomRef.current?.scrollIntoView({ block: 'end', behavior: 'instant' });
   }, [messages]);
 
   if (messages.length === 0) {
@@ -55,7 +53,6 @@ function ChatMessageList({
 
   return (
     <ScrollArea
-      ref={scrollRef}
       data-slot="chat-message-list"
       className={cn('flex-1 px-1', className)}
       {...props}
@@ -85,6 +82,7 @@ function ChatMessageList({
           </div>
         );
       })}
+      <div ref={bottomRef} />
     </ScrollArea>
   );
 }
