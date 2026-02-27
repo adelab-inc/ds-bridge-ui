@@ -352,6 +352,62 @@ const { data } = await supabase
 
 ---
 
+## Realtime Connection 제한 고려
+
+### 플랜별 Concurrent Connection 한도
+
+Supabase Realtime은 **채널 구독 단위**로 connection을 카운트한다.
+(WebSocket 연결 수가 아닌, 전체 클라이언트의 총 채널 구독 수)
+
+| 플랜 | Concurrent Connections |
+|------|----------------------|
+| Free | 200 |
+| Pro | 500 |
+| Pro (no spend cap) | 10,000 |
+| Team | 10,000 |
+| Enterprise | 10,000+ |
+
+### 현재 설계의 유저당 Connection 소비
+
+| 구독 | Connection | 비고 |
+|------|-----------|------|
+| 클라이언트 Broadcast (`room:${roomId}`) | 1 | 방 입장 시 구독, 퇴장 시 해제 |
+| 서버 Broadcast (AI 스트리밍 중계) | 1 (임시) | 스트리밍 완료 후 즉시 해제 |
+| **유저당 합계** | **~1** | 서버 connection은 스트리밍 중에만 존재 |
+
+Free 플랜 기준: 동시 접속 **약 200명** 가능 (서버 임시 connection 감안 시 ~150명)
+
+### chat_messages에 Postgres Changes를 안 쓰는 이유
+
+`ai-done` 후 메시지 동기화를 Postgres Changes(Realtime DB 구독) 대신 **수동 DB fetch**로 처리한다.
+
+**Postgres Changes 방식의 문제점:**
+
+1. **타이밍 제어 불가** — DB INSERT 후 Postgres Changes 이벤트 도착까지 지연이 있을 수 있음
+2. **batch 처리 불가** — `streamingMessage → messages` 전환을 같은 tick에서 처리해야 깜빡임이 없는데, Postgres Changes는 이벤트 도착 시점을 보장 못함
+3. **Connection 추가 소비** — 별도 채널로 구독하면 유저당 +1 connection (같은 채널에 통합하면 회피 가능)
+
+**수동 fetch 방식의 장점:**
+
+1. `ai-done` 수신 → fetch → batch update를 **동기적으로 제어** 가능
+2. 추가 Realtime connection **소비 없음**
+3. 같은 messageId를 key로 사용하여 React 컴포넌트 리마운트 방지
+
+```
+// 현재 설계 (수동 fetch)
+ai-done 수신 → DB fetch → batch update (같은 tick)
+  → streamingMessage = null + messages.push(...fetched)
+  → 깜빡임 없는 전환 보장
+
+// Postgres Changes 방식 (채택하지 않음)
+ai-done 수신 → streamingMessage = null
+  ... (지연) ...
+Postgres Changes INSERT 이벤트 → messages.push(newMessage)
+  → 두 시점이 분리되어 깜빡임 발생 가능
+```
+
+---
+
 ## 에러 처리
 
 ### 서버 크래시 (스트리밍 중 서버 죽음)
