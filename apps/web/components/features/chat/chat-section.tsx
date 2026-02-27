@@ -18,6 +18,7 @@ import { useImageUpload } from '@/hooks/useImageUpload';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import type { CodeEvent } from '@/types/chat';
 import { useGetPaginatedFbMessages } from '@/hooks/firebase/useGetPaginatedFbMessages';
+import { useDeleteMessage } from '@/hooks/api/useDeleteMessage';
 import type { ChatMessage } from '@/hooks/firebase/messageUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -69,19 +70,30 @@ function ChatSection({
   });
 
   const searchParams = useSearchParams();
+  const deleteMessageMutation = useDeleteMessage();
 
   const [messages, setMessages] = React.useState<ChatMessage[]>([]);
+  const [deleteMessageDialog, setDeleteMessageDialog] = React.useState<{
+    open: boolean;
+    message: ChatMessage | null;
+  }>({ open: false, message: null });
   const currentMessageIdRef = React.useRef<string | null>(null);
 
-  // URL의 mid 쿼리 파라미터에서 선택된 메시지 ID 읽기
-  const selectedMessageId = searchParams.get('mid');
+  // 선택된 메시지 ID — useState로 즉시 UI 반영, URL은 부가 동기화
+  const [selectedMessageId, setSelectedMessageId] = React.useState<
+    string | null
+  >(() => searchParams.get('mid'));
 
-  // URL의 mid 파라미터 업데이트
-  // window.history.replaceState 사용 — router.replace와 달리
-  // 서버측 RSC fetch를 트리거하지 않아 Production CDN 지연/간섭 방지
-  // Next.js가 replaceState를 패치하여 useSearchParams() 동기화 유지
+  // 외부 URL 변경 시 로컬 상태 동기화 (룸 전환 등)
+  const urlMid = searchParams.get('mid');
+  React.useEffect(() => {
+    setSelectedMessageId(urlMid);
+  }, [urlMid]);
+
+  // URL의 mid 파라미터 업데이트 + 로컬 상태 즉시 반영
   const updateSelectedMessageId = React.useCallback(
     (messageId: string | null) => {
+      setSelectedMessageId(messageId);
       const url = new URL(window.location.href);
       if (messageId) {
         url.searchParams.set('mid', messageId);
@@ -319,6 +331,37 @@ function ChatSection({
   }>({ open: false, message: null });
   const [bookmarkLabel, setBookmarkLabel] = React.useState('');
 
+  // 메시지 삭제 아이콘 클릭
+  const handleDeleteIconClick = React.useCallback((message: ChatMessage) => {
+    setDeleteMessageDialog({ open: true, message });
+  }, []);
+
+  // 메시지 삭제 확인
+  const handleDeleteMessageConfirm = React.useCallback(() => {
+    if (!deleteMessageDialog.message) return;
+    const messageToDelete = deleteMessageDialog.message;
+    deleteMessageMutation.mutate(
+      { roomId, messageId: messageToDelete.id },
+      {
+        onSuccess: () => {
+          setDeleteMessageDialog({ open: false, message: null });
+          setMessages((prev) =>
+            prev.filter((msg) => msg.id !== messageToDelete.id)
+          );
+          if (selectedMessageId === messageToDelete.id) {
+            updateSelectedMessageId(null);
+          }
+        },
+      }
+    );
+  }, [
+    deleteMessageDialog.message,
+    deleteMessageMutation,
+    roomId,
+    selectedMessageId,
+    updateSelectedMessageId,
+  ]);
+
   // 북마크 아이콘 클릭: 미등록 → 다이얼로그 열기, 등록됨 → 삭제
   const handleBookmarkIconClick = React.useCallback(
     (message: ChatMessage) => {
@@ -464,6 +507,7 @@ function ChatSection({
           bookmarkedMessageIds={bookmarkedMessageIds}
           onMessageClick={handleMessageClick}
           onBookmarkClick={handleBookmarkIconClick}
+          onDeleteClick={handleDeleteIconClick}
           className="min-h-0 flex-1 overflow-y-auto"
         />
 
@@ -514,6 +558,32 @@ function ChatSection({
               disabled={!bookmarkLabel.trim()}
             >
               추가
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* 메시지 삭제 확인 다이얼로그 */}
+      <AlertDialog
+        open={deleteMessageDialog.open}
+        onOpenChange={(open) => {
+          if (!open) setDeleteMessageDialog({ open: false, message: null });
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>메시지 삭제</AlertDialogTitle>
+            <AlertDialogDescription>
+              이 메시지를 삭제하시겠습니까? 삭제된 메시지는 복구할 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteMessageConfirm}
+              disabled={deleteMessageMutation.isPending}
+            >
+              삭제
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
