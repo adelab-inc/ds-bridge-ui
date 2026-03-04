@@ -33,7 +33,7 @@ Serena MCP 플러그인이 활성화되어 있는 경우, 코드베이스 탐색
 | Hugeicons              | 1.1.4   | 아이콘 라이브러리               |
 | react-resizable-panels | 4.3.0   | 리사이즈 패널 레이아웃          |
 | TanStack Query         | 5.90.16 | 서버 상태 관리, 데이터 fetching |
-| Firebase               | 12.7.0  | Auth, Firestore, Storage        |
+| Supabase               | @supabase/ssr 0.8.0 | Auth, DB, Realtime          |
 
 ## 중요: 공식 문서 확인 필수
 
@@ -141,15 +141,26 @@ apps/web/
 │       └── chat/           # 채팅 기능
 │
 ├── hooks/                  # 커스텀 훅
-│   └── firebase/           # Firebase 관련 훅
-│       ├── messageUtils.ts # 메시지 타입 & 유틸
-│       ├── useGetPaginatedFbMessages.ts # 페이지네이션
-│       └── useRealtimeMessages.ts # 실시간 구독
+│   ├── api/                # API 연동 훅
+│   │   ├── useCreateRoom.ts # 채팅방 생성
+│   │   ├── useRoomQuery.ts  # 채팅방 조회
+│   │   └── useChatQuery.ts  # 채팅 쿼리
+│   └── supabase/           # Supabase 관련 훅
+│       ├── useRoomsList.ts  # 채팅방 목록 조회
+│       ├── useRoomChannel.ts # Broadcast 채널
+│       └── useGetPaginatedMessages.ts # 페이지네이션
 │
 ├── lib/
 │   ├── utils.ts            # cn() 유틸리티
 │   ├── constants.ts        # 상수 정의
-│   └── firebase.ts         # Firebase 초기화
+│   ├── auth/               # 인증 관련
+│   │   ├── actions.ts      # signIn, signOut, getIdToken
+│   │   ├── config.ts       # PUBLIC_ROUTES, EMAIL_STORAGE_KEY
+│   │   └── verify-token.ts # JWT 검증 (service_role)
+│   └── supabase/           # Supabase 클라이언트
+│       ├── client.ts       # Browser client
+│       ├── server.ts       # Server client
+│       └── middleware.ts   # 세션 갱신
 │
 └── package.json            # @ds-hub/web
 ```
@@ -291,120 +302,115 @@ pnpm typecheck
 
 사용: `import { Button } from "@/components/ui/button"`
 
-## Firebase 연동
+## Supabase 연동
 
 ### Quick Reference
 
-| 항목      | 값                                            |
-| --------- | --------------------------------------------- |
-| SDK       | firebase 12.7.0                               |
-| 초기화    | `lib/firebase.ts`                             |
-| 훅 위치   | `hooks/firebase/`                             |
-| 타입 소스 | `@packages/shared-types/typescript/firebase/` |
-| 컬렉션    | `chat_messages`, `chat_rooms`                 |
+| 항목      | 값                                              |
+| --------- | ----------------------------------------------- |
+| SDK       | @supabase/ssr 0.8.0, @supabase/supabase-js 2.97.0 |
+| 클라이언트 | `lib/supabase/client.ts` (Browser), `lib/supabase/server.ts` (Server) |
+| 인증      | `lib/auth/actions.ts` (Magic Link + Google OAuth) |
+| 훅 위치   | `hooks/supabase/`                               |
+| 타입 소스 | `@packages/shared-types/typescript/database/`   |
+| 테이블    | `chat_rooms`, `chat_messages`                   |
 
-### 서비스 인스턴스
+### 아키텍처
 
-```typescript
-// lib/firebase.ts에서 export됨
-import { firebaseFirestore } from '@/lib/firebase';
-
-// Firestore 사용 (주로 사용)
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+```
+Browser → BFF (Next.js API Routes, Supabase Auth 검증) → ai-service (X-API-Key + X-User-Id)
+                                                        → Supabase DB (service_role)
 ```
 
-### 컬렉션 & 타입
+### 인증 플로우
 
 ```typescript
-// 컬렉션 이름은 반드시 상수 사용
-import { COLLECTIONS } from '@packages/shared-types/typescript/firebase/collections';
-import type { ChatMessage } from '@packages/shared-types/typescript/firebase/types';
+// Magic Link 로그인
+import { sendSignInLink } from '@/lib/auth/actions';
+await sendSignInLink(email); // OTP magic link 발송
 
-// 또는 훅에서 re-export된 것 사용
-import {
-  MESSAGES_COLLECTION,
-  type ChatMessage,
-} from '@/hooks/firebase/messageUtils';
+// Google OAuth 로그인
+import { signInWithGoogle } from '@/lib/auth/actions';
+await signInWithGoogle(); // Google 동의 화면으로 리다이렉트
 
-const messagesRef = collection(db, COLLECTIONS.CHAT_MESSAGES); // 'chat_messages'
+// 토큰 가져오기 (API 호출용)
+import { getIdToken } from '@/lib/auth/actions';
+const token = await getIdToken(); // access_token 반환
+
+// API Route에서 토큰 검증
+import { verifySupabaseToken } from '@/lib/auth/verify-token';
+const decoded = await verifySupabaseToken(req.headers.get('authorization'));
+// → { uid: string, email?: string } | null
 ```
 
-**ChatMessage 타입**:
+### 데이터 타입
 
 ```typescript
+import type { ChatRoom, ChatMessage } from '@packages/shared-types/typescript/database/types';
+
+interface ChatRoom {
+  id: string;           // UUID
+  storybook_url: string;
+  user_id: string;
+  created_at: number;   // ms timestamp
+}
+
 interface ChatMessage {
   id: string;
   room_id: string;
-  question: string; // 사용자 질문
-  text: string; // AI 텍스트 응답
-  content: string; // React 코드
-  path: string; // 파일 경로
-  question_created_at: number; // ms timestamp
+  question: string;
+  text: string;
+  content: string;
+  path: string;
+  question_created_at: number;
   answer_created_at: number;
   status: 'GENERATING' | 'DONE' | 'ERROR';
 }
 ```
 
-### Firebase 훅
+### Supabase 훅
 
-#### useRealtimeMessages - 실시간 구독
-
-```typescript
-import { useRealtimeMessages } from '@/hooks/firebase/useRealtimeMessages';
-
-const { messages, isLoading, error } = useRealtimeMessages({
-  sessionId: roomId, // 필수
-  pageSize: 50, // 선택
-  callbacks: {
-    // 선택
-    onAdded: (msg) => playSound(),
-    onInitial: (msgs) => console.log('loaded', msgs.length),
-  },
-});
-```
-
-- `onSnapshot` 사용 → 자동 실시간 동기화
-- 언마운트 시 자동 구독 해제
-- `question_created_at` 기준 내림차순 정렬
-
-#### useGetPaginatedFbMessages - 무한 스크롤
+#### useRoomsList - 채팅방 목록
 
 ```typescript
-import { useGetPaginatedFbMessages } from '@/hooks/firebase/useGetPaginatedFbMessages';
-
-const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
-  useGetPaginatedFbMessages({
-    roomId,
-    pageSize: 20,
-    infiniteQueryOptions: { enabled: !!roomId },
-  });
-
-const allMessages = data?.pages.flat() ?? [];
+import { useRoomsList } from '@/hooks/supabase/useRoomsList';
+const { rooms, isLoading, error } = useRoomsList();
 ```
 
-- TanStack Query `useInfiniteQuery` 기반
-- timestamp 기준 역순 페이지네이션
-- 5분 staleTime 캐싱
+- TanStack Query 기반, `user_id` 필터 + `created_at DESC` 정렬
+- 채팅방 생성 시 자동 캐시 무효화
+
+#### useGetPaginatedMessages - 메시지 페이지네이션
+
+```typescript
+import { useGetPaginatedMessages } from '@/hooks/supabase/useGetPaginatedMessages';
+```
+
+- cursor 기반 페이지네이션
+
+#### useRoomChannel - Broadcast 채널
+
+```typescript
+import { useRoomChannel } from '@/hooks/supabase/useRoomChannel';
+```
+
+- Supabase Realtime Broadcast 기반 실시간 스트리밍
 
 ### 환경 변수
 
 ```bash
 # .env.local (필수)
-NEXT_PUBLIC_FIREBASE_API_KEY=
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
-NEXT_PUBLIC_FIREBASE_APP_ID=
-NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_your-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key  # server-only
 ```
 
 ### 규칙
 
-1. **컬렉션 이름**: `COLLECTIONS` 상수 필수 (하드코딩 금지)
-2. **타입**: `@packages/shared-types` 타입 사용
-3. **쿼리**: `room_id` 필터 + `question_created_at` 정렬
-4. **인덱스**: 복합 쿼리 시 Firestore 인덱스 생성 필요
+1. **타입**: `@packages/shared-types/typescript/database/types` 사용
+2. **쿼리**: `user_id` 필터 필수 (유저 격리)
+3. **인증**: API Route에서 `verifySupabaseToken` 사용 필수
+4. **미들웨어**: `getUser()` 사용 권장 (`getSession` 아닌)
 
 ## Vercel 배포 (모노레포)
 
@@ -424,13 +430,11 @@ NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=
    Vercel 대시보드 → Settings → Environment Variables에 추가:
 
    ```
-   NEXT_PUBLIC_FIREBASE_API_KEY
-   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-   NEXT_PUBLIC_FIREBASE_PROJECT_ID
-   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-   NEXT_PUBLIC_FIREBASE_APP_ID
-   NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+   NEXT_PUBLIC_SUPABASE_URL
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+   SUPABASE_SERVICE_ROLE_KEY
+   AI_SERVER_URL
+   X_API_KEY
    ```
 
 4. **배포**
@@ -459,11 +463,9 @@ NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=
 
 ## 현재 상태
 
-**Phase 1 완료** - UI 레이아웃 및 기본 컴포넌트 구현 완료
+**Phase 1 완료** - UI 레이아웃, 기본 컴포넌트, Supabase Auth 마이그레이션 완료
 
-### 다음 구현 예정
-
-1. Zustand 상태 관리 스토어
-2. API 라우트 (BFF 패턴)
-3. Storybook Parser 로직
-4. AI Chat 연동
+- Supabase Auth (Magic Link + Google OAuth)
+- Zustand 상태 관리 스토어
+- API 라우트 (BFF 패턴, Supabase JWT 검증)
+- Supabase Realtime Broadcast 기반 채팅 스트리밍

@@ -1,5 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
+// 모듈 레벨 싱글턴: 매 요청마다 클라이언트를 생성하지 않음
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
 /**
  * Authorization 헤더에서 Supabase JWT를 검증
  * 성공 시 { uid, email } 반환, 실패 시 null
@@ -14,16 +20,10 @@ export async function verifySupabaseToken(
   const token = authHeader.slice(7);
 
   try {
-    // service_role key로 관리자 클라이언트 생성하여 토큰 검증
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-
     const {
       data: { user },
       error,
-    } = await supabase.auth.getUser(token);
+    } = await supabaseAdmin.auth.getUser(token);
 
     if (error || !user) return null;
 

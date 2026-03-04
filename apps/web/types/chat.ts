@@ -47,7 +47,7 @@ export type SSEEvent =
 
 /** 이미지 업로드 API 응답 (백엔드 POST /rooms/{room_id}/images) */
 export interface ImageUploadResponse {
-  url: string; // Firebase Storage public URL
+  url: string; // Supabase Storage public URL
   path: string; // Storage path
 }
 

@@ -52,8 +52,9 @@ export function useCreateRoom(mutationOptions?: UseCreateRoomOptions) {
       return response.json();
     },
     onSuccess: (data) => {
-      // 생성된 룸을 캐시에 추가
+      // 생성된 룸을 캐시에 추가 + 목록 갱신
       queryClient.setQueryData(roomKeys.detail(data.id), data);
+      queryClient.invalidateQueries({ queryKey: roomKeys.all });
     },
     ...mutationOptions,
   });
