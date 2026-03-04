@@ -5,7 +5,7 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChatMessage } from './chat-message';
-import { ChatMessage as ChatMessageType } from '@/hooks/firebase/messageUtils';
+import type { ChatMessage as ChatMessageType } from '@packages/shared-types/typescript/database/types';
 
 interface ChatMessageListProps extends React.ComponentProps<'div'> {
   messages?: ChatMessageType[];
