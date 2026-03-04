@@ -33,6 +33,20 @@ export function getStoredEmail(): string | null {
   return window.localStorage.getItem(EMAIL_STORAGE_KEY);
 }
 
+/** Google OAuth 로그인 */
+export async function signInWithGoogle(): Promise<void> {
+  const supabase = createClient();
+
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: `${window.location.origin}/auth/callback`,
+    },
+  });
+
+  if (error) throw error;
+}
+
 /** 로그아웃 */
 export async function signOut(): Promise<void> {
   const supabase = createClient();
