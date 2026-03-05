@@ -265,9 +265,11 @@ function ChatSection({
     return data.pages.flat();
   }, [data]);
 
-  // 표시할 메시지 목록 (Firebase 메시지 + 로컬 메시지)
+  // 표시할 메시지 목록 (Firebase 메시지 + 로컬 메시지, ID 기준 중복 제거)
   const displayMessages = React.useMemo(() => {
-    return [...firebaseMessages, ...messages];
+    const firebaseIds = new Set(firebaseMessages.map((msg) => msg.id));
+    const uniqueLocalMessages = messages.filter((msg) => !firebaseIds.has(msg.id));
+    return [...firebaseMessages, ...uniqueLocalMessages];
   }, [firebaseMessages, messages]);
 
   // Firebase 메시지 로드 시 초기 메시지 선택 처리
