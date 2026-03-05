@@ -265,9 +265,11 @@ function ChatSection({
     return data.pages.flat();
   }, [data]);
 
-  // 표시할 메시지 목록 (Firebase 메시지 + 로컬 메시지)
+  // 표시할 메시지 목록 (Firebase 메시지 + 로컬 메시지, ID 기준 중복 제거)
   const displayMessages = React.useMemo(() => {
-    return [...firebaseMessages, ...messages];
+    const firebaseIds = new Set(firebaseMessages.map((msg) => msg.id));
+    const uniqueLocalMessages = messages.filter((msg) => !firebaseIds.has(msg.id));
+    return [...firebaseMessages, ...uniqueLocalMessages];
   }, [firebaseMessages, messages]);
 
   // Firebase 메시지 로드 시 초기 메시지 선택 처리
@@ -349,7 +351,23 @@ function ChatSection({
             prev.filter((msg) => msg.id !== messageToDelete.id)
           );
           if (selectedMessageId === messageToDelete.id) {
-            updateSelectedMessageId(null);
+            // 남은 메시지 중 마지막 content 있는 메시지 자동 선택
+            const remaining = displayMessages.filter(
+              (msg) => msg.id !== messageToDelete.id
+            );
+            const lastWithContent = [...remaining]
+              .reverse()
+              .find((msg) => msg.content && msg.content.trim());
+            if (lastWithContent) {
+              updateSelectedMessageId(lastWithContent.id);
+              onCodeGenerated?.({
+                type: 'code',
+                content: lastWithContent.content,
+                path: lastWithContent.path,
+              });
+            } else {
+              updateSelectedMessageId(null);
+            }
           }
         },
       }
@@ -360,6 +378,8 @@ function ChatSection({
     roomId,
     selectedMessageId,
     updateSelectedMessageId,
+    displayMessages,
+    onCodeGenerated,
   ]);
 
   // 북마크 아이콘 클릭: 미등록 → 다이얼로그 열기, 등록됨 → 삭제
