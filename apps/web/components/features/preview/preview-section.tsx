@@ -2,23 +2,10 @@
 
 import * as React from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import {
-  PlayIcon,
-  LayoutIcon,
-  SparklesIcon,
-  Copy01Icon,
-  Tick02Icon,
-} from '@hugeicons/core-free-icons';
+import { PlayIcon, LayoutIcon, SparklesIcon } from '@hugeicons/core-free-icons';
 
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { StorybookIframe } from './storybook-iframe';
 import {
   CompositionPreview,
@@ -57,7 +44,6 @@ function PreviewSection({
 
   // Controlled tabs state
   const [activeTab, setActiveTab] = React.useState<string>(effectiveDefaultTab);
-  const [copied, setCopied] = React.useState(false);
   const [viewMode, setViewMode] = React.useState<PreviewViewMode>('viewport');
 
   // aiCode 변경 시 탭 자동 전환
@@ -66,17 +52,6 @@ function PreviewSection({
       setActiveTab('ai-generated');
     }
   }, [aiCode, isGeneratingCode]);
-
-  // 현재 URL 복사 핸들러
-  const handleCopy = React.useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy:', err);
-    }
-  }, []);
 
   return (
     <section
@@ -175,38 +150,8 @@ function PreviewSection({
           </div>
         </div>
 
-        {/* Tabs Content with Copy Button */}
+        {/* Tabs Content */}
         <div className="relative flex-1 overflow-hidden">
-          {/* Copy button - AI Generated 탭 활성화 시에만 표시 */}
-          {aiCode && activeTab === 'ai-generated' && (
-            <div className="absolute left-3 top-10 z-10">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon-lg"
-                      onClick={handleCopy}
-                      className={cn(
-                        'bg-background/80 backdrop-blur-sm hover:bg-background',
-                        copied && 'border-green-600 text-green-600'
-                      )}
-                    >
-                      <HugeiconsIcon
-                        icon={copied ? Tick02Icon : Copy01Icon}
-                        className="size-3.5"
-                        strokeWidth={2}
-                      />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">
-                    <p>{copied ? '복사됨!' : 'URL 복사'}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-          )}
-
           {/* Tab Contents */}
           {(aiCode || isGeneratingCode) && (
             <TabsContent

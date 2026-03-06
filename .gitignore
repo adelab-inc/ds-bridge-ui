@@ -139,3 +139,6 @@ apps/web/public/figma-nodes/*.clean.json
 
 # data
 apps/ai-service/data
+
+# Storybook standalone build output
+storybook-standalone/apps/web/

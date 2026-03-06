@@ -17,6 +17,8 @@ interface ChatMessageListProps extends React.ComponentProps<'div'> {
   onMessageClick?: (message: ChatMessageType) => void;
   /** 북마크 아이콘 클릭 핸들러 */
   onBookmarkClick?: (message: ChatMessageType) => void;
+  /** 삭제 아이콘 클릭 핸들러 */
+  onDeleteClick?: (message: ChatMessageType) => void;
 }
 
 function ChatMessageList({
@@ -25,6 +27,7 @@ function ChatMessageList({
   bookmarkedMessageIds,
   onMessageClick,
   onBookmarkClick,
+  onDeleteClick,
   className,
   ...props
 }: ChatMessageListProps) {
@@ -81,6 +84,7 @@ function ChatMessageList({
               onBookmarkClick={
                 hasContent ? () => onBookmarkClick?.(message) : undefined
               }
+              onDeleteClick={() => onDeleteClick?.(message)}
             />
           </div>
         );

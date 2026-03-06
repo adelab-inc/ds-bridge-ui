@@ -4,25 +4,29 @@ import * as React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
-  Link02Icon,
-  Upload01Icon,
+  // Link02Icon,
   MoreVerticalIcon,
-  ArrowRight01Icon,
+  // ArrowRight01Icon,
   Add01Icon,
   FolderLibraryIcon,
+  Delete02Icon,
+  Copy01Icon,
+  Tick01Icon,
+  PencilEdit02Icon,
 } from '@hugeicons/core-free-icons';
 
 import { cn } from '@/lib/utils';
 import { HeaderLogo } from '@/components/layout/header-logo';
 import { ClientOnly } from '@/components/ui/client-only';
 import { Button } from '@/components/ui/button';
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupInput,
-  InputGroupText,
-} from '@/components/ui/input-group';
+import { Input } from '@/components/ui/input';
+// import {
+//   InputGroup,
+//   InputGroupAddon,
+//   InputGroupButton,
+//   InputGroupInput,
+//   InputGroupText,
+// } from '@/components/ui/input-group';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -52,6 +56,8 @@ import {
 import { UserMenu } from '@/components/features/auth/user-menu';
 import { useRoomsList } from '@/hooks/firebase/useRoomsList';
 import { useCreateRoom } from '@/hooks/api/useCreateRoom';
+import { useDeleteRoom } from '@/hooks/api/useDeleteRoom';
+import { useUpdateRoom } from '@/hooks/api/useUpdateRoom';
 import { useAuthStore } from '@/stores/useAuthStore';
 
 /**
@@ -61,9 +67,9 @@ import { useAuthStore } from '@/stores/useAuthStore';
 function HeaderControlsSkeleton() {
   return (
     <>
-      {/* Input placeholder */}
-      <div className="flex max-w-xl flex-1 items-center gap-2">
-        <div className="border-input bg-background h-9 w-full rounded-md border" />
+      {/* Project name placeholder */}
+      <div className="flex min-w-0 flex-1 items-center">
+        <div className="bg-muted h-5 w-32 rounded" />
       </div>
       {/* Button placeholders */}
       <div className="flex shrink-0 items-center gap-1">
@@ -87,50 +93,96 @@ function Header({
   isLoading = false,
   ...props
 }: HeaderProps) {
-  const [url, setUrl] = React.useState('');
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  // const [url, setUrl] = React.useState('');
+  const [urlCopied, setUrlCopied] = React.useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const { rooms, isLoading: isRoomsLoading } = useRoomsList();
   const createRoomMutation = useCreateRoom();
+  const deleteRoomMutation = useDeleteRoom();
+  const updateRoomMutation = useUpdateRoom();
   const authUser = useAuthStore((s) => s.user);
 
   const currentRoomId = searchParams.get('crid');
+  const currentRoom = rooms.find((r) => r.id === currentRoomId);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (url.trim() && onURLSubmit) {
-      onURLSubmit(url.trim());
+  const [createDialog, setCreateDialog] = React.useState(false);
+  const [deleteDialog, setDeleteDialog] = React.useState<{
+    open: boolean;
+    roomId: string | null;
+  }>({ open: false, roomId: null });
+  const [editDialog, setEditDialog] = React.useState<{
+    open: boolean;
+    roomId: string | null;
+    storybookUrl: string;
+  }>({ open: false, roomId: null, storybookUrl: '' });
+
+  // const handleSubmit = (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   if (url.trim() && onURLSubmit) {
+  //     onURLSubmit(url.trim());
+  //   }
+  // };
+
+  const handleCopyUrl = React.useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setUrlCopied(true);
+      setTimeout(() => setUrlCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy URL:', err);
     }
-  };
+  }, []);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && onJSONUpload) {
-      onJSONUpload(file);
-    }
-    // Reset input
-    e.target.value = '';
-  };
-
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleCreateRoom = () => {
-    createRoomMutation.mutate(
-      {
+  const handleCreateRoom = async () => {
+    try {
+      const newRoom = await createRoomMutation.mutateAsync({
         storybook_url: 'https://storybook.example.com',
         user_id: authUser?.uid || 'anonymous',
-      },
-      {
-        onSuccess: (newRoom) => {
-          const params = new URLSearchParams(searchParams.toString());
-          params.set('crid', newRoom.id);
-          router.push(`?${params.toString()}`);
-        },
+      });
+      setCreateDialog(false);
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete('mid');
+      params.set('crid', newRoom.id);
+      router.push(`?${params.toString()}`);
+    } catch (error) {
+      console.error('Failed to create room:', error);
+    }
+  };
+
+  const handleDeleteRoom = async () => {
+    const roomIdToDelete = deleteDialog.roomId;
+    if (!roomIdToDelete) return;
+    try {
+      await deleteRoomMutation.mutateAsync(roomIdToDelete);
+      setDeleteDialog({ open: false, roomId: null });
+      if (roomIdToDelete === currentRoomId) {
+        // 현재 룸이 삭제되면 새 룸 생성
+        const newRoom = await createRoomMutation.mutateAsync({
+          storybook_url: 'https://storybook.example.com',
+          user_id: authUser?.uid || 'anonymous',
+        });
+        const params = new URLSearchParams(searchParams.toString());
+        params.delete('mid');
+        params.set('crid', newRoom.id);
+        router.push(`?${params.toString()}`);
       }
-    );
+    } catch (error) {
+      console.error('Failed to delete room:', error);
+    }
+  };
+
+  const handleEditRoom = async () => {
+    if (!editDialog.roomId || !editDialog.storybookUrl.trim()) return;
+    try {
+      await updateRoomMutation.mutateAsync({
+        roomId: editDialog.roomId,
+        storybook_url: editDialog.storybookUrl.trim(),
+      });
+      setEditDialog({ open: false, roomId: null, storybookUrl: '' });
+    } catch (error) {
+      console.error('Failed to update room:', error);
+    }
   };
 
   const handleSelectRoom = (roomId: string) => {
@@ -164,7 +216,22 @@ function Header({
       {/* Base UI 사용 영역 - ClientOnly로 래핑하여 hydration 이슈 방지 */}
       <ClientOnly fallback={<HeaderControlsSkeleton />}>
         <TooltipProvider>
-          {/* URL Input Form */}
+          {/* 프로젝트 이름 */}
+          <div className="border-border mx-1 h-5 w-px shrink-0 bg-current opacity-20" />
+          <div className="flex min-w-0 flex-1 items-center">
+            <span className="text-foreground truncate text-sm font-semibold">
+              {(() => {
+                if (!currentRoom?.storybook_url) return '새 프로젝트';
+                try {
+                  return new URL(currentRoom.storybook_url).hostname;
+                } catch {
+                  return currentRoom.storybook_url;
+                }
+              })()}
+            </span>
+          </div>
+
+          {/* URL Input Form - 추후 작업 예정
           <form
             onSubmit={handleSubmit}
             className="flex flex-1 items-center gap-2"
@@ -195,31 +262,23 @@ function Header({
               </InputGroupAddon>
             </InputGroup>
           </form>
+          */}
 
           {/* Actions */}
           <div className="flex shrink-0 items-center gap-1">
-            {/* Upload JSON Button */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".json"
-              onChange={handleFileChange}
-              className="hidden"
-            />
+            {/* URL 복사 버튼 */}
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handleUploadClick}
-                  disabled={isLoading}
-                >
-                  <HugeiconsIcon icon={Upload01Icon} strokeWidth={2} />
-                  <span className="sr-only">JSON 업로드</span>
+                <Button variant="outline" size="icon" onClick={handleCopyUrl}>
+                  <HugeiconsIcon
+                    icon={urlCopied ? Tick01Icon : Copy01Icon}
+                    strokeWidth={2}
+                  />
+                  <span className="sr-only">URL 복사</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>ds.json 파일 업로드</p>
+                <p>{urlCopied ? '복사됨!' : 'URL 복사'}</p>
               </TooltipContent>
             </Tooltip>
 
@@ -257,49 +316,86 @@ function Header({
                       key={room.id}
                       onClick={() => handleSelectRoom(room.id)}
                       className={cn(
-                        'flex flex-col items-start gap-0.5',
+                        'flex items-center gap-2',
                         room.id === currentRoomId && 'bg-accent'
                       )}
                     >
-                      <span className="truncate text-sm font-medium">
-                        {(() => {
-                          try {
-                            return room.storybook_url
-                              ? new URL(room.storybook_url).hostname
-                              : '새 프로젝트';
-                          } catch {
-                            return room.storybook_url || '새 프로젝트';
-                          }
-                        })()}
-                      </span>
-                      <span className="text-muted-foreground text-xs">
-                        {formatDate(room.created_at)}
-                      </span>
+                      <div className="min-w-0 flex-1 flex flex-col gap-0.5">
+                        <span className="truncate text-sm font-medium">
+                          {(() => {
+                            try {
+                              return room.storybook_url
+                                ? new URL(room.storybook_url).hostname
+                                : '새 프로젝트';
+                            } catch {
+                              return room.storybook_url || '새 프로젝트';
+                            }
+                          })()}
+                        </span>
+                        <span className="text-muted-foreground text-xs">
+                          {formatDate(room.created_at)}
+                        </span>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-0.5">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditDialog({
+                              open: true,
+                              roomId: room.id,
+                              storybookUrl: room.storybook_url || '',
+                            });
+                          }}
+                          className="text-muted-foreground hover:text-foreground shrink-0 rounded-full p-0.5 transition-colors"
+                          aria-label="프로젝트 수정"
+                        >
+                          <HugeiconsIcon
+                            icon={PencilEdit02Icon}
+                            className="size-3.5"
+                            strokeWidth={2}
+                          />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteDialog({ open: true, roomId: room.id });
+                          }}
+                          className="text-muted-foreground hover:text-destructive shrink-0 rounded-full p-0.5 transition-colors"
+                          aria-label="프로젝트 삭제"
+                        >
+                          <HugeiconsIcon
+                            icon={Delete02Icon}
+                            className="size-3.5"
+                            strokeWidth={2}
+                          />
+                        </button>
+                      </div>
                     </DropdownMenuItem>
                   ))
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* New Project Button with Confirm Dialog */}
-            <AlertDialog>
-              <AlertDialogTrigger
-                render={
-                  <Button
-                    variant="default"
-                    size="sm"
-                    disabled={createRoomMutation.isPending}
-                    className="gap-1.5"
-                  />
-                }
-              >
-                <HugeiconsIcon
-                  icon={Add01Icon}
-                  strokeWidth={2}
-                  className="size-4"
-                />
-                <span className="hidden sm:inline">새 프로젝트 생성</span>
-              </AlertDialogTrigger>
+            {/* New Project Button */}
+            <Button
+              variant="default"
+              size="sm"
+              disabled={createRoomMutation.isPending}
+              className="gap-1.5"
+              onClick={() => setCreateDialog(true)}
+            >
+              <HugeiconsIcon
+                icon={Add01Icon}
+                strokeWidth={2}
+                className="size-4"
+              />
+              <span className="hidden sm:inline">새 프로젝트 생성</span>
+            </Button>
+
+            {/* New Project Confirm Dialog */}
+            <AlertDialog open={createDialog} onOpenChange={setCreateDialog}>
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>새 프로젝트 생성</AlertDialogTitle>
@@ -312,6 +408,84 @@ function Header({
                   <AlertDialogCancel>취소</AlertDialogCancel>
                   <AlertDialogAction onClick={handleCreateRoom}>
                     생성
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Room Delete Confirm Dialog */}
+            <AlertDialog
+              open={deleteDialog.open}
+              onOpenChange={(open) => {
+                if (!open) setDeleteDialog({ open: false, roomId: null });
+              }}
+            >
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>프로젝트 삭제</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    이 프로젝트와 모든 대화 기록이 삭제됩니다. 삭제 후 새로운
+                    프로젝트가 자동으로 생성됩니다.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>취소</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDeleteRoom}
+                    disabled={deleteRoomMutation.isPending}
+                  >
+                    삭제
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Room Edit Dialog */}
+            <AlertDialog
+              open={editDialog.open}
+              onOpenChange={(open) => {
+                if (!open)
+                  setEditDialog({
+                    open: false,
+                    roomId: null,
+                    storybookUrl: '',
+                  });
+              }}
+            >
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>프로젝트 이름 수정</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    프로젝트를 구분할 수 있는 이름을 입력해 주세요.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <Input
+                  value={editDialog.storybookUrl}
+                  onChange={(e) =>
+                    setEditDialog((prev) => ({
+                      ...prev,
+                      storybookUrl: e.target.value,
+                    }))
+                  }
+                  placeholder="https://storybook.example.com"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleEditRoom();
+                    }
+                  }}
+                  autoFocus
+                />
+                <AlertDialogFooter>
+                  <AlertDialogCancel>취소</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleEditRoom}
+                    disabled={
+                      updateRoomMutation.isPending ||
+                      !editDialog.storybookUrl.trim()
+                    }
+                  >
+                    저장
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>

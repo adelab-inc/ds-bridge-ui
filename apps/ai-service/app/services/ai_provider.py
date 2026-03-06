@@ -216,10 +216,23 @@ class AnthropicProvider(AIProvider):
                 yield text
 
 
+_THINKING_LEVEL_MAP: dict[str, types.ThinkingLevel | None] = {
+    "off": None,
+    "minimal": types.ThinkingLevel.MINIMAL,
+    "low": types.ThinkingLevel.LOW,
+    "medium": types.ThinkingLevel.MEDIUM,
+    "high": types.ThinkingLevel.HIGH,
+}
+
+
 class GeminiProvider(AIProvider):
     def __init__(self):
         self.client = genai.Client(api_key=settings.gemini_api_key)
         self.model = settings.gemini_model
+
+        # Thinking config (off이면 None → config에 포함하지 않음)
+        level = _THINKING_LEVEL_MAP.get(settings.gemini_thinking_level.lower())
+        self._thinking_config = types.ThinkingConfig(thinking_level=level) if level else None
 
     async def chat(self, messages: list[Message]) -> tuple[Message, dict | None]:
         system_instruction = None
@@ -234,6 +247,7 @@ class GeminiProvider(AIProvider):
 
         config = types.GenerateContentConfig(
             system_instruction=system_instruction,
+            thinking_config=self._thinking_config,
         )
 
         response = await self.client.aio.models.generate_content(
@@ -265,6 +279,7 @@ class GeminiProvider(AIProvider):
 
         config = types.GenerateContentConfig(
             system_instruction=system_instruction,
+            thinking_config=self._thinking_config,
         )
 
         stream = await self.client.aio.models.generate_content_stream(
@@ -311,6 +326,7 @@ class GeminiProvider(AIProvider):
 
         config = types.GenerateContentConfig(
             system_instruction=system_instruction,
+            thinking_config=self._thinking_config,
         )
 
         stream = await self.client.aio.models.generate_content_stream(

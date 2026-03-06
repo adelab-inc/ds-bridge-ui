@@ -842,10 +842,19 @@ Always respond in Korean.
 - **NO EMPTY STATES**: NEVER generate empty tables, lists, or selects
 
 ### Images & Icons
-- **NEVER use emoji as icons** (🔍, ⭐, 📁, 👤) — unprofessional
-- **NEVER use icon libraries** (material-icons, lucide-react) — not available
-- **NEVER use IconButton** or icon props (leftIcon, rightIcon, icon on Button/Alert/Chip)
-- **Use text-only buttons**: `<Button>검색</Button>`, `<Button>추가</Button>`
+- **⛔ ABSOLUTELY NO icon library imports** — lucide-react, material-icons, heroicons, react-icons 등 모두 설치되어 있지 않음. import 시 앱이 크래시남
+- **⛔ NEVER `import {{ ... }} from 'lucide-react'`** — THIS WILL CRASH THE APP
+- **⛔ NEVER use emoji as icons** (🔍, ⭐, 📁, 👤) — unprofessional
+- **⛔ NEVER use IconButton** or icon props (leftIcon, rightIcon, icon on Button/Alert/Chip)
+- **⛔ NEVER use inline SVG** (`<svg>`) — 코드가 불필요하게 길어짐
+- **⛔ NO ICONS AT ALL** — 이 프로젝트에는 아이콘이 없음. 아이콘 자리에는 반드시 텍스트로 대체
+- **✅ 텍스트로만 표현**:
+  - 버튼: `<Button>검색</Button>`, `<Button>추가</Button>`, `<Button>삭제</Button>`
+  - 브레드크럼 구분자: 텍스트 `>` 또는 `/` 사용
+  - 즐겨찾기: 텍스트 버튼 `<button>즐겨찾기</button>`
+  - 닫기: 텍스트 `<button>닫기</button>` 또는 `<button>×</button>`
+  - 외부링크: 텍스트만 `<Button>이미지시스템</Button>`
+  - 이미지 참조 UI에 아이콘이 보이더라도 텍스트로 대체할 것
 - **Profile images**: Initial Avatar — colored circle with first character
   - `<div className="w-10 h-10 rounded-full bg-[#0033a0] text-white flex items-center justify-center font-semibold text-sm">{{name.charAt(0)}}</div>`
   - Color by `name.charCodeAt(0) % 6` from design tokens: `['#0033a0','#8b5cf6','#ec4899','#ed6c02','#2e7d32','#0288d1']`
@@ -862,7 +871,7 @@ Always respond in Korean.
    - Unused imports = CRASH
 2. **REACT**: `React.useState`, `React.useEffect` directly (no import needed)
 3. **STYLING**: Tailwind CSS only (`className="..."`). `style={{{{}}}}` ONLY for dynamic JS variable values. No custom CSS.
-4. **NO EXTERNAL LIBS**: Don't import lucide-react, framer-motion
+4. **NO EXTERNAL LIBS**: ⛔ NEVER import lucide-react, heroicons, material-icons, react-icons, framer-motion — NOT INSTALLED, WILL CRASH. No icons — use text only.
 5. **ENUM PROPS**: Match context — NEVER use the same size/variant for every component on a page
    - 페이지 헤더 버튼: `size="md"`, 필터 조회 버튼: `size="md"`, DataGrid 내부: `size="sm"`, 폼 제출: `size="lg"`
    - Badge 상태: 성공="success", 실패="error", 대기="warning"
@@ -913,7 +922,72 @@ ONLY use components from the Available Components list below. DO NOT create or i
 `<input>`, `<br>`, `<hr>`, `<img>` MUST end with `/>` and NEVER have children.
 - ❌ `<input>text</input>` — CRASH (React Error #137)
 
-## Available Components
+"""
+
+# ============================================================================
+# Layout Guide (Grid Type × Row Pattern)
+# ============================================================================
+
+LAYOUT_GUIDE = """
+## 📐 레이아웃 가이드 (Grid Type × Row Pattern)
+
+유저가 "Type C", "RP-1" 등 레이아웃 용어를 사용하면 아래 정의에 따라 코드를 생성하세요.
+
+### Grid Type (가로 분할 구조)
+
+| Type | 컬럼 구성 | Tailwind 구조 | 용도 |
+|------|----------|---------------|------|
+| TYPE-A | col-12 (단일) | 전체 `col-span-12` | 리스트, 단일 상세, 입력 폼, 리포트 |
+| TYPE-B | col-6 + col-6 | `col-span-6` + `col-span-6` | 비교 화면, 병렬 입력 |
+| TYPE-C | col-3 + col-9 | `col-span-3` + `col-span-9` | 목록+상세, 코드/조직/설정 관리 |
+| TYPE-D | col-4 + col-8 | `col-span-4` + `col-span-8` | 고급 검색, 필터 고정형 리포트 |
+| TYPE-E | col-4 × 3 | `col-span-4` × 3 | 동일 위계 정보 병렬 배치 |
+| TYPE-F | col-2 + col-8 + col-2 | `col-span-2` + `col-span-8` + `col-span-2` | 검토/승인 프로세스 |
+| TYPE-G | col-2 + col-2 + col-8 | `col-span-2` + `col-span-2` + `col-span-8` | 트리+목록+상세 (2단계 탐색) |
+| TYPE-H | col-3 × 4 | `col-span-3` × 4 | 동일 위계 정보 4열 배치 |
+
+- TYPE-C, D는 좌우 반전 가능 (C-2: col-9+col-3, D-2: col-8+col-4)
+- 모든 Type은 `grid grid-cols-12` 기반
+
+### Row Pattern (세로 흐름 구조)
+
+| 패턴 | 이름 | 구조 | 용도 |
+|------|------|------|------|
+| RP-1 | 조회형(기본형) | Title → FilterBar → ActionButtons → Grid | 대량 데이터 조회 (계약 리스트, 승인 목록) |
+| RP-2 | 단일 상세형 | Title → 상세 정보 영역 | 단일 객체 조회 (계약 상세, 고객 상세) |
+| RP-3 | 입력/수정형 | Title → Form Section → Action(저장/취소) | 데이터 생성/수정 |
+| RP-4 | 요약+Grid형 | Title → 상단 요약 → 하단 Grid | 기본 정보 + 관련 데이터 |
+| RP-5 | 다중 Grid형 | Title → Grid A → Grid B | 성격 다른 데이터 병렬 (승인대기/완료) |
+| RP-6 | 탐색형 | Title → Navigation Area + Detail Area | 관리성 화면 (코드 관리, 조직 관리) |
+| RP-7 | 병렬형 | Title → Section A \\| Section B | 변경 전/후 비교, A/B 비교 |
+| RP-8 | 상세+탭형 | Title → 상단 기본정보 → Tab → 하단 Grid/Content | 상세 + 탭별 관련 데이터 |
+
+### Grid Type × Row Pattern 적용 범위
+
+| Type \\ RP | RP-1 | RP-2 | RP-3 | RP-4 | RP-5 | RP-6 | RP-7 | RP-8 |
+|-----------|------|------|------|------|------|------|------|------|
+| TYPE-A | O | O | O | O | O | X | X | O |
+| TYPE-B | X | △ | △ | △ | △ | X | O | X |
+| TYPE-C | △ | △ | △ | O | △ | O | X | O |
+| TYPE-D | O | △ | X | O | △ | △ | X | △ |
+| TYPE-E | X | X | X | △ | △ | X | △ | X |
+| TYPE-F | X | O | △ | O | X | X | X | O |
+| TYPE-G | △ | △ | △ | △ | X | O | X | △ |
+| TYPE-H | X | X | X | △ | △ | X | △ | X |
+
+(O=권장, △=가능, X=부적합)
+
+### 레이아웃 간격 규칙
+
+| 구간 | 간격 | Tailwind |
+|------|------|----------|
+| 타이틀 ↔ 콘텐츠 | 20px | `mb-5` |
+| 필터바 ↔ 그리드 | 20px | `mb-5` |
+| 필터바 ↔ 서머리바 | 12px | `mb-3` |
+| 서머리바 ↔ 액션버튼 | 12px | `mb-3` |
+| 액션버튼 ↔ 그리드 | 12px | `mb-3` |
+| 탭 ↔ 필터바 | 20px | `mb-5` |
+| 탭 섹션: 타이틀 ↔ 폼 | 12px | `mb-3` |
 
 """
 
@@ -1112,6 +1186,8 @@ COMPONENT_DOCS = format_component_docs(_schema) if _schema else (_error or "Sche
 AVAILABLE_COMPONENTS = get_available_components_note(_schema) if _schema else ""
 SYSTEM_PROMPT = (
     SYSTEM_PROMPT_HEADER
+    + LAYOUT_GUIDE
+    + "\n## Available Components\n\n"
     + AVAILABLE_COMPONENTS
     + COMPONENT_DOCS
     + UI_PATTERN_EXAMPLES
@@ -1246,6 +1322,8 @@ def generate_system_prompt(
         SYSTEM_PROMPT_HEADER.replace("{current_date}", current_date).replace(
             "{design_tokens_section}", design_tokens_section
         )
+        + LAYOUT_GUIDE
+        + "\n## Available Components\n\n"
         + available_components
         + component_docs
         + ag_grid_section
