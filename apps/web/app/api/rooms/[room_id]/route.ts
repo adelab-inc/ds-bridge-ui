@@ -129,7 +129,7 @@ export async function PATCH(
   { params }: { params: Promise<{ room_id: string }> }
 ) {
   try {
-    const decodedToken = await verifyFirebaseToken(
+    const decodedToken = await verifySupabaseToken(
       request.headers.get('authorization')
     );
     if (!decodedToken) {
@@ -248,7 +248,7 @@ export async function DELETE(
   { params }: { params: Promise<{ room_id: string }> }
 ) {
   try {
-    const decodedToken = await verifyFirebaseToken(
+    const decodedToken = await verifySupabaseToken(
       request.headers.get('authorization')
     );
     if (!decodedToken) {
