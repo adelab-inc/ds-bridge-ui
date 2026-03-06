@@ -30,13 +30,13 @@ export async function POST(request: NextRequest) {
     // 인증된 uid로 user_id 강제 교체
     body.user_id = decodedToken.uid;
 
-    if (!body.storybook_url || !body.user_id) {
+    if (!body.user_id) {
       return NextResponse.json(
         {
           detail: [
             {
               loc: ['body'],
-              msg: 'storybook_url and user_id are required',
+              msg: 'user_id is required',
               type: 'value_error.missing',
             },
           ],

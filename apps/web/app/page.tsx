@@ -27,10 +27,7 @@ export default function Page() {
       {/* Main Content: Server에서 구조 렌더링 */}
       <main className="relative flex flex-1 overflow-hidden">
         <Suspense fallback={null}>
-          <RoomProvider
-            storybookUrl="https://microsoft.github.io/vscode-webview-ui-toolkit"
-            userId="anonymous"
-          >
+          <RoomProvider>
             {/* Desktop Layout: Client (ResizablePanels) */}
             <div className="hidden h-full w-full md:block">
               <DesktopLayout />

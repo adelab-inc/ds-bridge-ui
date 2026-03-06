@@ -78,8 +78,7 @@ export function useRoom(options: UseRoomOptions = {}): UseRoomReturn {
 
       createRoomMutation.mutate(
         {
-          storybook_url:
-            options.storybookUrl || 'https://storybook.example.com',
+          storybook_url: options.storybookUrl,
           user_id: options.userId || authUser?.uid || 'anonymous',
         },
         {
