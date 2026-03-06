@@ -20,6 +20,7 @@ import { useRoomChannel } from '@/hooks/supabase/useRoomChannel';
 import { useGetPaginatedMessages } from '@/hooks/supabase/useGetPaginatedMessages';
 import { useStreamingStore } from '@/stores/useStreamingStore';
 import type { CodeEvent } from '@/types/chat';
+import { useDeleteMessage } from '@/hooks/api/useDeleteMessage';
 import type { ChatMessage } from '@packages/shared-types/typescript/database/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -74,6 +75,7 @@ function ChatSection({
   });
 
   const searchParams = useSearchParams();
+  const deleteMessageMutation = useDeleteMessage();
 
   // 스트리밍 중인 단일 메시지 (Zustand 외부 스토어로 관리)
   // → React 배칭/동시성 렌더링에 의한 state 유실 방지
@@ -87,12 +89,26 @@ function ChatSection({
   const pendingQuestionRef = React.useRef<string>('');
   const activeMessageIdRef = React.useRef<string | null>(null);
 
-  // URL의 mid 쿼리 파라미터에서 선택된 메시지 ID 읽기
-  const selectedMessageId = searchParams.get('mid');
+  const [deleteMessageDialog, setDeleteMessageDialog] = React.useState<{
+    open: boolean;
+    message: ChatMessage | null;
+  }>({ open: false, message: null });
 
-  // URL의 mid 파라미터 업데이트
+  // 선택된 메시지 ID — useState로 즉시 UI 반영, URL은 부가 동기화
+  const [selectedMessageId, setSelectedMessageId] = React.useState<
+    string | null
+  >(() => searchParams.get('mid'));
+
+  // 외부 URL 변경 시 로컬 상태 동기화 (룸 전환 등)
+  const urlMid = searchParams.get('mid');
+  React.useEffect(() => {
+    setSelectedMessageId(urlMid);
+  }, [urlMid]);
+
+  // URL의 mid 파라미터 업데이트 + 로컬 상태 즉시 반영
   const updateSelectedMessageId = React.useCallback(
     (messageId: string | null) => {
+      setSelectedMessageId(messageId);
       const url = new URL(window.location.href);
       if (messageId) {
         url.searchParams.set('mid', messageId);
@@ -414,6 +430,53 @@ function ChatSection({
   }>({ open: false, message: null });
   const [bookmarkLabel, setBookmarkLabel] = React.useState('');
 
+  // 메시지 삭제 아이콘 클릭
+  const handleDeleteIconClick = React.useCallback((message: ChatMessage) => {
+    setDeleteMessageDialog({ open: true, message });
+  }, []);
+
+  // 메시지 삭제 확인
+  const handleDeleteMessageConfirm = React.useCallback(() => {
+    if (!deleteMessageDialog.message) return;
+    const messageToDelete = deleteMessageDialog.message;
+    deleteMessageMutation.mutate(
+      { roomId, messageId: messageToDelete.id },
+      {
+        onSuccess: () => {
+          setDeleteMessageDialog({ open: false, message: null });
+          refetchMessages();
+          if (selectedMessageId === messageToDelete.id) {
+            // 남은 메시지 중 마지막 content 있는 메시지 자동 선택
+            const remaining = displayMessages.filter(
+              (msg) => msg.id !== messageToDelete.id
+            );
+            const lastWithContent = [...remaining]
+              .reverse()
+              .find((msg) => msg.content && msg.content.trim());
+            if (lastWithContent) {
+              updateSelectedMessageId(lastWithContent.id);
+              onCodeGenerated?.({
+                type: 'code',
+                content: lastWithContent.content,
+                path: lastWithContent.path,
+              });
+            } else {
+              updateSelectedMessageId(null);
+            }
+          }
+        },
+      }
+    );
+  }, [
+    deleteMessageDialog.message,
+    deleteMessageMutation,
+    roomId,
+    selectedMessageId,
+    updateSelectedMessageId,
+    displayMessages,
+    onCodeGenerated,
+  ]);
+
   // 북마크 아이콘 클릭: 미등록 → 다이얼로그 열기, 등록됨 → 삭제
   const handleBookmarkIconClick = React.useCallback(
     (message: ChatMessage) => {
@@ -562,6 +625,7 @@ function ChatSection({
           bookmarkedMessageIds={bookmarkedMessageIds}
           onMessageClick={handleMessageClick}
           onBookmarkClick={handleBookmarkIconClick}
+          onDeleteClick={handleDeleteIconClick}
           className="min-h-0 flex-1 overflow-y-auto"
         />
 
@@ -612,6 +676,32 @@ function ChatSection({
               disabled={!bookmarkLabel.trim()}
             >
               추가
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* 메시지 삭제 확인 다이얼로그 */}
+      <AlertDialog
+        open={deleteMessageDialog.open}
+        onOpenChange={(open) => {
+          if (!open) setDeleteMessageDialog({ open: false, message: null });
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>메시지 삭제</AlertDialogTitle>
+            <AlertDialogDescription>
+              이 메시지를 삭제하시겠습니까? 삭제된 메시지는 복구할 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteMessageConfirm}
+              disabled={deleteMessageMutation.isPending}
+            >
+              삭제
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

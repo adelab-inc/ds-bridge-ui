@@ -6,6 +6,7 @@ import {
   Tick01Icon,
   Bookmark02Icon,
   BookmarkCheck02Icon,
+  Delete02Icon,
 } from '@hugeicons/core-free-icons';
 import { cn } from '@/lib/utils';
 import {
@@ -26,6 +27,7 @@ function ChatMessage({
   isBookmarked,
   onClick,
   onBookmarkClick,
+  onDeleteClick,
   className,
 }: {
   text: string;
@@ -43,6 +45,8 @@ function ChatMessage({
   onClick?: () => void;
   /** 북마크 아이콘 클릭 핸들러 */
   onBookmarkClick?: () => void;
+  /** 삭제 아이콘 클릭 핸들러 */
+  onDeleteClick?: () => void;
   className?: string;
 }) {
   const [isCodeOpen, setIsCodeOpen] = useState(false);
@@ -119,28 +123,47 @@ function ChatMessage({
                   strokeWidth={2}
                 />
               </CollapsibleTrigger>
-              {onBookmarkClick && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onBookmarkClick();
-                  }}
-                  className={cn(
-                    'rounded-full p-0.5 transition-all duration-150',
-                    isBookmarked
-                      ? 'text-amber-500 opacity-100'
-                      : 'text-muted-foreground opacity-0 hover:text-amber-500 group-hover/msg:opacity-100'
-                  )}
-                  aria-label={isBookmarked ? '북마크 제거' : '북마크 추가'}
-                >
-                  <HugeiconsIcon
-                    icon={isBookmarked ? BookmarkCheck02Icon : Bookmark02Icon}
-                    className="size-3.5"
-                    strokeWidth={2}
-                  />
-                </button>
-              )}
+              <div className="flex items-center gap-0.5">
+                {onDeleteClick && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteClick();
+                    }}
+                    className="text-muted-foreground opacity-0 hover:text-destructive group-hover/msg:opacity-100 rounded-full p-0.5 transition-all duration-150"
+                    aria-label="메시지 삭제"
+                  >
+                    <HugeiconsIcon
+                      icon={Delete02Icon}
+                      className="size-3.5"
+                      strokeWidth={2}
+                    />
+                  </button>
+                )}
+                {onBookmarkClick && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onBookmarkClick();
+                    }}
+                    className={cn(
+                      'rounded-full p-0.5 transition-all duration-150',
+                      isBookmarked
+                        ? 'text-amber-500 opacity-100'
+                        : 'text-muted-foreground opacity-0 hover:text-amber-500 group-hover/msg:opacity-100'
+                    )}
+                    aria-label={isBookmarked ? '북마크 제거' : '북마크 추가'}
+                  >
+                    <HugeiconsIcon
+                      icon={isBookmarked ? BookmarkCheck02Icon : Bookmark02Icon}
+                      className="size-3.5"
+                      strokeWidth={2}
+                    />
+                  </button>
+                )}
+              </div>
             </div>
             <CollapsibleContent className="mt-2">
               <div className="relative">
@@ -176,28 +199,47 @@ function ChatMessage({
               />
               코드
             </span>
-            {onBookmarkClick && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onBookmarkClick();
-                }}
-                className={cn(
-                  'rounded-full p-0.5 transition-all duration-150',
-                  isBookmarked
-                    ? 'text-amber-500 opacity-100'
-                    : 'text-muted-foreground opacity-0 hover:text-amber-500 group-hover/msg:opacity-100'
-                )}
-                aria-label={isBookmarked ? '북마크 제거' : '북마크 추가'}
-              >
-                <HugeiconsIcon
-                  icon={isBookmarked ? BookmarkCheck02Icon : Bookmark02Icon}
-                  className="size-3.5"
-                  strokeWidth={2}
-                />
-              </button>
-            )}
+            <div className="flex items-center gap-0.5">
+              {onDeleteClick && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteClick();
+                  }}
+                  className="text-muted-foreground opacity-0 hover:text-destructive group-hover/msg:opacity-100 rounded-full p-0.5 transition-all duration-150"
+                  aria-label="메시지 삭제"
+                >
+                  <HugeiconsIcon
+                    icon={Delete02Icon}
+                    className="size-3.5"
+                    strokeWidth={2}
+                  />
+                </button>
+              )}
+              {onBookmarkClick && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onBookmarkClick();
+                  }}
+                  className={cn(
+                    'rounded-full p-0.5 transition-all duration-150',
+                    isBookmarked
+                      ? 'text-amber-500 opacity-100'
+                      : 'text-muted-foreground opacity-0 hover:text-amber-500 group-hover/msg:opacity-100'
+                  )}
+                  aria-label={isBookmarked ? '북마크 제거' : '북마크 추가'}
+                >
+                  <HugeiconsIcon
+                    icon={isBookmarked ? BookmarkCheck02Icon : Bookmark02Icon}
+                    className="size-3.5"
+                    strokeWidth={2}
+                  />
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>

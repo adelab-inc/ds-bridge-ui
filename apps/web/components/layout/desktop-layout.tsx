@@ -13,7 +13,7 @@ import {
 import { ClientOnly } from '@/components/ui/client-only';
 import { LeftPanel } from '@/components/layout/left-panel';
 import { RightPanel } from '@/components/layout/right-panel';
-import { useRoom } from '@/hooks/useRoom';
+import { useRoomContext } from '@/components/providers/room-provider';
 import { useCodeGenerationStore } from '@/stores/useCodeGenerationStore';
 
 // Feature components
@@ -35,10 +35,7 @@ function DesktopLayout() {
     }
   }, [leftPanelRef]);
 
-  const { roomId, isLoading, error } = useRoom({
-    storybookUrl: 'https://microsoft.github.io/vscode-webview-ui-toolkit',
-    userId: 'anonymous',
-  });
+  const { roomId, isLoading, error } = useRoomContext();
 
   // Zustand 스토어에서 상태 및 핸들러 가져오기
   const {
@@ -47,7 +44,13 @@ function DesktopLayout() {
     onStreamStart,
     onStreamEnd,
     onCodeGenerated,
+    reset: resetCodeGeneration,
   } = useCodeGenerationStore();
+
+  // roomId 변경 시 프리뷰 상태 초기화
+  React.useEffect(() => {
+    resetCodeGeneration();
+  }, [roomId, resetCodeGeneration]);
 
   return (
     <ClientOnly
@@ -91,6 +94,7 @@ function DesktopLayout() {
                 </div>
               ) : roomId ? (
                 <ChatSection
+                  key={roomId}
                   roomId={roomId}
                   onCodeGenerated={onCodeGenerated}
                   onStreamStart={onStreamStart}

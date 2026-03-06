@@ -1,16 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import type { paths } from '@ds-hub/shared-types/typescript/api/schema';
-import { verifySupabaseToken } from '@/lib/auth/verify-token';
+import { verifyFirebaseToken } from '@/lib/auth/verify-token';
 
-type CreateRoomRequest =
-  paths['/rooms']['post']['requestBody']['content']['application/json'];
-type CreateRoomResponse =
-  paths['/rooms']['post']['responses']['201']['content']['application/json'];
-
-export async function POST(request: NextRequest) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ room_id: string; message_id: string }> }
+) {
   try {
-    // Supabase Auth 토큰 검증
-    const decodedToken = await verifySupabaseToken(
+    const decodedToken = await verifyFirebaseToken(
       request.headers.get('authorization')
     );
     if (!decodedToken) {
@@ -24,19 +20,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 요청 body 파싱
-    const body: CreateRoomRequest = await request.json();
+    const { room_id, message_id } = await params;
 
-    // 인증된 uid로 user_id 강제 교체
-    body.user_id = decodedToken.uid;
-
-    if (!body.user_id) {
+    if (!room_id || !message_id) {
       return NextResponse.json(
         {
           detail: [
             {
-              loc: ['body'],
-              msg: 'user_id is required',
+              loc: ['path'],
+              msg: 'room_id and message_id are required',
               type: 'value_error.missing',
             },
           ],
@@ -45,7 +37,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // AI 서버 URL 가져오기
     const aiServerUrl = process.env.AI_SERVER_URL;
     const xApiKey = process.env.X_API_KEY;
 
@@ -79,17 +70,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // AI 서버로 요청
-    const aiResponse = await fetch(`${aiServerUrl}/rooms`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': xApiKey,
-      },
-      body: JSON.stringify(body),
-    });
+    const aiResponse = await fetch(
+      `${aiServerUrl}/rooms/${room_id}/messages/${message_id}`,
+      {
+        method: 'DELETE',
+        headers: {
+          'X-API-Key': xApiKey,
+        },
+      }
+    );
 
     if (!aiResponse.ok) {
+      if (aiResponse.status === 404) {
+        return NextResponse.json(
+          { error: 'Message not found' },
+          { status: 404 }
+        );
+      }
+
       const errorText = await aiResponse.text();
       return NextResponse.json(
         {
@@ -105,22 +103,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // AI 서버 응답을 클라이언트에게 전달
-    const data: CreateRoomResponse = await aiResponse.json();
-    return NextResponse.json(data, { status: 201 });
+    return new NextResponse(null, { status: 204 });
   } catch (error) {
     return NextResponse.json(
       {
         detail: [
           {
-            loc: ['body'],
+            loc: ['server'],
             msg:
-              error instanceof Error ? error.message : 'Invalid request body',
-            type: 'value_error',
+              error instanceof Error ? error.message : 'Internal server error',
+            type: 'server_error',
           },
         ],
       },
-      { status: 422 }
+      { status: 500 }
     );
   }
 }
