@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { Header } from '@/components/layout/header';
 import { DesktopLayout } from '@/components/layout/desktop-layout';
 import { MobileLayout } from '@/components/layout/mobile-layout';
+import { RoomProvider } from '@/components/providers/room-provider';
 
 /**
  * 홈페이지 (Server Component)
@@ -25,19 +26,22 @@ export default function Page() {
 
       {/* Main Content: Server에서 구조 렌더링 */}
       <main className="relative flex flex-1 overflow-hidden">
-        {/* Desktop Layout: Client (ResizablePanels) */}
-        <div className="hidden h-full w-full md:block">
-          <Suspense fallback={null}>
-            <DesktopLayout />
-          </Suspense>
-        </div>
+        <Suspense fallback={null}>
+          <RoomProvider
+            storybookUrl="https://microsoft.github.io/vscode-webview-ui-toolkit"
+            userId="anonymous"
+          >
+            {/* Desktop Layout: Client (ResizablePanels) */}
+            <div className="hidden h-full w-full md:block">
+              <DesktopLayout />
+            </div>
 
-        {/* Mobile Layout: Client (BottomSheet) */}
-        <div className="flex h-full w-full flex-col md:hidden">
-          <Suspense fallback={null}>
-            <MobileLayout />
-          </Suspense>
-        </div>
+            {/* Mobile Layout: Client (BottomSheet) */}
+            <div className="flex h-full w-full flex-col md:hidden">
+              <MobileLayout />
+            </div>
+          </RoomProvider>
+        </Suspense>
       </main>
     </div>
   );

@@ -13,7 +13,7 @@ import {
 import { ClientOnly } from '@/components/ui/client-only';
 import { LeftPanel } from '@/components/layout/left-panel';
 import { RightPanel } from '@/components/layout/right-panel';
-import { useRoom } from '@/hooks/useRoom';
+import { useRoomContext } from '@/components/providers/room-provider';
 import { useCodeGenerationStore } from '@/stores/useCodeGenerationStore';
 
 // Feature components
@@ -35,10 +35,7 @@ function DesktopLayout() {
     }
   }, [leftPanelRef]);
 
-  const { roomId, isLoading, error } = useRoom({
-    storybookUrl: 'https://microsoft.github.io/vscode-webview-ui-toolkit',
-    userId: 'anonymous',
-  });
+  const { roomId, isLoading, error } = useRoomContext();
 
   // Zustand 스토어에서 상태 및 핸들러 가져오기
   const {
