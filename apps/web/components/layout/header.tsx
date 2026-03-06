@@ -107,6 +107,7 @@ function Header({
   const currentRoom = rooms.find((r) => r.id === currentRoomId);
 
   const [createDialog, setCreateDialog] = React.useState(false);
+  const [createProjectName, setCreateProjectName] = React.useState('');
   const [deleteDialog, setDeleteDialog] = React.useState<{
     open: boolean;
     roomId: string | null;
@@ -137,10 +138,11 @@ function Header({
   const handleCreateRoom = async () => {
     try {
       const newRoom = await createRoomMutation.mutateAsync({
-        storybook_url: '',
+        storybook_url: createProjectName.trim() || '새 프로젝트',
         user_id: authUser?.uid || 'anonymous',
       });
       setCreateDialog(false);
+      setCreateProjectName('');
       const params = new URLSearchParams(searchParams.toString());
       params.delete('mid');
       params.set('crid', newRoom.id);
@@ -395,18 +397,38 @@ function Header({
             </Button>
 
             {/* New Project Confirm Dialog */}
-            <AlertDialog open={createDialog} onOpenChange={setCreateDialog}>
+            <AlertDialog
+              open={createDialog}
+              onOpenChange={(open) => {
+                setCreateDialog(open);
+                if (!open) setCreateProjectName('');
+              }}
+            >
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>새 프로젝트 생성</AlertDialogTitle>
                   <AlertDialogDescription>
-                    새로운 프로젝트를 생성하시겠습니까? 현재 작업 중인
-                    프로젝트는 목록에서 다시 열 수 있습니다.
+                    프로젝트를 구분할 수 있는 이름을 입력해 주세요.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
+                <Input
+                  value={createProjectName}
+                  onChange={(e) => setCreateProjectName(e.target.value)}
+                  placeholder="새 프로젝트"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleCreateRoom();
+                    }
+                  }}
+                  autoFocus
+                />
                 <AlertDialogFooter>
                   <AlertDialogCancel>취소</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleCreateRoom}>
+                  <AlertDialogAction
+                    onClick={handleCreateRoom}
+                    disabled={createRoomMutation.isPending}
+                  >
                     생성
                   </AlertDialogAction>
                 </AlertDialogFooter>
