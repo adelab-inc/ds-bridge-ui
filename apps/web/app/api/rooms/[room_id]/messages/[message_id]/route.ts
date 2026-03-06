@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyFirebaseToken } from '@/lib/auth/verify-token';
+import { verifySupabaseToken } from '@/lib/auth/verify-token';
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ room_id: string; message_id: string }> }
 ) {
   try {
-    const decodedToken = await verifyFirebaseToken(
+    const decodedToken = await verifySupabaseToken(
       request.headers.get('authorization')
     );
     if (!decodedToken) {

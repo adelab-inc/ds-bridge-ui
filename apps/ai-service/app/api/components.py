@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from app.core.auth import verify_api_key
-from app.services.firebase_storage import (
+from app.services.supabase_storage import (
     DEFAULT_AG_GRID_SCHEMA_KEY,
     DEFAULT_AG_GRID_TOKENS_KEY,
     fetch_ag_grid_tokens_from_storage,

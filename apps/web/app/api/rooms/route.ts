@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { paths } from '@ds-hub/shared-types/typescript/api/schema';
-import { verifyFirebaseToken } from '@/lib/auth/verify-token';
+import { verifySupabaseToken } from '@/lib/auth/verify-token';
 
 type CreateRoomRequest =
   paths['/rooms']['post']['requestBody']['content']['application/json'];
@@ -9,8 +9,8 @@ type CreateRoomResponse =
 
 export async function POST(request: NextRequest) {
   try {
-    // Firebase Auth 토큰 검증
-    const decodedToken = await verifyFirebaseToken(
+    // Supabase Auth 토큰 검증
+    const decodedToken = await verifySupabaseToken(
       request.headers.get('authorization')
     );
     if (!decodedToken) {
