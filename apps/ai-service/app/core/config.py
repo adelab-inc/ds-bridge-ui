@@ -1,6 +1,7 @@
 from functools import lru_cache
 from typing import Literal
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -26,6 +27,7 @@ class Settings(BaseSettings):
     # Gemini
     gemini_api_key: str = ""
     gemini_model: str = "gemini-3-flash-preview"
+    gemini_thinking_level: str = "low"  # off(비활성), minimal, low, medium, high
 
     # API Authentication
     x_api_key: str = ""  # X-API-Key 헤더로 인증
@@ -33,13 +35,22 @@ class Settings(BaseSettings):
     # CORS
     cors_origins: str = "http://localhost:3000,http://localhost:5173"
 
-    # Firebase
-    firebase_project_id: str = ""
-    firebase_storage_bucket: str = ""
+    # Supabase
+    supabase_url: str = ""
+    supabase_service_role_key: str = ""
 
     # Chat Settings
     max_history_count: int = 10  # 대화 컨텍스트에 포함할 최대 메시지 수
     max_image_size_mb: int = 10  # 이미지 업로드 최대 크기 (MB)
+
+    @model_validator(mode="after")
+    def _validate_supabase(self) -> "Settings":
+        """Supabase 필수 환경변수 검증 (빈 문자열이면 서버 시작 시 즉시 실패)"""
+        if not self.supabase_url:
+            raise ValueError("SUPABASE_URL 환경변수가 설정되지 않았습니다")
+        if not self.supabase_service_role_key:
+            raise ValueError("SUPABASE_SERVICE_ROLE_KEY 환경변수가 설정되지 않았습니다")
+        return self
 
     @property
     def max_image_size_bytes(self) -> int:

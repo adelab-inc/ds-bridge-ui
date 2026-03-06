@@ -54,7 +54,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { UserMenu } from '@/components/features/auth/user-menu';
-import { useRoomsList } from '@/hooks/firebase/useRoomsList';
+import { useRoomsList } from '@/hooks/supabase/useRoomsList';
 import { useCreateRoom } from '@/hooks/api/useCreateRoom';
 import { useDeleteRoom } from '@/hooks/api/useDeleteRoom';
 import { useUpdateRoom } from '@/hooks/api/useUpdateRoom';

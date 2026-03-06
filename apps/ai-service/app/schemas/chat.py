@@ -152,6 +152,11 @@ class ChatRequest(BaseModel):
         description="채팅방 ID",
         json_schema_extra={"example": "550e8400-e29b-41d4-a716-446655440000"},
     )
+    user_id: str | None = Field(
+        default=None,
+        description="요청한 사용자 ID (broadcast start 이벤트에 포함)",
+        json_schema_extra={"example": "user-uuid-1234"},
+    )
     image_urls: list[str] | None = Field(
         default=None,
         max_length=5,
@@ -298,6 +303,12 @@ class StreamEvent(BaseModel):
             ]
         }
     }
+
+
+class BroadcastResponse(BaseModel):
+    """Broadcast 방식 chat_stream 응답 (202 Accepted)"""
+
+    message_id: str = Field(..., description="생성된 메시지 ID (broadcast 이벤트로 결과 수신)")
 
 
 class ComponentSchema(BaseModel):

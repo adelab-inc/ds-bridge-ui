@@ -1,33 +1,24 @@
-import { useCallback, useState, useRef, useEffect } from 'react';
-import { ChatStreamRequestWithImages, SSEEvent, CodeEvent } from '@/types/chat';
+import { useCallback, useState } from 'react';
+import { ChatStreamRequestWithImages } from '@/types/chat';
+import type { ChatStreamTriggerResponse } from '@/types/chat';
 import { useAuthStore } from '@/stores/useAuthStore';
 
-interface UseChatStreamOptions {
-  onStart?: (messageId: string) => void;
-  onChat?: (text: string) => void;
-  onCode?: (code: CodeEvent) => void;
-  onError?: (error: string) => void;
-  onDone?: (messageId: string) => void;
-}
-
-export function useChatStream(options: UseChatStreamOptions = {}) {
+/**
+ * AI 서버에 채팅 메시지를 POST로 전송하는 훅
+ *
+ * SSE 파싱은 제거되었으며, POST 트리거만 수행합니다.
+ * AI 응답 스트리밍은 useRoomChannel (Broadcast)로 수신합니다.
+ *
+ * @returns sendMessage - message_id 반환 (실패 시 null)
+ */
+export function useChatStream() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [accumulatedText, setAccumulatedText] = useState('');
-  const [generatedFiles, setGeneratedFiles] = useState<CodeEvent[]>([]);
-
-  // 클로저 문제 해결: 항상 최신 콜백을 참조하도록 ref 사용
-  const optionsRef = useRef(options);
-  useEffect(() => {
-    optionsRef.current = options;
-  });
 
   const sendMessage = useCallback(
-    async (request: ChatStreamRequestWithImages) => {
+    async (request: ChatStreamRequestWithImages): Promise<string | null> => {
       setIsLoading(true);
       setError(null);
-      setAccumulatedText('');
-      setGeneratedFiles([]);
 
       try {
         const token = await useAuthStore.getState().getIdToken();
@@ -44,87 +35,13 @@ export function useChatStream(options: UseChatStreamOptions = {}) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const reader = response.body?.getReader();
-        const decoder = new TextDecoder();
-
-        if (!reader) {
-          throw new Error('Response body is not readable');
-        }
-
-        let buffer = '';
-
-        const processLine = (line: string) => {
-          if (line.startsWith('data: ')) {
-            try {
-              const event: SSEEvent = JSON.parse(line.slice(6));
-
-              switch (event.type) {
-                case 'start':
-                  optionsRef.current.onStart?.(event.message_id);
-                  break;
-
-                case 'chat':
-                  setAccumulatedText((prev) => prev + event.text);
-                  optionsRef.current.onChat?.(event.text);
-                  break;
-
-                case 'code':
-                  console.debug(
-                    '[SSE] code event received, path:',
-                    event.path,
-                    'content length:',
-                    event.content?.length ?? 0
-                  );
-                  setGeneratedFiles((prev) => [...prev, event]);
-                  optionsRef.current.onCode?.(event);
-                  break;
-
-                case 'done':
-                  optionsRef.current.onDone?.(event.message_id);
-                  break;
-
-                case 'error':
-                  setError(event.error);
-                  optionsRef.current.onError?.(event.error);
-                  break;
-              }
-            } catch (parseError) {
-              console.warn(
-                '[SSE] Failed to parse event. Error:',
-                parseError,
-                'Raw (first 500 chars):',
-                line.slice(0, 500)
-              );
-            }
-          }
-        };
-
-        while (true) {
-          const { done, value } = await reader.read();
-
-          if (done) {
-            // 스트림 종료 시 남은 버퍼 처리
-            if (buffer.trim()) {
-              processLine(buffer);
-            }
-            break;
-          }
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n\n');
-
-          // 마지막 줄은 불완전할 수 있으므로 버퍼에 유지
-          buffer = lines.pop() || '';
-
-          for (const line of lines) {
-            processLine(line);
-          }
-        }
+        const data: ChatStreamTriggerResponse = await response.json();
+        return data.message_id;
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : 'Unknown error occurred';
         setError(errorMessage);
-        optionsRef.current.onError?.(errorMessage);
+        return null;
       } finally {
         setIsLoading(false);
       }
@@ -133,8 +50,6 @@ export function useChatStream(options: UseChatStreamOptions = {}) {
   );
 
   const reset = useCallback(() => {
-    setAccumulatedText('');
-    setGeneratedFiles([]);
     setError(null);
   }, []);
 
@@ -142,8 +57,6 @@ export function useChatStream(options: UseChatStreamOptions = {}) {
     sendMessage,
     isLoading,
     error,
-    accumulatedText,
-    generatedFiles,
     reset,
   };
 }

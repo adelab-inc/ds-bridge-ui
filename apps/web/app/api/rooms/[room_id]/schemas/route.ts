@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { paths } from '@ds-hub/shared-types/typescript/api/schema';
-import { verifyFirebaseToken } from '@/lib/auth/verify-token';
+import { verifySupabaseToken } from '@/lib/auth/verify-token';
 
 type SchemaResponse =
   paths['/rooms/{room_id}/schemas']['get']['responses']['200']['content']['application/json'];
@@ -14,8 +14,8 @@ interface RouteContext {
 // GET /api/rooms/[room_id]/schemas - 채팅방 스키마 조회
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
-    // Firebase Auth 토큰 검증
-    const decodedToken = await verifyFirebaseToken(
+    // Supabase Auth 토큰 검증
+    const decodedToken = await verifySupabaseToken(
       request.headers.get('authorization')
     );
     if (!decodedToken) {
@@ -101,8 +101,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
 // POST /api/rooms/[room_id]/schemas - 컴포넌트 스키마 생성
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
-    // Firebase Auth 토큰 검증
-    const decodedToken = await verifyFirebaseToken(
+    // Supabase Auth 토큰 검증
+    const decodedToken = await verifySupabaseToken(
       request.headers.get('authorization')
     );
     if (!decodedToken) {

@@ -1,14 +1,17 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { updateSession } from '@/lib/supabase/middleware';
 
 const PUBLIC_ROUTES = ['/login', '/auth/callback'];
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // 공개 라우트 허용
   if (PUBLIC_ROUTES.some((route) => pathname.startsWith(route))) {
-    return NextResponse.next();
+    // Supabase 쿠키 갱신은 여전히 수행
+    const { supabaseResponse } = await updateSession(request);
+    return supabaseResponse;
   }
 
   // API 라우트 허용 (자체 인증 처리)
@@ -16,9 +19,10 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 세션 쿠키 확인 (UX 최적화용 — 보안 경계는 API 레이어에서)
-  const sessionCookie = request.cookies.get('__session');
-  if (!sessionCookie?.value) {
+  // 인증 확인
+  const { user, supabaseResponse } = await updateSession(request);
+
+  if (!user) {
     const loginUrl = new URL('/login', request.url);
     if (pathname !== '/') {
       loginUrl.searchParams.set('redirect', pathname);
@@ -26,7 +30,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  return NextResponse.next();
+  return supabaseResponse;
 }
 
 export const config = {

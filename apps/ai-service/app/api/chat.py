@@ -1,10 +1,10 @@
+import asyncio
 import json
 import logging
 import re
-from collections.abc import AsyncGenerator
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse
 
 from app.api.components import (
     generate_system_prompt,
@@ -14,6 +14,7 @@ from app.api.components import (
 from app.core.auth import verify_api_key
 from app.core.config import get_settings
 from app.schemas.chat import (
+    BroadcastResponse,
     ChatRequest,
     ChatResponse,
     CurrentComposition,
@@ -24,8 +25,9 @@ from app.schemas.chat import (
     Message,
     ParsedResponse,
 )
-from app.services.ai_provider import get_ai_provider
-from app.services.firebase_storage import (
+from app.services.broadcast import broadcast_event, track_broadcast_task
+from app.services.ai_provider import AIProvider, get_ai_provider
+from app.services.supabase_storage import (
     DEFAULT_AG_GRID_SCHEMA_KEY,
     DEFAULT_SCHEMA_KEY,
     fetch_ag_grid_tokens_from_storage,
@@ -36,14 +38,13 @@ from app.services.firebase_storage import (
     fetch_schema_from_storage,
     upload_description_to_storage,
 )
-from app.services.firestore import (
-    FirestoreError,
+from app.services.supabase_db import (
+    DatabaseError,
     RoomNotFoundError,
     create_chat_message,
     get_chat_room,
     get_latest_code_message,
     get_message_by_id,
-    get_messages_by_room,
     get_timestamp_ms,
     update_chat_message,
 )
@@ -176,7 +177,7 @@ async def resolve_system_prompt(
             schema, design_tokens, ag_grid_schema, ag_grid_tokens, layouts, component_definitions
         )
     except FileNotFoundError:
-        logger.warning("Schema not found in Firebase", extra={"schema_key": effective_key})
+        logger.warning("Schema not found in storage", extra={"schema_key": effective_key})
         raise HTTPException(
             status_code=404, detail=f"Schema not found: {effective_key}"
         )
@@ -240,20 +241,17 @@ async def build_conversation_history(
                 extra={"from_message_id": from_message_id, "path": base_code["path"]},
             )
     else:
-        # 방의 최신 메시지에서 코드 추출
-        recent_messages = await get_messages_by_room(room_id)
-        # 최신 메시지부터 역순으로 코드가 있는 메시지 찾기
-        for msg in reversed(recent_messages):
-            if msg.get("content") and msg.get("path"):
-                base_code = {
-                    "path": msg["path"],
-                    "content": msg["content"],
-                }
-                logger.info(
-                    "Code context from latest message",
-                    extra={"room_id": room_id, "path": base_code["path"]},
-                )
-                break
+        # 방의 최신 코드 메시지 1건만 조회 (최적화)
+        latest_code_msg = await get_latest_code_message(room_id)
+        if latest_code_msg and latest_code_msg.get("content") and latest_code_msg.get("path"):
+            base_code = {
+                "path": latest_code_msg["path"],
+                "content": latest_code_msg["content"],
+            }
+            logger.info(
+                "Code context from latest message",
+                extra={"room_id": room_id, "path": base_code["path"]},
+            )
 
     # 사용자 메시지 구성: 기존 코드가 있으면 포함
     if base_code:
@@ -493,7 +491,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
         response_message, usage = await provider.chat(messages)
         parsed = parse_ai_response(response_message.content)
 
-        # Firestore에 메시지 저장 (question + text + code 하나의 문서로)
+        # DB에 메시지 저장 (question + text + code 하나의 문서로)
         first_file = parsed.files[0] if parsed.files else None
         await create_chat_message(
             room_id=request.room_id,
@@ -512,8 +510,8 @@ async def chat(request: ChatRequest) -> ChatResponse:
         raise HTTPException(status_code=404, detail="Chat room not found.") from e
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
-    except FirestoreError as e:
-        logger.error("Firestore error in chat", extra={"room_id": request.room_id, "error": str(e)})
+    except DatabaseError as e:
+        logger.error("Database error in chat", extra={"room_id": request.room_id, "error": str(e)})
         raise HTTPException(status_code=500, detail="Database error. Please try again.") from e
     except Exception as e:
         logger.error("Unexpected error in chat", extra={"room_id": request.room_id, "error": str(e)})
@@ -524,10 +522,17 @@ async def chat(request: ChatRequest) -> ChatResponse:
 
 @router.post(
     "/stream",
-    summary="AI 채팅 (Streaming)",
+    summary="AI 채팅 (Broadcast)",
     description="""
-SSE(Server-Sent Events)를 통해 실시간 스트리밍 응답을 받습니다.
+Supabase Realtime broadcast를 통해 실시간 스트리밍 응답을 받습니다.
 이미지가 포함되면 Vision 모드로 동작합니다.
+
+## 동작 방식
+
+1. 클라이언트가 Supabase Realtime `room:{room_id}` 채널을 구독
+2. 이 엔드포인트 호출 → `{ "message_id": "..." }` 즉시 반환 (202)
+3. 서버가 백그라운드에서 AI 응답을 생성하며 broadcast 이벤트 발행
+4. 클라이언트가 broadcast 이벤트로 실시간 수신
 
 ## 요청 예시 (텍스트만)
 ```json
@@ -550,7 +555,7 @@ SSE(Server-Sent Events)를 통해 실시간 스트리밍 응답을 받습니다.
 }
 ```
 
-## 이벤트 타입
+## Broadcast 이벤트 타입
 
 | 타입 | 설명 | 필드 |
 |------|------|------|
@@ -559,19 +564,6 @@ SSE(Server-Sent Events)를 통해 실시간 스트리밍 응답을 받습니다.
 | `code` | 코드 파일 (완성 후) | `path`, `content` |
 | `done` | 스트리밍 완료 | `message_id` |
 | `error` | 오류 발생 | `error` |
-
-## SSE 응답 예시
-```
-data: {"type": "start", "message_id": "abc-123-def"}
-
-data: {"type": "chat", "text": "모던한 "}
-
-data: {"type": "chat", "text": "로그인 페이지입니다."}
-
-data: {"type": "code", "path": "src/pages/Login.tsx", "content": "import..."}
-
-data: {"type": "done", "message_id": "abc-123-def"}
-```
 
 ## 제한 (Vision 모드)
 - 최대 5개 이미지
@@ -587,29 +579,23 @@ data: {"type": "done", "message_id": "abc-123-def"}
 }
 ```
 """,
-    response_description="SSE 스트림",
+    response_model=BroadcastResponse,
+    status_code=202,
     responses={
-        200: {
-            "description": "SSE 스트림",
-            "content": {
-                "text/event-stream": {
-                    "example": 'data: {"type": "chat", "text": "모던한 로그인"}\n\ndata: {"type": "done"}\n\n'
-                }
-            },
-        },
+        202: {"description": "AI 응답 생성 시작 (broadcast로 결과 수신)"},
         404: {"description": "채팅방을 찾을 수 없음"},
         500: {"description": "AI API 호출 실패"},
     },
 )
-async def chat_stream(request: ChatRequest) -> StreamingResponse:
+async def chat_stream(request: ChatRequest) -> JSONResponse:
     """
-    AI 채팅 API (Streaming) - 하이브리드 방식
+    AI 채팅 API (Broadcast) - Supabase Realtime 기반
 
-    - 대화 텍스트는 실시간으로 스트리밍됩니다 (타이핑 효과)
-    - 코드 파일은 완성된 후 한 번에 전송됩니다 (파싱 안정성)
+    - 즉시 message_id를 반환하고 백그라운드에서 AI 응답 생성
+    - 클라이언트는 Supabase Realtime room:{room_id} 채널에서 broadcast 수신
     - 이미지가 포함되면 Vision 모드로 동작합니다
 
-    채팅방의 schema_key가 설정되어 있으면 Firebase Storage에서 스키마를 로드합니다.
+    채팅방의 schema_key가 설정되어 있으면 Storage에서 스키마를 로드합니다.
     """
     try:
         # Vision 모드 여부 판단
@@ -618,9 +604,18 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
         # 이미지 URL에서 base64로 변환 (Vision 모드인 경우)
         images: list[ImageContent] = []
         if is_vision_mode:
+            settings = get_settings()
             for url in request.image_urls:  # type: ignore
                 try:
                     base64_data, media_type = await fetch_image_as_base64(url)
+                    # base64 디코딩 없이 원본 크기 추정 (base64는 ~33% 오버헤드)
+                    estimated_size = len(base64_data) * 3 // 4
+                    if estimated_size > settings.max_image_size_bytes:
+                        logger.warning(
+                            "Image exceeds size limit, skipping",
+                            extra={"url": url, "size_mb": estimated_size / 1024 / 1024, "limit_mb": settings.max_image_size_mb},
+                        )
+                        continue
                     images.append(ImageContent(media_type=media_type, data=base64_data))
                 except Exception as e:
                     logger.warning("Failed to fetch image", extra={"url": url, "error": str(e)})
@@ -684,91 +679,194 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
             from_message_id=request.from_message_id,
         )
 
-        async def generate() -> AsyncGenerator[str, None]:
-            parser = StreamingParser()
-            collected_text = ""
-            collected_files: list[dict] = []
-
-            # 스트리밍 시작 시 message_id 전송
-            yield f"data: {json.dumps({'type': 'start', 'message_id': message_id}, ensure_ascii=False)}\n\n"
-
-            try:
-                # Vision/일반 모드에 따라 스트리밍 호출
-                if is_vision_mode:
-                    stream = provider.chat_vision_stream(messages, images)
-                else:
-                    stream = provider.chat_stream(messages)
-
-                async for chunk in stream:
-                    events = parser.process_chunk(chunk)
-                    for event in events:
-                        # 이벤트 수집
-                        if event["type"] == "chat":
-                            collected_text += event.get("text", "")
-                        elif event["type"] == "code":
-                            collected_files.append(event)
-
-                        yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
-
-                # 남은 버퍼 처리
-                final_events = parser.flush()
-                for event in final_events:
-                    if event["type"] == "chat":
-                        collected_text += event.get("text", "")
-                    yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
-
-                # 완료 시 DONE으로 업데이트
-                first_file = collected_files[0] if collected_files else None
-                await update_chat_message(
-                    message_id=message_id,
-                    text=collected_text.strip(),
-                    content=first_file.get("content", "") if first_file else "",
-                    path=first_file.get("path", "") if first_file else "",
-                    status="DONE",
-                )
-
-                yield f"data: {json.dumps({'type': 'done', 'message_id': message_id}, ensure_ascii=False)}\n\n"
-
-            except NotImplementedError:
-                # Vision 미지원 Provider
-                logger.error("Vision not supported", extra={"room_id": request.room_id, "provider": get_settings().ai_provider})
-                await update_chat_message(message_id=message_id, status="ERROR")
-                error_event = {
-                    "type": "error",
-                    "error": "현재 AI 프로바이더는 Vision 기능을 지원하지 않습니다.",
-                }
-                yield f"data: {json.dumps(error_event, ensure_ascii=False)}\n\n"
-            except Exception as e:
-                # 에러 시 ERROR로 업데이트
-                logger.error("Streaming error", extra={"room_id": request.room_id, "message_id": message_id, "error": str(e)})
-                await update_chat_message(message_id=message_id, status="ERROR")
-                error_event = {
-                    "type": "error",
-                    "error": "An error occurred during streaming. Please try again.",
-                }
-                yield f"data: {json.dumps(error_event, ensure_ascii=False)}\n\n"
-
-        return StreamingResponse(
-            generate(),
-            media_type="text/event-stream",
-            headers={
-                "Cache-Control": "no-cache",
-                "Connection": "keep-alive",
-                "X-Accel-Buffering": "no",
-            },
+        # 6. 백그라운드 태스크로 AI 생성 + broadcast 시작
+        task = asyncio.create_task(
+            _run_broadcast_generation(
+                room_id=request.room_id,
+                message_id=message_id,
+                user_id=request.user_id,
+                provider=provider,
+                messages=messages,
+                images=images,
+                is_vision_mode=is_vision_mode,
+            ),
+            name=f"broadcast:{request.room_id}:{message_id}",
         )
+        track_broadcast_task(task)
+
+        # 7. 즉시 202 응답 반환
+        return JSONResponse(
+            status_code=202,
+            content=BroadcastResponse(message_id=message_id).model_dump(),
+        )
+
     except RoomNotFoundError as e:
         raise HTTPException(status_code=404, detail="Chat room not found.") from e
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
-    except FirestoreError as e:
-        logger.error("Firestore error in chat_stream", extra={"room_id": request.room_id, "error": str(e)})
+    except DatabaseError as e:
+        logger.error("Database error in chat_stream", extra={"room_id": request.room_id, "error": str(e)})
         raise HTTPException(status_code=500, detail="Database error. Please try again.") from e
     except Exception as e:
         logger.error("Unexpected error in chat_stream", extra={"room_id": request.room_id, "error": str(e)})
         raise HTTPException(
             status_code=500, detail="An unexpected error occurred. Please try again."
         ) from e
+
+
+
+_DB_MAX_RETRIES = 3
+_DB_BASE_DELAY = 0.5  # seconds
+
+
+async def _save_message_with_retry(
+    *,
+    message_id: str,
+    text: str | None = None,
+    content: str | None = None,
+    path: str | None = None,
+    status: str | None = None,
+) -> None:
+    """DB 메시지 저장을 재시도 포함으로 수행 (최대 3회, 지수 백오프)."""
+    last_error: Exception | None = None
+
+    for attempt in range(_DB_MAX_RETRIES):
+        try:
+            await update_chat_message(
+                message_id=message_id,
+                text=text,
+                content=content,
+                path=path,
+                status=status,
+            )
+            return
+        except Exception as e:
+            last_error = e
+            logger.warning(
+                "DB save failed (retrying)",
+                extra={"message_id": message_id, "attempt": attempt + 1, "error": str(e)},
+            )
+            if attempt < _DB_MAX_RETRIES - 1:
+                await asyncio.sleep(_DB_BASE_DELAY * (2 ** attempt))
+
+    logger.error(
+        "DB save failed after retries",
+        extra={"message_id": message_id, "max_retries": _DB_MAX_RETRIES},
+    )
+    raise last_error  # type: ignore[misc]
+
+
+async def _run_broadcast_generation(
+    *,
+    room_id: str,
+    message_id: str,
+    user_id: str | None,
+    provider,
+    messages: list,
+    images: list[ImageContent],
+    is_vision_mode: bool,
+) -> None:
+    """백그라운드에서 AI 응답을 생성하고 broadcast 이벤트를 발행한다."""
+    parser = StreamingParser()
+    collected_text = ""
+    collected_files: list[dict] = []
+
+    try:
+        # start 이벤트
+        await broadcast_event(room_id, "start", {"message_id": message_id, "user_id": user_id})
+
+        async with asyncio.timeout(300):  # 5분 타임아웃
+            # Vision/일반 모드에 따라 스트리밍 호출
+            if is_vision_mode:
+                # Vision 미지원 프로바이더인지 확인 후 폴백
+                _supports_vision = type(provider).chat_vision_stream is not AIProvider.chat_vision_stream
+                if not _supports_vision:
+                    logger.warning(
+                        "Vision not supported, falling back to text-only",
+                        extra={"room_id": room_id, "provider": get_settings().ai_provider},
+                    )
+                    await broadcast_event(
+                        room_id,
+                        "warning",
+                        {"message": "현재 AI 프로바이더는 이미지 분석을 지원하지 않아 텍스트만으로 처리합니다."},
+                    )
+                    stream = provider.chat_stream(messages)
+                else:
+                    stream = provider.chat_vision_stream(messages, images)
+            else:
+                stream = provider.chat_stream(messages)
+
+            async for chunk in stream:
+                events = parser.process_chunk(chunk)
+                for event in events:
+                    event_type = event.pop("type")
+                    if event_type == "chat":
+                        collected_text += event.get("text", "")
+                    elif event_type == "code":
+                        collected_files.append(event)
+
+                    await broadcast_event(room_id, "chunk", {"type": event_type, **event})
+
+        # 남은 버퍼 처리
+        final_events = parser.flush()
+        for event in final_events:
+            event_type = event.pop("type")
+            if event_type == "chat":
+                collected_text += event.get("text", "")
+            await broadcast_event(room_id, "chunk", {"type": event_type, **event})
+
+        # 완료 시 DB 저장 (재시도 포함)
+        first_file = collected_files[0] if collected_files else None
+        await _save_message_with_retry(
+            message_id=message_id,
+            text=collected_text.strip(),
+            content=first_file.get("content", "") if first_file else "",
+            path=first_file.get("path", "") if first_file else "",
+            status="DONE",
+        )
+
+        await broadcast_event(room_id, "done", {"message_id": message_id})
+
+    except TimeoutError:
+        logger.error(
+            "Broadcast generation timed out",
+            extra={"room_id": room_id, "message_id": message_id, "timeout_seconds": 300},
+        )
+        try:
+            await _save_message_with_retry(
+                message_id=message_id,
+                text=collected_text.strip() if collected_text else None,
+                status="ERROR",
+            )
+            await broadcast_event(
+                room_id,
+                "error",
+                {"error": "응답 생성 시간이 초과되었습니다. 다시 시도해주세요."},
+            )
+        except Exception:
+            logger.exception("Failed to handle timeout", extra={"room_id": room_id, "message_id": message_id})
+    except NotImplementedError:
+        logger.error("Vision not supported", extra={"room_id": room_id, "provider": get_settings().ai_provider})
+        await _save_message_with_retry(message_id=message_id, status="ERROR")
+        await broadcast_event(
+            room_id,
+            "error",
+            {"error": "현재 AI 프로바이더는 Vision 기능을 지원하지 않습니다."},
+        )
+    except Exception as e:
+        logger.error(
+            "Broadcast generation error",
+            extra={"room_id": room_id, "message_id": message_id, "error": str(e)},
+        )
+        try:
+            await _save_message_with_retry(message_id=message_id, status="ERROR")
+            await broadcast_event(
+                room_id,
+                "error",
+                {"error": "An error occurred during generation. Please try again."},
+            )
+        except Exception:
+            logger.exception("Failed to send error broadcast", extra={"room_id": room_id, "message_id": message_id})
 
 
 # ============================================================================
@@ -791,7 +889,7 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
 ```
 
 ## 응답 구조
-- `url`: 생성된 마크다운 파일의 다운로드 URL (Firebase Storage)
+- `url`: 생성된 마크다운 파일의 다운로드 URL (Supabase Storage)
 - `content`: 마크다운 원본 텍스트
 """,
     response_description="생성된 화면 기술서",
@@ -807,7 +905,7 @@ async def describe(request: DescribeRequest) -> DescribeResponse:
 
     1. 해당 방의 최신 코드 메시지를 DB에서 가져옴
     2. 디스크립션 시스템 프롬프트 + 코드를 AI에 전달
-    3. AI 응답(마크다운)을 Firebase Storage에 업로드
+    3. AI 응답(마크다운)을 Supabase Storage에 업로드
     4. 다운로드 URL과 원본 텍스트를 반환
     """
     try:
@@ -841,7 +939,7 @@ async def describe(request: DescribeRequest) -> DescribeResponse:
         response_message, _ = await provider.chat(messages)
         description_md = response_message.content
 
-        # 4. Firebase Storage에 업로드
+        # 4. Supabase Storage에 업로드
         public_url, _ = await upload_description_to_storage(
             room_id=request.room_id,
             markdown_content=description_md,
@@ -858,9 +956,9 @@ async def describe(request: DescribeRequest) -> DescribeResponse:
         raise
     except RoomNotFoundError as e:
         raise HTTPException(status_code=404, detail="Chat room not found.") from e
-    except FirestoreError as e:
+    except DatabaseError as e:
         logger.error(
-            "Firestore error in describe",
+            "Database error in describe",
             extra={"room_id": request.room_id, "error": str(e)},
         )
         raise HTTPException(

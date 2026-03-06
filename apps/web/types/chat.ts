@@ -47,7 +47,7 @@ export type SSEEvent =
 
 /** 이미지 업로드 API 응답 (백엔드 POST /rooms/{room_id}/images) */
 export interface ImageUploadResponse {
-  url: string; // Firebase Storage public URL
+  url: string; // Supabase Storage public URL
   path: string; // Storage path
 }
 
@@ -59,6 +59,37 @@ export interface AttachedImage {
   uploadedUrl?: string; // 업로드 완료 후 Storage URL
   status: 'pending' | 'uploading' | 'done' | 'error';
   progress: number; // 0-100
+}
+
+// === Broadcast 이벤트 payload 타입 ===
+// AI 서버가 Supabase Realtime REST API로 직접 발행
+// 채널: room:{room_id}
+
+export interface BroadcastStartPayload {
+  message_id: string;
+  user_id: string;
+}
+
+export interface BroadcastChunkPayload {
+  type: 'chat' | 'code';
+  text?: string; // type === 'chat'
+  content?: string; // type === 'code'
+  path?: string; // type === 'code'
+}
+
+export interface BroadcastDonePayload {
+  message_id: string;
+}
+
+export interface BroadcastErrorPayload {
+  error: string;
+}
+
+// === BFF 응답 타입 ===
+
+/** POST /api/chat/stream 응답 - AI 서버 202 응답 프록시 */
+export interface ChatStreamTriggerResponse {
+  message_id: string;
 }
 
 /**
