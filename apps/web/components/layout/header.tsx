@@ -137,7 +137,7 @@ function Header({
   const handleCreateRoom = async () => {
     try {
       const newRoom = await createRoomMutation.mutateAsync({
-        storybook_url: 'https://storybook.example.com',
+        storybook_url: '',
         user_id: authUser?.uid || 'anonymous',
       });
       setCreateDialog(false);
@@ -159,7 +159,7 @@ function Header({
       if (roomIdToDelete === currentRoomId) {
         // 현재 룸이 삭제되면 새 룸 생성
         const newRoom = await createRoomMutation.mutateAsync({
-          storybook_url: 'https://storybook.example.com',
+          storybook_url: '',
           user_id: authUser?.uid || 'anonymous',
         });
         const params = new URLSearchParams(searchParams.toString());
