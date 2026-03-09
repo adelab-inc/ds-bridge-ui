@@ -11,6 +11,7 @@ import { toAuthUser } from '@/types/auth';
  */
 export function AuthInitializer() {
   const setUser = useAuthStore((s) => s.setUser);
+  const setAccessToken = useAuthStore((s) => s.setAccessToken);
 
   useEffect(() => {
     const supabase = createClient();
@@ -20,15 +21,17 @@ export function AuthInitializer() {
       setUser(user ? toAuthUser(user) : null);
     });
 
-    // 인증 상태 변경 구독
+    // 인증 상태 변경 구독 - token도 함께 캐싱
+    // TOKEN_REFRESHED 이벤트 시 자동으로 갱신된 token이 캐싱됨
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ? toAuthUser(session.user) : null);
+      setAccessToken(session?.access_token ?? null);
     });
 
     return () => subscription.unsubscribe();
-  }, [setUser]);
+  }, [setUser, setAccessToken]);
 
   return null;
 }
