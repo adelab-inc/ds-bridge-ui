@@ -10,8 +10,14 @@ from app.api.chat import router as chat_router
 from app.api.rooms import router as rooms_router
 from app.core.config import get_settings
 from app.core.logging import setup_logging
-from app.services.firebase_storage import cleanup_firebase
-from app.services.firestore import close_firestore_client
+from app.services.broadcast import close_broadcast_client, drain_broadcast_tasks
+from app.services.supabase_storage import cleanup_supabase
+from app.services.supabase_db import (
+    DatabaseError,
+    cleanup_stuck_generating_messages,
+    close_supabase_client,
+    get_supabase_client,
+)
 
 # JSON 로깅 초기화 (모듈 로드 시 즉시 실행)
 setup_logging()
@@ -30,11 +36,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """애플리케이션 생명주기 관리"""
     # Startup
     logger.info("Starting DS Bridge AI Server...")
+    await cleanup_stuck_generating_messages()
     yield
     # Shutdown
     logger.info("Shutting down DS Bridge AI Server...")
-    await close_firestore_client()
-    cleanup_firebase()
+    await drain_broadcast_tasks(timeout=30.0)
+    await close_broadcast_client()
+    await close_supabase_client()
+    cleanup_supabase()
     logger.info("Cleanup completed")
 
 
@@ -133,12 +142,12 @@ app.include_router(chat_router, prefix="/chat", tags=["chat"])
     "/health",
     tags=["health"],
     summary="서버 상태 확인",
-    description="서버가 정상적으로 실행 중인지 확인합니다.",
+    description="서버가 정상적으로 실행 중인지 확인합니다. Supabase 연결 상태도 포함됩니다.",
     response_description="서버 상태",
     responses={
         status.HTTP_200_OK: {
             "description": "서버 정상",
-            "content": {"application/json": {"example": {"status": "healthy"}}},
+            "content": {"application/json": {"example": {"status": "healthy", "database": "connected"}}},
         }
     },
 )
@@ -147,8 +156,17 @@ async def health_check():
     서버 헬스 체크 엔드포인트
 
     Cloud Run, Kubernetes 등에서 liveness/readiness probe로 사용됩니다.
+    Supabase DB 연결 상태를 함께 확인합니다.
     """
-    return {"status": "healthy"}
+    db_status = "connected"
+    try:
+        client = await get_supabase_client()
+        await client.table("chat_rooms").select("id", count="exact").limit(0).execute()
+    except (DatabaseError, Exception):
+        db_status = "disconnected"
+
+    overall = "healthy" if db_status == "connected" else "degraded"
+    return {"status": overall, "database": db_status}
 
 
 # ============================================================================

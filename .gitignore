@@ -140,5 +140,8 @@ apps/web/public/figma-nodes/*.clean.json
 # data
 apps/ai-service/data
 
+# Migration data (uid 매핑 등 민감 정보)
+apps/ai-service/scripts/migration_data/
+
 # Storybook standalone build output
 storybook-standalone/apps/web/
