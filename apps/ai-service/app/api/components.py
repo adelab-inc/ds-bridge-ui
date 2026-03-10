@@ -933,34 +933,56 @@ LAYOUT_GUIDE = """
 
 유저가 "Type C", "RP-1" 등 레이아웃 용어를 사용하면 아래 정의에 따라 코드를 생성하세요.
 
+### 기본 구조 원칙
+
+- 기준 해상도: **1920px**
+- 콘텐츠 최대 영역: **1872px** (좌우 Margin 24px씩)
+- 좌우 Margin: **24px** (`px-6`)
+- 헤더 ↔ 메인 섹션 간 Gap: **20px** (`gap-5`)
+- 12 Column Grid: Gutter **24px** (`gap-6`), col-1 = 134px
+- Tailwind: `grid grid-cols-12 gap-6 px-6`
+
+### 필터/검색 영역 그리드 규칙
+
+- 필터 영역은 col-12 내부에서 독립 그리드 사용
+- 내부 Gutter: **12px** (`gap-3`), Padding: **16px** (`p-4`)
+- 6그리드 기반: 1컬럼당 col-1 또는 col-2 폭
+- 우측 최하단 2컬럼 = 검색/초기화 버튼 위치
+
+### 액션 버튼 정렬 규칙
+
+- 항상 **우측 정렬** (`flex justify-end gap-2`)
+- 좌→우 순서: 중립 텍스트(Tertiary) → 중립 보조(Outline) → 보조(Secondary) → 주요(Primary)
+
 ### Grid Type (가로 분할 구조)
 
-| Type | 컬럼 구성 | Tailwind 구조 | 용도 |
-|------|----------|---------------|------|
-| TYPE-A | col-12 (단일) | 전체 `col-span-12` | 리스트, 단일 상세, 입력 폼, 리포트 |
-| TYPE-B | col-6 + col-6 | `col-span-6` + `col-span-6` | 비교 화면, 병렬 입력 |
-| TYPE-C | col-3 + col-9 | `col-span-3` + `col-span-9` | 목록+상세, 코드/조직/설정 관리 |
-| TYPE-D | col-4 + col-8 | `col-span-4` + `col-span-8` | 고급 검색, 필터 고정형 리포트 |
-| TYPE-E | col-4 × 3 | `col-span-4` × 3 | 동일 위계 정보 병렬 배치 |
-| TYPE-F | col-2 + col-8 + col-2 | `col-span-2` + `col-span-8` + `col-span-2` | 검토/승인 프로세스 |
-| TYPE-G | col-2 + col-2 + col-8 | `col-span-2` + `col-span-2` + `col-span-8` | 트리+목록+상세 (2단계 탐색) |
-| TYPE-H | col-3 × 4 | `col-span-3` × 4 | 동일 위계 정보 4열 배치 |
+| Type | 컬럼 구성 | Tailwind 구조 | 대표 RP | 용도 |
+|------|----------|---------------|---------|------|
+| TYPE-A | col-12 (단일) | 전체 `col-span-12` | RP-1, RP-2, RP-3 | 리스트, 단일 상세, 입력 폼, 리포트 |
+| TYPE-B | col-6 + col-6 | `col-span-6` + `col-span-6` | RP-7 | 비교 화면, 병렬 입력 |
+| TYPE-C (C-1) | col-3 + col-9 | `col-span-3` + `col-span-9` | RP-6 | 목록+상세, 코드/조직/설정 관리 |
+| TYPE-C (C-2) | col-9 + col-3 | `col-span-9` + `col-span-3` | RP-6 | C-1 좌우 반전 |
+| TYPE-D (D-1) | col-4 + col-8 | `col-span-4` + `col-span-8` | RP-1, RP-4 | 고급 검색, 필터 고정형 리포트 |
+| TYPE-D (D-2) | col-8 + col-4 | `col-span-8` + `col-span-4` | RP-4 | D-1 좌우 반전 |
+| TYPE-E | col-4 × 3 | `col-span-4` × 3 | — | 동일 위계 정보 병렬 배치 |
+| TYPE-F | col-2 + col-8 + col-2 | `col-span-2` + `col-span-8` + `col-span-2` | RP-2, RP-4 | 검토/승인 프로세스 |
+| TYPE-G | col-2 + col-2 + col-8 | `col-span-2` + `col-span-2` + `col-span-8` | RP-6 | 트리+목록+상세 (2단계 탐색) |
+| TYPE-H | col-3 × 4 | `col-span-3` × 4 | — | 동일 위계 정보 4열 배치 |
 
-- TYPE-C, D는 좌우 반전 가능 (C-2: col-9+col-3, D-2: col-8+col-4)
-- 모든 Type은 `grid grid-cols-12` 기반
+- 모든 Type은 `grid grid-cols-12 gap-6` 기반
 
 ### Row Pattern (세로 흐름 구조)
 
-| 패턴 | 이름 | 구조 | 용도 |
-|------|------|------|------|
-| RP-1 | 조회형(기본형) | Title → FilterBar → ActionButtons → Grid | 대량 데이터 조회 (계약 리스트, 승인 목록) |
-| RP-2 | 단일 상세형 | Title → 상세 정보 영역 | 단일 객체 조회 (계약 상세, 고객 상세) |
-| RP-3 | 입력/수정형 | Title → Form Section → Action(저장/취소) | 데이터 생성/수정 |
-| RP-4 | 요약+Grid형 | Title → 상단 요약 → 하단 Grid | 기본 정보 + 관련 데이터 |
-| RP-5 | 다중 Grid형 | Title → Grid A → Grid B | 성격 다른 데이터 병렬 (승인대기/완료) |
-| RP-6 | 탐색형 | Title → Navigation Area + Detail Area | 관리성 화면 (코드 관리, 조직 관리) |
-| RP-7 | 병렬형 | Title → Section A \\| Section B | 변경 전/후 비교, A/B 비교 |
-| RP-8 | 상세+탭형 | Title → 상단 기본정보 → Tab → 하단 Grid/Content | 상세 + 탭별 관련 데이터 |
+| 패턴 | 이름 | 구조 | 스크롤 정책 | 용도 |
+|------|------|------|------------|------|
+| RP-1 | 조회형(기본형) | Title → FilterBar → ActionButtons → Grid | 전체 스크롤 + Grid 내부 스크롤 | 대량 데이터 조회 (계약 리스트, 승인 목록) |
+| RP-2 | 단일 상세형 | Title → 상세 정보 영역 | 전체 스크롤 | 단일 객체 조회 (계약 상세, 고객 상세) |
+| RP-3 | 입력/수정형 | Title → Form Section → Action(저장/취소) | 전체 스크롤, Form 자동 확장 | 데이터 생성/수정 |
+| RP-4 | 요약+Grid형 | Title → 상단 요약 → 하단 Grid | 전체 스크롤, 하단 Grid 내부 스크롤 | 기본 정보 + 관련 데이터 |
+| RP-5 | 다중 Grid형 | Title → Grid A → Grid B | 전체 스크롤, 각 Grid 독립 가능 | 성격 다른 데이터 병렬 (승인대기/완료) |
+| RP-6 | 탐색형 | Title → Navigation Area + Detail Area | 좌측 독립 스크롤, 우측 전체 스크롤 | 관리성 화면 (코드 관리, 조직 관리) |
+| RP-7 | 병렬형 | Title → Section A \\| Section B | 좌우 독립 스크롤 | 변경 전/후 비교, A/B 비교 |
+| RP-8 | 상세+탭형 | Title → 상단 기본정보 → Tab → 하단 Grid/Content | 전체 스크롤, 탭 콘텐츠 내부 스크롤 | 상세 + 탭별 관련 데이터 |
 
 ### Grid Type × Row Pattern 적용 범위
 
@@ -981,8 +1003,11 @@ LAYOUT_GUIDE = """
 
 | 구간 | 간격 | Tailwind |
 |------|------|----------|
+| 헤더 ↔ 메인 섹션 | 20px | `mb-5` |
 | 타이틀 ↔ 콘텐츠 | 20px | `mb-5` |
+| 탭 ↔ 타이틀 | 24px | `mb-6` |
 | 필터바 ↔ 그리드 | 20px | `mb-5` |
+| 필터바 ↔ 세그먼트 | 20px | `mb-5` |
 | 필터바 ↔ 서머리바 | 12px | `mb-3` |
 | 서머리바 ↔ 액션버튼 | 12px | `mb-3` |
 | 액션버튼 ↔ 그리드 | 12px | `mb-3` |
