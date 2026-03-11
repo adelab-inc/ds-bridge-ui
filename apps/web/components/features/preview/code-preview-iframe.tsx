@@ -442,6 +442,7 @@ function CodePreviewIframe({
           var onSortChanged = props.onSortChanged;
           var onCellValueChanged = props.onCellValueChanged;
           var onColumnMoved = props.onColumnMoved;
+          var suppressRowClickSelection = props.suppressRowClickSelection;
 
           // 퍼센트 높이가 flex 컨텍스트에서 해결되지 않을 때 부모의 실제 높이를 측정
           React.useEffect(function() {
@@ -497,6 +498,7 @@ function CodePreviewIframe({
               onSortChanged: onSortChanged,
               onCellValueChanged: onCellValueChanged,
               onColumnMoved: onColumnMoved,
+              suppressRowClickSelection: suppressRowClickSelection,
             })
           );
         };
