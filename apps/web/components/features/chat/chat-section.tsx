@@ -328,8 +328,14 @@ function ChatSection({
       image_urls: imageUrls,
     });
 
-    // POST 실패 시 에러 처리
-    if (!messageId) {
+    if (messageId) {
+      // tempId → message_id 즉시 갱신 (onStart 도착 전 dedup 보장)
+      activeMessageIdRef.current = messageId;
+      updateStreamingMessage((prev) =>
+        prev ? { ...prev, id: messageId } : prev
+      );
+    } else {
+      // POST 실패 시 에러 처리
       activeMessageIdRef.current = null;
       const now = Date.now();
       updateStreamingMessage((prev) =>
