@@ -92,6 +92,8 @@ _SCHEMA_SUPPLEMENTS: dict[str, dict[str, dict]] = {
         "onChange": {"type": "(e: ChangeEvent) => void", "required": False},
         "required": {"type": "boolean", "required": False},
         "name": {"type": "string", "required": False},
+        "disabled": {"type": "boolean", "required": False},
+        "readOnly": {"type": "boolean", "required": False},
     },
     "Button": {
         "type": {"type": ["button", "submit", "reset"], "required": False, "defaultValue": "button"},
@@ -114,6 +116,18 @@ _SCHEMA_SUPPLEMENTS: dict[str, dict[str, dict]] = {
 def _supplement_schema(schema: dict) -> dict:
     """Schema에 누락된 HTML 기반 props를 보충 (스키마에 있는 컴포넌트만)"""
     components = schema.get("components", {})
+
+    # isDisabled → disabled, isReadOnly → readOnly 교정
+    # (Schema가 CVA 내부 variant 이름을 사용하는 경우 실제 외부 prop 이름으로 변환)
+    _PROP_RENAMES = {"isDisabled": "disabled", "isReadOnly": "readOnly"}
+    for comp_data in components.values():
+        props = comp_data.get("props", {})
+        for old_name, new_name in _PROP_RENAMES.items():
+            if old_name in props and new_name not in props:
+                props[new_name] = props.pop(old_name)
+            elif old_name in props and new_name in props:
+                del props[old_name]
+
     for comp_name, extra_props in _SCHEMA_SUPPLEMENTS.items():
         if comp_name in components:
             existing = components[comp_name].get("props", {})
@@ -837,6 +851,28 @@ Always respond in Korean.
 - multiline rowsVariant="flexible": 긴 텍스트 (설명, 비고)
 - ✅ `<Field type="text" label="이름" />` — ALWAYS self-closing
 - ❌ `<Field>children</Field>` — CRASHES (React Error #137)
+
+### 🚨 Disabled / ReadOnly Props (CRITICAL — 잘못된 prop명 사용 시 스타일 미적용)
+모든 컴포넌트의 비활성/읽기전용 prop은 **HTML 표준 이름**을 사용합니다:
+- ✅ `disabled` — Button, Field, Select, Checkbox, Radio, ToggleSwitch 모두 동일
+- ✅ `readOnly` — Field 전용 (다른 컴포넌트에는 없음)
+- ❌ `isDisabled` — **사용 금지!** 내부 CVA variant 이름이며, prop으로 전달해도 스타일 미적용
+- ❌ `isReadOnly` — **사용 금지!** 내부 CVA variant 이름이며, prop으로 전달해도 스타일 미적용
+
+```tsx
+// ✅ 올바른 disabled/readOnly 사용법
+<Button variant="destructive" disabled>삭제</Button>
+<Field label="이름" value={name} readOnly />
+<Field label="이메일" value={email} disabled />
+<Select label="부서" value={dept} disabled options={options} />
+<Checkbox checked={agreed} disabled />
+<Radio checked={selected} disabled />
+
+// ❌ 잘못된 사용법 (스타일 적용 안 됨!)
+<Button isDisabled>삭제</Button>
+<Field label="이름" isReadOnly />
+<Field label="이메일" isDisabled />
+```
 
 ### Select
 - 필터용: placeholder="전체" + options에 "전체" 포함
