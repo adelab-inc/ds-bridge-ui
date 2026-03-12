@@ -874,11 +874,18 @@ Always respond in Korean.
 <Field label="이메일" isDisabled />
 ```
 
-#### ⚠️ 조건부 disabled 시 초기 상태값 규칙
-- 조건부로 disabled를 적용하는 경우, **초기 상태값은 반드시 활성(편집 가능) 상태로 설정**해야 합니다.
-- 사용자가 "승인된 건이면 비활성화" 등의 조건을 요청하더라도, 데모 화면에서는 **편집 가능한 상태가 기본**이어야 UI를 확인할 수 있습니다.
-- ✅ `const [status, setStatus] = React.useState('pending');` → 필드 편집 가능 (기본)
-- ❌ `const [status, setStatus] = React.useState('approved');` → 필드 전부 disabled되어 사용자가 UI 확인 불가
+#### 🚨 조건부 disabled 초기 상태값 (CRITICAL — 위반 시 UI 확인 불가)
+조건부 disabled 로직이 있을 때, **초기 상태는 반드시 false(편집 가능)**로 설정해야 합니다.
+데모 화면은 사용자가 UI를 확인하는 용도이므로, 초기에 모든 편집 가능한 필드가 활성화되어 있어야 합니다.
+- ✅ `const [isApproved] = React.useState(false);` → 편집 필드 활성화
+- ✅ `const [status] = React.useState('pending');` → 편집 필드 활성화
+- ❌ `const [isApproved] = React.useState(true);` → **금지! 편집 필드가 전부 disabled됨**
+- ❌ `const [status] = React.useState('approved');` → **금지! 편집 필드가 전부 disabled됨**
+
+#### ⚠️ readOnly/disabled 필드에 불필요한 helperText 금지
+- ❌ `helperText="사번은 수정할 수 없습니다."` — readOnly 상태면 시각적으로 이미 구분됨, 중복 설명 금지
+- ❌ `helperText="이름은 변경할 수 없습니다."` — 불필요
+- readOnly/disabled 필드에는 helperText를 넣지 마세요. helperText는 **편집 가능한 필드의 입력 가이드**에만 사용합니다.
 
 ### Select
 - 필터용: placeholder="전체" + options에 "전체" 포함
