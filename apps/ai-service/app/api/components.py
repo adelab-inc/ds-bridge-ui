@@ -575,31 +575,52 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("- ✅ `const [rowData, setRowData] = useState([...])` — 참조 유지되어 그리드 상태 보존")
     lines.append("")
 
-    # 체크박스 선택 패턴
-    lines.append("### Checkbox Selection Pattern")
-    lines.append("행 선택(체크박스)이 필요한 경우, **반드시 `suppressRowClickSelection`을 함께 사용**해야 합니다.")
-    lines.append("그렇지 않으면 행의 아무 곳(버튼, 텍스트 등)을 클릭해도 체크박스가 토글되어 의도치 않은 선택이 발생합니다.")
+    # 체크박스 선택 패턴 (AG Grid v34 API) — 강화된 지시
+    lines.append("### 🚨 CRITICAL: Checkbox Selection Pattern (AG Grid v34)")
+    lines.append("이 프로젝트는 AG Grid v34를 사용합니다. 체크박스 행 선택 시 **반드시 아래 규칙을 따르세요.**")
     lines.append("")
+    lines.append("#### 🚫 절대 사용 금지 (RUNTIME ERROR 발생):")
+    lines.append("- `rowSelection=\"multiple\"` — 문자열 형태는 v34에서 **삭제됨**, 런타임 에러 발생")
+    lines.append("- `rowSelection=\"single\"` — 문자열 형태는 v34에서 **삭제됨**, 런타임 에러 발생")
+    lines.append("- `suppressRowClickSelection` — v34에서 **삭제됨**, prop 자체가 존재하지 않음")
+    lines.append("- `checkboxSelection: true` in columnDefs — v34에서 **삭제됨**, rowSelection.checkboxes로 대체")
+    lines.append("- `headerCheckboxSelection: true` in columnDefs — v34에서 **삭제됨**, rowSelection.headerCheckbox로 대체")
+    lines.append("")
+    lines.append("#### ✅ 유일한 올바른 방법:")
     lines.append("```tsx")
-    lines.append("// ⚠️ rowData는 반드시 useState로 — const rowData = [...] 사용 시 체크 즉시 해제됨")
+    lines.append("// ⚠️ rowData는 반드시 useState로")
     lines.append("const [rowData] = useState([...initialData]);")
     lines.append("")
+    lines.append("// ✅ columnDefs에 checkboxSelection 컬럼을 넣지 않는다!")
     lines.append("const columnDefs: ColDef[] = [")
-    lines.append("  { checkboxSelection: true, headerCheckboxSelection: true, width: 50 },  // 체크박스 전용 컬럼")
     lines.append("  { field: 'name', headerName: '이름' },")
-    lines.append("  // ... 나머지 컬럼")
+    lines.append("  { field: 'age', headerName: '나이' },")
     lines.append("];")
     lines.append("")
+    lines.append("// ✅ 다중 선택 + 체크박스로만 선택 (행 클릭으로 선택 안 됨)")
     lines.append("<DataGrid")
     lines.append("  rowData={rowData}")
     lines.append("  columnDefs={columnDefs}")
-    lines.append("  rowSelection=\"multiple\"")
-    lines.append("  suppressRowClickSelection={true}  // ← 필수: 체크박스로만 선택 가능하게 함")
+    lines.append("  rowSelection={{ mode: 'multiRow', checkboxes: true, headerCheckbox: true, enableClickSelection: false }}")
+    lines.append("  onSelectionChanged={handleSelectionChanged}")
+    lines.append("/>")
+    lines.append("")
+    lines.append("// ✅ 단일 선택 + 체크박스로만 선택")
+    lines.append("<DataGrid")
+    lines.append("  rowData={rowData}")
+    lines.append("  columnDefs={columnDefs}")
+    lines.append("  rowSelection={{ mode: 'singleRow', checkboxes: true, enableClickSelection: false }}")
+    lines.append("/>")
+    lines.append("")
+    lines.append("// ✅ 체크박스 없이 행 클릭으로 선택")
+    lines.append("<DataGrid")
+    lines.append("  rowData={rowData}")
+    lines.append("  columnDefs={columnDefs}")
+    lines.append("  rowSelection={{ mode: 'multiRow', enableClickSelection: true }}")
     lines.append("/>")
     lines.append("```")
     lines.append("")
-    lines.append("- ❌ `rowSelection=\"multiple\"` 만 사용 → 행 아무 곳 클릭해도 선택됨 (버튼 클릭 시에도)")
-    lines.append("- ✅ `rowSelection=\"multiple\"` + `suppressRowClickSelection={true}` → 체크박스로만 선택")
+    lines.append("**요약: rowSelection은 반드시 객체 `{{ }}` 형태로 작성. 문자열 금지. suppressRowClickSelection 금지. columnDefs에 checkboxSelection 금지.**")
     lines.append("")
 
     # 이벤트 핸들러
@@ -835,12 +856,35 @@ Always respond in Korean.
   - "info": 진행중, 접수
 - ❌ NEVER invent hex colors — only use exact values from the COLOR TOKEN TABLE above
 
-### Dialog
+### 🚨 Dialog (Compound Pattern)
+Dialog는 Compound 패턴입니다. 반드시 `Dialog.Header`, `Dialog.Body`, `Dialog.Footer`를 사용하세요.
 - size="sm": 확인/취소 간단 알림
 - size="md": 폼 입력 (기본)
 - size="lg": 복잡한 폼, 상세 정보
-- ⚠️ Dialog 내부 padding은 `p-5` 사용. `p-6` 이상은 마진이 과도해 보임
+- ⚠️ **Dialog 자체에 padding이 내장되어 있음. 절대로 Dialog 내부에 추가 padding/margin wrapper div를 넣지 마세요!**
+- ❌ `<Dialog><div className="p-5">...</div></Dialog>` — 이중 패딩 발생, 금지
+- ❌ `<Dialog><div className="p-6">...</div></Dialog>` — 이중 패딩 발생, 금지
+- ✅ `<Dialog><Dialog.Header title="제목" /><Dialog.Body>내용</Dialog.Body><Dialog.Footer>...</Dialog.Footer></Dialog>`
 - Dialog body 내 폼 필드 간격: `gap-4` 또는 `mb-4` (mb-5 이상 금지)
+
+```tsx
+// ✅ 올바른 Dialog 사용법
+<Dialog open={isOpen} onClose={() => setIsOpen(false)} size="md">
+  <Dialog.Header title="계약 상세" showCloseButton />
+  <Dialog.Body>
+    <div className="flex flex-col gap-4">
+      <Field label="계약번호" value="CNT-001" readOnly />
+      <Field label="고객명" value="김민준" readOnly />
+    </div>
+  </Dialog.Body>
+  <Dialog.Footer>
+    <Dialog.FooterRight>
+      <Button variant="outline" onClick={() => setIsOpen(false)}>취소</Button>
+      <Button variant="primary">확인</Button>
+    </Dialog.FooterRight>
+  </Dialog.Footer>
+</Dialog>
+```
 
 ### Tooltip (롤오버 메시지)
 - 아이콘이나 텍스트에 마우스 오버 시 설명 표시용
@@ -867,7 +911,7 @@ Always respond in Korean.
 - **White Card Container**: `bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6` — ALL content inside cards
   - Exception: Page Titles (h1) can be outside
 - **Container**: `w-full max-w-[1920px] mx-auto` (1920x1080 기준)
-- **Filter + Table**: MUST be grouped together. DO NOT separate into different cards.
+- 🚨 **Filter + Table = 하나의 Card**: FilterBar, ActionButtons, Grid는 **반드시 하나의 Section Card** 안에 포함. 절대 별도 카드로 분리 금지!
 - **Grid System**:
   - 12-column: `grid-cols-12` + `col-span-N` (flexible layouts)
   - Simple: `grid-cols-2`/`grid-cols-3`/`grid-cols-4` (equal divisions)
@@ -1043,7 +1087,7 @@ LAYOUT_GUIDE = """
 
 | 패턴 | 이름 | 구조 | 스크롤 정책 | 용도 |
 |------|------|------|------------|------|
-| RP-1 | 조회형(기본형) | Title → FilterBar → ActionButtons → Grid | 전체 스크롤 + Grid 내부 스크롤 | 대량 데이터 조회 (계약 리스트, 승인 목록) |
+| RP-1 | 조회형(기본형) | Title → **[Section Card: FilterBar → ActionButtons → Grid]** | 전체 스크롤 + Grid 내부 스크롤 | 대량 데이터 조회 (계약 리스트, 승인 목록) |
 | RP-2 | 단일 상세형 | Title → 상세 정보 영역 | 전체 스크롤 | 단일 객체 조회 (계약 상세, 고객 상세) |
 | RP-3 | 입력/수정형 | Title → Form Section → Action(저장/취소) | 전체 스크롤, Form 자동 확장 | 데이터 생성/수정 |
 | RP-4 | 요약+Grid형 | Title → 상단 요약 → 하단 Grid | 전체 스크롤, 하단 Grid 내부 스크롤 | 기본 정보 + 관련 데이터 |
@@ -1082,6 +1126,50 @@ LAYOUT_GUIDE = """
 | 탭 ↔ 필터바 | 20px | `mb-5` |
 | 탭 섹션: 타이틀 ↔ 폼 | 12px | `mb-3` |
 
+### 🚨 RP-1 Section Card 규칙 (CRITICAL)
+
+**RP-1(조회형) 레이아웃에서 FilterBar, ActionButtons, Grid는 반드시 하나의 Section Card 안에 포함되어야 합니다.**
+
+- Title(h1)만 Section Card **바깥**에 위치
+- FilterBar, ActionButtons, DataGrid/Table은 모두 **같은 하나의 `bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6`** 안에 배치
+- ❌ FilterBar와 Grid를 **별도 카드**로 분리 금지
+- ❌ FilterBar, ActionButtons, Grid를 카드 없이 **직접 나열** 금지
+
+#### RP-1 올바른 구조:
+```tsx
+<div className="min-h-screen bg-[#f4f6f8] p-8">
+  {/* Title — Section Card 바깥 */}
+  <h1 className="text-2xl font-bold text-[#212529] mb-5">계약 관리</h1>
+
+  {/* 🚨 하나의 Section Card 안에 FilterBar + ActionButtons + Grid 모두 포함 */}
+  <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6">
+    {/* FilterBar */}
+    <div className="grid grid-cols-4 gap-4 items-end">
+      <Field type="date" label="조회기간(시작)" ... className="w-full" />
+      <Field type="date" label="조회기간(종료)" ... className="w-full" />
+      <Select label="상태" ... className="w-full" />
+      <Field type="text" label="검색어" ... className="w-full" />
+    </div>
+    {/* ActionButtons — 필터 아래 우측 정렬 */}
+    <div className="flex justify-end gap-2 mt-4 mb-5">
+      <Button variant="secondary" size="md">초기화</Button>
+      <Button variant="primary" size="md">조회</Button>
+    </div>
+    {/* Grid — 같은 카드 안 */}
+    <DataGrid rowData={rowData} columnDefs={columnDefs} domLayout="autoHeight" />
+    <Pagination currentPage={page} totalCount={100} pageSize={10} onPageChange={setPage} className="mt-4" />
+  </div>
+</div>
+```
+
+#### ❌ 잘못된 구조 (FilterBar와 Grid가 분리됨):
+```tsx
+{/* ❌ 이렇게 하면 안 됨 */}
+<h1>계약 관리</h1>
+<div className="bg-white ...">FilterBar + Buttons</div>  {/* 카드 1 */}
+<div className="bg-white ...">Grid</div>                  {/* 카드 2 — 분리됨! */}
+```
+
 """
 
 # ============================================================================
@@ -1099,6 +1187,7 @@ PRE_GENERATION_CHECKLIST = """
 3. **Import**: JSX에서 사용한 컴포넌트만 import했는가? 타입 import는 없는가?
 4. **Complete output**: `...` 이나 `// 나머지 동일` 같은 생략이 없는가?
 5. **ENUM variety**: 같은 variant/size를 모든 컴포넌트에 반복하지 않았는가?
+6. **Section Card**: 조회형(RP-1) 화면에서 FilterBar + ActionButtons + Grid가 **하나의 Section Card** 안에 있는가? 별도 카드로 분리되지 않았는가?
 
 ---
 
@@ -1202,11 +1291,12 @@ const MemberDetail = () => {
 export default MemberDetail;
 ```
 
-### Filter + Button Layout (조회 영역)
-필터 영역에 버튼을 배치할 때 반드시 이 패턴을 따를 것:
+### Filter + Button + Grid Layout (조회 영역 = 하나의 Section Card)
+🚨 **FilterBar, ActionButtons, Grid는 반드시 하나의 Section Card 안에 포함!**
 ```tsx
-{/* ✅ 올바른 필터 레이아웃: 버튼은 별도 행, size="md" */}
-<div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6 mb-6">
+{/* ✅ 올바른 조회 레이아웃: FilterBar + Buttons + Grid = 하나의 Section Card */}
+<div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6">
+  {/* FilterBar */}
   <div className="grid grid-cols-12 gap-4 items-end">
     <div className="col-span-3">
       <Field type="date" label="조회기간(시작)" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full" />
@@ -1222,16 +1312,20 @@ export default MemberDetail;
       <Field type="text" label="검색어" placeholder="이름 또는 코드" value={keyword} onChange={(e) => setKeyword(e.target.value)} className="w-full" />
     </div>
   </div>
-  {/* 버튼은 항상 별도 행에 우측 정렬 */}
-  <div className="flex justify-end gap-2 mt-4">
+  {/* ActionButtons — 별도 행에 우측 정렬 */}
+  <div className="flex justify-end gap-2 mt-4 mb-5">
     <Button variant="secondary" size="md">초기화</Button>
     <Button variant="primary" size="md">조회</Button>
   </div>
+  {/* Grid — 같은 Section Card 안! 절대 별도 카드로 분리 금지 */}
+  <DataGrid rowData={rowData} columnDefs={columnDefs} domLayout="autoHeight" />
+  <Pagination currentPage={page} totalCount={100} pageSize={10} onPageChange={setPage} className="mt-4" />
 </div>
 ```
 - ⚠️ 버튼을 필드와 같은 grid row에 col-span으로 넣지 말 것 (찌그러짐 원인)
 - 버튼은 `flex justify-end gap-2 mt-4`로 별도 행에 배치
 - 필터 버튼: 반드시 `size="md"` (sm 금지)
+- 🚨 **Grid는 FilterBar와 같은 Section Card 안에 배치. 별도 카드 금지!**
 
 ### Breadcrumb (경로 표시)
 경로 표시가 필요할 때 페이지 상단에 Breadcrumb 스타일로 배치:
