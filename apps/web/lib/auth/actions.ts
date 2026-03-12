@@ -55,9 +55,6 @@ export async function signOut(): Promise<void> {
 
 /** 현재 세션의 access_token 반환 (미인증 시 null) */
 export async function getIdToken(): Promise<string | null> {
-  const supabase = createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  return session?.access_token ?? null;
+  const { useAuthStore } = await import('@/stores/useAuthStore');
+  return useAuthStore.getState().getIdToken();
 }

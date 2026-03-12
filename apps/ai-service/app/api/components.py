@@ -375,7 +375,7 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("import { ColDef } from 'ag-grid-community';")
     lines.append("")
     lines.append("// 셀 렌더러가 필요한 경우")
-    lines.append("import { DataGrid, ButtonCellRenderer, CheckboxCellRenderer, ImageCellRenderer } from '@aplus/ui';")
+    lines.append("import { DataGrid, CheckboxCellRenderer, ImageCellRenderer } from '@aplus/ui';")
     lines.append("")
     lines.append("// 컬럼 타입 또는 유틸리티가 필요한 경우")
     lines.append("import { DataGrid, COLUMN_TYPES, AgGridUtils } from '@aplus/ui';")
@@ -443,30 +443,56 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("")
 
     # 셀 렌더러
-    lines.append("### Cell Renderers (⚠️ ONLY these 3 — NO inline functions)")
-    lines.append("**NEVER use inline cellRenderer functions. They SILENTLY KILL the entire grid.**")
+    lines.append("### Cell Renderers")
+    lines.append("cellRenderer에 화살표 함수로 React 컴포넌트를 직접 렌더링할 수 있습니다.")
+    lines.append("디자인 시스템의 Button 컴포넌트를 사용하면 variant, size 등을 자유롭게 지정할 수 있습니다.")
     lines.append("")
-    lines.append("- **ButtonCellRenderer**: Action button in cell. Passes row `data` to onClick.")
     lines.append("- **CheckboxCellRenderer**: Checkbox in cell. `cellRendererParams: { onCheckboxChange: (data, checked) => ... }`")
     lines.append("- **ImageCellRenderer**: Thumbnail image from field value (30x30)")
     lines.append("")
     lines.append("**Action Button Column Pattern (e.g., '상세', '수정', '삭제'):**")
     lines.append("```tsx")
-    lines.append("// ✅ CORRECT — Use ButtonCellRenderer with onClick handler")
+    lines.append("// ✅ Button 컴포넌트를 cellRenderer 화살표 함수로 직접 사용")
     lines.append("{")
-    lines.append("  headerName: '상세',")
+    lines.append("  headerName: '상세',  // 버튼 용도에 따라 '수정', '삭제', '보기' 등으로 변경")
     lines.append("  width: 100,")
-    lines.append("  cellRenderer: ButtonCellRenderer,")
-    lines.append("  cellRendererParams: {")
-    lines.append("    onClick: (data: any) => {")
-    lines.append("      setSelectedItem(data);")
+    lines.append("  cellRenderer: (params: any) => (")
+    lines.append("    <Button variant=\"outline\" size=\"sm\" onClick={() => {")
+    lines.append("      setSelectedItem(params.data);")
     lines.append("      setIsDetailOpen(true);")
-    lines.append("    }")
-    lines.append("  }")
+    lines.append("    }}>")
+    lines.append("      상세")
+    lines.append("    </Button>")
+    lines.append("  )")
     lines.append("}")
     lines.append("")
-    lines.append("// ❌ FATAL — inline cellRenderer KILLS the grid (no error, just empty)")
-    lines.append("// cellRenderer: (params) => <Button onClick={() => setSelectedItem(params.data)}>상세</Button>")
+    lines.append("// ❌ ButtonCellRenderer 사용 금지 — 디자인 시스템 미적용, 색상/크기 커스터마이징 불가")
+    lines.append("// cellRenderer: ButtonCellRenderer")
+    lines.append("```")
+    lines.append("")
+
+    # Checkbox 패턴
+    lines.append("**Checkbox Column Pattern:**")
+    lines.append("⚠️ `onCheckboxChange`에서 반드시 rowData 상태를 업데이트해야 합니다. 안 하면 체크 즉시 해제됩니다.")
+    lines.append("```tsx")
+    lines.append("const [rowData, setRowData] = useState(initialData);")
+    lines.append("")
+    lines.append("const columnDefs: ColDef[] = [")
+    lines.append("  {")
+    lines.append("    field: 'isActive',")
+    lines.append("    headerName: '활성',")
+    lines.append("    width: 80,")
+    lines.append("    cellRenderer: CheckboxCellRenderer,")
+    lines.append("    cellRendererParams: {")
+    lines.append("      onCheckboxChange: (data: any, checked: boolean) => {")
+    lines.append("        setRowData(prev => prev.map(row =>")
+    lines.append("          row.id === data.id ? { ...row, isActive: checked } : row")
+    lines.append("        ));")
+    lines.append("      }")
+    lines.append("    }")
+    lines.append("  },")
+    lines.append("  // ... 나머지 컬럼")
+    lines.append("];")
     lines.append("```")
     lines.append("")
 
@@ -498,7 +524,8 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("")
     lines.append("### Usage Example (Complex - Many Columns + Action Button)")
     lines.append("```tsx")
-    lines.append("import { DataGrid, COLUMN_TYPES, ButtonCellRenderer } from '@aplus/ui';")
+    lines.append("import { DataGrid, COLUMN_TYPES } from '@aplus/ui';")
+    lines.append("import { Button } from '@/components';")
     lines.append("")
     lines.append("// For grouped headers, use headerName prefix instead of column groups")
     lines.append("const columnDefs: ColDef[] = [")
@@ -511,10 +538,11 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("  { field: 'bonus', headerName: '[급여] 상여금', ...COLUMN_TYPES.currencyColumn },")
     lines.append("  { field: 'status', headerName: '상태', width: 100,")
     lines.append("    valueFormatter: (params) => params.value === 'active' ? '재직' : '퇴직' },")
-    lines.append("  // Action button — MUST use ButtonCellRenderer, NEVER inline function")
+    lines.append("  // Action button — Button 컴포넌트를 cellRenderer로 직접 사용")
     lines.append("  { headerName: '상세', width: 100, pinned: 'right',")
-    lines.append("    cellRenderer: ButtonCellRenderer,")
-    lines.append("    cellRendererParams: { onClick: (data: any) => { setSelectedItem(data); setIsDetailOpen(true); } } },")
+    lines.append("    cellRenderer: (params: any) => (")
+    lines.append("      <Button variant=\"outline\" size=\"sm\" onClick={() => { setSelectedItem(params.data); setIsDetailOpen(true); }}>상세</Button>")
+    lines.append("    ) },")
     lines.append("];")
     lines.append("")
     lines.append("<DataGrid rowData={rowData} columnDefs={columnDefs} height={600} pagination paginationPageSize={20} />")
@@ -531,17 +559,57 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("- ✅ Use flat columns: `{ field: 'name', headerName: '이름' }, { field: 'dept', headerName: '부서' }`")
     lines.append("- To visually group headers, use `headerName` prefix: `'[인사] 이름'`, `'[인사] 부서'`")
     lines.append("")
-    lines.append("**2. cellRenderer — ONLY use named components:**")
-    lines.append("- ❌ `cellRenderer: (params) => <span>{params.value}</span>` — INLINE FUNCTION KILLS GRID")
-    lines.append("- ❌ `cellRenderer: (params) => { return <div>...</div> }` — ALSO KILLS GRID")
-    lines.append("- ✅ `cellRenderer: ButtonCellRenderer` — Named component from @aplus/ui")
+    lines.append("**2. cellRenderer — 화살표 함수 또는 named component 사용:**")
+    lines.append("- ✅ `cellRenderer: (params) => <Button variant=\"outline\" size=\"sm\">상세</Button>` — 디자인 시스템 Button 직접 사용")
     lines.append("- ✅ `cellRenderer: CheckboxCellRenderer` — Named component from @aplus/ui")
     lines.append("- ✅ `cellRenderer: ImageCellRenderer` — Named component from @aplus/ui")
-    lines.append("- For custom display, use `valueFormatter` instead: `valueFormatter: (params) => params.value ? '활성' : '비활성'`")
+    lines.append("- ❌ `cellRenderer: ButtonCellRenderer` — 사용 금지 (디자인 시스템 미적용, 파란색 하드코딩)")
+    lines.append("- For simple text formatting, use `valueFormatter`: `valueFormatter: (params) => params.value ? '활성' : '비활성'`")
     lines.append("")
     lines.append("**3. pinned — ONLY on top-level columns:**")
     lines.append("- ✅ `{ field: 'name', pinned: 'left' }` — Works on flat column")
     lines.append("- ❌ Pinned inside column group children — GRID DIES")
+    lines.append("")
+    lines.append("**4. rowData — 반드시 useState 또는 useMemo로 관리:**")
+    lines.append("- ❌ `const rowData = [...]` — 리렌더 시 새 배열 생성 → 체크박스 선택 해제, 스크롤 초기화 등 발생")
+    lines.append("- ✅ `const [rowData, setRowData] = useState([...])` — 참조 유지되어 그리드 상태 보존")
+    lines.append("")
+
+    # 체크박스 선택 패턴
+    lines.append("### Checkbox Selection Pattern")
+    lines.append("행 선택(체크박스)이 필요한 경우, **반드시 `suppressRowClickSelection`을 함께 사용**해야 합니다.")
+    lines.append("그렇지 않으면 행의 아무 곳(버튼, 텍스트 등)을 클릭해도 체크박스가 토글되어 의도치 않은 선택이 발생합니다.")
+    lines.append("")
+    lines.append("```tsx")
+    lines.append("// ⚠️ rowData는 반드시 useState로 — const rowData = [...] 사용 시 체크 즉시 해제됨")
+    lines.append("const [rowData] = useState([...initialData]);")
+    lines.append("")
+    lines.append("const columnDefs: ColDef[] = [")
+    lines.append("  { checkboxSelection: true, headerCheckboxSelection: true, width: 50 },  // 체크박스 전용 컬럼")
+    lines.append("  { field: 'name', headerName: '이름' },")
+    lines.append("  // ... 나머지 컬럼")
+    lines.append("];")
+    lines.append("")
+    lines.append("<DataGrid")
+    lines.append("  rowData={rowData}")
+    lines.append("  columnDefs={columnDefs}")
+    lines.append("  rowSelection=\"multiple\"")
+    lines.append("  suppressRowClickSelection={true}  // ← 필수: 체크박스로만 선택 가능하게 함")
+    lines.append("/>")
+    lines.append("```")
+    lines.append("")
+    lines.append("- ❌ `rowSelection=\"multiple\"` 만 사용 → 행 아무 곳 클릭해도 선택됨 (버튼 클릭 시에도)")
+    lines.append("- ✅ `rowSelection=\"multiple\"` + `suppressRowClickSelection={true}` → 체크박스로만 선택")
+    lines.append("")
+
+    # 이벤트 핸들러
+    lines.append("### Event Handlers")
+    lines.append("DataGrid는 AG Grid 이벤트를 props로 직접 전달할 수 있습니다:")
+    lines.append("- `onCellClicked` — 셀 클릭 시 (event.data로 행 데이터 접근)")
+    lines.append("- `onRowSelected` — 행 선택/해제 시")
+    lines.append("- `onSelectionChanged` — 선택 상태 변경 시 (전체 선택된 행 조회)")
+    lines.append("- `onCellValueChanged` — 셀 값 편집 완료 시")
+    lines.append("- `onGridReady` — 그리드 초기화 완료 시 (GridApi 저장용)")
     lines.append("")
 
     # 금지 사항
@@ -933,34 +1001,56 @@ LAYOUT_GUIDE = """
 
 유저가 "Type C", "RP-1" 등 레이아웃 용어를 사용하면 아래 정의에 따라 코드를 생성하세요.
 
+### 기본 구조 원칙
+
+- 기준 해상도: **1920px**
+- 콘텐츠 최대 영역: **1872px** (좌우 Margin 24px씩)
+- 좌우 Margin: **24px** (`px-6`)
+- 헤더 ↔ 메인 섹션 간 Gap: **20px** (`gap-5`)
+- 12 Column Grid: Gutter **24px** (`gap-6`), col-1 = 134px
+- Tailwind: `grid grid-cols-12 gap-6 px-6`
+
+### 필터/검색 영역 그리드 규칙
+
+- 필터 영역은 col-12 내부에서 독립 그리드 사용
+- 내부 Gutter: **12px** (`gap-3`), Padding: **16px** (`p-4`)
+- 6그리드 기반: 1컬럼당 col-1 또는 col-2 폭
+- 우측 최하단 2컬럼 = 검색/초기화 버튼 위치
+
+### 액션 버튼 정렬 규칙
+
+- 항상 **우측 정렬** (`flex justify-end gap-2`)
+- 좌→우 순서: 중립 텍스트(Tertiary) → 중립 보조(Outline) → 보조(Secondary) → 주요(Primary)
+
 ### Grid Type (가로 분할 구조)
 
-| Type | 컬럼 구성 | Tailwind 구조 | 용도 |
-|------|----------|---------------|------|
-| TYPE-A | col-12 (단일) | 전체 `col-span-12` | 리스트, 단일 상세, 입력 폼, 리포트 |
-| TYPE-B | col-6 + col-6 | `col-span-6` + `col-span-6` | 비교 화면, 병렬 입력 |
-| TYPE-C | col-3 + col-9 | `col-span-3` + `col-span-9` | 목록+상세, 코드/조직/설정 관리 |
-| TYPE-D | col-4 + col-8 | `col-span-4` + `col-span-8` | 고급 검색, 필터 고정형 리포트 |
-| TYPE-E | col-4 × 3 | `col-span-4` × 3 | 동일 위계 정보 병렬 배치 |
-| TYPE-F | col-2 + col-8 + col-2 | `col-span-2` + `col-span-8` + `col-span-2` | 검토/승인 프로세스 |
-| TYPE-G | col-2 + col-2 + col-8 | `col-span-2` + `col-span-2` + `col-span-8` | 트리+목록+상세 (2단계 탐색) |
-| TYPE-H | col-3 × 4 | `col-span-3` × 4 | 동일 위계 정보 4열 배치 |
+| Type | 컬럼 구성 | Tailwind 구조 | 대표 RP | 용도 |
+|------|----------|---------------|---------|------|
+| TYPE-A | col-12 (단일) | 전체 `col-span-12` | RP-1, RP-2, RP-3 | 리스트, 단일 상세, 입력 폼, 리포트 |
+| TYPE-B | col-6 + col-6 | `col-span-6` + `col-span-6` | RP-7 | 비교 화면, 병렬 입력 |
+| TYPE-C (C-1) | col-3 + col-9 | `col-span-3` + `col-span-9` | RP-6 | 목록+상세, 코드/조직/설정 관리 |
+| TYPE-C (C-2) | col-9 + col-3 | `col-span-9` + `col-span-3` | RP-6 | C-1 좌우 반전 |
+| TYPE-D (D-1) | col-4 + col-8 | `col-span-4` + `col-span-8` | RP-1, RP-4 | 고급 검색, 필터 고정형 리포트 |
+| TYPE-D (D-2) | col-8 + col-4 | `col-span-8` + `col-span-4` | RP-4 | D-1 좌우 반전 |
+| TYPE-E | col-4 × 3 | `col-span-4` × 3 | — | 동일 위계 정보 병렬 배치 |
+| TYPE-F | col-2 + col-8 + col-2 | `col-span-2` + `col-span-8` + `col-span-2` | RP-2, RP-4 | 검토/승인 프로세스 |
+| TYPE-G | col-2 + col-2 + col-8 | `col-span-2` + `col-span-2` + `col-span-8` | RP-6 | 트리+목록+상세 (2단계 탐색) |
+| TYPE-H | col-3 × 4 | `col-span-3` × 4 | — | 동일 위계 정보 4열 배치 |
 
-- TYPE-C, D는 좌우 반전 가능 (C-2: col-9+col-3, D-2: col-8+col-4)
-- 모든 Type은 `grid grid-cols-12` 기반
+- 모든 Type은 `grid grid-cols-12 gap-6` 기반
 
 ### Row Pattern (세로 흐름 구조)
 
-| 패턴 | 이름 | 구조 | 용도 |
-|------|------|------|------|
-| RP-1 | 조회형(기본형) | Title → FilterBar → ActionButtons → Grid | 대량 데이터 조회 (계약 리스트, 승인 목록) |
-| RP-2 | 단일 상세형 | Title → 상세 정보 영역 | 단일 객체 조회 (계약 상세, 고객 상세) |
-| RP-3 | 입력/수정형 | Title → Form Section → Action(저장/취소) | 데이터 생성/수정 |
-| RP-4 | 요약+Grid형 | Title → 상단 요약 → 하단 Grid | 기본 정보 + 관련 데이터 |
-| RP-5 | 다중 Grid형 | Title → Grid A → Grid B | 성격 다른 데이터 병렬 (승인대기/완료) |
-| RP-6 | 탐색형 | Title → Navigation Area + Detail Area | 관리성 화면 (코드 관리, 조직 관리) |
-| RP-7 | 병렬형 | Title → Section A \\| Section B | 변경 전/후 비교, A/B 비교 |
-| RP-8 | 상세+탭형 | Title → 상단 기본정보 → Tab → 하단 Grid/Content | 상세 + 탭별 관련 데이터 |
+| 패턴 | 이름 | 구조 | 스크롤 정책 | 용도 |
+|------|------|------|------------|------|
+| RP-1 | 조회형(기본형) | Title → FilterBar → ActionButtons → Grid | 전체 스크롤 + Grid 내부 스크롤 | 대량 데이터 조회 (계약 리스트, 승인 목록) |
+| RP-2 | 단일 상세형 | Title → 상세 정보 영역 | 전체 스크롤 | 단일 객체 조회 (계약 상세, 고객 상세) |
+| RP-3 | 입력/수정형 | Title → Form Section → Action(저장/취소) | 전체 스크롤, Form 자동 확장 | 데이터 생성/수정 |
+| RP-4 | 요약+Grid형 | Title → 상단 요약 → 하단 Grid | 전체 스크롤, 하단 Grid 내부 스크롤 | 기본 정보 + 관련 데이터 |
+| RP-5 | 다중 Grid형 | Title → Grid A → Grid B | 전체 스크롤, 각 Grid 독립 가능 | 성격 다른 데이터 병렬 (승인대기/완료) |
+| RP-6 | 탐색형 | Title → Navigation Area + Detail Area | 좌측 독립 스크롤, 우측 전체 스크롤 | 관리성 화면 (코드 관리, 조직 관리) |
+| RP-7 | 병렬형 | Title → Section A \\| Section B | 좌우 독립 스크롤 | 변경 전/후 비교, A/B 비교 |
+| RP-8 | 상세+탭형 | Title → 상단 기본정보 → Tab → 하단 Grid/Content | 전체 스크롤, 탭 콘텐츠 내부 스크롤 | 상세 + 탭별 관련 데이터 |
 
 ### Grid Type × Row Pattern 적용 범위
 
@@ -981,8 +1071,11 @@ LAYOUT_GUIDE = """
 
 | 구간 | 간격 | Tailwind |
 |------|------|----------|
+| 헤더 ↔ 메인 섹션 | 20px | `mb-5` |
 | 타이틀 ↔ 콘텐츠 | 20px | `mb-5` |
+| 탭 ↔ 타이틀 | 24px | `mb-6` |
 | 필터바 ↔ 그리드 | 20px | `mb-5` |
+| 필터바 ↔ 세그먼트 | 20px | `mb-5` |
 | 필터바 ↔ 서머리바 | 12px | `mb-3` |
 | 서머리바 ↔ 액션버튼 | 12px | `mb-3` |
 | 액션버튼 ↔ 그리드 | 12px | `mb-3` |

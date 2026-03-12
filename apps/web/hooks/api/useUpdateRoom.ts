@@ -53,8 +53,9 @@ export function useUpdateRoom(mutationOptions?: UseUpdateRoomOptions) {
       return response.json();
     },
     onSuccess: (data, { roomId }) => {
-      // 업데이트된 룸 캐시 갱신
+      // 업데이트된 룸 캐시 갱신 (detail + list 모두)
       queryClient.invalidateQueries({ queryKey: roomKeys.detail(roomId) });
+      queryClient.invalidateQueries({ queryKey: roomKeys.all });
     },
     ...mutationOptions,
   });
