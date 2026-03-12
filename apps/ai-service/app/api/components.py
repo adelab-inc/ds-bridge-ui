@@ -874,6 +874,12 @@ Always respond in Korean.
 <Field label="이메일" isDisabled />
 ```
 
+#### ⚠️ 조건부 disabled 시 초기 상태값 규칙
+- 조건부로 disabled를 적용하는 경우, **초기 상태값은 반드시 활성(편집 가능) 상태로 설정**해야 합니다.
+- 사용자가 "승인된 건이면 비활성화" 등의 조건을 요청하더라도, 데모 화면에서는 **편집 가능한 상태가 기본**이어야 UI를 확인할 수 있습니다.
+- ✅ `const [status, setStatus] = React.useState('pending');` → 필드 편집 가능 (기본)
+- ❌ `const [status, setStatus] = React.useState('approved');` → 필드 전부 disabled되어 사용자가 UI 확인 불가
+
 ### Select
 - 필터용: placeholder="전체" + options에 "전체" 포함
 - 폼 입력용: placeholder="선택하세요" + className="w-full"
