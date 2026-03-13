@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useDescriptionStore } from '@/stores/useDescriptionStore';
 import { useLatestDescription } from '@/hooks/api/useDescriptionQuery';
 import { DescriptionViewer } from './description-viewer';
+import { DescriptionVersionBanner } from './description-version-banner';
 
 interface DescriptionTabProps {
   roomId: string;
@@ -23,6 +24,8 @@ function DescriptionTab({ roomId }: DescriptionTabProps) {
   const setCurrentDescription = useDescriptionStore(
     (s) => s.setCurrentDescription
   );
+  const currentVersion = useDescriptionStore((s) => s.currentVersion);
+  const currentDescription = useDescriptionStore((s) => s.currentDescription);
 
   // 최신 디스크립션 조회 (마운트 시 자동 fetch)
   const { data: latestDescription } = useLatestDescription(roomId);
@@ -68,6 +71,14 @@ function DescriptionTab({ roomId }: DescriptionTabProps) {
   if (uiState === 'viewing' || uiState === 'waiting') {
     return (
       <div className="flex min-h-0 flex-1 flex-col">
+        {currentDescription && currentVersion && (
+          <DescriptionVersionBanner
+            version={currentVersion}
+            reason={currentDescription.reason}
+            isLatest={!latestDescription || currentVersion >= latestDescription.version}
+            isEditing={false}
+          />
+        )}
         <DescriptionViewer />
       </div>
     );
@@ -77,6 +88,14 @@ function DescriptionTab({ roomId }: DescriptionTabProps) {
   if (uiState === 'editing') {
     return (
       <div className="flex min-h-0 flex-1 flex-col">
+        {currentVersion && (
+          <DescriptionVersionBanner
+            version={currentVersion}
+            reason={currentDescription?.reason ?? 'initial'}
+            isLatest={false}
+            isEditing
+          />
+        )}
         <DescriptionViewer />
       </div>
     );

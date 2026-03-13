@@ -877,7 +877,7 @@ apps/web/
   - 빈 상태: "디스크립션을 먼저 추출해 주세요" + [추출하기] 바로가기
   - 추출 완료 시 자동 전환
 
-- [ ] **2-6. DescriptionVersionBanner 구현**
+- [x] **2-6. DescriptionVersionBanner 구현**
   - `apps/web/components/features/description/description-version-banner.tsx` 신규
   - 읽기 전용: `v{n}` + 최신 뱃지 + 생성 사유
   - 편집 중: 주황 스타일 + `편집 중` + `v{n} 기반 수정`
