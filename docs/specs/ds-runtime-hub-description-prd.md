@@ -813,7 +813,7 @@ apps/web/
   - 인덱스 생성 (room_id + version DESC)
   - `collections.json` SSOT 업데이트
 
-- [ ] **1-2. `packages/shared-types` 타입 정의 추가**
+- [x] **1-2. `packages/shared-types` 타입 정의 추가**
   - `Description`, `DescriptionVersionSummary`, `EditHistory` 인터페이스
   - `DescriptionReason`, `ChangeTag` 타입
 
