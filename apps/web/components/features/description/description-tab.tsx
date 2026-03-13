@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { FileTextIcon } from '@hugeicons/core-free-icons';
+import { File02Icon } from '@hugeicons/core-free-icons';
 
 import { Button } from '@/components/ui/button';
 import { useDescriptionStore } from '@/stores/useDescriptionStore';
@@ -74,7 +74,7 @@ function DescriptionTab({ roomId }: DescriptionTabProps) {
       <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-12">
         <div className="bg-muted flex size-12 items-center justify-center rounded-full">
           <HugeiconsIcon
-            icon={FileTextIcon}
+            icon={File02Icon}
             className="text-muted-foreground size-6"
             strokeWidth={1.5}
           />

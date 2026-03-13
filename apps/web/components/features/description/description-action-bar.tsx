@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
-  FileTextIcon,
+  File02Icon,
   Clock01Icon,
   Loading03Icon,
 } from '@hugeicons/core-free-icons';
@@ -109,7 +109,7 @@ function DescriptionActionBar({ roomId, hasMessages }: DescriptionActionBarProps
           className="text-orange-600 hover:text-orange-700"
           disabled
         >
-          <HugeiconsIcon icon={FileTextIcon} className="size-4" strokeWidth={2} />
+          <HugeiconsIcon icon={File02Icon} className="size-4" strokeWidth={2} />
           편집 중
         </Button>
       ) : (
@@ -127,7 +127,7 @@ function DescriptionActionBar({ roomId, hasMessages }: DescriptionActionBarProps
             />
           ) : (
             <HugeiconsIcon
-              icon={FileTextIcon}
+              icon={File02Icon}
               className="size-4"
               strokeWidth={2}
             />
