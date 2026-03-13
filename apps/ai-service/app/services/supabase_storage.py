@@ -1,10 +1,7 @@
 import json
 import logging
 import time
-from functools import lru_cache
-from pathlib import Path
 
-from app.core.config import get_settings
 from app.services.supabase_db import get_supabase_client
 
 logger = logging.getLogger(__name__)
@@ -540,3 +537,65 @@ def clear_layouts_cache() -> None:
     global _layouts_cache
     _layouts_cache = None
     logger.info("Layouts cache cleared")
+
+
+# ============================================================================
+# Description Upload
+# ============================================================================
+
+DESCRIPTIONS_PATH = "descriptions"
+DESCRIPTION_SIGNED_URL_EXPIRY = 30 * 24 * 60 * 60  # 30일 (초)
+
+
+async def upload_description_to_storage(
+    room_id: str,
+    markdown_content: str,
+) -> tuple[str, str]:
+    """
+    Supabase Storage에 디스크립션 마크다운 파일 업로드
+
+    Args:
+        room_id: 채팅방 ID
+        markdown_content: 마크다운 텍스트
+
+    Returns:
+        (signed_url, storage_path) 튜플
+    """
+    import time as _time
+
+    client = await get_supabase_client()
+
+    timestamp = int(_time.time() * 1000)
+    file_path_in_bucket = f"{DESCRIPTIONS_PATH}/{room_id}/{timestamp}.md"
+    storage_path = f"exports/{file_path_in_bucket}"
+
+    try:
+        bucket, path_in_bucket = _resolve_bucket_and_path(storage_path)
+        storage_bucket = client.storage.from_(bucket)
+
+        # 업로드
+        await storage_bucket.upload(
+            path_in_bucket,
+            markdown_content.encode("utf-8"),
+            {"content-type": "text/markdown; charset=utf-8", "x-upsert": "true"},
+        )
+
+        # Signed URL 생성 (30일 유효)
+        signed = await storage_bucket.create_signed_url(
+            path_in_bucket, DESCRIPTION_SIGNED_URL_EXPIRY
+        )
+        signed_url = signed["signedURL"]
+
+        logger.info(
+            "Description uploaded",
+            extra={"storage_path": storage_path, "room_id": room_id},
+        )
+
+        return signed_url, storage_path
+
+    except Exception as e:
+        logger.error(
+            "Failed to upload description",
+            extra={"storage_path": storage_path, "error": str(e)},
+        )
+        raise
