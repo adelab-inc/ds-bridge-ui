@@ -857,7 +857,7 @@ apps/web/
   - `useExtractDescription()` — 추출 mutation
   - `useSaveEditHistory()` — 편집 이력 저장 mutation
 
-- [ ] **2-3. ChatSection 탭 UI 분리**
+- [x] **2-3. ChatSection 탭 UI 분리**
   - `apps/web/components/features/chat/chat-section.tsx` 수정
   - 기존 헤더 아래에 `Tabs` (variant="line") 추가
   - TabsContent: 디자인 모드 (기존 ChatMessageList + 액션바 + ChatInput) / 디스크립션 모드
