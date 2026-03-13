@@ -850,7 +850,7 @@ apps/web/
   - 상태 전이 액션: extractDescription, startEditing, saveEdit, cancelEdit, openHistory, closeHistory
   - 편집 이력 추적: editDraft, editHistory
 
-- [ ] **2-2. `useDescriptionQuery` TanStack Query 훅 생성**
+- [x] **2-2. `useDescriptionQuery` TanStack Query 훅 생성**
   - `apps/web/hooks/api/useDescriptionQuery.ts` 신규
   - `useLatestDescription(roomId)` — 최신 디스크립션 조회
   - `useDescriptionVersions(roomId)` — 버전 목록 조회
