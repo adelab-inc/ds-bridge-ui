@@ -889,7 +889,7 @@ apps/web/
   - Textarea 편집 영역 (최소 높이 180px, line-height 2)
   - 편집 전 원본 보관, 변경 사항 감지
 
-- [ ] **3-2. DescriptionToolbar 구현**
+- [x] **3-2. DescriptionToolbar 구현**
   - `apps/web/components/features/description/description-toolbar.tsx` 신규
   - 읽기 전용: [수정하기], [복사], [생성 이력]
   - 편집 모드: [저장 후 닫기], [수정 취소], [복사], [생성 이력]

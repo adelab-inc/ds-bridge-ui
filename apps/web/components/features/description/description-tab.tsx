@@ -10,6 +10,7 @@ import { useLatestDescription } from '@/hooks/api/useDescriptionQuery';
 import { DescriptionViewer } from './description-viewer';
 import { DescriptionEditor } from './description-editor';
 import { DescriptionVersionBanner } from './description-version-banner';
+import { DescriptionToolbar } from './description-toolbar';
 
 interface DescriptionTabProps {
   roomId: string;
@@ -26,7 +27,14 @@ function DescriptionTab({ roomId }: DescriptionTabProps) {
     (s) => s.setCurrentDescription
   );
   const currentVersion = useDescriptionStore((s) => s.currentVersion);
+  const currentContent = useDescriptionStore((s) => s.currentContent);
   const currentDescription = useDescriptionStore((s) => s.currentDescription);
+  const editDraft = useDescriptionStore((s) => s.editDraft);
+  const startEditing = useDescriptionStore((s) => s.startEditing);
+  const saveEdit = useDescriptionStore((s) => s.saveEdit);
+  const cancelEdit = useDescriptionStore((s) => s.cancelEdit);
+  const openHistory = useDescriptionStore((s) => s.openHistory);
+  const versions = useDescriptionStore((s) => s.versions);
 
   // 최신 디스크립션 조회 (마운트 시 자동 fetch)
   const { data: latestDescription } = useLatestDescription(roomId);
@@ -80,6 +88,16 @@ function DescriptionTab({ roomId }: DescriptionTabProps) {
             isEditing={false}
           />
         )}
+        <DescriptionToolbar
+          uiState={uiState}
+          onEdit={startEditing}
+          onSave={saveEdit}
+          onCancel={cancelEdit}
+          copyText={currentContent}
+          onOpenHistory={openHistory}
+          showHistoryButton={versions.length > 0}
+          isSaveDisabled={false}
+        />
         <DescriptionViewer />
       </div>
     );
@@ -87,6 +105,9 @@ function DescriptionTab({ roomId }: DescriptionTabProps) {
 
   // editing: 편집 모드
   if (uiState === 'editing') {
+    const isDraftEmpty = !editDraft?.trim();
+    const isUnchanged = editDraft === currentContent;
+
     return (
       <div className="flex min-h-0 flex-1 flex-col">
         {currentVersion && (
@@ -97,6 +118,16 @@ function DescriptionTab({ roomId }: DescriptionTabProps) {
             isEditing
           />
         )}
+        <DescriptionToolbar
+          uiState={uiState}
+          onEdit={startEditing}
+          onSave={saveEdit}
+          onCancel={cancelEdit}
+          copyText={editDraft}
+          onOpenHistory={openHistory}
+          showHistoryButton={versions.length > 0}
+          isSaveDisabled={isDraftEmpty || isUnchanged}
+        />
         <DescriptionEditor />
       </div>
     );
