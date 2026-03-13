@@ -118,6 +118,7 @@ function DescriptionActionBar({ roomId, hasMessages }: DescriptionActionBarProps
           size="sm"
           onClick={handleExtract}
           disabled={isExtractDisabled}
+          className="disabled:opacity-30 disabled:pointer-events-auto disabled:cursor-not-allowed"
         >
           {isExtracting || extractMutation.isPending ? (
             <HugeiconsIcon
