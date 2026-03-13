@@ -844,7 +844,7 @@ apps/web/
 
 ### Phase 2: 핵심 FE
 
-- [ ] **2-1. `useDescriptionStore` Zustand 스토어 생성**
+- [x] **2-1. `useDescriptionStore` Zustand 스토어 생성**
   - `apps/web/stores/useDescriptionStore.ts` 신규
   - 5개 UI 상태: idle, viewing, editing, waiting, history
   - 상태 전이 액션: extractDescription, startEditing, saveEdit, cancelEdit, openHistory, closeHistory
