@@ -637,6 +637,61 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("**요약: rowSelection은 반드시 객체 `{{ }}` 형태로 작성. 문자열 금지. suppressRowClickSelection 금지. columnDefs에 checkboxSelection 금지.**")
     lines.append("")
 
+    # getRowId 패턴
+    lines.append("### 🚨 getRowId — 선택 상태 보존 필수 (CRITICAL)")
+    lines.append("체크박스 선택이 있는 DataGrid에는 반드시 `getRowId`를 지정해야 합니다.")
+    lines.append("없으면 데이터 갱신 시 선택이 초기화됩니다.")
+    lines.append("")
+    lines.append("```tsx")
+    lines.append("<DataGrid")
+    lines.append("  rowData={{rowData}}")
+    lines.append("  columnDefs={{columnDefs}}")
+    lines.append("  rowSelection={{{{ mode: 'multiRow', checkboxes: true, headerCheckbox: true, enableClickSelection: false }}}}")
+    lines.append("  getRowId={{(params) => String(params.data.id)}}")
+    lines.append("  onSelectionChanged={{handleSelectionChanged}}")
+    lines.append("/>")
+    lines.append("```")
+    lines.append("- `getRowId`에 사용할 필드: `id`, `no`, `code` 등 고유 식별자")
+    lines.append("- 반드시 `String()`으로 감싸서 문자열 반환")
+    lines.append("")
+
+    # 체크박스 선택 + 액션바 완전한 예제
+    lines.append("### 체크박스 선택 + 액션바 완전한 패턴")
+    lines.append("```tsx")
+    lines.append("const [rowData] = React.useState([")
+    lines.append("  {{ id: 1, name: '김민준', status: '대기' }},")
+    lines.append("  {{ id: 2, name: '이서연', status: '승인' }},")
+    lines.append("]);")
+    lines.append("const [selectedRows, setSelectedRows] = React.useState<any[]>([]);")
+    lines.append("")
+    lines.append("const handleSelectionChanged = (event: any) => {{")
+    lines.append("  setSelectedRows(event.api.getSelectedRows());")
+    lines.append("}};")
+    lines.append("")
+    lines.append("return (")
+    lines.append("  <div>")
+    lines.append("    {{/* 선택 액션바 — 체크된 항목이 있을 때만 표시 */}}")
+    lines.append("    {{selectedRows.length > 0 && (")
+    lines.append("      <div className=\"flex items-center gap-3 bg-[#e7f5ff] border border-[#339af0] rounded-lg px-4 py-2.5 mb-4\">")
+    lines.append("        <span className=\"text-sm font-medium text-[#1971c2]\">{{selectedRows.length}}건 선택</span>")
+    lines.append("        <div className=\"flex gap-2 ml-auto\">")
+    lines.append("          <Button variant=\"outline\" size=\"sm\">일괄 승인</Button>")
+    lines.append("          <Button variant=\"destructive\" size=\"sm\">일괄 삭제</Button>")
+    lines.append("        </div>")
+    lines.append("      </div>")
+    lines.append("    )}}")
+    lines.append("    <DataGrid")
+    lines.append("      rowData={{rowData}}")
+    lines.append("      columnDefs={{columnDefs}}")
+    lines.append("      rowSelection={{{{ mode: 'multiRow', checkboxes: true, headerCheckbox: true, enableClickSelection: false }}}}")
+    lines.append("      getRowId={{(params) => String(params.data.id)}}")
+    lines.append("      onSelectionChanged={{handleSelectionChanged}}")
+    lines.append("    />")
+    lines.append("  </div>")
+    lines.append(");")
+    lines.append("```")
+    lines.append("")
+
     # 이벤트 핸들러
     lines.append("### Event Handlers")
     lines.append("DataGrid는 AG Grid 이벤트를 props로 직접 전달할 수 있습니다:")
@@ -935,6 +990,31 @@ Dialog는 Compound 패턴입니다. 반드시 `Dialog.Header`, `Dialog.Body`, `D
 </Dialog>
 ```
 
+### 🚨 커스텀 Drawer/오버레이 z-index 규칙 (CRITICAL)
+Dialog 컴포넌트는 내부적으로 z-index 40(backdrop), 41(dialog)을 사용합니다.
+커스텀 Drawer나 오버레이를 만들 때 z-index가 40 이상이면 Dialog가 Drawer 뒤에 가려집니다.
+
+**규칙:**
+- 커스텀 Drawer backdrop: `z-[30]` (❌ `z-[40]`, ❌ `z-[50]`)
+- 커스텀 Drawer panel: `z-[31]` (❌ `z-[41]`, ❌ `z-[50]`)
+- Dialog는 z-40~41을 내부적으로 사용하므로 항상 Drawer 위에 표시됨
+
+```tsx
+// ✅ 올바른 커스텀 Drawer z-index
+{isDrawerOpen && (
+  <>
+    <div className="fixed inset-0 z-[30] bg-black/50" onClick={() => setIsDrawerOpen(false)} />
+    <div className="fixed inset-y-0 right-0 z-[31] w-[600px] bg-white shadow-xl overflow-y-auto">
+      {/* Drawer 내용 */}
+    </div>
+  </>
+)}
+
+// ❌ 금지 — Dialog가 뒤에 가려짐
+<div className="fixed inset-0 z-[40] bg-black/50" />  // Dialog backdrop과 충돌
+<div className="fixed ... z-[50] ...">                  // Dialog(z-41)보다 높아서 가려짐
+```
+
 ### Tooltip (롤오버 메시지)
 - 아이콘이나 텍스트에 마우스 오버 시 설명 표시용
 - ✅ `<Tooltip label="설명 텍스트"><span>호버 대상</span></Tooltip>`
@@ -977,7 +1057,7 @@ Dialog는 Compound 패턴입니다. 반드시 `Dialog.Header`, `Dialog.Body`, `D
     - 1:1:1 → `col-span-4` + `col-span-4` + `col-span-4`
     - 1:2:1 → `col-span-3` + `col-span-6` + `col-span-3`
     - 규칙: 비율의 합 → 12로 환산. 예) 2:3 → (2/5×12):(3/5×12) ≈ `col-span-5` + `col-span-7`
-- **Z-Index**: Dropdowns/Modals must have `z-50` or higher
+- **Z-Index**: Dropdown 메뉴는 `z-50`. 커스텀 오버레이(Drawer 등)는 `z-30` 이하 사용 (Dialog 컴포넌트가 z-40~41을 내부적으로 사용하므로 충돌 방지)
 - **필터 영역 버튼 배치 규칙**:
   - 필터 입력 필드들과 조회/초기화 버튼을 같은 grid row에 넣을 때, 버튼 영역은 최소 `col-span-3` 이상 확보
   - 필드 4개 이상이면 버튼을 별도 행으로 분리: `<div className="col-span-12 flex justify-end gap-2">`
