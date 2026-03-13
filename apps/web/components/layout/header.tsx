@@ -158,8 +158,12 @@ function Header({
     try {
       await deleteRoomMutation.mutateAsync(roomIdToDelete);
       setDeleteDialog({ open: false, roomId: null });
-      if (roomIdToDelete === currentRoomId) {
-        // 현재 룸이 삭제되면 새 룸 생성
+
+      const remainingRooms = rooms.filter((r) => r.id !== roomIdToDelete);
+      const isCurrentRoom = roomIdToDelete === currentRoomId;
+
+      if (remainingRooms.length === 0) {
+        // 다른 프로젝트 없음 → 새로 생성
         const newRoom = await createRoomMutation.mutateAsync({
           storybook_url: '',
           user_id: authUser?.uid || 'anonymous',
@@ -168,7 +172,15 @@ function Header({
         params.delete('mid');
         params.set('crid', newRoom.id);
         router.push(`?${params.toString()}`);
+      } else if (isCurrentRoom) {
+        // 현재 프로젝트 삭제 + 다른 프로젝트 있음 → 최신 프로젝트로 이동
+        const latestRoom = remainingRooms[0];
+        const params = new URLSearchParams(searchParams.toString());
+        params.delete('mid');
+        params.set('crid', latestRoom.id);
+        router.push(`?${params.toString()}`);
       }
+      // 다른 프로젝트 삭제 + 다른 프로젝트 있음 → 아무것도 안함
     } catch (error) {
       console.error('Failed to delete room:', error);
     }
