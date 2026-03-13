@@ -871,7 +871,7 @@ apps/web/
   - [디스크립션 추출] 클릭 → 편집 이력 자동 포함 → API 호출
   - [생성 이력] 클릭 → 디스크립션 모드 이력 패널
 
-- [ ] **2-5. DescriptionTab + DescriptionViewer 구현**
+- [x] **2-5. DescriptionTab + DescriptionViewer 구현**
   - `apps/web/components/features/description/description-tab.tsx` — 상태 분기 루트
   - `apps/web/components/features/description/description-viewer.tsx` — 읽기 전용 뷰
   - 빈 상태: "디스크립션을 먼저 추출해 주세요" + [추출하기] 바로가기
