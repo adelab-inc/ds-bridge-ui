@@ -641,7 +641,7 @@ function ChatSection({
                       </div>
                       <button
                         type="button"
-                        className="text-muted-foreground hover:text-destructive shrink-0 p-0.5"
+                        className="text-muted-foreground hover:text-destructive shrink-0 p-0.5 cursor-pointer"
                         onClick={(e) => {
                           e.stopPropagation();
                           removeBookmark(bm.id);

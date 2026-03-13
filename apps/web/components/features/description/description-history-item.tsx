@@ -46,7 +46,7 @@ function DescriptionHistoryItem({
       type="button"
       onClick={onClick}
       className={cn(
-        'hover:bg-muted/50 flex w-full flex-col gap-1.5 border-b px-4 py-3 text-left transition-colors',
+        'hover:bg-muted/50 flex w-full flex-col gap-1.5 border-b px-4 py-3 text-left transition-colors cursor-pointer',
         isSelected && 'bg-muted'
       )}
     >

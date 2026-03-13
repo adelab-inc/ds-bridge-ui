@@ -51,7 +51,7 @@ function ImagePreview({ images, onRemove }: ImagePreviewProps) {
           <button
             type="button"
             onClick={() => onRemove(image.id)}
-            className="bg-background border-border text-muted-foreground hover:text-foreground absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full border shadow-sm transition-colors"
+            className="bg-background border-border text-muted-foreground hover:text-foreground absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full border shadow-sm transition-colors cursor-pointer"
           >
             <svg
               width="10"
