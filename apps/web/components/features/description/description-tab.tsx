@@ -6,7 +6,10 @@ import { FileTextIcon } from '@hugeicons/core-free-icons';
 
 import { Button } from '@/components/ui/button';
 import { useDescriptionStore } from '@/stores/useDescriptionStore';
-import { useLatestDescription } from '@/hooks/api/useDescriptionQuery';
+import {
+  useLatestDescription,
+  useSaveEditHistory,
+} from '@/hooks/api/useDescriptionQuery';
 import { DescriptionViewer } from './description-viewer';
 import { DescriptionEditor } from './description-editor';
 import { DescriptionVersionBanner } from './description-version-banner';
@@ -38,6 +41,24 @@ function DescriptionTab({ roomId }: DescriptionTabProps) {
 
   // 최신 디스크립션 조회 (마운트 시 자동 fetch)
   const { data: latestDescription } = useLatestDescription(roomId);
+
+  // 편집 이력 BE 저장 mutation
+  const saveEditMutation = useSaveEditHistory();
+
+  // [저장 후 닫기] 핸들러: BE 저장 → 스토어 상태 전이
+  const handleSave = React.useCallback(() => {
+    const draft = useDescriptionStore.getState().editDraft;
+    if (!draft?.trim()) return;
+
+    saveEditMutation.mutate(
+      { roomId, edited_content: draft },
+      {
+        onSuccess: () => {
+          saveEdit(); // 스토어: editHistory 생성 + waiting + 디자인 탭
+        },
+      }
+    );
+  }, [roomId, saveEditMutation, saveEdit]);
 
   // 서버 데이터 → 스토어 동기화 (최초 로드 or 새 버전)
   React.useEffect(() => {
@@ -91,7 +112,7 @@ function DescriptionTab({ roomId }: DescriptionTabProps) {
         <DescriptionToolbar
           uiState={uiState}
           onEdit={startEditing}
-          onSave={saveEdit}
+          onSave={handleSave}
           onCancel={cancelEdit}
           copyText={currentContent}
           onOpenHistory={openHistory}
@@ -121,7 +142,7 @@ function DescriptionTab({ roomId }: DescriptionTabProps) {
         <DescriptionToolbar
           uiState={uiState}
           onEdit={startEditing}
-          onSave={saveEdit}
+          onSave={handleSave}
           onCancel={cancelEdit}
           copyText={editDraft}
           onOpenHistory={openHistory}
