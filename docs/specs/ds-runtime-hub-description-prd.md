@@ -835,7 +835,7 @@ apps/web/
   - `GET /description/{room_id}/versions/{id}` (특정 버전 조회)
 
 - [ ] **1-6. Next.js BFF 라우트 구현**
-  - `apps/web/app/api/description/extract/route.ts`
+  - [x] `apps/web/app/api/description/extract/route.ts`
   - `apps/web/app/api/description/[room_id]/route.ts`
   - `apps/web/app/api/description/[room_id]/edit/route.ts`
   - `apps/web/app/api/description/[room_id]/versions/route.ts`
