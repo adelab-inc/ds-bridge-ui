@@ -901,17 +901,17 @@ apps/web/
 
 ### Phase 4: 생성 이력
 
-- [ ] **4-1. DescriptionHistoryPanel 구현**
+- [x] **4-1. DescriptionHistoryPanel 구현**
   - `apps/web/components/features/description/description-history-panel.tsx` 신규
   - 이력 목록 (최신 순) + 하단 미리보기
   - 슬라이드 애니메이션 (0.3s ease)
 
-- [ ] **4-2. DescriptionHistoryItem 구현**
+- [x] **4-2. DescriptionHistoryItem 구현**
   - `apps/web/components/features/description/description-history-item.tsx` 신규
   - 버전 번호, 최신/이전 뱃지, 상대 시각, 생성 사유, 변경 태그
   - 클릭 시 하이라이트 + 미리보기 표시
 
-- [ ] **4-3. [생성 이력] 버튼 연동**
+- [x] **4-3. [생성 이력] 버튼 연동**
   - 액션바(디자인 모드) + 툴바(디스크립션 모드) 양쪽에서 접근 가능
   - 이력 패널 닫기 → 최신 버전 읽기 전용 복귀
 

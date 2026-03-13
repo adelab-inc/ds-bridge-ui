@@ -33,6 +33,7 @@ function DescriptionActionBar({ roomId, hasMessages }: DescriptionActionBarProps
   );
   const editHistory = useDescriptionStore((s) => s.editHistory);
   const openHistory = useDescriptionStore((s) => s.openHistory);
+  const versions = useDescriptionStore((s) => s.versions);
 
   const isGeneratingCode = useCodeGenerationStore((s) => s.isGeneratingCode);
   const generatedCode = useCodeGenerationStore((s) => s.generatedCode);
@@ -44,7 +45,7 @@ function DescriptionActionBar({ roomId, hasMessages }: DescriptionActionBarProps
     !hasMessages || isGeneratingCode || isExtracting || extractMutation.isPending;
 
   // 이력 버튼 표시 조건 (1회 이상 추출 완료)
-  const showHistoryButton = uiState !== 'idle';
+  const showHistoryButton = uiState !== 'idle' && versions.length > 0;
 
   // 디스크립션 추출 핸들러
   const handleExtract = React.useCallback(() => {

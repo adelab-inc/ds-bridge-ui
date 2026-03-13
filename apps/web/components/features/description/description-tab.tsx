@@ -14,6 +14,7 @@ import { DescriptionViewer } from './description-viewer';
 import { DescriptionEditor } from './description-editor';
 import { DescriptionVersionBanner } from './description-version-banner';
 import { DescriptionToolbar } from './description-toolbar';
+import { DescriptionHistoryPanel } from './description-history-panel';
 
 interface DescriptionTabProps {
   roomId: string;
@@ -154,13 +155,9 @@ function DescriptionTab({ roomId }: DescriptionTabProps) {
     );
   }
 
-  // history: 이력 패널 (후속 커밋에서 DescriptionHistoryPanel로 교체)
+  // history: 이력 패널
   if (uiState === 'history') {
-    return (
-      <div className="flex flex-1 flex-col items-center justify-center">
-        <p className="text-muted-foreground text-sm">생성 이력 (구현 예정)</p>
-      </div>
-    );
+    return <DescriptionHistoryPanel roomId={roomId} />;
   }
 
   return null;
