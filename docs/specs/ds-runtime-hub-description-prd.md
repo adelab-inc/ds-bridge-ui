@@ -884,7 +884,7 @@ apps/web/
 
 ### Phase 3: 편집 + 재추출
 
-- [ ] **3-1. DescriptionEditor 구현**
+- [x] **3-1. DescriptionEditor 구현**
   - `apps/web/components/features/description/description-editor.tsx` 신규
   - Textarea 편집 영역 (최소 높이 180px, line-height 2)
   - 편집 전 원본 보관, 변경 사항 감지

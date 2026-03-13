@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useDescriptionStore } from '@/stores/useDescriptionStore';
 import { useLatestDescription } from '@/hooks/api/useDescriptionQuery';
 import { DescriptionViewer } from './description-viewer';
+import { DescriptionEditor } from './description-editor';
 import { DescriptionVersionBanner } from './description-version-banner';
 
 interface DescriptionTabProps {
@@ -84,7 +85,7 @@ function DescriptionTab({ roomId }: DescriptionTabProps) {
     );
   }
 
-  // editing: 편집 모드 (후속 커밋에서 DescriptionEditor로 교체)
+  // editing: 편집 모드
   if (uiState === 'editing') {
     return (
       <div className="flex min-h-0 flex-1 flex-col">
@@ -96,7 +97,7 @@ function DescriptionTab({ roomId }: DescriptionTabProps) {
             isEditing
           />
         )}
-        <DescriptionViewer />
+        <DescriptionEditor />
       </div>
     );
   }
