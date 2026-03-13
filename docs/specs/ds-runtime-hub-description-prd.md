@@ -864,7 +864,7 @@ apps/web/
   - `data-[state=inactive]:hidden`으로 비활성 탭 DOM 유지
   - 편집 중 탭 전환 시 미저장 확인 AlertDialog
 
-- [ ] **2-4. DescriptionActionBar 구현**
+- [x] **2-4. DescriptionActionBar 구현**
   - `apps/web/components/features/description/description-action-bar.tsx` 신규
   - 디자인 모드 탭 내 ChatInput 위 배치
   - 상태별 버튼 변경 (idle/viewing-waiting/editing)

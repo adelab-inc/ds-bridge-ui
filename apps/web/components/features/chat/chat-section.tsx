@@ -27,6 +27,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { DescriptionTab } from '@/components/features/description/description-tab';
+import { DescriptionActionBar } from '@/components/features/description/description-action-bar';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -673,6 +674,12 @@ function ChatSection({
               onBookmarkClick={handleBookmarkIconClick}
               onDeleteClick={handleDeleteIconClick}
               className="min-h-0 flex-1 overflow-y-auto"
+            />
+
+            {/* 디스크립션 액션바 */}
+            <DescriptionActionBar
+              roomId={roomId}
+              hasMessages={displayMessages.length > 0}
             />
 
             {/* Input */}
