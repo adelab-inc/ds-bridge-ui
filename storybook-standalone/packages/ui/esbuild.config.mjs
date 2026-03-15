@@ -33,6 +33,10 @@ await esbuild.build({
   minify: true,
   sourcemap: true,
 
+  // tree-shaking 비활성화: compound component 프로퍼티 할당 보존
+  // (예: Dialog.Header = DialogHeader 등이 dead code로 제거되는 것 방지)
+  treeShaking: false,
+
   // 타겟 브라우저
   target: ["es2020"],
 

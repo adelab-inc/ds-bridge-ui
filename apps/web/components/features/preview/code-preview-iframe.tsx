@@ -256,6 +256,28 @@ function CodePreviewIframe({
         jsxRuntime: 'classic',
       });
 
+      // 5-1. Compound component 서브 프로퍼티 감지 (예: Dialog.Header, Dialog.Body 등)
+      const allMappedComponents = [
+        ...nonAgGridImportedComponents,
+        ...nonAgGridAplusComponents,
+      ];
+      const compoundSubProps: { parent: string; sub: string }[] = [];
+      const compoundRe = /\b([A-Z]\w+)\.([A-Z]\w+)\b/g;
+      let compoundMatch: RegExpExecArray | null;
+      while (
+        (compoundMatch = compoundRe.exec(transpiledCode)) !== null
+      ) {
+        const [, parent, sub] = compoundMatch;
+        if (
+          allMappedComponents.includes(parent) &&
+          !compoundSubProps.some(
+            (p) => p.parent === parent && p.sub === sub
+          )
+        ) {
+          compoundSubProps.push({ parent, sub });
+        }
+      }
+
       // 6. AG Grid 인라인 래퍼 코드 생성
       const agGridWrapperCode = needsAgGrid
         ? `
@@ -608,6 +630,18 @@ function CodePreviewIframe({
 
         if (missingComponents.length > 0) {
           console.warn('[Preview] Missing components from @aplus/ui:', missingComponents.join(', '));
+        }
+
+        // Compound component 서브 프로퍼티 fallback (예: Dialog.Header 등)
+        ${
+          compoundSubProps.length > 0
+            ? compoundSubProps
+                .map(
+                  ({ parent, sub }) =>
+                    `if (${parent} && !${parent}.${sub}) { ${parent}.${sub} = function(props) { return React.createElement('div', { style: { padding: '8px', border: '1px dashed #ccc', borderRadius: '4px', background: '#f9f9f9' }, ...props }, props.children || '[${parent}.${sub}]'); }; console.warn('[Preview] Missing compound sub-component: ${parent}.${sub}'); }`
+                )
+                .join('\n        ')
+            : ''
         }
 
         ${agGridWrapperCode}
