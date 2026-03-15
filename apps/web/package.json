@@ -8,6 +8,7 @@
     "pnpm": "^10.0.0"
   },
   "scripts": {
+    "predev": "cp ../../storybook-standalone/packages/ui/dist/ui.umd.js public/ui-bundle.js 2>/dev/null; cp ../../storybook-standalone/packages/ui/dist/ui.css public/ui-bundle.css 2>/dev/null; true",
     "dev": "next dev --port 5555",
     "prebuild": "cd ../../storybook-standalone/packages/ui && pnpm install && pnpm build:umd",
     "build": "next build",
