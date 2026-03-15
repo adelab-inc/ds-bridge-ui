@@ -1054,10 +1054,11 @@ Drawer는 Compound 패턴입니다. 반드시 `Drawer.Header`, `Drawer.Body`, `D
 ## 🔨 IMPLEMENTATION RULES
 
 1. **IMPORT**: `import {{ Button, Field, Select }} from '@/components'`
-   - ONLY import components you actually render in JSX
+   - JSX에서 사용하는 컴포넌트는 **반드시 전부** import — 누락 시 ReferenceError CRASH
    - ❌ NEVER import types (HTMLInputElement, ChangeEvent, MouseEvent) — define inline
    - ❌ NEVER import Option/OptionGroup (Select uses `options` prop internally)
-   - Unused imports = CRASH
+   - Unused imports = CRASH, Missing imports = CRASH
+   - ✅ 확인 방법: JSX에서 `<ComponentName`으로 사용한 모든 컴포넌트가 import 문에 있는지 최종 점검
 2. **REACT**: `React.useState`, `React.useEffect` directly (no import needed)
 3. **STYLING**: Tailwind CSS only (`className="..."`). `style={{{{}}}}` ONLY for dynamic JS variable values. No custom CSS.
 4. **NO EXTERNAL LIBS**: ⛔ NEVER import lucide-react, heroicons, material-icons, react-icons, framer-motion — NOT INSTALLED, WILL CRASH. No icons — use text only.
@@ -1261,7 +1262,7 @@ PRE_GENERATION_CHECKLIST = """
 
 1. **Field**: 모든 `<Field`는 `/>` 로 끝나는가? `</Field>` 가 0개인가?
 2. **Whitelist**: 사용한 컴포넌트가 모두 Available Components에 있는가?
-3. **Import**: JSX에서 사용한 컴포넌트만 import했는가? 타입 import는 없는가?
+3. **Import 완전성**: JSX에서 `<ComponentName`으로 사용한 모든 컴포넌트가 import에 포함되어 있는가? 누락된 import = ReferenceError CRASH. 타입 import는 없는가?
 4. **Complete output**: `...` 이나 `// 나머지 동일` 같은 생략이 없는가?
 5. **ENUM variety**: 같은 variant/size를 모든 컴포넌트에 반복하지 않았는가?
 6. **Section Card**: 조회형(RP-1) 화면에서 FilterBar + ActionButtons + Grid가 **하나의 Section Card** 안에 있는가? 별도 카드로 분리되지 않았는가?
