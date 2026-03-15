@@ -935,6 +935,34 @@ Dialog는 Compound 패턴입니다. 반드시 `Dialog.Header`, `Dialog.Body`, `D
 </Dialog>
 ```
 
+### 🚨 Drawer (Compound Pattern)
+Drawer는 Compound 패턴입니다. 반드시 `Drawer.Header`, `Drawer.Body`, `Drawer.Footer`를 사용하세요.
+- size="sm": 간단한 정보 표시 (352px)
+- size="md": 기본 폼/상세 (552px, 기본값)
+- size="lg": 복잡한 폼, 상세 정보 (752px)
+- size="xl": 대형 콘텐츠, 테이블 포함 (1152px)
+- ⚠️ **Drawer 자체에 padding이 내장되어 있음. 절대로 Drawer 내부에 추가 padding/margin wrapper div를 넣지 마세요!**
+- ❌ `<Drawer><div className="p-5">...</div></Drawer>` — 이중 패딩 발생, 금지
+- ❌ `<Drawer><div className="p-6">...</div></Drawer>` — 이중 패딩 발생, 금지
+- ✅ `<Drawer><Drawer.Header title="제목" /><Drawer.Body>내용</Drawer.Body><Drawer.Footer>...</Drawer.Footer></Drawer>`
+
+```tsx
+// ✅ 올바른 Drawer 사용법
+<Drawer open={isOpen} onClose={() => setIsOpen(false)} size="md">
+  <Drawer.Header title="계약 상세" />
+  <Drawer.Body>
+    <div className="flex flex-col gap-4">
+      <Field label="계약번호" value="CNT-001" readOnly />
+      <Field label="고객명" value="김민준" readOnly />
+    </div>
+  </Drawer.Body>
+  <Drawer.Footer>
+    <Button variant="outline" onClick={() => setIsOpen(false)}>취소</Button>
+    <Button variant="primary">저장</Button>
+  </Drawer.Footer>
+</Drawer>
+```
+
 ### Tooltip (롤오버 메시지)
 - 아이콘이나 텍스트에 마우스 오버 시 설명 표시용
 - ✅ `<Tooltip label="설명 텍스트"><span>호버 대상</span></Tooltip>`
