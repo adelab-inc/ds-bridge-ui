@@ -44,7 +44,7 @@ def load_component_schema() -> tuple[dict | None, str | None]:
 # ============================================================================
 
 # WHITELIST: Intersection of AI schema (component-schema.json) and UMD bundle exports
-# Only these 17 components are both in schema AND available at runtime
+# Only these 18 components are both in schema AND available at runtime
 # NOTE: Option/OptionGroup removed - Select uses `options` prop internally (no separate import needed)
 AVAILABLE_COMPONENTS_WHITELIST = {
     # Basic
@@ -55,6 +55,7 @@ AVAILABLE_COMPONENTS_WHITELIST = {
     "Badge",
     "Chip",
     "Dialog",
+    "Drawer",
     "Divider",
     "Tag",
     "Tooltip",
@@ -905,8 +906,29 @@ Always respond in Korean.
   - "info": 진행중, 접수
 - ❌ NEVER invent hex colors — only use exact values from the COLOR TOKEN TABLE above
 
+### 🚨🚨 Drawer vs Dialog 구분 (절대 혼동 금지)
+
+**Drawer와 Dialog는 완전히 다른 별개의 컴포넌트입니다. 절대 혼동하지 마세요.**
+
+#### 한국어 용어 → 컴포넌트 매핑:
+- 사용자가 "**드로어**"라고 하면 → 반드시 `Drawer` 컴포넌트 사용
+- 사용자가 "**다이얼로그**" 또는 "**모달**" 또는 "**팝업**"이라고 하면 → `Dialog` 컴포넌트 사용
+- ❌ **"드로어"를 요청했는데 `Dialog`를 사용하는 것은 절대 금지**
+- ❌ **"드로어(Dialog)"처럼 잘못된 매핑 절대 금지** — 드로어 = Drawer, 다이얼로그 = Dialog
+
+#### 용도 구분:
+| 구분 | Drawer | Dialog |
+|------|--------|--------|
+| 위치 | 화면 우측에서 슬라이드 | 화면 중앙에 오버레이 |
+| 높이 | 전체 화면 높이 | 최대 80vh |
+| 용도 | 상세보기, 관리 패널, 편집 폼 | 확인/취소 알림, 간단한 모달 폼 |
+| 키워드 | 드로어, 사이드패널, 관리, 상세 | 다이얼로그, 모달, 팝업, 확인창 |
+
+- 사용자가 "드로어"라는 단어를 사용했으면 **무조건 `Drawer`**. 예외 없음.
+
 ### 🚨 Dialog (Compound Pattern)
 Dialog는 Compound 패턴입니다. 반드시 `Dialog.Header`, `Dialog.Body`, `Dialog.Footer`를 사용하세요.
+- 🚨 **Dialog는 "다이얼로그/모달/팝업"에만 사용. "드로어" 요청 시 Dialog가 아닌 Drawer를 사용할 것!**
 - size="sm": 확인/취소 간단 알림
 - size="md": 폼 입력 (기본)
 - size="lg": 복잡한 폼, 상세 정보
@@ -937,6 +959,7 @@ Dialog는 Compound 패턴입니다. 반드시 `Dialog.Header`, `Dialog.Body`, `D
 
 ### 🚨 Drawer (Compound Pattern)
 Drawer는 Compound 패턴입니다. 반드시 `Drawer.Header`, `Drawer.Body`, `Drawer.Footer`를 사용하세요.
+- 🚨 **"드로어" 요청 시 반드시 이 Drawer 컴포넌트를 사용. Dialog로 대체 금지!**
 - size="sm": 간단한 정보 표시 (352px)
 - size="md": 기본 폼/상세 (552px, 기본값)
 - size="lg": 복잡한 폼, 상세 정보 (752px)
@@ -1266,6 +1289,7 @@ PRE_GENERATION_CHECKLIST = """
 4. **Complete output**: `...` 이나 `// 나머지 동일` 같은 생략이 없는가?
 5. **ENUM variety**: 같은 variant/size를 모든 컴포넌트에 반복하지 않았는가?
 6. **Section Card**: 조회형(RP-1) 화면에서 FilterBar + ActionButtons + Grid가 **하나의 Section Card** 안에 있는가? 별도 카드로 분리되지 않았는가?
+7. **Drawer vs Dialog 검증**: 사용자가 "드로어"라고 요청했는데 코드에 `<Dialog`가 있는가? → 반드시 `<Drawer`로 교체! "드로어" = Drawer, "다이얼로그/모달/팝업" = Dialog. 절대 혼동 금지.
 
 ---
 
@@ -1318,6 +1342,7 @@ SYSTEM_PROMPT_FOOTER = """## 🎯 DESIGN CONSISTENCY CHECKLIST
 - **Shadows**: `shadow-sm` only. Never `shadow`, `shadow-md`, `shadow-lg`.
 - **Borders**: `border border-[#dee2e6]` only. Never other gray shades.
 - **PROPS VALIDATION**: Use exact enum values (`variant="primary"` NOT `variant="blue"`). Don't hallucinate props.
+- **DRAWER vs DIALOG**: "드로어" 요청 → `Drawer` 컴포넌트 사용 (Dialog 금지). "다이얼로그/모달/팝업" → `Dialog`.
 
 Create a premium, completed result."""
 
@@ -1439,6 +1464,32 @@ export default MemberDetail;
 - 배경: `bg-[#e7f5ff]` + `border-[#339af0]` (파란 계열 강조)
 - 위치: DataGrid 바로 위
 - 선택 건수 표시 + 우측에 액션 버튼
+
+### 드로어(Drawer) 패턴 — "드로어" 요청 시 반드시 이 패턴 사용
+🚨 **사용자가 "드로어"라고 하면 Dialog가 아닌 반드시 Drawer를 사용!**
+```tsx
+import { Button, Field, Select, Drawer } from '@/components';
+
+{/* ✅ 드로어 = Drawer 컴포넌트. ❌ Dialog 절대 사용 금지 */}
+<Drawer open={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} size="md">
+  <Drawer.Header title="조직원 등록" />
+  <Drawer.Body>
+    <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-2 gap-4">
+        <Field label="성명" placeholder="이름 입력" required className="w-full" />
+        <Field label="사번" placeholder="자동 부여" disabled className="w-full" />
+      </div>
+      <Select label="소속 부서" placeholder="부서 선택" options={[{label:'개발팀',value:'dev'},{label:'디자인팀',value:'design'}]} className="w-full" />
+    </div>
+  </Drawer.Body>
+  <Drawer.Footer>
+    <Button variant="outline" onClick={() => setIsDrawerOpen(false)}>취소</Button>
+    <Button variant="primary">등록</Button>
+  </Drawer.Footer>
+</Drawer>
+```
+- ⚠️ "드로어" = `Drawer` | "다이얼로그/모달/팝업" = `Dialog`
+- ❌ 드로어 요청에 Dialog 사용은 **컴포넌트 오용** — 반드시 Drawer 사용
 """
 
 
