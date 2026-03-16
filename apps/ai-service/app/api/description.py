@@ -192,8 +192,13 @@ async def extract_description(
 
         # 6. LLM 호출
         provider = get_ai_provider()
-        response_message, _ = await provider.chat(messages)
+        response_message, usage = await provider.chat(messages)
         description_text = response_message.content
+
+        if not description_text or not description_text.strip():
+            raise HTTPException(
+                status_code=500, detail="AI가 빈 응답을 반환했습니다. 다시 시도해 주세요."
+            )
 
         # 7. 생성 사유 결정
         reason = _determine_reason(edit_history, has_previous)
@@ -211,6 +216,7 @@ async def extract_description(
                 "room_id": request.room_id,
                 "version": record["version"],
                 "reason": reason,
+                "usage": usage,
             },
         )
 
