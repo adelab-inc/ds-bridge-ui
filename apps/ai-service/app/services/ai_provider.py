@@ -295,7 +295,7 @@ class GeminiProvider(AIProvider):
         )
         async for chunk in stream:
             # thinking 파트 제외하고 응답 텍스트만 스트리밍
-            if chunk.candidates:
+            if chunk.candidates and chunk.candidates[0].content:
                 for part in chunk.candidates[0].content.parts:
                     if part.text and not getattr(part, "thought", False):
                         yield part.text
@@ -344,8 +344,11 @@ class GeminiProvider(AIProvider):
             config=config,
         )
         async for chunk in stream:
-            if chunk.text:
-                yield chunk.text
+            # thinking 파트 제외하고 응답 텍스트만 스트리밍
+            if chunk.candidates and chunk.candidates[0].content:
+                for part in chunk.candidates[0].content.parts:
+                    if part.text and not getattr(part, "thought", False):
+                        yield part.text
 
 
 def get_ai_provider() -> AIProvider:
