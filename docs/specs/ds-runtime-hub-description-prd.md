@@ -370,7 +370,7 @@ history ──[닫기]──→ viewing
 - 버전 번호 (v1, v2, v3...) + 최신/이전 뱃지
 - 생성 시각 (상대 시간: "방금 전", "10분 전")
 - 생성 사유 (최초 생성 / 편집 이력 반영 재생성 등)
-- 변경 요약 태그 (`+1 기능 추가`, `편집 이력 반영`, `최초 생성`)
+
 
 **기능 범위**: **조회(읽기 전용)만** 가능. 이전 버전으로 되돌리기는 제공하지 않음.
 
@@ -450,7 +450,6 @@ CREATE TABLE descriptions (
   content TEXT NOT NULL,
   version INTEGER NOT NULL,
   reason TEXT NOT NULL CHECK (reason IN ('initial', 'regenerated_with_edits', 'regenerated')),
-  change_tags JSONB DEFAULT '[]',
   edited_content TEXT,
   base_message_id UUID REFERENCES chat_messages(id),
   created_by TEXT,
@@ -469,7 +468,6 @@ CREATE INDEX idx_descriptions_room_version ON descriptions(room_id, version DESC
 | `content` | AI가 생성한 원본 디스크립션 텍스트 |
 | `version` | 정수 버전 (1, 2, 3...). AI 추출 시에만 증가 |
 | `reason` | 생성 사유: `initial`(최초), `regenerated_with_edits`(편집 이력 반영 재생성), `regenerated`(대화 추가만) |
-| `change_tags` | 변경 요약 태그 JSON 배열 `[{type, label}]` |
 | `edited_content` | 사용자 편집본 (null이면 편집 없음). 재추출 시 AI 컨텍스트로 사용 |
 | `base_message_id` | 추출 시점의 최신 메시지 ID (컨텍스트 범위 추적) |
 
@@ -482,7 +480,6 @@ export interface Description {
   content: string;
   version: number;
   reason: DescriptionReason;
-  change_tags: ChangeTag[];
   edited_content: string | null;
   base_message_id: string | null;
   created_by: string | null;
@@ -491,16 +488,10 @@ export interface Description {
 
 export type DescriptionReason = 'initial' | 'regenerated_with_edits' | 'regenerated';
 
-export interface ChangeTag {
-  type: 'add' | 'edit' | 'context';
-  label: string;
-}
-
 export interface DescriptionVersionSummary {
   id: string;
   version: number;
   reason: DescriptionReason;
-  change_tags: ChangeTag[];
   created_at: number;
 }
 
@@ -563,11 +554,7 @@ interface DescriptionState {
   "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "version": 2,
   "content": "## Dashboard 페이지 구조\n\n...",
-  "reason": "regenerated_with_edits",
-  "change_tags": [
-    {"type": "add", "label": "+1 기능 추가"},
-    {"type": "context", "label": "편집 이력 반영"}
-  ]
+  "reason": "regenerated_with_edits"
 }
 ```
 
@@ -599,14 +586,12 @@ interface DescriptionState {
       "id": "a1b2...",
       "version": 2,
       "reason": "regenerated_with_edits",
-      "change_tags": [{"type": "add", "label": "+1 기능 추가"}, {"type": "context", "label": "편집 이력 반영"}],
       "created_at": 1709568000000
     },
     {
       "id": "1122...",
       "version": 1,
       "reason": "initial",
-      "change_tags": [{"type": "add", "label": "최초 생성"}],
       "created_at": 1709500000000
     }
   ]
@@ -809,13 +794,13 @@ apps/web/
 ### Phase 1: 데이터 기반 (BE)
 
 - [ ] **1-1. `descriptions` 테이블 Supabase Migration 작성**
-  - `descriptions` 테이블 CREATE 쿼리 (정수 version, reason, change_tags, edited_content)
+  - `descriptions` 테이블 CREATE 쿼리 (정수 version, reason, edited_content)
   - 인덱스 생성 (room_id + version DESC)
   - `collections.json` SSOT 업데이트
 
 - [x] **1-2. `packages/shared-types` 타입 정의 추가**
   - `Description`, `DescriptionVersionSummary`, `EditHistory` 인터페이스
-  - `DescriptionReason`, `ChangeTag` 타입
+  - `DescriptionReason` 타입
 
 - [ ] **1-3. FastAPI Description CRUD 서비스 구현**
   - `apps/ai-service/app/services/supabase_db.py` 확장
@@ -908,7 +893,7 @@ apps/web/
 
 - [x] **4-2. DescriptionHistoryItem 구현**
   - `apps/web/components/features/description/description-history-item.tsx` 신규
-  - 버전 번호, 최신/이전 뱃지, 상대 시각, 생성 사유, 변경 태그
+  - 버전 번호, 최신/이전 뱃지, 상대 시각, 생성 사유
   - 클릭 시 하이라이트 + 미리보기 표시
 
 - [x] **4-3. [생성 이력] 버튼 연동**
