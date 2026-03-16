@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useDescriptionStore } from '@/stores/useDescriptionStore';
 import {
   useLatestDescription,
+  useDescriptionVersions,
   useSaveEditHistory,
 } from '@/hooks/api/useDescriptionQuery';
 import { DescriptionViewer } from './description-viewer';
@@ -39,9 +40,13 @@ function DescriptionTab({ roomId }: DescriptionTabProps) {
   const cancelEdit = useDescriptionStore((s) => s.cancelEdit);
   const openHistory = useDescriptionStore((s) => s.openHistory);
   const versions = useDescriptionStore((s) => s.versions);
+  const setVersions = useDescriptionStore((s) => s.setVersions);
 
   // 최신 디스크립션 조회 (마운트 시 자동 fetch)
   const { data: latestDescription } = useLatestDescription(roomId);
+
+  // 버전 목록 조회
+  const { data: versionsData } = useDescriptionVersions(roomId);
 
   // 편집 이력 BE 저장 mutation
   const saveEditMutation = useSaveEditHistory();
@@ -67,6 +72,13 @@ function DescriptionTab({ roomId }: DescriptionTabProps) {
       setCurrentDescription(latestDescription);
     }
   }, [latestDescription, uiState, setCurrentDescription]);
+
+  // 버전 목록 → 스토어 동기화
+  React.useEffect(() => {
+    if (versionsData?.versions) {
+      setVersions(versionsData.versions);
+    }
+  }, [versionsData, setVersions]);
 
   // idle: 빈 상태 안내
   if (uiState === 'idle') {

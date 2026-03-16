@@ -1,6 +1,5 @@
 'use client';
 
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useDescriptionStore } from '@/stores/useDescriptionStore';
 
 /**
@@ -10,17 +9,14 @@ function DescriptionViewer() {
   const currentContent = useDescriptionStore((s) => s.currentContent);
 
   return (
-    <ScrollArea className="flex-1">
-      <div className="p-4">
-        <textarea
-          readOnly
-          value={currentContent ?? ''}
-          className="bg-transparent text-foreground w-full resize-none border-none text-sm leading-relaxed outline-none"
-          style={{ minHeight: '180px' }}
-          rows={10}
-        />
-      </div>
-    </ScrollArea>
+    <div className="flex-1 overflow-y-auto p-4">
+      <textarea
+        readOnly
+        value={currentContent ?? ''}
+        className="bg-transparent text-foreground h-full min-h-[180px] w-full resize-none border-none text-sm leading-relaxed outline-none"
+        rows={10}
+      />
+    </div>
   );
 }
 
