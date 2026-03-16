@@ -290,8 +290,11 @@ class GeminiProvider(AIProvider):
             config=config,
         )
         async for chunk in stream:
-            if chunk.text:
-                yield chunk.text
+            # thinking 파트 제외하고 응답 텍스트만 스트리밍
+            if chunk.candidates:
+                for part in chunk.candidates[0].content.parts:
+                    if part.text and not getattr(part, "thought", False):
+                        yield part.text
 
     async def chat_vision_stream(
         self,
