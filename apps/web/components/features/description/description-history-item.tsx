@@ -33,7 +33,7 @@ function formatRelativeTime(timestamp: number): string {
 
 /**
  * 생성 이력 항목
- * - 버전 뱃지, 최신/이전 뱃지, 상대 시각, 생성 사유, 변경 태그
+ * - 버전 뱃지, 최신/이전 뱃지, 상대 시각, 생성 사유
  */
 function DescriptionHistoryItem({
   version,
@@ -75,15 +75,6 @@ function DescriptionHistoryItem({
         {reasonLabels[version.reason] ?? version.reason}
       </p>
 
-      {version.change_tags.length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {version.change_tags.map((tag, i) => (
-            <Badge key={i} variant="secondary" className="text-[10px]">
-              {tag.label}
-            </Badge>
-          ))}
-        </div>
-      )}
     </button>
   );
 }

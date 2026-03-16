@@ -10,12 +10,6 @@ export type DescriptionReason =
   | 'regenerated_with_edits'
   | 'regenerated';
 
-/** 변경 요약 태그 */
-export interface ChangeTag {
-  type: 'add' | 'edit' | 'context';
-  label: string;
-}
-
 /** descriptions 테이블 전체 레코드 */
 export interface Description {
   id: string;
@@ -23,7 +17,6 @@ export interface Description {
   content: string;
   version: number;
   reason: DescriptionReason;
-  change_tags: ChangeTag[];
   edited_content: string | null;
   base_message_id: string | null;
   created_by: string | null;
@@ -35,7 +28,6 @@ export interface DescriptionVersionSummary {
   id: string;
   version: number;
   reason: DescriptionReason;
-  change_tags: ChangeTag[];
   created_at: number;
 }
 
