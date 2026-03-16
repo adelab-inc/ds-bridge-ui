@@ -451,8 +451,6 @@ CREATE TABLE descriptions (
   version INTEGER NOT NULL,
   reason TEXT NOT NULL CHECK (reason IN ('initial', 'regenerated_with_edits', 'regenerated')),
   edited_content TEXT,
-  base_message_id UUID REFERENCES chat_messages(id),
-  created_by TEXT,
   created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::BIGINT,
 
   UNIQUE (room_id, version)
@@ -469,7 +467,6 @@ CREATE INDEX idx_descriptions_room_version ON descriptions(room_id, version DESC
 | `version` | 정수 버전 (1, 2, 3...). AI 추출 시에만 증가 |
 | `reason` | 생성 사유: `initial`(최초), `regenerated_with_edits`(편집 이력 반영 재생성), `regenerated`(대화 추가만) |
 | `edited_content` | 사용자 편집본 (null이면 편집 없음). 재추출 시 AI 컨텍스트로 사용 |
-| `base_message_id` | 추출 시점의 최신 메시지 ID (컨텍스트 범위 추적) |
 
 ### 4.2 TypeScript 타입 (`packages/shared-types`)
 
@@ -481,8 +478,6 @@ export interface Description {
   version: number;
   reason: DescriptionReason;
   edited_content: string | null;
-  base_message_id: string | null;
-  created_by: string | null;
   created_at: number;
 }
 
@@ -538,15 +533,11 @@ interface DescriptionState {
 **Request**:
 ```json
 {
-  "room_id": "550e8400-e29b-41d4-a716-446655440000",
-  "current_code": "const App = () => (<div className='grid grid-cols-12'>...</div>)",
-  "current_code_path": "src/pages/Dashboard.tsx",
-  "edit_history": {
-    "original": "원본 AI 생성 디스크립션",
-    "edited": "사용자가 수정한 디스크립션"
-  }
+  "room_id": "550e8400-e29b-41d4-a716-446655440000"
 }
 ```
+
+> 코드, 대화 히스토리, 편집 이력은 모두 서버에서 DB 조회하여 자동으로 가져옵니다.
 
 **Response** (200):
 ```json

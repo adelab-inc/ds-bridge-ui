@@ -256,7 +256,13 @@ class GeminiProvider(AIProvider):
             config=config,
         )
 
-        content = response.text or ""
+        # thinking 파트 제외하고 응답 텍스트만 추출
+        parts = (
+            response.candidates[0].content.parts
+            if response.candidates and response.candidates[0].content
+            else []
+        )
+        content = "".join(p.text for p in parts if p.text and not getattr(p, "thought", False))
         usage = None
         if response.usage_metadata:
             usage = {
@@ -288,8 +294,11 @@ class GeminiProvider(AIProvider):
             config=config,
         )
         async for chunk in stream:
-            if chunk.text:
-                yield chunk.text
+            # thinking 파트 제외하고 응답 텍스트만 스트리밍
+            if chunk.candidates and chunk.candidates[0].content:
+                for part in chunk.candidates[0].content.parts:
+                    if part.text and not getattr(part, "thought", False):
+                        yield part.text
 
     async def chat_vision_stream(
         self,
@@ -335,8 +344,11 @@ class GeminiProvider(AIProvider):
             config=config,
         )
         async for chunk in stream:
-            if chunk.text:
-                yield chunk.text
+            # thinking 파트 제외하고 응답 텍스트만 스트리밍
+            if chunk.candidates and chunk.candidates[0].content:
+                for part in chunk.candidates[0].content.parts:
+                    if part.text and not getattr(part, "thought", False):
+                        yield part.text
 
 
 def get_ai_provider() -> AIProvider:
