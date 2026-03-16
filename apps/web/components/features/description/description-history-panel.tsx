@@ -86,17 +86,16 @@ function DescriptionHistoryPanel({ roomId }: DescriptionHistoryPanelProps) {
       </ScrollArea>
 
       {/* 미리보기 */}
-      <ScrollArea className="flex-1">
+      <div className="flex flex-1 flex-col overflow-y-auto">
         {selectedVersion ? (
-          <div className="p-4">
+          <div className="flex flex-1 flex-col p-4">
             <div className="text-muted-foreground mb-2 text-xs">
               v{selectedVersion.version} 미리보기
             </div>
             <textarea
               readOnly
               value={selectedVersion.content}
-              className="bg-transparent text-foreground w-full resize-none border-none text-sm leading-relaxed outline-none"
-              style={{ minHeight: '120px' }}
+              className="bg-transparent text-foreground h-full min-h-[120px] w-full resize-none border-none text-sm leading-relaxed outline-none"
               rows={8}
             />
           </div>
@@ -107,7 +106,7 @@ function DescriptionHistoryPanel({ roomId }: DescriptionHistoryPanelProps) {
             </p>
           </div>
         )}
-      </ScrollArea>
+      </div>
     </div>
   );
 }
