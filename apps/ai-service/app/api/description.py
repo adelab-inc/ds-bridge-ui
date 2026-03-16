@@ -1,8 +1,9 @@
 import logging
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.components import get_description_system_prompt
+from app.core.auth import verify_api_key
 from app.schemas.chat import Message
 from app.schemas.description import (
     DescriptionExtractRequest,
@@ -27,7 +28,7 @@ from app.services.supabase_db import (
     update_edited_content,
 )
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(verify_api_key)])
 logger = logging.getLogger(__name__)
 
 
