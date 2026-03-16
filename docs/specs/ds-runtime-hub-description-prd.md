@@ -450,10 +450,7 @@ CREATE TABLE descriptions (
   content TEXT NOT NULL,
   version INTEGER NOT NULL,
   reason TEXT NOT NULL CHECK (reason IN ('initial', 'regenerated_with_edits', 'regenerated')),
-  change_tags JSONB DEFAULT '[]',
   edited_content TEXT,
-  base_message_id UUID REFERENCES chat_messages(id),
-  created_by TEXT,
   created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::BIGINT,
 
   UNIQUE (room_id, version)
@@ -469,9 +466,7 @@ CREATE INDEX idx_descriptions_room_version ON descriptions(room_id, version DESC
 | `content` | AI가 생성한 원본 디스크립션 텍스트 |
 | `version` | 정수 버전 (1, 2, 3...). AI 추출 시에만 증가 |
 | `reason` | 생성 사유: `initial`(최초), `regenerated_with_edits`(편집 이력 반영 재생성), `regenerated`(대화 추가만) |
-| `change_tags` | 변경 요약 태그 JSON 배열 `[{type, label}]` |
 | `edited_content` | 사용자 편집본 (null이면 편집 없음). 재추출 시 AI 컨텍스트로 사용 |
-| `base_message_id` | 추출 시점의 최신 메시지 ID (컨텍스트 범위 추적) |
 
 ### 4.2 TypeScript 타입 (`packages/shared-types`)
 
@@ -482,25 +477,16 @@ export interface Description {
   content: string;
   version: number;
   reason: DescriptionReason;
-  change_tags: ChangeTag[];
   edited_content: string | null;
-  base_message_id: string | null;
-  created_by: string | null;
   created_at: number;
 }
 
 export type DescriptionReason = 'initial' | 'regenerated_with_edits' | 'regenerated';
 
-export interface ChangeTag {
-  type: 'add' | 'edit' | 'context';
-  label: string;
-}
-
 export interface DescriptionVersionSummary {
   id: string;
   version: number;
   reason: DescriptionReason;
-  change_tags: ChangeTag[];
   created_at: number;
 }
 
@@ -547,15 +533,11 @@ interface DescriptionState {
 **Request**:
 ```json
 {
-  "room_id": "550e8400-e29b-41d4-a716-446655440000",
-  "current_code": "const App = () => (<div className='grid grid-cols-12'>...</div>)",
-  "current_code_path": "src/pages/Dashboard.tsx",
-  "edit_history": {
-    "original": "원본 AI 생성 디스크립션",
-    "edited": "사용자가 수정한 디스크립션"
-  }
+  "room_id": "550e8400-e29b-41d4-a716-446655440000"
 }
 ```
+
+> 코드, 대화 히스토리, 편집 이력은 모두 서버에서 DB 조회하여 자동으로 가져옵니다.
 
 **Response** (200):
 ```json
@@ -563,11 +545,7 @@ interface DescriptionState {
   "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "version": 2,
   "content": "## Dashboard 페이지 구조\n\n...",
-  "reason": "regenerated_with_edits",
-  "change_tags": [
-    {"type": "add", "label": "+1 기능 추가"},
-    {"type": "context", "label": "편집 이력 반영"}
-  ]
+  "reason": "regenerated_with_edits"
 }
 ```
 
@@ -599,14 +577,12 @@ interface DescriptionState {
       "id": "a1b2...",
       "version": 2,
       "reason": "regenerated_with_edits",
-      "change_tags": [{"type": "add", "label": "+1 기능 추가"}, {"type": "context", "label": "편집 이력 반영"}],
       "created_at": 1709568000000
     },
     {
       "id": "1122...",
       "version": 1,
       "reason": "initial",
-      "change_tags": [{"type": "add", "label": "최초 생성"}],
       "created_at": 1709500000000
     }
   ]
@@ -809,13 +785,13 @@ apps/web/
 ### Phase 1: 데이터 기반 (BE)
 
 - [ ] **1-1. `descriptions` 테이블 Supabase Migration 작성**
-  - `descriptions` 테이블 CREATE 쿼리 (정수 version, reason, change_tags, edited_content)
+  - `descriptions` 테이블 CREATE 쿼리 (정수 version, reason, edited_content)
   - 인덱스 생성 (room_id + version DESC)
   - `collections.json` SSOT 업데이트
 
 - [ ] **1-2. `packages/shared-types` 타입 정의 추가**
   - `Description`, `DescriptionVersionSummary`, `EditHistory` 인터페이스
-  - `DescriptionReason`, `ChangeTag` 타입
+  - `DescriptionReason` 타입
 
 - [ ] **1-3. FastAPI Description CRUD 서비스 구현**
   - `apps/ai-service/app/services/supabase_db.py` 확장

@@ -676,30 +676,166 @@ async def delete_chat_message(message_id: str) -> bool:
     return deleted
 
 
-@handle_db_error("최신 코드 메시지 조회 실패")
-async def get_latest_code_message(room_id: str) -> MessageData | None:
-    """
-    채팅방에서 코드가 포함된 가장 최근 메시지 조회.
+# ============================================================================
+# Description CRUD
+# ============================================================================
 
-    content와 path가 비어있지 않은 메시지 중 가장 최근 것을 반환합니다.
+
+@handle_db_error("디스크립션 생성 실패")
+async def create_description(
+    room_id: str,
+    content: str,
+    reason: str,
+) -> dict:
+    """
+    새 디스크립션 버전 생성
+
+    Args:
+        room_id: 채팅방 ID
+        content: AI 생성 디스크립션 텍스트
+        reason: 생성 사유 (initial / regenerated_with_edits / regenerated)
+
+    Returns:
+        생성된 디스크립션 레코드
+    """
+    client = await get_supabase_client()
+
+    # 현재 최신 버전 조회
+    latest = (
+        await client.table("descriptions")
+        .select("version")
+        .eq("room_id", room_id)
+        .order("version", desc=True)
+        .limit(1)
+        .execute()
+    )
+    next_version = (latest.data[0]["version"] + 1) if latest.data else 1
+
+    description_id = str(uuid.uuid4())
+    now = get_timestamp_ms()
+
+    record = {
+        "id": description_id,
+        "room_id": room_id,
+        "content": content,
+        "version": next_version,
+        "reason": reason,
+        "edited_content": None,
+        "created_at": now,
+    }
+
+    await client.table("descriptions").insert(record).execute()
+    logger.info(
+        "Description created",
+        extra={"id": description_id, "room_id": room_id, "version": next_version},
+    )
+    return record
+
+
+@handle_db_error("최신 디스크립션 조회 실패")
+async def get_latest_description(room_id: str) -> dict | None:
+    """
+    채팅방의 최신 디스크립션 조회
 
     Args:
         room_id: 채팅방 ID
 
     Returns:
-        코드가 포함된 최신 메시지 또는 None
+        최신 디스크립션 레코드 또는 None
     """
     client = await get_supabase_client()
-    result = await (
-        client.table("chat_messages")
+    result = (
+        await client.table("descriptions")
         .select("*")
         .eq("room_id", room_id)
-        .neq("content", "")
-        .neq("path", "")
-        .order("answer_created_at", desc=True)
+        .order("version", desc=True)
         .limit(1)
         .execute()
     )
-    if result.data:
-        return result.data[0]  # type: ignore[return-value]
-    return None
+    return result.data[0] if result.data else None
+
+
+@handle_db_error("디스크립션 버전 목록 조회 실패")
+async def get_description_versions(room_id: str) -> list[dict]:
+    """
+    채팅방의 모든 디스크립션 버전 목록 (요약)
+
+    Args:
+        room_id: 채팅방 ID
+
+    Returns:
+        버전 목록 (id, version, reason, created_at)
+    """
+    client = await get_supabase_client()
+    result = (
+        await client.table("descriptions")
+        .select("id, version, reason, created_at")
+        .eq("room_id", room_id)
+        .order("version", desc=True)
+        .execute()
+    )
+    return result.data
+
+
+@handle_db_error("디스크립션 버전 조회 실패")
+async def get_description_by_id(description_id: str) -> dict | None:
+    """
+    특정 디스크립션 버전 조회
+
+    Args:
+        description_id: 디스크립션 ID
+
+    Returns:
+        디스크립션 레코드 또는 None
+    """
+    client = await get_supabase_client()
+    result = (
+        await client.table("descriptions")
+        .select("*")
+        .eq("id", description_id)
+        .limit(1)
+        .execute()
+    )
+    return result.data[0] if result.data else None
+
+
+@handle_db_error("편집 내용 저장 실패")
+async def update_edited_content(room_id: str, edited_content: str) -> dict | None:
+    """
+    최신 버전의 edited_content 업데이트 (사용자 편집 이력 저장)
+
+    Args:
+        room_id: 채팅방 ID
+        edited_content: 사용자가 편집한 디스크립션 텍스트
+
+    Returns:
+        업데이트된 디스크립션 레코드 또는 None
+    """
+    client = await get_supabase_client()
+
+    # 최신 버전 조회
+    latest = (
+        await client.table("descriptions")
+        .select("id, version")
+        .eq("room_id", room_id)
+        .order("version", desc=True)
+        .limit(1)
+        .execute()
+    )
+    if not latest.data:
+        return None
+
+    description_id = latest.data[0]["id"]
+    result = (
+        await client.table("descriptions")
+        .update({"edited_content": edited_content})
+        .eq("id", description_id)
+        .execute()
+    )
+    logger.info(
+        "Description edited_content updated",
+        extra={"id": description_id, "room_id": room_id},
+    )
+    return result.data[0] if result.data else None
+
+
