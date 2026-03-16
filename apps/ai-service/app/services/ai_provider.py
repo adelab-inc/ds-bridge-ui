@@ -256,7 +256,9 @@ class GeminiProvider(AIProvider):
             config=config,
         )
 
-        content = response.text or ""
+        # thinking 파트 제외하고 응답 텍스트만 추출
+        parts = response.candidates[0].content.parts if response.candidates else []
+        content = "".join(p.text for p in parts if p.text and not getattr(p, "thought", False))
         usage = None
         if response.usage_metadata:
             usage = {
