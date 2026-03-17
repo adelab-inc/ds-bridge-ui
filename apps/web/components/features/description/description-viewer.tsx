@@ -9,7 +9,7 @@ function DescriptionViewer() {
   const currentContent = useDescriptionStore((s) => s.currentContent);
 
   return (
-    <div className="flex-1 overflow-y-auto p-4">
+    <div className="flex-1 overflow-hidden p-4">
       <textarea
         readOnly
         value={currentContent ?? ''}
