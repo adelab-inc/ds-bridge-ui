@@ -111,7 +111,7 @@ function PreviewSection({
                     type="button"
                     onClick={() => setViewMode(mode.value as PreviewViewMode)}
                     className={cn(
-                      'rounded-sm px-2 py-0.5 font-medium transition-colors',
+                      'rounded-sm px-2 py-0.5 font-medium transition-colors cursor-pointer',
                       viewMode === mode.value
                         ? 'bg-background text-foreground shadow-sm'
                         : 'text-muted-foreground hover:text-foreground'

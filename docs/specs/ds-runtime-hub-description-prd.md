@@ -370,7 +370,7 @@ history ──[닫기]──→ viewing
 - 버전 번호 (v1, v2, v3...) + 최신/이전 뱃지
 - 생성 시각 (상대 시간: "방금 전", "10분 전")
 - 생성 사유 (최초 생성 / 편집 이력 반영 재생성 등)
-- 변경 요약 태그 (`+1 기능 추가`, `편집 이력 반영`, `최초 생성`)
+
 
 **기능 범위**: **조회(읽기 전용)만** 가능. 이전 버전으로 되돌리기는 제공하지 않음.
 
@@ -450,7 +450,6 @@ CREATE TABLE descriptions (
   content TEXT NOT NULL,
   version INTEGER NOT NULL,
   reason TEXT NOT NULL CHECK (reason IN ('initial', 'regenerated_with_edits', 'regenerated')),
-  change_tags JSONB DEFAULT '[]',
   edited_content TEXT,
   base_message_id UUID REFERENCES chat_messages(id),
   created_by TEXT,
@@ -469,7 +468,6 @@ CREATE INDEX idx_descriptions_room_version ON descriptions(room_id, version DESC
 | `content` | AI가 생성한 원본 디스크립션 텍스트 |
 | `version` | 정수 버전 (1, 2, 3...). AI 추출 시에만 증가 |
 | `reason` | 생성 사유: `initial`(최초), `regenerated_with_edits`(편집 이력 반영 재생성), `regenerated`(대화 추가만) |
-| `change_tags` | 변경 요약 태그 JSON 배열 `[{type, label}]` |
 | `edited_content` | 사용자 편집본 (null이면 편집 없음). 재추출 시 AI 컨텍스트로 사용 |
 | `base_message_id` | 추출 시점의 최신 메시지 ID (컨텍스트 범위 추적) |
 
@@ -482,7 +480,6 @@ export interface Description {
   content: string;
   version: number;
   reason: DescriptionReason;
-  change_tags: ChangeTag[];
   edited_content: string | null;
   base_message_id: string | null;
   created_by: string | null;
@@ -491,16 +488,10 @@ export interface Description {
 
 export type DescriptionReason = 'initial' | 'regenerated_with_edits' | 'regenerated';
 
-export interface ChangeTag {
-  type: 'add' | 'edit' | 'context';
-  label: string;
-}
-
 export interface DescriptionVersionSummary {
   id: string;
   version: number;
   reason: DescriptionReason;
-  change_tags: ChangeTag[];
   created_at: number;
 }
 
@@ -563,11 +554,7 @@ interface DescriptionState {
   "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "version": 2,
   "content": "## Dashboard 페이지 구조\n\n...",
-  "reason": "regenerated_with_edits",
-  "change_tags": [
-    {"type": "add", "label": "+1 기능 추가"},
-    {"type": "context", "label": "편집 이력 반영"}
-  ]
+  "reason": "regenerated_with_edits"
 }
 ```
 
@@ -599,14 +586,12 @@ interface DescriptionState {
       "id": "a1b2...",
       "version": 2,
       "reason": "regenerated_with_edits",
-      "change_tags": [{"type": "add", "label": "+1 기능 추가"}, {"type": "context", "label": "편집 이력 반영"}],
       "created_at": 1709568000000
     },
     {
       "id": "1122...",
       "version": 1,
       "reason": "initial",
-      "change_tags": [{"type": "add", "label": "최초 생성"}],
       "created_at": 1709500000000
     }
   ]
@@ -809,13 +794,13 @@ apps/web/
 ### Phase 1: 데이터 기반 (BE)
 
 - [ ] **1-1. `descriptions` 테이블 Supabase Migration 작성**
-  - `descriptions` 테이블 CREATE 쿼리 (정수 version, reason, change_tags, edited_content)
+  - `descriptions` 테이블 CREATE 쿼리 (정수 version, reason, edited_content)
   - 인덱스 생성 (room_id + version DESC)
   - `collections.json` SSOT 업데이트
 
-- [ ] **1-2. `packages/shared-types` 타입 정의 추가**
+- [x] **1-2. `packages/shared-types` 타입 정의 추가**
   - `Description`, `DescriptionVersionSummary`, `EditHistory` 인터페이스
-  - `DescriptionReason`, `ChangeTag` 타입
+  - `DescriptionReason` 타입
 
 - [ ] **1-3. FastAPI Description CRUD 서비스 구현**
   - `apps/ai-service/app/services/supabase_db.py` 확장
@@ -834,84 +819,84 @@ apps/web/
   - `GET /description/{room_id}/versions` (버전 목록)
   - `GET /description/{room_id}/versions/{id}` (특정 버전 조회)
 
-- [ ] **1-6. Next.js BFF 라우트 구현**
-  - `apps/web/app/api/description/extract/route.ts`
-  - `apps/web/app/api/description/[room_id]/route.ts`
-  - `apps/web/app/api/description/[room_id]/edit/route.ts`
-  - `apps/web/app/api/description/[room_id]/versions/route.ts`
-  - `apps/web/app/api/description/[room_id]/versions/[id]/route.ts`
+- [x] **1-6. Next.js BFF 라우트 구현**
+  - [x] `apps/web/app/api/description/extract/route.ts`
+  - [x] `apps/web/app/api/description/[room_id]/route.ts`
+  - [x] `apps/web/app/api/description/[room_id]/edit/route.ts`
+  - [x] `apps/web/app/api/description/[room_id]/versions/route.ts`
+  - [x] `apps/web/app/api/description/[room_id]/versions/[id]/route.ts`
   - Supabase JWT 인증 적용 (기존 패턴 참고)
 
 ### Phase 2: 핵심 FE
 
-- [ ] **2-1. `useDescriptionStore` Zustand 스토어 생성**
+- [x] **2-1. `useDescriptionStore` Zustand 스토어 생성**
   - `apps/web/stores/useDescriptionStore.ts` 신규
   - 5개 UI 상태: idle, viewing, editing, waiting, history
   - 상태 전이 액션: extractDescription, startEditing, saveEdit, cancelEdit, openHistory, closeHistory
   - 편집 이력 추적: editDraft, editHistory
 
-- [ ] **2-2. `useDescriptionQuery` TanStack Query 훅 생성**
+- [x] **2-2. `useDescriptionQuery` TanStack Query 훅 생성**
   - `apps/web/hooks/api/useDescriptionQuery.ts` 신규
   - `useLatestDescription(roomId)` — 최신 디스크립션 조회
   - `useDescriptionVersions(roomId)` — 버전 목록 조회
   - `useExtractDescription()` — 추출 mutation
   - `useSaveEditHistory()` — 편집 이력 저장 mutation
 
-- [ ] **2-3. ChatSection 탭 UI 분리**
+- [x] **2-3. ChatSection 탭 UI 분리**
   - `apps/web/components/features/chat/chat-section.tsx` 수정
   - 기존 헤더 아래에 `Tabs` (variant="line") 추가
   - TabsContent: 디자인 모드 (기존 ChatMessageList + 액션바 + ChatInput) / 디스크립션 모드
   - `data-[state=inactive]:hidden`으로 비활성 탭 DOM 유지
   - 편집 중 탭 전환 시 미저장 확인 AlertDialog
 
-- [ ] **2-4. DescriptionActionBar 구현**
+- [x] **2-4. DescriptionActionBar 구현**
   - `apps/web/components/features/description/description-action-bar.tsx` 신규
   - 디자인 모드 탭 내 ChatInput 위 배치
   - 상태별 버튼 변경 (idle/viewing-waiting/editing)
   - [디스크립션 추출] 클릭 → 편집 이력 자동 포함 → API 호출
   - [생성 이력] 클릭 → 디스크립션 모드 이력 패널
 
-- [ ] **2-5. DescriptionTab + DescriptionViewer 구현**
+- [x] **2-5. DescriptionTab + DescriptionViewer 구현**
   - `apps/web/components/features/description/description-tab.tsx` — 상태 분기 루트
   - `apps/web/components/features/description/description-viewer.tsx` — 읽기 전용 뷰
   - 빈 상태: "디스크립션을 먼저 추출해 주세요" + [추출하기] 바로가기
   - 추출 완료 시 자동 전환
 
-- [ ] **2-6. DescriptionVersionBanner 구현**
+- [x] **2-6. DescriptionVersionBanner 구현**
   - `apps/web/components/features/description/description-version-banner.tsx` 신규
   - 읽기 전용: `v{n}` + 최신 뱃지 + 생성 사유
   - 편집 중: 주황 스타일 + `편집 중` + `v{n} 기반 수정`
 
 ### Phase 3: 편집 + 재추출
 
-- [ ] **3-1. DescriptionEditor 구현**
+- [x] **3-1. DescriptionEditor 구현**
   - `apps/web/components/features/description/description-editor.tsx` 신규
   - Textarea 편집 영역 (최소 높이 180px, line-height 2)
   - 편집 전 원본 보관, 변경 사항 감지
 
-- [ ] **3-2. DescriptionToolbar 구현**
+- [x] **3-2. DescriptionToolbar 구현**
   - `apps/web/components/features/description/description-toolbar.tsx` 신규
   - 읽기 전용: [수정하기], [복사], [생성 이력]
   - 편집 모드: [저장 후 닫기], [수정 취소], [복사], [생성 이력]
 
-- [ ] **3-3. 편집 이력 추적 + 재추출 자동 병합 로직**
+- [x] **3-3. 편집 이력 추적 + 재추출 자동 병합 로직**
   - [저장 후 닫기] → editHistory 확정 → BE 저장 → 디자인 탭 전환
   - [수정 취소] → editHistory 폐기 → 읽기 전용 복귀
   - [디스크립션 추출] 클릭 시 editHistory 존재하면 자동 포함
 
 ### Phase 4: 생성 이력
 
-- [ ] **4-1. DescriptionHistoryPanel 구현**
+- [x] **4-1. DescriptionHistoryPanel 구현**
   - `apps/web/components/features/description/description-history-panel.tsx` 신규
   - 이력 목록 (최신 순) + 하단 미리보기
   - 슬라이드 애니메이션 (0.3s ease)
 
-- [ ] **4-2. DescriptionHistoryItem 구현**
+- [x] **4-2. DescriptionHistoryItem 구현**
   - `apps/web/components/features/description/description-history-item.tsx` 신규
-  - 버전 번호, 최신/이전 뱃지, 상대 시각, 생성 사유, 변경 태그
+  - 버전 번호, 최신/이전 뱃지, 상대 시각, 생성 사유
   - 클릭 시 하이라이트 + 미리보기 표시
 
-- [ ] **4-3. [생성 이력] 버튼 연동**
+- [x] **4-3. [생성 이력] 버튼 연동**
   - 액션바(디자인 모드) + 툴바(디스크립션 모드) 양쪽에서 접근 가능
   - 이력 패널 닫기 → 최신 버전 읽기 전용 복귀
 

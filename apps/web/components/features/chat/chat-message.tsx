@@ -131,7 +131,7 @@ function ChatMessage({
                       e.stopPropagation();
                       onDeleteClick();
                     }}
-                    className="text-muted-foreground opacity-0 hover:text-destructive group-hover/msg:opacity-100 rounded-full p-0.5 transition-all duration-150"
+                    className="text-muted-foreground opacity-0 hover:text-destructive group-hover/msg:opacity-100 rounded-full p-0.5 transition-all duration-150 cursor-pointer"
                     aria-label="메시지 삭제"
                   >
                     <HugeiconsIcon
@@ -149,7 +149,7 @@ function ChatMessage({
                       onBookmarkClick();
                     }}
                     className={cn(
-                      'rounded-full p-0.5 transition-all duration-150',
+                      'rounded-full p-0.5 transition-all duration-150 cursor-pointer',
                       isBookmarked
                         ? 'text-amber-500 opacity-100'
                         : 'text-muted-foreground opacity-0 hover:text-amber-500 group-hover/msg:opacity-100'
@@ -173,7 +173,7 @@ function ChatMessage({
                     e.stopPropagation();
                     handleCopy();
                   }}
-                  className="absolute right-2 top-2 z-10 rounded-md bg-muted/80 p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                  className="absolute right-2 top-2 z-10 rounded-md bg-muted/80 p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
                   aria-label="코드 복사"
                 >
                   <HugeiconsIcon
@@ -207,7 +207,7 @@ function ChatMessage({
                     e.stopPropagation();
                     onDeleteClick();
                   }}
-                  className="text-muted-foreground opacity-0 hover:text-destructive group-hover/msg:opacity-100 rounded-full p-0.5 transition-all duration-150"
+                  className="text-muted-foreground opacity-0 hover:text-destructive group-hover/msg:opacity-100 rounded-full p-0.5 transition-all duration-150 cursor-pointer"
                   aria-label="메시지 삭제"
                 >
                   <HugeiconsIcon
@@ -225,7 +225,7 @@ function ChatMessage({
                     onBookmarkClick();
                   }}
                   className={cn(
-                    'rounded-full p-0.5 transition-all duration-150',
+                    'rounded-full p-0.5 transition-all duration-150 cursor-pointer',
                     isBookmarked
                       ? 'text-amber-500 opacity-100'
                       : 'text-muted-foreground opacity-0 hover:text-amber-500 group-hover/msg:opacity-100'

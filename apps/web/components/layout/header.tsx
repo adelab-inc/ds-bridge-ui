@@ -361,7 +361,7 @@ function Header({
                               storybookUrl: room.storybook_url || '',
                             });
                           }}
-                          className="text-muted-foreground hover:text-foreground shrink-0 rounded-full p-0.5 transition-colors"
+                          className="text-muted-foreground hover:text-foreground shrink-0 rounded-full p-0.5 transition-colors cursor-pointer"
                           aria-label="프로젝트 수정"
                         >
                           <HugeiconsIcon
@@ -376,7 +376,7 @@ function Header({
                             e.stopPropagation();
                             setDeleteDialog({ open: true, roomId: room.id });
                           }}
-                          className="text-muted-foreground hover:text-destructive shrink-0 rounded-full p-0.5 transition-colors"
+                          className="text-muted-foreground hover:text-destructive shrink-0 rounded-full p-0.5 transition-colors cursor-pointer"
                           aria-label="프로젝트 삭제"
                         >
                           <HugeiconsIcon
