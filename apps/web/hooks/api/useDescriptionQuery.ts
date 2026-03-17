@@ -67,7 +67,7 @@ export function useLatestDescription(
     },
     enabled: !!roomId,
     retry: false,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
     ...queryOptions,
   });
 }
@@ -115,7 +115,7 @@ export function useDescriptionVersions(
     },
     enabled: !!roomId,
     retry: false,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
     ...queryOptions,
   });
 }
