@@ -39,6 +39,29 @@
           "description": "Response status"
         }
       }
+    },
+    "descriptions": {
+      "name": "descriptions",
+      "description": "AI-generated UI descriptions with version management",
+      "fields": {
+        "id": { "type": "string", "description": "Description ID (UUID)" },
+        "room_id": { "type": "string", "description": "Chat room ID (FK)" },
+        "content": { "type": "string", "description": "AI-generated description text" },
+        "version": { "type": "integer", "description": "Integer version (1, 2, 3...). Incremented only on AI extraction" },
+        "reason": {
+          "type": "string",
+          "enum": ["initial", "regenerated_with_edits", "regenerated"],
+          "description": "Generation reason"
+        },
+        "edited_content": {
+          "type": ["string", "null"],
+          "description": "User-edited content (null if not edited)"
+        },
+        "created_at": {
+          "type": "number",
+          "description": "Created timestamp (ms)"
+        }
+      }
     }
   }
 }
