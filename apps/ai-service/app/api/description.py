@@ -7,10 +7,8 @@ from app.core.auth import verify_api_key
 from app.schemas.chat import Message
 from app.schemas.description import (
     DescriptionExtractRequest,
-    DescriptionExtractResponse,
     DescriptionResponse,
     EditContentRequest,
-    EditContentResponse,
     VersionListResponse,
     VersionSummaryResponse,
 )
@@ -116,7 +114,7 @@ def _determine_reason(edit_history: dict | None, has_previous: bool) -> str:
 
 @router.post(
     "/extract",
-    response_model=DescriptionExtractResponse,
+    response_model=DescriptionResponse,
     summary="디스크립션 AI 추출",
     description="""
 채팅방의 대화 히스토리 + 최신 코드를 분석하여 화면 디스크립션을 AI로 생성합니다.
@@ -146,7 +144,7 @@ def _determine_reason(edit_history: dict | None, has_previous: bool) -> str:
 )
 async def extract_description(
     request: DescriptionExtractRequest,
-) -> DescriptionExtractResponse:
+) -> DescriptionResponse:
     try:
         # 1. room 검증
         room = await get_chat_room(request.room_id)
@@ -221,12 +219,7 @@ async def extract_description(
             },
         )
 
-        return DescriptionExtractResponse(
-            id=record["id"],
-            version=record["version"],
-            content=record["content"],
-            reason=record["reason"],
-        )
+        return DescriptionResponse(**record)
 
     except HTTPException:
         raise
@@ -288,7 +281,7 @@ async def get_description(room_id: str) -> DescriptionResponse:
 
 @router.put(
     "/{room_id}/edit",
-    response_model=EditContentResponse,
+    response_model=DescriptionResponse,
     summary="편집 이력 저장",
     description="""
 최신 버전의 `edited_content`를 업데이트합니다.
@@ -304,16 +297,12 @@ async def get_description(room_id: str) -> DescriptionResponse:
 )
 async def edit_description(
     room_id: str, request: EditContentRequest
-) -> EditContentResponse:
+) -> DescriptionResponse:
     try:
         result = await update_edited_content(room_id, request.edited_content)
         if result is None:
             raise HTTPException(status_code=404, detail="디스크립션이 없습니다.")
-        return EditContentResponse(
-            id=result["id"],
-            version=result["version"],
-            edited_content=result["edited_content"],
-        )
+        return DescriptionResponse(**result)
     except HTTPException:
         raise
     except DatabaseError as e:
