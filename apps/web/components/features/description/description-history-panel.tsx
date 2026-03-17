@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { Cancel01Icon } from '@hugeicons/core-free-icons';
+import { Cancel01Icon, Copy01Icon, Tick01Icon } from '@hugeicons/core-free-icons';
 
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -44,6 +44,16 @@ function DescriptionHistoryPanel({ roomId }: DescriptionHistoryPanelProps) {
     selectedId
   );
 
+  // 복사 상태
+  const [isCopied, setIsCopied] = React.useState(false);
+
+  const handleCopy = React.useCallback(async () => {
+    if (!selectedVersion?.content) return;
+    await navigator.clipboard.writeText(selectedVersion.content);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
+  }, [selectedVersion]);
+
   // 최신 버전 번호
   const latestVersion = versions.length > 0 ? versions[0].version : 0;
 
@@ -67,7 +77,7 @@ function DescriptionHistoryPanel({ roomId }: DescriptionHistoryPanelProps) {
       </div>
 
       {/* 이력 목록 */}
-      <ScrollArea className="max-h-[40%] shrink-0 border-b">
+      <ScrollArea className="max-h-60 shrink-0 border-b">
         {versions.length === 0 ? (
           <p className="text-muted-foreground px-4 py-6 text-center text-xs">
             생성 이력이 없습니다
@@ -86,11 +96,25 @@ function DescriptionHistoryPanel({ roomId }: DescriptionHistoryPanelProps) {
       </ScrollArea>
 
       {/* 미리보기 */}
-      <div className="flex flex-1 flex-col overflow-y-auto">
+      <div className="flex flex-1 flex-col overflow-hidden">
         {selectedVersion ? (
           <div className="flex flex-1 flex-col p-4">
-            <div className="text-muted-foreground mb-2 text-xs">
-              v{selectedVersion.version} 미리보기
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-muted-foreground text-xs">
+                v{selectedVersion.version} 미리보기
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleCopy}
+              >
+                <HugeiconsIcon
+                  icon={isCopied ? Tick01Icon : Copy01Icon}
+                  className="size-4"
+                  strokeWidth={2}
+                />
+                {isCopied ? '복사됨' : '복사'}
+              </Button>
             </div>
             <textarea
               readOnly
