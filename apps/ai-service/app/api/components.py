@@ -1437,22 +1437,31 @@ export default MemberDetail;
 - 필터 버튼: 반드시 `size="md"` (sm 금지)
 - 🚨 **Grid는 FilterBar와 같은 Section Card 안에 배치. 별도 카드 금지!**
 
-### Breadcrumb (경로 표시)
-경로 표시가 필요할 때 페이지 상단에 Breadcrumb 스타일로 배치:
+### Title Bar (타이틀 영역 = 브레드크럼 + 타이틀 + 액션 버튼)
+타이틀 영역은 반드시 아래 구조로 한 블록으로 생성:
 ```tsx
-{/* Breadcrumb — 페이지 타이틀 위에 배치 */}
-<nav className="flex items-center gap-1.5 text-sm text-[#868e96] mb-3">
-  <span className="hover:text-[#495057] cursor-pointer">홈</span>
-  <span>/</span>
-  <span className="hover:text-[#495057] cursor-pointer">인사관리</span>
-  <span>/</span>
-  <span className="text-[#212529] font-medium">발령등록</span>
-</nav>
-<h1 className="text-2xl font-bold text-[#212529] mb-6">발령등록</h1>
+{/* Title Bar — 브레드크럼 + 타이틀·버튼 한 줄 */}
+<div className="mb-6">
+  <nav className="flex items-center gap-1.5 text-sm text-[#868e96] mb-3">
+    <span className="hover:text-[#495057] cursor-pointer">홈</span>
+    <span>/</span>
+    <span className="hover:text-[#495057] cursor-pointer">인사관리</span>
+    <span>/</span>
+    <span className="text-[#212529] font-medium">발령등록</span>
+  </nav>
+  <div className="flex items-center justify-between">
+    <h1 className="text-2xl font-bold text-[#212529]">발령등록</h1>
+    <div className="flex items-center gap-2">
+      <Button variant="outline" size="sm">공지사항</Button>
+      <Button variant="secondary" size="sm">조직도 보기</Button>
+      <Button size="sm">부서 등록</Button>
+    </div>
+  </div>
+</div>
 ```
-- 마지막 항목만 `text-[#212529] font-medium` (현재 페이지)
-- 구분자: `/` 또는 `>`
-- 위치: 항상 페이지 타이틀(h1) 바로 위
+- 브레드크럼: 마지막 항목만 `text-[#212529] font-medium`, 구분자 `/` 또는 `>`
+- 타이틀(h1)과 액션 버튼은 반드시 **같은 행**에 `flex justify-between`으로 배치
+- 액션 버튼이 없으면 `<div className="flex ...">` 없이 `<h1>` 단독 배치
 
 ### DataGrid 선택 액션 바
 그리드에서 체크박스 선택 시 상단에 액션 바를 표시:
