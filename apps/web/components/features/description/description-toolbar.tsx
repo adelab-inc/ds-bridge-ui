@@ -70,7 +70,7 @@ function DescriptionToolbar({
             disabled={isSaveDisabled}
           >
             <HugeiconsIcon icon={FloppyDiskIcon} className="size-4" strokeWidth={2} />
-            저장 후 닫기
+            저장
           </Button>
           <Button variant="ghost" size="sm" onClick={onCancel}>
             <HugeiconsIcon icon={Cancel01Icon} className="size-4" strokeWidth={2} />

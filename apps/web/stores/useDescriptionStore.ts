@@ -75,7 +75,13 @@ export const useDescriptionStore = create<DescriptionState>((set, get) => ({
   setActiveTab: (tab) => set({ activeTab: tab }),
 
   // 추출 완료 → viewing 상태 + 디스크립션 탭 자동 전환
-  setCurrentDescription: (description) =>
+  setCurrentDescription: (description) => {
+    console.log('[DESC:setCurrentDescription]', {
+      version: description.version,
+      content: description.content?.slice(0, 80),
+      edited_content: description.edited_content?.slice(0, 80),
+      resolved: (description.edited_content ?? description.content)?.slice(0, 80),
+    });
     set({
       uiState: 'viewing',
       activeTab: 'description',
@@ -83,7 +89,8 @@ export const useDescriptionStore = create<DescriptionState>((set, get) => ({
       currentContent: description.edited_content ?? description.content,
       currentDescription: description,
       isExtracting: false,
-    }),
+    });
+  },
 
   // viewing → editing 전환
   startEditing: () => {
@@ -100,11 +107,15 @@ export const useDescriptionStore = create<DescriptionState>((set, get) => ({
   // 편집 저장 → waiting 상태 + 디자인 탭 전환
   saveEdit: () => {
     const { currentContent, editDraft, currentVersion } = get();
+    console.log('[DESC:saveEdit]', {
+      currentVersion,
+      currentContent: currentContent?.slice(0, 80),
+      editDraft: editDraft?.slice(0, 80),
+    });
     if (!currentContent || !editDraft || !currentVersion) return;
 
     set({
-      uiState: 'waiting',
-      activeTab: 'design',
+      uiState: 'viewing',
       editHistory: {
         original_content: currentContent,
         edited_content: editDraft,
