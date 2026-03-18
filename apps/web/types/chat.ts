@@ -79,6 +79,7 @@ export interface BroadcastChunkPayload {
 
 export interface BroadcastDonePayload {
   message_id: string;
+  text?: string; // 서버가 보낸 최종 텍스트 (chunk 중복 방지용)
 }
 
 export interface BroadcastErrorPayload {

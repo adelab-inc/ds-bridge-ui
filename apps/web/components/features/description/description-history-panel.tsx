@@ -48,8 +48,9 @@ function DescriptionHistoryPanel({ roomId }: DescriptionHistoryPanelProps) {
   const [isCopied, setIsCopied] = React.useState(false);
 
   const handleCopy = React.useCallback(async () => {
-    if (!selectedVersion?.content) return;
-    await navigator.clipboard.writeText(selectedVersion.content);
+    const text = selectedVersion?.edited_content ?? selectedVersion?.content;
+    if (!text) return;
+    await navigator.clipboard.writeText(text);
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2000);
   }, [selectedVersion]);
@@ -118,7 +119,7 @@ function DescriptionHistoryPanel({ roomId }: DescriptionHistoryPanelProps) {
             </div>
             <textarea
               readOnly
-              value={selectedVersion.content}
+              value={selectedVersion.edited_content ?? selectedVersion.content}
               className="bg-transparent text-foreground h-full min-h-[120px] w-full resize-none border-none text-sm leading-relaxed outline-none"
               rows={8}
             />

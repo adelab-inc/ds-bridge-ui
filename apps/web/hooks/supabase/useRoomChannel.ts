@@ -65,11 +65,12 @@ export function useRoomChannel({
 
     const supabase = createClient();
 
-    function setupChannel() {
-      // 이전 채널 정리 (removeChannel → CLOSED 콜백 발생하지만 stale guard로 무시됨)
+    async function setupChannel() {
+      // 이전 채널 정리: unsubscribe 완료 후 제거하여 핸들러 중복 등록 방지
       const oldChannel = channelRef.current;
       channelRef.current = null;
       if (oldChannel) {
+        try { await oldChannel.unsubscribe(); } catch { /* ignore */ }
         supabase.removeChannel(oldChannel);
       }
 
@@ -78,19 +79,19 @@ export function useRoomChannel({
       roomIdRef.current = roomId;
 
       channel
-        .on('broadcast', { event: 'start' }, (msg) => {
+        .on('broadcast', { event: 'start' }, (msg: { payload: unknown }) => {
           callbacksRef.current.onStart?.(msg.payload as BroadcastStartPayload);
         })
-        .on('broadcast', { event: 'chunk' }, (msg) => {
+        .on('broadcast', { event: 'chunk' }, (msg: { payload: unknown }) => {
           callbacksRef.current.onChunk?.(msg.payload as BroadcastChunkPayload);
         })
-        .on('broadcast', { event: 'done' }, (msg) => {
+        .on('broadcast', { event: 'done' }, (msg: { payload: unknown }) => {
           callbacksRef.current.onDone?.(msg.payload as BroadcastDonePayload);
         })
-        .on('broadcast', { event: 'error' }, (msg) => {
+        .on('broadcast', { event: 'error' }, (msg: { payload: unknown }) => {
           callbacksRef.current.onError?.(msg.payload as BroadcastErrorPayload);
         })
-        .subscribe((status) => {
+        .subscribe((status: string) => {
           console.log(`[useRoomChannel] status: ${status}, room: ${roomId}`);
 
           // 이미 교체된 (stale) 채널이면 무시
