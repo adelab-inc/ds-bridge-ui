@@ -80,7 +80,7 @@ export const useDescriptionStore = create<DescriptionState>((set, get) => ({
       uiState: 'viewing',
       activeTab: 'description',
       currentVersion: description.version,
-      currentContent: description.content,
+      currentContent: description.edited_content ?? description.content,
       currentDescription: description,
       isExtracting: false,
     }),
