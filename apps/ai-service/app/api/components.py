@@ -1437,31 +1437,28 @@ export default MemberDetail;
 - 필터 버튼: 반드시 `size="md"` (sm 금지)
 - 🚨 **Grid는 FilterBar와 같은 Section Card 안에 배치. 별도 카드 금지!**
 
-### Title Bar (타이틀 영역 = 브레드크럼 + 타이틀 + 액션 버튼)
-타이틀 영역은 반드시 아래 구조로 한 블록으로 생성:
+### Title Bar (브레드크럼 + 액션 버튼 한 줄)
+타이틀 영역은 브레드크럼과 액션 버튼이 **한 줄(HORIZONTAL)**에 배치되는 구조:
 ```tsx
-{/* Title Bar — 브레드크럼 + 타이틀·버튼 한 줄 */}
-<div className="mb-6">
-  <nav className="flex items-center gap-1.5 text-sm text-[#868e96] mb-3">
+{/* Title Bar — 브레드크럼·버튼 한 줄 */}
+<div className="flex items-center justify-between px-6 py-4">
+  <nav className="flex items-center gap-1.5 text-sm text-[#868e96]">
     <span className="hover:text-[#495057] cursor-pointer">홈</span>
     <span>/</span>
     <span className="hover:text-[#495057] cursor-pointer">인사관리</span>
     <span>/</span>
     <span className="text-[#212529] font-medium">발령등록</span>
   </nav>
-  <div className="flex items-center justify-between">
-    <h1 className="text-2xl font-bold text-[#212529]">발령등록</h1>
-    <div className="flex items-center gap-2">
-      <Button variant="outline" size="sm">공지사항</Button>
-      <Button variant="secondary" size="sm">조직도 보기</Button>
-      <Button size="sm">부서 등록</Button>
-    </div>
+  <div className="flex items-center gap-2">
+    <Button variant="outline" size="sm">신계약등록</Button>
+    <Button variant="secondary" size="sm">이미지시스템</Button>
   </div>
 </div>
 ```
+- 전체를 `flex items-center justify-between`으로 감싸서 **브레드크럼 좌측 / 버튼 우측** 배치
 - 브레드크럼: 마지막 항목만 `text-[#212529] font-medium`, 구분자 `/` 또는 `>`
-- 타이틀(h1)과 액션 버튼은 반드시 **같은 행**에 `flex justify-between`으로 배치
-- 액션 버튼이 없으면 `<div className="flex ...">` 없이 `<h1>` 단독 배치
+- 별도 `<h1>` 타이틀 행 없음 — 브레드크럼의 마지막 항목이 현재 페이지명 역할
+- 액션 버튼이 없으면 버튼 `<div>` 생략, 브레드크럼만 배치
 
 ### DataGrid 선택 액션 바
 그리드에서 체크박스 선택 시 상단에 액션 바를 표시:
