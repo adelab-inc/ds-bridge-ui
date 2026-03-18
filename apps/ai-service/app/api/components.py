@@ -1246,15 +1246,18 @@ LAYOUT_GUIDE = """
 #### RP-1 올바른 구조:
 ```tsx
 <div className="min-h-screen bg-[#f4f6f8] p-8">
-  {/* Title Bar — 브레드크럼·버튼 한 줄, Section Card 바깥 */}
+  {/* Title Bar — 브레드크럼 + 제목 + 버튼 한 줄, Section Card 바깥 */}
   <div className="flex items-center justify-between mb-5">
-    <nav className="flex items-center gap-1.5 text-sm text-[#868e96]">
-      <span className="hover:text-[#495057] cursor-pointer">홈</span>
-      <span>/</span>
-      <span className="hover:text-[#495057] cursor-pointer">계약</span>
-      <span>/</span>
-      <span className="text-[#212529] font-medium">계약 관리</span>
-    </nav>
+    <div className="flex items-center gap-5">
+      <nav className="flex items-center gap-1.5 text-sm text-[#868e96]">
+        <span className="hover:text-[#495057] cursor-pointer">홈</span>
+        <span>/</span>
+        <span className="hover:text-[#495057] cursor-pointer">계약</span>
+        <span>/</span>
+        <span className="text-[#495057]">계약 관리</span>
+      </nav>
+      <h1 className="text-2xl font-bold text-[#212529]">계약 관리</h1>
+    </div>
     <div className="flex items-center gap-2">
       <Button variant="outline" size="sm">엑셀 다운로드</Button>
       <Button variant="primary" size="sm">신규 등록</Button>
@@ -1363,7 +1366,7 @@ SYSTEM_PROMPT_FOOTER = """## 🎯 DESIGN CONSISTENCY CHECKLIST
 - **Borders**: `border border-[#dee2e6]` only. Never other gray shades.
 - **PROPS VALIDATION**: Use exact enum values (`variant="primary"` NOT `variant="blue"`). Don't hallucinate props.
 - **DRAWER vs DIALOG**: "드로어" 요청 → `Drawer` 컴포넌트 사용 (Dialog 금지). "다이얼로그/모달/팝업" → `Dialog`.
-- **TITLE BAR**: 브레드크럼과 액션 버튼은 반드시 **한 줄(flex justify-between)**에 배치. ❌ 브레드크럼 아래 별도 `<h1>` 행 금지! 브레드크럼 마지막 항목이 현재 페이지명 역할.
+- **TITLE BAR**: 브레드크럼 + h1 제목 + 액션 버튼은 반드시 **한 줄**에 배치. ❌ 브레드크럼과 h1을 별도 행으로 분리 금지!
 
 Create a premium, completed result."""
 
@@ -1383,15 +1386,16 @@ const MemberDetail = () => {
 
   return (
     <div className="min-h-screen bg-[#f4f6f8] p-8">
-      {/* Title Bar — 브레드크럼·버튼 한 줄 */}
-      <div className="flex items-center justify-between mb-6">
+      {/* Title Bar — 브레드크럼 + 제목 한 줄 */}
+      <div className="flex items-center gap-5 mb-6">
         <nav className="flex items-center gap-1.5 text-sm text-[#868e96]">
           <span className="hover:text-[#495057] cursor-pointer">홈</span>
           <span>/</span>
           <span className="hover:text-[#495057] cursor-pointer">회원관리</span>
           <span>/</span>
-          <span className="text-[#212529] font-medium">회원 상세</span>
+          <span className="text-[#495057]">회원 상세</span>
         </nav>
+        <h1 className="text-2xl font-bold text-[#212529]">회원 상세</h1>
       </div>
       <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6">
         {/* Section: 기본 정보 — 2-column grid */}
@@ -1460,28 +1464,32 @@ export default MemberDetail;
 - 필터 버튼: 반드시 `size="md"` (sm 금지)
 - 🚨 **Grid는 FilterBar와 같은 Section Card 안에 배치. 별도 카드 금지!**
 
-### Title Bar (브레드크럼 + 액션 버튼 한 줄)
-타이틀 영역은 브레드크럼과 액션 버튼이 **한 줄(HORIZONTAL)**에 배치되는 구조:
+### Title Bar (브레드크럼 + 페이지 제목 + 액션 버튼 — 한 줄)
+타이틀 영역은 브레드크럼, 페이지 제목(h1), 액션 버튼이 모두 **한 줄(HORIZONTAL)**에 배치:
 ```tsx
-{/* Title Bar — 브레드크럼·버튼 한 줄 */}
-<div className="flex items-center justify-between px-6 py-4">
-  <nav className="flex items-center gap-1.5 text-sm text-[#868e96]">
-    <span className="hover:text-[#495057] cursor-pointer">홈</span>
-    <span>/</span>
-    <span className="hover:text-[#495057] cursor-pointer">인사관리</span>
-    <span>/</span>
-    <span className="text-[#212529] font-medium">발령등록</span>
-  </nav>
+{/* Title Bar — 브레드크럼 + 제목 + 버튼 한 줄 */}
+<div className="flex items-center justify-between mb-5">
+  <div className="flex items-center gap-5">
+    <nav className="flex items-center gap-1.5 text-sm text-[#868e96]">
+      <span className="hover:text-[#495057] cursor-pointer">홈</span>
+      <span>/</span>
+      <span className="hover:text-[#495057] cursor-pointer">인사관리</span>
+      <span>/</span>
+      <span className="text-[#495057]">발령등록</span>
+    </nav>
+    <h1 className="text-2xl font-bold text-[#212529]">발령등록</h1>
+  </div>
   <div className="flex items-center gap-2">
     <Button variant="outline" size="sm">신계약등록</Button>
     <Button variant="secondary" size="sm">이미지시스템</Button>
   </div>
 </div>
 ```
-- 전체를 `flex items-center justify-between`으로 감싸서 **브레드크럼 좌측 / 버튼 우측** 배치
-- 브레드크럼: 마지막 항목만 `text-[#212529] font-medium`, 구분자 `/` 또는 `>`
-- 별도 `<h1>` 타이틀 행 없음 — 브레드크럼의 마지막 항목이 현재 페이지명 역할
-- 액션 버튼이 없으면 버튼 `<div>` 생략, 브레드크럼만 배치
+- 🚨 **브레드크럼, h1 제목, 버튼이 반드시 같은 한 줄에 위치**
+- 좌측: 브레드크럼 + h1 제목을 `flex items-center gap-5`로 나란히 배치
+- 우측: 액션 버튼을 `flex items-center gap-2`로 배치
+- ❌ 브레드크럼과 h1을 **별도 행으로 분리 금지** (두 줄 레이아웃 금지)
+- 액션 버튼이 없으면 버튼 `<div>` 생략
 
 ### DataGrid 선택 액션 바
 그리드에서 체크박스 선택 시 상단에 액션 바를 표시:
