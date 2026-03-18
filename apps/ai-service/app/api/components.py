@@ -1246,9 +1246,10 @@ LAYOUT_GUIDE = """
 #### RP-1 올바른 구조:
 ```tsx
 <div className="min-h-screen bg-[#f4f6f8] p-8">
-  {/* Title Bar — 브레드크럼 + 제목 + 버튼 한 줄, Section Card 바깥 */}
+  {/* Title Bar — 제목 + 브레드크럼 + 버튼 한 줄, Section Card 바깥 */}
   <div className="flex items-center justify-between mb-5">
     <div className="flex items-center gap-5">
+      <h1 className="text-2xl font-bold text-[#212529]">계약 관리</h1>
       <nav className="flex items-center gap-1.5 text-sm text-[#868e96]">
         <span className="hover:text-[#495057] cursor-pointer">홈</span>
         <span>/</span>
@@ -1256,7 +1257,6 @@ LAYOUT_GUIDE = """
         <span>/</span>
         <span className="text-[#495057]">계약 관리</span>
       </nav>
-      <h1 className="text-2xl font-bold text-[#212529]">계약 관리</h1>
     </div>
     <div className="flex items-center gap-2">
       <Button variant="outline" size="sm">엑셀 다운로드</Button>
@@ -1386,8 +1386,9 @@ const MemberDetail = () => {
 
   return (
     <div className="min-h-screen bg-[#f4f6f8] p-8">
-      {/* Title Bar — 브레드크럼 + 제목 한 줄 */}
+      {/* Title Bar — 제목 + 브레드크럼 한 줄 */}
       <div className="flex items-center gap-5 mb-6">
+        <h1 className="text-2xl font-bold text-[#212529]">회원 상세</h1>
         <nav className="flex items-center gap-1.5 text-sm text-[#868e96]">
           <span className="hover:text-[#495057] cursor-pointer">홈</span>
           <span>/</span>
@@ -1395,7 +1396,6 @@ const MemberDetail = () => {
           <span>/</span>
           <span className="text-[#495057]">회원 상세</span>
         </nav>
-        <h1 className="text-2xl font-bold text-[#212529]">회원 상세</h1>
       </div>
       <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6">
         {/* Section: 기본 정보 — 2-column grid */}
@@ -1467,9 +1467,10 @@ export default MemberDetail;
 ### Title Bar (브레드크럼 + 페이지 제목 + 액션 버튼 — 한 줄)
 타이틀 영역은 브레드크럼, 페이지 제목(h1), 액션 버튼이 모두 **한 줄(HORIZONTAL)**에 배치:
 ```tsx
-{/* Title Bar — 브레드크럼 + 제목 + 버튼 한 줄 */}
+{/* Title Bar — 제목 + 브레드크럼 + 버튼 한 줄 */}
 <div className="flex items-center justify-between mb-5">
   <div className="flex items-center gap-5">
+    <h1 className="text-2xl font-bold text-[#212529]">발령등록</h1>
     <nav className="flex items-center gap-1.5 text-sm text-[#868e96]">
       <span className="hover:text-[#495057] cursor-pointer">홈</span>
       <span>/</span>
@@ -1477,7 +1478,6 @@ export default MemberDetail;
       <span>/</span>
       <span className="text-[#495057]">발령등록</span>
     </nav>
-    <h1 className="text-2xl font-bold text-[#212529]">발령등록</h1>
   </div>
   <div className="flex items-center gap-2">
     <Button variant="outline" size="sm">신계약등록</Button>
@@ -1485,8 +1485,8 @@ export default MemberDetail;
   </div>
 </div>
 ```
-- 🚨 **브레드크럼, h1 제목, 버튼이 반드시 같은 한 줄에 위치**
-- 좌측: 브레드크럼 + h1 제목을 `flex items-center gap-5`로 나란히 배치
+- 🚨 **h1 제목, 브레드크럼, 버튼이 반드시 같은 한 줄에 위치**
+- 좌측: **h1 제목이 먼저**, 그 옆에 브레드크럼 (`flex items-center gap-5`)
 - 우측: 액션 버튼을 `flex items-center gap-2`로 배치
 - ❌ 브레드크럼과 h1을 **별도 행으로 분리 금지** (두 줄 레이아웃 금지)
 - 액션 버튼이 없으면 버튼 `<div>` 생략
