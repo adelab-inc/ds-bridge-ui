@@ -185,10 +185,7 @@ async def extract_description(
         # 편집 이력: DB에서 자동 감지
         edit_history = None
         if has_previous and latest_desc.get("edited_content"):
-            edit_history = {
-                "original": latest_desc["content"],
-                "edited": latest_desc["edited_content"],
-            }
+            edit_history = {"edited": latest_desc["edited_content"]}
 
         # 5. 시스템 프롬프트 + 메시지 구성
         base_prompt = get_description_system_prompt()
