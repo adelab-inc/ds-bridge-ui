@@ -164,7 +164,7 @@ export function useDescriptionVersion(
     },
     enabled: !!roomId && !!id,
     retry: false,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
     ...queryOptions,
   });
 }
