@@ -1238,7 +1238,7 @@ LAYOUT_GUIDE = """
 
 **RP-1(조회형) 레이아웃에서 FilterBar, ActionButtons, Grid는 반드시 하나의 Section Card 안에 포함되어야 합니다.**
 
-- Title(h1)만 Section Card **바깥**에 위치
+- Title Bar(브레드크럼 + 버튼)는 Section Card **바깥** 상단에 위치
 - FilterBar, ActionButtons, DataGrid/Table은 모두 **같은 하나의 `bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6`** 안에 배치
 - ❌ FilterBar와 Grid를 **별도 카드**로 분리 금지
 - ❌ FilterBar, ActionButtons, Grid를 카드 없이 **직접 나열** 금지
@@ -1246,8 +1246,20 @@ LAYOUT_GUIDE = """
 #### RP-1 올바른 구조:
 ```tsx
 <div className="min-h-screen bg-[#f4f6f8] p-8">
-  {/* Title — Section Card 바깥 */}
-  <h1 className="text-2xl font-bold text-[#212529] mb-5">계약 관리</h1>
+  {/* Title Bar — 브레드크럼·버튼 한 줄, Section Card 바깥 */}
+  <div className="flex items-center justify-between mb-5">
+    <nav className="flex items-center gap-1.5 text-sm text-[#868e96]">
+      <span className="hover:text-[#495057] cursor-pointer">홈</span>
+      <span>/</span>
+      <span className="hover:text-[#495057] cursor-pointer">계약</span>
+      <span>/</span>
+      <span className="text-[#212529] font-medium">계약 관리</span>
+    </nav>
+    <div className="flex items-center gap-2">
+      <Button variant="outline" size="sm">엑셀 다운로드</Button>
+      <Button variant="primary" size="sm">신규 등록</Button>
+    </div>
+  </div>
 
   {/* 🚨 하나의 Section Card 안에 FilterBar + ActionButtons + Grid 모두 포함 */}
   <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6">
@@ -1273,7 +1285,8 @@ LAYOUT_GUIDE = """
 #### ❌ 잘못된 구조 (FilterBar와 Grid가 분리됨):
 ```tsx
 {/* ❌ 이렇게 하면 안 됨 */}
-<h1>계약 관리</h1>
+<nav>홈 / 계약 / 계약 관리</nav>
+<h1>계약 관리</h1>  {/* ❌ 브레드크럼과 별도 행 금지! 한 줄에 배치해야 함 */}
 <div className="bg-white ...">FilterBar + Buttons</div>  {/* 카드 1 */}
 <div className="bg-white ...">Grid</div>                  {/* 카드 2 — 분리됨! */}
 ```
@@ -1350,6 +1363,7 @@ SYSTEM_PROMPT_FOOTER = """## 🎯 DESIGN CONSISTENCY CHECKLIST
 - **Borders**: `border border-[#dee2e6]` only. Never other gray shades.
 - **PROPS VALIDATION**: Use exact enum values (`variant="primary"` NOT `variant="blue"`). Don't hallucinate props.
 - **DRAWER vs DIALOG**: "드로어" 요청 → `Drawer` 컴포넌트 사용 (Dialog 금지). "다이얼로그/모달/팝업" → `Dialog`.
+- **TITLE BAR**: 브레드크럼과 액션 버튼은 반드시 **한 줄(flex justify-between)**에 배치. ❌ 브레드크럼 아래 별도 `<h1>` 행 금지! 브레드크럼 마지막 항목이 현재 페이지명 역할.
 
 Create a premium, completed result."""
 
@@ -1369,7 +1383,16 @@ const MemberDetail = () => {
 
   return (
     <div className="min-h-screen bg-[#f4f6f8] p-8">
-      <h1 className="text-2xl font-bold text-[#212529] mb-6">회원 상세</h1>
+      {/* Title Bar — 브레드크럼·버튼 한 줄 */}
+      <div className="flex items-center justify-between mb-6">
+        <nav className="flex items-center gap-1.5 text-sm text-[#868e96]">
+          <span className="hover:text-[#495057] cursor-pointer">홈</span>
+          <span>/</span>
+          <span className="hover:text-[#495057] cursor-pointer">회원관리</span>
+          <span>/</span>
+          <span className="text-[#212529] font-medium">회원 상세</span>
+        </nav>
+      </div>
       <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6">
         {/* Section: 기본 정보 — 2-column grid */}
         <h2 className="text-lg font-semibold text-[#212529] mb-4">기본 정보</h2>
