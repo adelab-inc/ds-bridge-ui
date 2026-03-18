@@ -7,10 +7,8 @@ from app.core.auth import verify_api_key
 from app.schemas.chat import Message
 from app.schemas.description import (
     DescriptionExtractRequest,
-    DescriptionExtractResponse,
     DescriptionResponse,
     EditContentRequest,
-    EditContentResponse,
     VersionListResponse,
     VersionSummaryResponse,
 )
@@ -43,9 +41,17 @@ EXTRACTION_INITIAL_SYSTEM = """\
 """
 
 EXTRACTION_WITH_EDITS_SYSTEM = """\
-아래 대화 히스토리와 사용자의 이전 편집 이력을 종합하여 \
-하나의 통합된 화면 디스크립션을 생성하세요.
-편집 이력의 내용을 자연스럽게 반영하되, 별도 표시 없이 통합된 문서로 작성하세요.
+사용자가 이전에 확정한 디스크립션(사용자 확정본)이 제공됩니다.
+이 확정본을 **그대로 유지**하면서, 새로 추가된 대화/코드 변경사항만 추가하세요.
+
+## 최우선 규칙 (아래 출력 가이드보다 우선)
+1. 사용자 확정본의 **모든 섹션, 모든 항목, 모든 표현을 원문 그대로 유지**합니다.
+2. 확정본에 있는 항목은 코드에서 확인되지 않더라도 **절대 삭제하지 마세요**.
+3. 새 대화/코드에서 추가된 내용만 적절한 위치에 삽입합니다.
+4. 확정본의 기존 문장을 다른 표현으로 바꾸지 마세요.
+
+※ 아래 출력 가이드의 "코드에 존재하지 않는 내용은 작성하지 마세요" 규칙은
+  사용자 확정본에 이미 있는 내용에는 적용되지 않습니다.
 
 {base_prompt}
 """
@@ -80,18 +86,21 @@ def _build_extraction_messages(
     history_text = "\n".join(history_parts) if history_parts else "(대화 히스토리 없음)"
 
     # 사용자 메시지 구성
-    user_parts = [
-        f"## 대화 히스토리\n{history_text}",
-        f"## 현재 코드\n파일: {code_path}\n\n```tsx\n{code_content}\n```",
-    ]
+    user_parts = []
 
-    # 편집 이력 포함
+    # 편집 이력이 있으면 확정본을 가장 먼저 배치 (base로 인식)
     if edit_history:
         user_parts.append(
-            "## 이전 편집 이력\n"
-            f"- 원본 (AI 생성):\n{edit_history['original']}\n\n"
-            f"- 사용자 수정본:\n{edit_history['edited']}"
+            "## 사용자 확정본 (반드시 전체 보존)\n"
+            "아래는 사용자가 직접 수정·확정한 디스크립션입니다. "
+            "모든 항목을 원문 그대로 유지하고, 새 변경사항만 추가하세요.\n\n"
+            f"{edit_history['edited']}"
         )
+
+    user_parts.extend([
+        f"## 대화 히스토리\n{history_text}",
+        f"## 현재 코드\n파일: {code_path}\n\n```tsx\n{code_content}\n```",
+    ])
 
     messages.append(Message(role="user", content="\n\n".join(user_parts)))
     return messages
@@ -116,7 +125,7 @@ def _determine_reason(edit_history: dict | None, has_previous: bool) -> str:
 
 @router.post(
     "/extract",
-    response_model=DescriptionExtractResponse,
+    response_model=DescriptionResponse,
     summary="디스크립션 AI 추출",
     description="""
 채팅방의 대화 히스토리 + 최신 코드를 분석하여 화면 디스크립션을 AI로 생성합니다.
@@ -146,7 +155,7 @@ def _determine_reason(edit_history: dict | None, has_previous: bool) -> str:
 )
 async def extract_description(
     request: DescriptionExtractRequest,
-) -> DescriptionExtractResponse:
+) -> DescriptionResponse:
     try:
         # 1. room 검증
         room = await get_chat_room(request.room_id)
@@ -176,10 +185,7 @@ async def extract_description(
         # 편집 이력: DB에서 자동 감지
         edit_history = None
         if has_previous and latest_desc.get("edited_content"):
-            edit_history = {
-                "original": latest_desc["content"],
-                "edited": latest_desc["edited_content"],
-            }
+            edit_history = {"edited": latest_desc["edited_content"]}
 
         # 5. 시스템 프롬프트 + 메시지 구성
         base_prompt = get_description_system_prompt()
@@ -221,12 +227,7 @@ async def extract_description(
             },
         )
 
-        return DescriptionExtractResponse(
-            id=record["id"],
-            version=record["version"],
-            content=record["content"],
-            reason=record["reason"],
-        )
+        return DescriptionResponse(**record)
 
     except HTTPException:
         raise
@@ -288,7 +289,7 @@ async def get_description(room_id: str) -> DescriptionResponse:
 
 @router.put(
     "/{room_id}/edit",
-    response_model=EditContentResponse,
+    response_model=DescriptionResponse,
     summary="편집 이력 저장",
     description="""
 최신 버전의 `edited_content`를 업데이트합니다.
@@ -304,16 +305,12 @@ async def get_description(room_id: str) -> DescriptionResponse:
 )
 async def edit_description(
     room_id: str, request: EditContentRequest
-) -> EditContentResponse:
+) -> DescriptionResponse:
     try:
         result = await update_edited_content(room_id, request.edited_content)
         if result is None:
             raise HTTPException(status_code=404, detail="디스크립션이 없습니다.")
-        return EditContentResponse(
-            id=result["id"],
-            version=result["version"],
-            edited_content=result["edited_content"],
-        )
+        return DescriptionResponse(**result)
     except HTTPException:
         raise
     except DatabaseError as e:
