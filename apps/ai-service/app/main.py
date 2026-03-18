@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
 from app.api.chat import router as chat_router
+from app.api.description import router as description_router
 from app.api.rooms import router as rooms_router
 from app.core.config import get_settings
 from app.core.logging import setup_logging
@@ -63,6 +64,10 @@ tags_metadata = [
     {
         "name": "chat",
         "description": "AI 채팅 API - 디자인 시스템 컴포넌트 기반 React UI 코드 생성",
+    },
+    {
+        "name": "description",
+        "description": "디스크립션 추출/편집/버전 관리 API",
     },
 ]
 
@@ -131,6 +136,7 @@ app.add_middleware(
 
 app.include_router(rooms_router, prefix="/rooms", tags=["rooms"])
 app.include_router(chat_router, prefix="/chat", tags=["chat"])
+app.include_router(description_router, prefix="/description", tags=["description"])
 
 
 # ============================================================================

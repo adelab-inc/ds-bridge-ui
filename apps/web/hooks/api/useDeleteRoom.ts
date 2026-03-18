@@ -40,6 +40,7 @@ export function useDeleteRoom(mutationOptions?: UseDeleteRoomOptions) {
       queryClient.removeQueries({
         queryKey: ['paginatedMessages', roomId],
       });
+      queryClient.invalidateQueries({ queryKey: roomKeys.all });
     },
     ...mutationOptions,
   });

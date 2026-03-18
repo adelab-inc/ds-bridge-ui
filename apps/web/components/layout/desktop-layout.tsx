@@ -15,6 +15,7 @@ import { LeftPanel } from '@/components/layout/left-panel';
 import { RightPanel } from '@/components/layout/right-panel';
 import { useRoomContext } from '@/components/providers/room-provider';
 import { useCodeGenerationStore } from '@/stores/useCodeGenerationStore';
+import { useDescriptionStore } from '@/stores/useDescriptionStore';
 
 // Feature components
 import { ChatSection } from '@/components/features/chat/chat-section';
@@ -47,10 +48,13 @@ function DesktopLayout() {
     reset: resetCodeGeneration,
   } = useCodeGenerationStore();
 
-  // roomId 변경 시 프리뷰 상태 초기화
+  const resetDescription = useDescriptionStore((s) => s.reset);
+
+  // roomId 변경 시 프리뷰 + 디스크립션 상태 초기화
   React.useEffect(() => {
     resetCodeGeneration();
-  }, [roomId, resetCodeGeneration]);
+    resetDescription();
+  }, [roomId, resetCodeGeneration, resetDescription]);
 
   return (
     <ClientOnly
@@ -131,7 +135,7 @@ function DesktopLayout() {
         <button
           type="button"
           onClick={handleTogglePanel}
-          className="bg-background hover:bg-accent border-border absolute top-[calc(50%-28px)] z-20 flex h-6 w-3.5 -translate-y-1/2 items-center justify-center rounded-sm border transition-colors"
+          className="bg-background hover:bg-accent border-border absolute top-[calc(50%-28px)] z-20 flex h-6 w-3.5 -translate-y-1/2 items-center justify-center rounded-sm border transition-colors cursor-pointer"
           style={{
             left: `${isCollapsed ? leftPanelWidth : leftPanelWidth - 7}px`,
           }}

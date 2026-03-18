@@ -19,11 +19,15 @@ import { useBookmarks } from '@/hooks/useBookmarks';
 import { useRoomChannel } from '@/hooks/supabase/useRoomChannel';
 import { useGetPaginatedMessages } from '@/hooks/supabase/useGetPaginatedMessages';
 import { useStreamingStore } from '@/stores/useStreamingStore';
+import { useDescriptionStore } from '@/stores/useDescriptionStore';
 import type { CodeEvent } from '@/types/chat';
 import { useDeleteMessage } from '@/hooks/api/useDeleteMessage';
 import type { ChatMessage } from '@packages/shared-types/typescript/database/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { DescriptionTab } from '@/components/features/description/description-tab';
+import { DescriptionActionBar } from '@/components/features/description/description-action-bar';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -76,6 +80,27 @@ function ChatSection({
 
   const searchParams = useSearchParams();
   const deleteMessageMutation = useDeleteMessage();
+
+  // 디스크립션 탭 상태
+  const activeTab = useDescriptionStore((s) => s.activeTab);
+  const setActiveTab = useDescriptionStore((s) => s.setActiveTab);
+  const descriptionUiState = useDescriptionStore((s) => s.uiState);
+
+  // 편집 중 탭 전환 시 미저장 확인용
+  const [pendingTab, setPendingTab] = React.useState<string | null>(null);
+
+  const handleTabChange = React.useCallback(
+    (value: string | number | null) => {
+      const tab = value as 'design' | 'description';
+      // 편집 중에 디자인 탭으로 전환 시 확인 다이얼로그
+      if (descriptionUiState === 'editing' && tab === 'design') {
+        setPendingTab(tab);
+        return;
+      }
+      setActiveTab(tab);
+    },
+    [descriptionUiState, setActiveTab]
+  );
 
   // 스트리밍 중인 단일 메시지 (Zustand 외부 스토어로 관리)
   // → React 배칭/동시성 렌더링에 의한 state 유실 방지
@@ -209,7 +234,7 @@ function ChatSection({
           });
         }
       },
-      onDone: () => {
+      onDone: (payload) => {
         activeMessageIdRef.current = null;
 
         // 타임아웃 즉시 클리어 (ref 직접 접근)
@@ -220,10 +245,12 @@ function ChatSection({
         onStreamEnd?.();
 
         // 스트리밍 메시지를 DONE 상태로 전환 (refetch 전까지 화면 유지)
+        // done 이벤트의 정본 텍스트로 교체하여 chunk 중복 방지
         updateStreamingMessage((prev) =>
           prev
             ? {
                 ...prev,
+                text: payload.text || prev.text,
                 status: 'DONE' as const,
                 answer_created_at: Date.now(),
               }
@@ -542,108 +569,141 @@ function ChatSection({
         )}
         {...props}
       >
-        {/* Header */}
-        <div className="border-border flex items-center gap-2 border-b px-4 py-3">
-          <HugeiconsIcon
-            icon={Message01Icon}
-            className="text-muted-foreground size-4"
-            strokeWidth={2}
-          />
-          <h2 className="text-sm font-medium">AI Navigator</h2>
-          {error && <span className="text-destructive text-xs">{error}</span>}
+        {/* Tabs 래퍼: 헤더 + 콘텐츠 영역 모두 감싸기 */}
+        <Tabs
+          value={activeTab}
+          onValueChange={handleTabChange}
+          className="flex min-h-0 flex-1 flex-col gap-0"
+        >
+          {/* Header + TabsList 인라인 */}
+          <div className="border-border flex items-center gap-2 border-b px-4 py-3">
+            <HugeiconsIcon
+              icon={Message01Icon}
+              className="text-muted-foreground size-4"
+              strokeWidth={2}
+            />
+            <h2 className="text-sm font-medium">AI Navigator</h2>
+            <div className="border-border h-4 border-l" />
+            <TabsList variant="line">
+              <TabsTrigger value="design">디자인 모드</TabsTrigger>
+              <TabsTrigger value="description">디스크립션 모드</TabsTrigger>
+            </TabsList>
 
-          {/* 북마크 플로팅 버튼 */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                className="ml-auto rounded-full"
-                aria-label="북마크 목록"
+            {error && <span className="text-destructive text-xs">{error}</span>}
+
+            {/* 북마크 플로팅 버튼 */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="ml-auto rounded-full"
+                  aria-label="북마크 목록"
+                >
+                  <HugeiconsIcon
+                    icon={Bookmark02Icon}
+                    className="size-4"
+                    strokeWidth={2}
+                  />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                side="bottom"
+                align="end"
+                sideOffset={4}
+                className="w-64"
               >
-                <HugeiconsIcon
-                  icon={Bookmark02Icon}
-                  className="size-4"
-                  strokeWidth={2}
-                />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              side="bottom"
-              align="end"
-              sideOffset={4}
-              className="w-64"
-            >
-              <DropdownMenuGroup>
-                <DropdownMenuLabel>북마크</DropdownMenuLabel>
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator />
-              {bookmarks.length === 0 ? (
-                <p className="text-muted-foreground px-2 py-3 text-center text-xs">
-                  북마크가 없습니다
-                </p>
-              ) : (
-                bookmarks.map((bm) => (
-                  <DropdownMenuItem
-                    key={bm.id}
-                    className="flex items-center justify-between gap-2"
-                    onClick={() => handleBookmarkClick(bm.messageId)}
-                  >
-                    {selectedMessageId === bm.messageId && (
-                      <HugeiconsIcon
-                        icon={Tick01Icon}
-                        className="text-primary size-3.5 shrink-0"
-                        strokeWidth={2}
-                      />
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm">{bm.label}</p>
-                      <p className="text-muted-foreground truncate text-xs">
-                        {new Date(bm.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      className="text-muted-foreground hover:text-destructive shrink-0 p-0.5"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeBookmark(bm.id);
-                      }}
-                      aria-label="북마크 삭제"
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>북마크</DropdownMenuLabel>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                {bookmarks.length === 0 ? (
+                  <p className="text-muted-foreground px-2 py-3 text-center text-xs">
+                    북마크가 없습니다
+                  </p>
+                ) : (
+                  bookmarks.map((bm) => (
+                    <DropdownMenuItem
+                      key={bm.id}
+                      className="flex items-center justify-between gap-2"
+                      onClick={() => handleBookmarkClick(bm.messageId)}
                     >
-                      <HugeiconsIcon
-                        icon={Delete02Icon}
-                        className="size-3.5"
-                        strokeWidth={2}
-                      />
-                    </button>
-                  </DropdownMenuItem>
-                ))
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+                      {selectedMessageId === bm.messageId && (
+                        <HugeiconsIcon
+                          icon={Tick01Icon}
+                          className="text-primary size-3.5 shrink-0"
+                          strokeWidth={2}
+                        />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm">{bm.label}</p>
+                        <p className="text-muted-foreground truncate text-xs">
+                          {new Date(bm.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className="text-muted-foreground hover:text-destructive shrink-0 p-0.5 cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeBookmark(bm.id);
+                        }}
+                        aria-label="북마크 삭제"
+                      >
+                        <HugeiconsIcon
+                          icon={Delete02Icon}
+                          className="size-3.5"
+                          strokeWidth={2}
+                        />
+                      </button>
+                    </DropdownMenuItem>
+                  ))
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
 
-        {/* Messages */}
-        <ChatMessageList
-          messages={displayMessages}
-          selectedMessageId={selectedMessageId ?? undefined}
-          bookmarkedMessageIds={bookmarkedMessageIds}
-          onMessageClick={handleMessageClick}
-          onBookmarkClick={handleBookmarkIconClick}
-          onDeleteClick={handleDeleteIconClick}
-          className="min-h-0 flex-1 overflow-y-auto"
-        />
+          <TabsContent
+            value="design"
+            keepMounted
+            className="flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden"
+          >
+            {/* Messages */}
+            <ChatMessageList
+              messages={displayMessages}
+              selectedMessageId={selectedMessageId ?? undefined}
+              bookmarkedMessageIds={bookmarkedMessageIds}
+              onMessageClick={handleMessageClick}
+              onBookmarkClick={handleBookmarkIconClick}
+              onDeleteClick={handleDeleteIconClick}
+              className="min-h-0 flex-1 overflow-y-auto"
+            />
 
-        {/* Input */}
-        <ChatInput
-          onSend={handleSend}
-          disabled={isLoading}
-          images={images}
-          onAddImages={addImages}
-          onRemoveImage={removeImage}
-          isUploading={isUploading}
-        />
+            {/* 디스크립션 액션바 */}
+            <DescriptionActionBar
+              roomId={roomId}
+              hasMessages={displayMessages.length > 0}
+            />
+
+            {/* Input */}
+            <ChatInput
+              onSend={handleSend}
+              disabled={isLoading}
+              images={images}
+              onAddImages={addImages}
+              onRemoveImage={removeImage}
+              isUploading={isUploading}
+            />
+          </TabsContent>
+
+          <TabsContent
+            value="description"
+            keepMounted
+            className="flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden"
+          >
+            <DescriptionTab roomId={roomId} />
+          </TabsContent>
+        </Tabs>
       </section>
 
       {/* 북마크 이름 입력 다이얼로그 */}
@@ -708,6 +768,38 @@ function ChatSection({
               disabled={deleteMessageMutation.isPending}
             >
               삭제
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* 편집 중 탭 전환 미저장 확인 다이얼로그 */}
+      <AlertDialog
+        open={pendingTab !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingTab(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>편집 중인 내용이 있습니다</AlertDialogTitle>
+            <AlertDialogDescription>
+              저장하지 않은 편집 내용이 있습니다. 탭을 전환하면 변경 사항이
+              사라집니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>편집 계속</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                useDescriptionStore.getState().cancelEdit();
+                if (pendingTab) {
+                  setActiveTab(pendingTab as 'design' | 'description');
+                }
+                setPendingTab(null);
+              }}
+            >
+              변경 사항 버리기
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

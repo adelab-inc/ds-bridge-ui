@@ -8,6 +8,17 @@ import { cn } from '@/lib/utils';
 // AG Grid CDN URL (v34.2.0 고정)
 const AG_GRID_CDN = 'https://cdn.jsdelivr.net/npm/ag-grid-community@34.2.0';
 
+// UMD 번들에서 사용 가능한 @aplus/ui 컴포넌트 목록
+// import 누락 시 자동 감지하여 fallback 주입에 사용
+const AVAILABLE_APLUS_COMPONENTS = [
+  'Alert', 'Badge', 'Button', 'Checkbox', 'Chip', 'ChipGroup',
+  'Dialog', 'Divider', 'Drawer', 'Field', 'FieldGroup', 'Icon',
+  'IconButton', 'Link', 'LoadingSpinner', 'Menu', 'ModalStackProvider',
+  'Option', 'OptionGroup', 'Pagination', 'Radio', 'Segment', 'Select',
+  'SpacingModeProvider', 'Tab', 'Tag', 'TagGroup', 'Toast',
+  'ToggleSwitch', 'Tooltip', 'TreeMenu',
+];
+
 // ── Module-level UMD 번들 캐시 ──
 // 컴포넌트 언마운트/재마운트에도 캐시 유지.
 // 모듈 import 시 eager fetch → 컴포넌트 마운트 전 head start 확보.
@@ -255,6 +266,44 @@ function CodePreviewIframe({
         transforms: ['jsx', 'typescript'],
         jsxRuntime: 'classic',
       });
+
+      // 5-1. 미임포트 컴포넌트 자동 감지 (import 누락 시 ReferenceError 방지)
+      const explicitlyMapped = [
+        ...nonAgGridImportedComponents,
+        ...nonAgGridAplusComponents,
+      ];
+      const createdComponentsRe = /React\.createElement\(([A-Z]\w+)\b/g;
+      const usedComponents = new Set<string>();
+      let ceMatch: RegExpExecArray | null;
+      while ((ceMatch = createdComponentsRe.exec(transpiledCode)) !== null) {
+        usedComponents.add(ceMatch[1]);
+      }
+      const autoDetectedComponents = [...usedComponents]
+        .filter((c) => AVAILABLE_APLUS_COMPONENTS.includes(c))
+        .filter((c) => !explicitlyMapped.includes(c))
+        .filter((c) => !agGridRelatedExports.includes(c));
+
+      // 5-2. Compound component 서브 프로퍼티 감지 (예: Dialog.Header, Dialog.Body 등)
+      const allMappedComponents = [
+        ...explicitlyMapped,
+        ...autoDetectedComponents,
+      ];
+      const compoundSubProps: { parent: string; sub: string }[] = [];
+      const compoundRe = /\b([A-Z]\w+)\.([A-Z]\w+)\b/g;
+      let compoundMatch: RegExpExecArray | null;
+      while (
+        (compoundMatch = compoundRe.exec(transpiledCode)) !== null
+      ) {
+        const [, parent, sub] = compoundMatch;
+        if (
+          allMappedComponents.includes(parent) &&
+          !compoundSubProps.some(
+            (p) => p.parent === parent && p.sub === sub
+          )
+        ) {
+          compoundSubProps.push({ parent, sub });
+        }
+      }
 
       // 6. AG Grid 인라인 래퍼 코드 생성
       const agGridWrapperCode = needsAgGrid
@@ -606,8 +655,32 @@ function CodePreviewIframe({
             : ''
         }
 
+        // 미임포트 but 사용된 컴포넌트 자동 매핑 (import 누락 방어)
+        ${
+          autoDetectedComponents.length > 0
+            ? autoDetectedComponents
+                .map(
+                  (comp) =>
+                    `const ${comp} = AplusUI.${comp} || (function() { missingComponents.push('${comp}'); return function(props) { return React.createElement('div', { style: { padding: '8px', border: '1px dashed #ccc', borderRadius: '4px', background: '#f9f9f9' }, ...props }, props.children || '[${comp}]'); }; })();`
+                )
+                .join('\n        ')
+            : ''
+        }
+
         if (missingComponents.length > 0) {
           console.warn('[Preview] Missing components from @aplus/ui:', missingComponents.join(', '));
+        }
+
+        // Compound component 서브 프로퍼티 fallback (예: Dialog.Header 등)
+        ${
+          compoundSubProps.length > 0
+            ? compoundSubProps
+                .map(
+                  ({ parent, sub }) =>
+                    `if (${parent} && !${parent}.${sub}) { ${parent}.${sub} = function(props) { return React.createElement('div', { style: { padding: '8px', border: '1px dashed #ccc', borderRadius: '4px', background: '#f9f9f9' }, ...props }, props.children || '[${parent}.${sub}]'); }; console.warn('[Preview] Missing compound sub-component: ${parent}.${sub}'); }`
+                )
+                .join('\n        ')
+            : ''
         }
 
         ${agGridWrapperCode}

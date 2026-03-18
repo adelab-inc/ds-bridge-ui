@@ -50,3 +50,48 @@ export interface ChatMessage {
   /** Response status */
   status: Status;
 }
+
+/**
+ * Description generation reason
+ */
+export type DescriptionReason = 'initial' | 'regenerated_with_edits' | 'regenerated';
+
+/**
+ * AI-generated UI descriptions with version management
+ * Collection: descriptions
+ */
+export interface Description {
+  /** Description ID (UUID) */
+  id: string;
+  /** Chat room ID (FK) */
+  room_id: string;
+  /** AI-generated description text */
+  content: string;
+  /** Integer version (1, 2, 3...). Incremented only on AI extraction */
+  version: number;
+  /** Generation reason */
+  reason: DescriptionReason;
+  /** User-edited content (null if not edited) */
+  edited_content: string | null;
+  /** Created timestamp (ms) */
+  created_at: number;
+}
+
+/**
+ * Summary for version list (without full content)
+ */
+export interface DescriptionVersionSummary {
+  id: string;
+  version: number;
+  reason: DescriptionReason;
+  created_at: number;
+}
+
+/**
+ * Edit history for re-extraction context
+ */
+export interface EditHistory {
+  original_content: string;
+  edited_content: string;
+  base_version: number;
+}
