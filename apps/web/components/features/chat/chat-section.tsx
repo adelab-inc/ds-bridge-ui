@@ -234,7 +234,7 @@ function ChatSection({
           });
         }
       },
-      onDone: () => {
+      onDone: (payload) => {
         activeMessageIdRef.current = null;
 
         // 타임아웃 즉시 클리어 (ref 직접 접근)
@@ -245,10 +245,12 @@ function ChatSection({
         onStreamEnd?.();
 
         // 스트리밍 메시지를 DONE 상태로 전환 (refetch 전까지 화면 유지)
+        // done 이벤트의 정본 텍스트로 교체하여 chunk 중복 방지
         updateStreamingMessage((prev) =>
           prev
             ? {
                 ...prev,
+                text: payload.text || prev.text,
                 status: 'DONE' as const,
                 answer_created_at: Date.now(),
               }

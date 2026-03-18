@@ -65,11 +65,12 @@ export function useRoomChannel({
 
     const supabase = createClient();
 
-    function setupChannel() {
-      // 이전 채널 정리 (removeChannel → CLOSED 콜백 발생하지만 stale guard로 무시됨)
+    async function setupChannel() {
+      // 이전 채널 정리: unsubscribe 완료 후 제거하여 핸들러 중복 등록 방지
       const oldChannel = channelRef.current;
       channelRef.current = null;
       if (oldChannel) {
+        try { await oldChannel.unsubscribe(); } catch { /* ignore */ }
         supabase.removeChannel(oldChannel);
       }
 
