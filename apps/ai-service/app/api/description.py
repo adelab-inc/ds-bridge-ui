@@ -41,9 +41,16 @@ EXTRACTION_INITIAL_SYSTEM = """\
 """
 
 EXTRACTION_WITH_EDITS_SYSTEM = """\
-아래 대화 히스토리와 사용자의 이전 편집 이력을 종합하여 \
-하나의 통합된 화면 디스크립션을 생성하세요.
-편집 이력의 내용을 자연스럽게 반영하되, 별도 표시 없이 통합된 문서로 작성하세요.
+사용자가 이전에 확정한 디스크립션(사용자 확정본)을 기반으로, \
+새로 추가된 대화 내용과 코드 변경사항을 반영하여 디스크립션을 업데이트하세요.
+
+## 필수 규칙
+1. 사용자 확정본의 모든 내용을 **반드시 보존**합니다.
+   - 사용자가 추가한 항목은 절대 삭제하지 마세요.
+   - 사용자가 수정한 표현은 그대로 유지하세요.
+2. 사용자 확정본을 기반으로, 새로운 대화/코드에서 추가된 부분만 보충합니다.
+3. 코드에 없더라도 사용자 확정본에 있는 내용은 유지합니다.
+4. 출력 형식은 아래 가이드를 따르되, 사용자 확정본의 내용 보존이 최우선입니다.
 
 {base_prompt}
 """
@@ -83,12 +90,12 @@ def _build_extraction_messages(
         f"## 현재 코드\n파일: {code_path}\n\n```tsx\n{code_content}\n```",
     ]
 
-    # 편집 이력 포함
+    # 편집 이력: 사용자 확정본을 base로 전달
     if edit_history:
         user_parts.append(
-            "## 이전 편집 이력\n"
-            f"- 원본 (AI 생성):\n{edit_history['original']}\n\n"
-            f"- 사용자 수정본:\n{edit_history['edited']}"
+            "## 사용자 확정본 (이전 버전에서 사용자가 직접 수정한 디스크립션)\n"
+            "아래 내용의 모든 항목을 보존하면서, 새 대화/코드 변경사항만 추가하세요.\n\n"
+            f"{edit_history['edited']}"
         )
 
     messages.append(Message(role="user", content="\n\n".join(user_parts)))
