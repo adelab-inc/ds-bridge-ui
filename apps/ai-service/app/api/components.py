@@ -1313,6 +1313,7 @@ PRE_GENERATION_CHECKLIST = """
 5. **ENUM variety**: 같은 variant/size를 모든 컴포넌트에 반복하지 않았는가?
 6. **Section Card**: 조회형(RP-1) 화면에서 FilterBar + ActionButtons + Grid가 **하나의 Section Card** 안에 있는가? 별도 카드로 분리되지 않았는가?
 7. **Drawer vs Dialog 검증**: 코드에 `<Dialog`가 있으면 다시 확인! 상세보기·등록·수정·편집 폼이면 → `<Drawer`로 교체! Dialog는 삭제 확인/단순 알림에만 허용. 필드 3개 이상 폼에 Dialog 사용 = 무조건 Drawer로 변경.
+8. **⛔ 아이콘 import 금지**: `lucide-react`, `heroicons`, `react-icons`, `material-icons` import가 코드에 있는가? → **즉시 삭제!** 아이콘은 텍스트로 대체. `import { ... } from 'lucide-react'` = **앱 크래시**.
 
 ---
 
@@ -1367,6 +1368,7 @@ SYSTEM_PROMPT_FOOTER = """## 🎯 DESIGN CONSISTENCY CHECKLIST
 - **PROPS VALIDATION**: Use exact enum values (`variant="primary"` NOT `variant="blue"`). Don't hallucinate props.
 - **DRAWER vs DIALOG**: "드로어" 요청 → `Drawer` 컴포넌트 사용 (Dialog 금지). "다이얼로그/모달/팝업" → `Dialog`.
 - **TITLE BAR**: 브레드크럼 + h1 제목 + 액션 버튼은 반드시 **한 줄**에 배치. ❌ 브레드크럼과 h1을 별도 행으로 분리 금지!
+- **⛔ NO ICONS**: `lucide-react`, `heroicons`, `react-icons` import 절대 금지 — 미설치, 앱 크래시. 아이콘은 텍스트로 대체.
 
 Create a premium, completed result."""
 
