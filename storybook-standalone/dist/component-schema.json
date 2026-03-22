@@ -1,32 +1,12 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-02-09T10:43:20.733Z",
+  "generatedAt": "2026-03-22T23:16:45.811Z",
   "components": {
     "Alert": {
       "displayName": "Alert",
       "filePath": "packages/ui/src/components/Alert.tsx",
       "category": "UI",
       "props": {
-        "title": {
-          "type": "string",
-          "required": false
-        },
-        "icon": {
-          "type": "ReactNode",
-          "required": false
-        },
-        "actions": {
-          "type": "AlertActions",
-          "required": false
-        },
-        "onClose": {
-          "type": "() => void",
-          "required": false
-        },
-        "hasCloseButton": {
-          "type": "boolean",
-          "required": false
-        },
         "isToast": {
           "type": "boolean",
           "required": false,
@@ -39,7 +19,7 @@
           ],
           "required": false
         },
-        "variant": {
+        "type": {
           "type": [
             "default",
             "error",
@@ -49,6 +29,62 @@
           ],
           "required": false,
           "defaultValue": "default"
+        },
+        "showIcon": {
+          "type": "boolean",
+          "required": false
+        },
+        "icon": {
+          "type": "ReactNode",
+          "required": false
+        },
+        "showTitle": {
+          "type": "boolean",
+          "required": false
+        },
+        "title": {
+          "type": "string",
+          "required": false
+        },
+        "showActionGroup": {
+          "type": "boolean",
+          "required": false
+        },
+        "showAction1": {
+          "type": "boolean",
+          "required": false
+        },
+        "action1Label": {
+          "type": "string",
+          "required": false
+        },
+        "action1OnClick": {
+          "type": "() => void",
+          "required": false
+        },
+        "showAction2": {
+          "type": "boolean",
+          "required": false
+        },
+        "action2Label": {
+          "type": "string",
+          "required": false
+        },
+        "action2OnClick": {
+          "type": "() => void",
+          "required": false
+        },
+        "body": {
+          "type": "ReactNode",
+          "required": true
+        },
+        "showClose": {
+          "type": "boolean",
+          "required": false
+        },
+        "onClose": {
+          "type": "() => void",
+          "required": false
         }
       },
       "stories": [
@@ -84,27 +120,31 @@
         },
         "type": {
           "type": [
-            "count",
-            "dot",
             "level",
-            "status"
+            "status",
+            "count",
+            "dot"
           ],
           "required": true
         },
-        "levelVariant": {
+        "level": {
           "type": [
             "neutral",
             "primary"
           ],
           "required": false
         },
-        "statusVariant": {
+        "status": {
           "type": [
             "error",
             "info",
             "success",
             "warning"
           ],
+          "required": false
+        },
+        "label": {
+          "type": "ReactNode",
           "required": false
         },
         "maxDigits": {
@@ -139,18 +179,6 @@
       "filePath": "packages/ui/src/components/Button.tsx",
       "category": "UI",
       "props": {
-        "isLoading": {
-          "type": "boolean",
-          "required": false
-        },
-        "leftIcon": {
-          "type": "ReactNode",
-          "required": false
-        },
-        "rightIcon": {
-          "type": "ReactNode",
-          "required": false
-        },
         "onClick": {
           "type": "MouseEventHandler<HTMLButtonElement>",
           "required": false
@@ -159,8 +187,27 @@
           "type": "MouseEventHandler<HTMLButtonElement>",
           "required": false
         },
-        "isDisabled": {
-          "type": "boolean",
+        "buttonType": {
+          "type": [
+            "destructive",
+            "ghost-inverse",
+            "outline",
+            "outline-destructive",
+            "primary",
+            "secondary",
+            "tertiary"
+          ],
+          "required": false
+        },
+        "interaction": {
+          "type": [
+            "disabled",
+            "default",
+            "focused",
+            "hover",
+            "loading",
+            "pressed"
+          ],
           "required": false
         },
         "mode": {
@@ -178,16 +225,25 @@
           ],
           "required": false
         },
-        "variant": {
-          "type": [
-            "destructive",
-            "outline",
-            "outline-destructive",
-            "primary",
-            "secondary",
-            "tertiary"
-          ],
+        "showStartIcon": {
+          "type": "boolean",
+          "required": true
+        },
+        "startIcon": {
+          "type": "ReactNode",
           "required": false
+        },
+        "showEndIcon": {
+          "type": "boolean",
+          "required": true
+        },
+        "endIcon": {
+          "type": "ReactNode",
+          "required": false
+        },
+        "label": {
+          "type": "ReactNode",
+          "required": true
         }
       },
       "stories": [
@@ -397,23 +453,23 @@
           "required": false,
           "defaultValue": 18
         },
-        "checked": {
-          "type": "boolean",
-          "required": false,
-          "defaultValue": false
-        },
-        "variant": {
+        "value": {
           "type": [
             "checked",
-            "indeterminate"
+            "indeterminate",
+            "unchecked"
           ],
           "required": false,
-          "defaultValue": "checked"
+          "defaultValue": "CheckboxValue.UNCHECKED"
         },
-        "disabled": {
-          "type": "boolean",
-          "required": false,
-          "defaultValue": false
+        "interaction": {
+          "type": [
+            "disabled",
+            "default",
+            "hover",
+            "pressed"
+          ],
+          "required": false
         },
         "onChange": {
           "type": "(event: ChangeEvent<HTMLInputElement>) => void",
@@ -450,24 +506,21 @@
       "filePath": "packages/ui/src/components/Chip.tsx",
       "category": "UI",
       "props": {
-        "icon": {
-          "type": "ReactNode",
-          "required": false
+        "disabled": {
+          "type": "boolean",
+          "required": false,
+          "defaultValue": false
         },
-        "onClose": {
-          "type": "() => void",
-          "required": false
-        },
-        "value": {
-          "type": "string",
-          "required": false
-        },
-        "hasCloseButton": {
+        "iconOnly": {
           "type": "boolean",
           "required": false
         },
-        "hasIcon": {
-          "type": "boolean",
+        "interaction": {
+          "type": [
+            "default",
+            "hover",
+            "pressed"
+          ],
           "required": false
         },
         "mode": {
@@ -477,12 +530,17 @@
           ],
           "required": false
         },
-        "selectionStyle": {
-          "type": [
-            "multiple",
-            "single"
-          ],
+        "selected": {
+          "type": "boolean",
           "required": false
+        },
+        "showClose": {
+          "type": "boolean",
+          "required": false
+        },
+        "showIcon": {
+          "type": "boolean",
+          "required": true
         },
         "size": {
           "type": [
@@ -491,19 +549,27 @@
           ],
           "required": false
         },
-        "state": {
-          "type": [
-            "default",
-            "disabled",
-            "selected"
-          ],
-          "required": false
-        },
-        "variant": {
+        "type": {
           "type": [
             "default",
             "ghost"
           ],
+          "required": false
+        },
+        "icon": {
+          "type": "ReactNode",
+          "required": false
+        },
+        "label": {
+          "type": "ReactNode",
+          "required": false
+        },
+        "onClose": {
+          "type": "() => void",
+          "required": false
+        },
+        "value": {
+          "type": "string",
           "required": false
         }
       },
@@ -602,15 +668,6 @@
             "test",
             "autodocs"
           ]
-        },
-        {
-          "id": "ui-dialog--nested-modals",
-          "name": "Nested Modals",
-          "tags": [
-            "dev",
-            "test",
-            "autodocs"
-          ]
         }
       ]
     },
@@ -619,22 +676,19 @@
       "filePath": "packages/ui/src/components/Divider.tsx",
       "category": "UI",
       "props": {
-        "asChild": {
-          "type": "boolean",
-          "required": false
-        },
-        "color": {
-          "type": [
-            "default",
-            "strong",
-            "subtle"
-          ],
-          "required": false
-        },
         "orientation": {
           "type": [
             "horizontal",
             "vertical"
+          ],
+          "required": false
+        },
+        "tone": {
+          "type": [
+            "default",
+            "inverse",
+            "strong",
+            "subtle"
           ],
           "required": false
         }
@@ -651,82 +705,6 @@
         }
       ]
     },
-    "Drawer": {
-      "displayName": "Drawer",
-      "filePath": "packages/ui/src/components/Drawer.tsx",
-      "category": "UI",
-      "props": {
-        "open": {
-          "type": "boolean",
-          "required": false,
-          "description": "드로워 열림 상태"
-        },
-        "onClose": {
-          "type": "() => void",
-          "required": true,
-          "description": "닫기 핸들러"
-        },
-        "dim": {
-          "type": "boolean",
-          "required": false,
-          "description": "Dim(배경 어둡게) 처리 여부 (기본: true)"
-        },
-        "mode": {
-          "type": [
-            "base",
-            "compact"
-          ],
-          "required": false
-        },
-        "size": {
-          "type": [
-            "lg",
-            "md",
-            "sm",
-            "xl"
-          ],
-          "required": false
-        }
-      },
-      "stories": [
-        {
-          "id": "ui-drawer--default",
-          "name": "Default",
-          "tags": [
-            "dev",
-            "test",
-            "autodocs"
-          ]
-        },
-        {
-          "id": "ui-drawer--without-dim",
-          "name": "Without Dim",
-          "tags": [
-            "dev",
-            "test",
-            "autodocs"
-          ]
-        },
-        {
-          "id": "ui-drawer--all-sizes",
-          "name": "All Sizes",
-          "tags": [
-            "dev",
-            "test",
-            "autodocs"
-          ]
-        },
-        {
-          "id": "ui-drawer--with-scrollable-content",
-          "name": "With Scrollable Content",
-          "tags": [
-            "dev",
-            "test",
-            "autodocs"
-          ]
-        }
-      ]
-    },
     "Field": {
       "displayName": "Field",
       "filePath": "packages/ui/src/components/Field.tsx",
@@ -735,43 +713,7 @@
         "multiline": {
           "type": "boolean",
           "required": false,
-          "defaultValue": false,
-          "description": "Single-line input 모드 (기본값)\nMultiline textarea 모드"
-        },
-        "prefix": {
-          "type": "ReactNode",
-          "required": false,
-          "description": "입력 앞 텍스트 (예: $, ₩) - single-line 전용\nprefix는 single-line 전용"
-        },
-        "startIcon": {
-          "type": "ReactNode",
-          "required": false,
-          "description": "좌측 아이콘 - single-line 전용\nstartIcon은 single-line 전용"
-        },
-        "endIcon": {
-          "type": "ReactNode",
-          "required": false,
-          "description": "우측 아이콘 - single-line 전용\nendIcon은 single-line 전용"
-        },
-        "onStartIconClick": {
-          "type": "(e: MouseEvent<HTMLButtonElement, MouseEvent>) => void",
-          "required": false,
-          "description": "좌측 아이콘 클릭 핸들러 - single-line 전용\nonStartIconClick은 single-line 전용"
-        },
-        "onEndIconClick": {
-          "type": "(e: MouseEvent<HTMLButtonElement, MouseEvent>) => void",
-          "required": false,
-          "description": "우측 아이콘 클릭 핸들러 - single-line 전용\nonEndIconClick은 single-line 전용"
-        },
-        "startIconProps": {
-          "type": "HTMLAttributes<HTMLElement>",
-          "required": false,
-          "description": "내부 startIcon wrapper 요소에 전달할 추가 props - single-line 전용\nstartIconProps는 single-line 전용"
-        },
-        "endIconProps": {
-          "type": "HTMLAttributes<HTMLElement>",
-          "required": false,
-          "description": "내부 endIcon wrapper 요소에 전달할 추가 props - single-line 전용\nendIconProps는 single-line 전용"
+          "defaultValue": false
         },
         "rowsVariant": {
           "type": [
@@ -781,23 +723,14 @@
             "rows8"
           ],
           "required": false,
-          "defaultValue": "flexible",
-          "description": "rowsVariant는 multiline 전용\nTextarea 행 수 변형 - multiline 전용"
-        },
-        "label": {
-          "type": "string",
-          "required": false
+          "defaultValue": "flexible"
         },
         "required": {
           "type": "boolean",
           "required": false,
           "defaultValue": false
         },
-        "helperText": {
-          "type": "string",
-          "required": false
-        },
-        "error": {
+        "hasError": {
           "type": "boolean",
           "required": false,
           "defaultValue": false
@@ -818,26 +751,15 @@
           "required": false,
           "description": "내부 input/textarea 요소에 전달할 추가 props"
         },
-        "labelProps": {
-          "type": "LabelHTMLAttributes<HTMLLabelElement>",
-          "required": false,
-          "description": "내부 label 요소에 전달할 추가 props"
-        },
-        "helperTextProps": {
-          "type": "HTMLAttributes<HTMLSpanElement>",
-          "required": false,
-          "description": "내부 helperText 요소에 전달할 추가 props"
-        },
-        "hasError": {
-          "type": "boolean",
-          "required": false
-        },
-        "isDisabled": {
-          "type": "boolean",
-          "required": false
-        },
-        "isReadOnly": {
-          "type": "boolean",
+        "interaction": {
+          "type": [
+            "disabled",
+            "value",
+            "default",
+            "display",
+            "editing",
+            "readonly"
+          ],
           "required": false
         },
         "mode": {
@@ -845,6 +767,70 @@
             "base",
             "compact"
           ],
+          "required": false
+        },
+        "showLabel": {
+          "type": "boolean",
+          "required": true
+        },
+        "label": {
+          "type": "string",
+          "required": false
+        },
+        "labelProps": {
+          "type": "LabelHTMLAttributes<HTMLLabelElement>",
+          "required": false
+        },
+        "showHelptext": {
+          "type": "boolean",
+          "required": true
+        },
+        "helptext": {
+          "type": "string",
+          "required": false
+        },
+        "helperTextProps": {
+          "type": "HTMLAttributes<HTMLSpanElement>",
+          "required": false
+        },
+        "showPrefix": {
+          "type": "boolean",
+          "required": false
+        },
+        "prefix": {
+          "type": "ReactNode",
+          "required": false
+        },
+        "showStartIcon": {
+          "type": "boolean",
+          "required": false
+        },
+        "startIcon": {
+          "type": "ReactNode",
+          "required": false
+        },
+        "onStartIconClick": {
+          "type": "(e: MouseEvent<HTMLButtonElement, MouseEvent>) => void",
+          "required": false
+        },
+        "startIconProps": {
+          "type": "HTMLAttributes<HTMLElement>",
+          "required": false
+        },
+        "showEndIcon": {
+          "type": "boolean",
+          "required": false
+        },
+        "endIcon": {
+          "type": "ReactNode",
+          "required": false
+        },
+        "onEndIconClick": {
+          "type": "(e: MouseEvent<HTMLButtonElement, MouseEvent>) => void",
+          "required": false
+        },
+        "endIconProps": {
+          "type": "HTMLAttributes<HTMLElement>",
           "required": false
         }
       },
@@ -986,13 +972,27 @@
       "filePath": "packages/ui/src/components/IconButton.tsx",
       "category": "UI",
       "props": {
-        "isLoading": {
-          "type": "boolean",
-          "required": false
-        },
-        "icon": {
+        "iconOnly": {
           "type": "ReactNode",
           "required": true
+        },
+        "aria-label": {
+          "type": "string",
+          "required": true,
+          "description": "접근성 라벨 (필수) — 스크린 리더가 읽는 버튼 이름"
+        },
+        "tooltip": {
+          "type": "string",
+          "required": false,
+          "description": "Tooltip 텍스트 (있으면 Tooltip 자동 렌더링)"
+        },
+        "tooltipProps": {
+          "type": [
+            "Partial<Omit<TooltipProps, \"content",
+            "children\">>"
+          ],
+          "required": false,
+          "description": "Tooltip 세부 설정"
         },
         "onClick": {
           "type": "MouseEventHandler<HTMLButtonElement>",
@@ -1002,8 +1002,24 @@
           "type": "MouseEventHandler<HTMLButtonElement>",
           "required": false
         },
-        "isDisabled": {
-          "type": "boolean",
+        "iconButtonType": {
+          "type": [
+            "ghost",
+            "ghost-destructive",
+            "secondary",
+            "tertiary"
+          ],
+          "required": false
+        },
+        "interaction": {
+          "type": [
+            "disabled",
+            "default",
+            "focused",
+            "hover",
+            "loading",
+            "pressed"
+          ],
           "required": false
         },
         "mode": {
@@ -1018,15 +1034,6 @@
             "lg",
             "md",
             "sm"
-          ],
-          "required": false
-        },
-        "variant": {
-          "type": [
-            "ghost",
-            "ghost-destructive",
-            "secondary",
-            "tertiary"
           ],
           "required": false
         }
@@ -1083,6 +1090,13 @@
           "type": "string",
           "required": false
         },
+        "interaction": {
+          "type": [
+            "default",
+            "hover"
+          ],
+          "required": false
+        },
         "size": {
           "type": [
             "lg",
@@ -1091,14 +1105,18 @@
           ],
           "required": false
         },
-        "variant": {
+        "tone": {
           "type": [
-            "always-inherit",
-            "always-link",
-            "none-inherit",
-            "none-link",
-            "on-hover-inherit",
-            "on-hover-link"
+            "inherit",
+            "link"
+          ],
+          "required": false
+        },
+        "underline": {
+          "type": [
+            "always",
+            "none",
+            "on-hover"
           ],
           "required": false
         },
@@ -1129,7 +1147,15 @@
       "displayName": "Heading",
       "filePath": "packages/ui/src/components/Menu/Heading.tsx",
       "category": "UI",
-      "props": {},
+      "props": {
+        "mode": {
+          "type": [
+            "base",
+            "compact"
+          ],
+          "required": false
+        }
+      },
       "stories": [
         {
           "id": "ui-menu--default",
@@ -1150,26 +1176,17 @@
           ]
         },
         {
-          "id": "ui-menu--with-headings",
-          "name": "With Headings",
-          "tags": [
-            "dev",
-            "test",
-            "autodocs"
-          ]
-        },
-        {
-          "id": "ui-menu--with-disabled",
-          "name": "With Disabled",
-          "tags": [
-            "dev",
-            "test",
-            "autodocs"
-          ]
-        },
-        {
           "id": "ui-menu--label-only",
           "name": "Label Only",
+          "tags": [
+            "dev",
+            "test",
+            "autodocs"
+          ]
+        },
+        {
+          "id": "ui-menu--item-title-description",
+          "name": "Item Title Description",
           "tags": [
             "dev",
             "test",
@@ -1252,129 +1269,53 @@
     },
     "Item": {
       "displayName": "Item",
-      "filePath": "packages/ui/src/components/TreeMenu/Item.tsx",
+      "filePath": "packages/ui/src/components/Menu/Item.tsx",
       "category": "UI",
       "props": {
+        "item": {
+          "type": "MenuItemBase",
+          "required": true
+        },
         "size": {
           "type": [
             "sm",
             "md"
           ],
+          "required": false,
+          "defaultValue": "md"
+        },
+        "onItemClick": {
+          "type": "(item: MenuItemBase) => void",
           "required": false
         },
-        "item": {
-          "type": [
-            "TreeMenuItemDataSm",
-            "TreeMenuItemDataMd"
-          ],
-          "required": true
+        "onItemHover": {
+          "type": "(item: MenuItemBase) => void",
+          "required": false
         },
         "depth": {
-          "type": [
-            "1",
-            "2",
-            "3",
-            "4"
-          ],
-          "required": false
-        },
-        "hasChildren": {
-          "type": "boolean",
-          "required": false
-        },
-        "isExpanded": {
-          "type": "boolean",
-          "required": false
+          "type": "number",
+          "required": false,
+          "defaultValue": 0
         },
         "isFocused": {
           "type": "boolean",
-          "required": false
+          "required": false,
+          "defaultValue": false
         },
-        "isFirstFocusable": {
+        "isExpanded": {
           "type": "boolean",
           "required": false,
-          "description": "Tab 키로 진입 가능한 첫 번째 아이템 여부 (접근성)"
+          "defaultValue": false
         },
-        "onExpandToggle": {
-          "type": "() => void",
-          "required": false
-        },
-        "onItemClick": {
-          "type": "() => void",
-          "required": false
-        },
-        "draggable": {
-          "type": "boolean",
+        "itemRole": {
+          "type": "string",
           "required": false,
-          "description": "드래그 가능 여부"
-        },
-        "isDragging": {
-          "type": "boolean",
-          "required": false,
-          "description": "현재 드래그 중인 아이템인지 여부"
-        },
-        "dragOverPosition": {
-          "type": [
-            "before",
-            "after",
-            "inside"
-          ],
-          "required": false,
-          "description": "현재 드롭 대상 위치 (인디케이터 표시용)"
-        },
-        "onDragStart": {
-          "type": "(e: DragEvent<Element>) => void",
-          "required": false,
-          "description": "드래그 시작 핸들러"
-        },
-        "onDragEnd": {
-          "type": "(e: DragEvent<Element>) => void",
-          "required": false,
-          "description": "드래그 종료 핸들러"
-        },
-        "onDragOver": {
-          "type": "(e: DragEvent<Element>) => void",
-          "required": false,
-          "description": "드래그 오버 핸들러"
-        },
-        "onDragEnter": {
-          "type": "(e: DragEvent<Element>) => void",
-          "required": false,
-          "description": "드래그 진입 핸들러"
-        },
-        "onDragLeave": {
-          "type": "(e: DragEvent<Element>) => void",
-          "required": false,
-          "description": "드래그 이탈 핸들러"
-        },
-        "onDrop": {
-          "type": "(e: DragEvent<Element>) => void",
-          "required": false,
-          "description": "드롭 핸들러"
-        },
-        "checkboxMode": {
-          "type": "boolean",
-          "required": false,
-          "description": "체크박스 모드 (MD only)"
-        },
-        "checkState": {
-          "type": [
-            "checked",
-            "unchecked",
-            "indeterminate"
-          ],
-          "required": false,
-          "description": "체크 상태 (MD only)"
-        },
-        "onCheckChange": {
-          "type": "(checked: boolean) => void",
-          "required": false,
-          "description": "체크 상태 변경 핸들러 (MD only)"
+          "description": "아이템의 ARIA role override. 기본값은 menuitem (checkable이면 menuitemcheckbox). Select에서는 \"option\""
         }
       },
       "stories": [
         {
-          "id": "ui-treemenu--default",
+          "id": "ui-menu--default",
           "name": "Default",
           "tags": [
             "dev",
@@ -1383,8 +1324,8 @@
           ]
         },
         {
-          "id": "ui-treemenu--with-checkbox",
-          "name": "With Checkbox",
+          "id": "ui-menu--with-selected",
+          "name": "With Selected",
           "tags": [
             "dev",
             "test",
@@ -1392,7 +1333,34 @@
           ]
         },
         {
-          "id": "ui-treemenu--with-badge",
+          "id": "ui-menu--label-only",
+          "name": "Label Only",
+          "tags": [
+            "dev",
+            "test",
+            "autodocs"
+          ]
+        },
+        {
+          "id": "ui-menu--item-title-description",
+          "name": "Item Title Description",
+          "tags": [
+            "dev",
+            "test",
+            "autodocs"
+          ]
+        },
+        {
+          "id": "ui-menu--icon-with-title-description",
+          "name": "Icon With Title Description",
+          "tags": [
+            "dev",
+            "test",
+            "autodocs"
+          ]
+        },
+        {
+          "id": "ui-menu--with-badge",
           "name": "With Badge",
           "tags": [
             "dev",
@@ -1401,8 +1369,8 @@
           ]
         },
         {
-          "id": "ui-treemenu--with-hover-action",
-          "name": "With Hover Action",
+          "id": "ui-menu--with-badge-dot",
+          "name": "With Badge Dot",
           "tags": [
             "dev",
             "test",
@@ -1410,8 +1378,8 @@
           ]
         },
         {
-          "id": "ui-treemenu--deep-nested",
-          "name": "Deep Nested",
+          "id": "ui-menu--title-description",
+          "name": "Title Description",
           "tags": [
             "dev",
             "test",
@@ -1419,8 +1387,8 @@
           ]
         },
         {
-          "id": "ui-treemenu--with-disabled",
-          "name": "With Disabled",
+          "id": "ui-menu--with-toggle-button",
+          "name": "With Toggle Button",
           "tags": [
             "dev",
             "test",
@@ -1428,8 +1396,8 @@
           ]
         },
         {
-          "id": "ui-treemenu--checkbox-with-badge",
-          "name": "Checkbox With Badge",
+          "id": "ui-menu--menu-positioning-in-container",
+          "name": "Menu Positioning In Container",
           "tags": [
             "dev",
             "test",
@@ -1437,8 +1405,8 @@
           ]
         },
         {
-          "id": "ui-treemenu--single-tree-menu-item",
-          "name": "Single Tree Menu Item",
+          "id": "ui-menu--with-checkbox-mode",
+          "name": "With Checkbox Mode",
           "tags": [
             "dev",
             "test",
@@ -1446,35 +1414,8 @@
           ]
         },
         {
-          "id": "ui-treemenu--controlled-expand-state",
-          "name": "Controlled Expand State",
-          "tags": [
-            "dev",
-            "test",
-            "autodocs"
-          ]
-        },
-        {
-          "id": "ui-treemenu--in-section",
-          "name": "In Section",
-          "tags": [
-            "dev",
-            "test",
-            "autodocs"
-          ]
-        },
-        {
-          "id": "ui-treemenu--draggable",
-          "name": "Draggable",
-          "tags": [
-            "dev",
-            "test",
-            "autodocs"
-          ]
-        },
-        {
-          "id": "ui-treemenu--draggable-long-list",
-          "name": "Draggable Long List",
+          "id": "ui-menu--with-radio-mode",
+          "name": "With Radio Mode",
           "tags": [
             "dev",
             "test",
@@ -1492,16 +1433,18 @@
           "type": "string",
           "required": true
         },
-        "inputSize": {
+        "size": {
           "type": [
-            "16",
-            "18",
-            "20",
-            "24",
-            "28"
+            "lg",
+            "md",
+            "sm"
           ],
+          "required": false
+        },
+        "disabled": {
+          "type": "boolean",
           "required": false,
-          "defaultValue": 18
+          "defaultValue": false
         },
         "mode": {
           "type": [
@@ -1537,19 +1480,31 @@
       "filePath": "packages/ui/src/components/OptionGroup.tsx",
       "category": "UI",
       "props": {
-        "title": {
+        "label": {
           "type": "string",
           "required": false
         },
-        "required": {
+        "showLabel": {
+          "type": "boolean",
+          "required": false,
+          "defaultValue": true,
+          "description": "Label 표시 여부 (Figma: Show Label)"
+        },
+        "showAsterisk": {
           "type": "boolean",
           "required": false,
           "defaultValue": false,
-          "description": "필수 입력 표시 (asterisk *)"
+          "description": "필수 입력 표시 (asterisk *) (Figma: Show Asterisk)"
         },
-        "helperText": {
+        "helptext": {
           "type": "string",
           "required": false
+        },
+        "showHelptext": {
+          "type": "boolean",
+          "required": false,
+          "defaultValue": true,
+          "description": "Helptext 표시 여부 (Figma: Show Helptext)"
         },
         "size": {
           "type": [
@@ -1567,21 +1522,6 @@
           ],
           "required": false,
           "defaultValue": "vertical"
-        },
-        "containerWidth": {
-          "type": [
-            "string",
-            "number"
-          ],
-          "required": false,
-          "defaultValue": 279
-        },
-        "groupType": {
-          "type": [
-            "radio",
-            "checkbox"
-          ],
-          "required": false
         },
         "mode": {
           "type": [
@@ -1612,61 +1552,6 @@
         }
       ]
     },
-    "Pagination": {
-      "displayName": "Pagination",
-      "filePath": "packages/ui/src/components/Pagination/Pagination.tsx",
-      "category": "UI",
-      "props": {
-        "onPageChange": {
-          "type": "(page: number) => void",
-          "required": true
-        },
-        "totalCount": {
-          "type": "number",
-          "required": true
-        },
-        "siblingCount": {
-          "type": "number",
-          "required": false,
-          "defaultValue": 1
-        },
-        "currentPage": {
-          "type": "number",
-          "required": true
-        },
-        "pageSize": {
-          "type": "number",
-          "required": true
-        },
-        "variant": {
-          "type": [
-            "standard",
-            "simple"
-          ],
-          "required": false,
-          "defaultValue": "standard"
-        },
-        "totalPages": {
-          "type": "number",
-          "required": false
-        },
-        "disabled": {
-          "type": "boolean",
-          "required": false
-        }
-      },
-      "stories": [
-        {
-          "id": "ui-pagination--default",
-          "name": "Default",
-          "tags": [
-            "dev",
-            "test",
-            "autodocs"
-          ]
-        }
-      ]
-    },
     "Radio": {
       "displayName": "Radio",
       "filePath": "packages/ui/src/components/Radio.tsx",
@@ -1683,15 +1568,22 @@
           "required": false,
           "defaultValue": 18
         },
-        "checked": {
-          "type": "boolean",
+        "value": {
+          "type": [
+            "checked",
+            "unchecked"
+          ],
           "required": false,
-          "defaultValue": false
+          "defaultValue": "RadioValue.UNCHECKED"
         },
-        "disabled": {
-          "type": "boolean",
-          "required": false,
-          "defaultValue": false
+        "interaction": {
+          "type": [
+            "disabled",
+            "default",
+            "hover",
+            "pressed"
+          ],
+          "required": false
         },
         "onChange": {
           "type": "(event: ChangeEvent<HTMLInputElement>) => void",
@@ -1751,7 +1643,7 @@
           ],
           "required": false,
           "defaultValue": "md",
-          "description": "아이템 크기"
+          "description": "아이템 크기 — Figma: Size"
         },
         "widthMode": {
           "type": [
@@ -1760,22 +1652,18 @@
           ],
           "required": false,
           "defaultValue": "equal",
-          "description": "아이템 너비 모드: equal(균등 분배), content(컨텐츠에 맞춤)"
+          "description": "아이템 너비 모드 — Figma: WidthMode. equal(균등 분배), content(컨텐츠에 맞춤)"
         },
         "disabled": {
           "type": "boolean",
           "required": false,
           "defaultValue": false,
-          "description": "전체 세그먼트 비활성화"
+          "description": "전체 세그먼트 비활성화 (코드 전용)"
         },
         "gap": {
           "type": "string",
           "required": false,
           "description": "세그먼트 리스트와 패널 사이 간격 (Tailwind 클래스, 예: 'gap-4', 'gap-layout-stack-md')"
-        },
-        "isDisabled": {
-          "type": "boolean",
-          "required": false
         },
         "mode": {
           "type": [
@@ -1821,15 +1709,6 @@
             "test",
             "autodocs"
           ]
-        },
-        {
-          "id": "ui-segment--with-gap",
-          "name": "With Gap",
-          "tags": [
-            "dev",
-            "test",
-            "autodocs"
-          ]
         }
       ]
     },
@@ -1838,98 +1717,15 @@
       "filePath": "packages/ui/src/components/Select.tsx",
       "category": "UI",
       "props": {
-        "label": {
-          "type": "string",
-          "required": false
-        },
-        "required": {
-          "type": "boolean",
-          "required": false,
-          "defaultValue": false,
-          "description": "필수 입력 표시 (asterisk *)"
-        },
-        "helperText": {
-          "type": "string",
-          "required": false
-        },
-        "options": {
-          "type": "SelectOption[]",
-          "required": true
-        },
-        "error": {
-          "type": "boolean",
-          "required": false,
-          "defaultValue": false
-        },
-        "disabled": {
-          "type": "boolean",
-          "required": false,
-          "defaultValue": false
-        },
-        "value": {
-          "type": "string",
-          "required": false
-        },
-        "defaultValue": {
-          "type": "string",
-          "required": false
-        },
-        "onChange": {
-          "type": "(value: string) => void",
-          "required": false
-        },
-        "placeholder": {
-          "type": "string",
-          "required": false,
-          "defaultValue": "선택하세요"
-        },
-        "startIcon": {
-          "type": "ReactNode",
-          "required": false,
-          "description": "Select 시작 아이콘"
-        },
-        "endIcon": {
-          "type": "ReactNode",
-          "required": false,
-          "description": "Select 끝 아이콘 (기본값: chevron-down)"
-        },
-        "onStartIconClick": {
-          "type": "(e: MouseEvent<HTMLButtonElement, MouseEvent>) => void",
-          "required": false,
-          "description": "Start 아이콘 클릭 핸들러"
-        },
-        "onEndIconClick": {
-          "type": "(e: MouseEvent<HTMLButtonElement, MouseEvent>) => void",
-          "required": false,
-          "description": "End 아이콘 클릭 핸들러"
-        },
-        "labelProps": {
-          "type": "LabelHTMLAttributes<HTMLLabelElement>",
-          "required": false,
-          "description": "내부 label 요소에 전달할 추가 props"
-        },
-        "helperTextProps": {
-          "type": "HTMLAttributes<HTMLSpanElement>",
-          "required": false,
-          "description": "내부 helperText 요소에 전달할 추가 props"
-        },
-        "selectProps": {
-          "type": "HTMLAttributes<HTMLDivElement>",
-          "required": false,
-          "description": "내부 select trigger 요소에 전달할 추가 props"
-        },
-        "startIconProps": {
-          "type": "HTMLAttributes<HTMLElement>",
-          "required": false,
-          "description": "내부 startIcon wrapper 요소에 전달할 추가 props"
-        },
-        "endIconProps": {
-          "type": "HTMLAttributes<HTMLElement>",
-          "required": false,
-          "description": "내부 endIcon wrapper 요소에 전달할 추가 props"
-        },
-        "hasValue": {
-          "type": "boolean",
+        "interaction": {
+          "type": [
+            "default",
+            "disabled",
+            "error",
+            "hover",
+            "pressed",
+            "selected"
+          ],
           "required": false
         },
         "isOpen": {
@@ -1950,21 +1746,112 @@
           ],
           "required": false,
           "defaultValue": "md"
+        },
+        "showLabel": {
+          "type": "boolean",
+          "required": true
+        },
+        "label": {
+          "type": "string",
+          "required": false
+        },
+        "labelProps": {
+          "type": "LabelHTMLAttributes<HTMLLabelElement>",
+          "required": false
+        },
+        "showHelptext": {
+          "type": "boolean",
+          "required": true
+        },
+        "helptext": {
+          "type": "string",
+          "required": false
+        },
+        "helperTextProps": {
+          "type": "HTMLAttributes<HTMLSpanElement>",
+          "required": false
+        },
+        "showStartIcon": {
+          "type": "boolean",
+          "required": true
+        },
+        "startIcon": {
+          "type": "ReactNode",
+          "required": false
+        },
+        "onStartIconClick": {
+          "type": "(e: MouseEvent<HTMLButtonElement, MouseEvent>) => void",
+          "required": false
+        },
+        "startIconProps": {
+          "type": "HTMLAttributes<HTMLElement>",
+          "required": false
+        },
+        "required": {
+          "type": "boolean",
+          "required": false,
+          "defaultValue": false
+        },
+        "options": {
+          "type": "SelectOption[]",
+          "required": true
+        },
+        "value": {
+          "type": [
+            "string",
+            "string[]"
+          ],
+          "required": false
+        },
+        "defaultValue": {
+          "type": [
+            "string",
+            "string[]"
+          ],
+          "required": false
+        },
+        "onChange": {
+          "type": [
+            "(value: string",
+            "string[]) => void"
+          ],
+          "required": false
+        },
+        "placeholder": {
+          "type": "string",
+          "required": false,
+          "defaultValue": "선택하세요"
+        },
+        "multiSelect": {
+          "type": "boolean",
+          "required": false,
+          "description": "다중 선택 모드"
+        },
+        "endIcon": {
+          "type": "ReactNode",
+          "required": false,
+          "description": "Select 끝 아이콘 (기본값: chevron-down)"
+        },
+        "onEndIconClick": {
+          "type": "(e: MouseEvent<HTMLButtonElement, MouseEvent>) => void",
+          "required": false,
+          "description": "End 아이콘 클릭 핸들러"
+        },
+        "selectProps": {
+          "type": "HTMLAttributes<HTMLDivElement>",
+          "required": false,
+          "description": "내부 select trigger 요소에 전달할 추가 props"
+        },
+        "endIconProps": {
+          "type": "HTMLAttributes<HTMLElement>",
+          "required": false,
+          "description": "내부 endIcon wrapper 요소에 전달할 추가 props"
         }
       },
       "stories": [
         {
           "id": "ui-select--default",
           "name": "Default",
-          "tags": [
-            "dev",
-            "test",
-            "autodocs"
-          ]
-        },
-        {
-          "id": "ui-select--with-complex-options",
-          "name": "복합 옵션",
           "tags": [
             "dev",
             "test",
@@ -1981,7 +1868,7 @@
         "items": {
           "type": "TabItem[]",
           "required": true,
-          "description": "탭 아이템 목록 (최대 5개 권장)"
+          "description": "탭 아이템 목록"
         },
         "value": {
           "type": "string",
@@ -2000,7 +1887,7 @@
           ],
           "required": false,
           "defaultValue": "content",
-          "description": "아이템 너비 모드: equal(균등 분배), content(컨텐츠에 맞춤, 기본값)"
+          "description": "아이템 너비 모드: equal(균등 분배), content(컨텐츠에 맞춤, 기본값) (Figma: width mode)"
         },
         "disabled": {
           "type": "boolean",
@@ -2012,10 +1899,6 @@
           "type": "string",
           "required": false,
           "description": "탭 리스트와 패널 사이 간격 (Tailwind 클래스, 예: 'gap-4', 'gap-layout-stack-md')"
-        },
-        "isDisabled": {
-          "type": "boolean",
-          "required": false
         },
         "mode": {
           "type": [
@@ -2061,15 +1944,6 @@
             "test",
             "autodocs"
           ]
-        },
-        {
-          "id": "ui-tab--with-gap",
-          "name": "With Gap",
-          "tags": [
-            "dev",
-            "test",
-            "autodocs"
-          ]
         }
       ]
     },
@@ -2078,19 +1952,8 @@
       "filePath": "packages/ui/src/components/Tag.tsx",
       "category": "UI",
       "props": {
-        "onClose": {
-          "type": "() => void",
-          "required": false,
-          "description": "태그 제거 버튼 클릭 시 호출될 콜백 함수\n\n⚠️ hasCloseButton prop과 함께 사용해야 제거 버튼이 표시됩니다.\n@example ```tsx\n<Tag hasCloseButton onClose={() => handleRemove(id)}>\n  제거 가능 태그\n</Tag>\n```"
-        },
-        "colorSwatch": {
+        "color": {
           "type": "string",
-          "required": false,
-          "defaultValue": "undefined (색상 점 미표시)",
-          "description": "태그 왼쪽에 표시될 색상 점 (6px × 6px 원형)\n\n8가지 색상을 지원합니다:\n- `'red'` - 빨강\n- `'orange'` - 주황\n- `'yellow'` - 노랑\n- `'lime'` - 연두\n- `'green'` - 초록\n- `'cyan'` - 청록\n- `'violet'` - 보라\n- `'pink'` - 분홍\n\n⚠️ 잘못된 색상을 전달하면 개발 환경에서 console.warn이 출력되고,\n색상 점이 렌더링되지 않습니다.\n@example ```tsx\n<Tag colorSwatch=\"red\">빨간색 표시</Tag>\n<Tag colorSwatch=\"green\">초록색 표시</Tag>\n```"
-        },
-        "hasCloseButton": {
-          "type": "boolean",
           "required": false
         },
         "mode": {
@@ -2100,12 +1963,26 @@
           ],
           "required": false
         },
-        "variant": {
+        "showClose": {
+          "type": "boolean",
+          "required": false
+        },
+        "tagType": {
           "type": [
             "default",
-            "more"
+            "more",
+            "swatch"
           ],
           "required": false
+        },
+        "onClose": {
+          "type": "() => void",
+          "required": false
+        },
+        "label": {
+          "type": "ReactNode",
+          "required": true,
+          "description": "태그 텍스트"
         }
       },
       "stories": [
@@ -2369,15 +2246,14 @@
       "filePath": "packages/ui/src/components/ToggleSwitch.tsx",
       "category": "UI",
       "props": {
-        "checked": {
-          "type": "boolean",
+        "selected": {
+          "type": [
+            "disabled",
+            "off",
+            "on"
+          ],
           "required": false,
-          "defaultValue": false
-        },
-        "disabled": {
-          "type": "boolean",
-          "required": false,
-          "defaultValue": false
+          "defaultValue": "ToggleSwitchSelected.OFF"
         },
         "onChange": {
           "type": "(event: ChangeEvent<HTMLInputElement>) => void",
@@ -2462,6 +2338,13 @@
           "required": false,
           "defaultValue": "{ x: 10, y: 10 }",
           "description": "커서와 툴팁 사이 오프셋 (followCursor가 true일 때만 적용)"
+        },
+        "context": {
+          "type": [
+            "default",
+            "contrast"
+          ],
+          "required": false
         },
         "mode": {
           "type": [

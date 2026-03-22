@@ -27,11 +27,11 @@ const dialogVariants = cva('flex flex-col items-start rounded-xl border border-b
     },
     compoundVariants: [
       {
-        "class": "py-component-inset-dialog-y px-component-inset-dialog-x gap-component-gap-dialog-structure",
+        "class": "py-component-inset-dialog-y gap-component-gap-dialog-structure",
         "mode": "base",
       },
       {
-        "class": "py-component-inset-dialog-y-compact px-component-inset-dialog-x-compact gap-component-gap-dialog-structure-compact",
+        "class": "py-component-inset-dialog-y-compact gap-component-gap-dialog-structure-compact",
         "mode": "compact",
       },
     ],
@@ -205,7 +205,8 @@ const DialogHeader: React.FC<DialogHeaderProps> = ({
   className,
   ...props
 }) => {
-  const { size, onClose } = useDialogContext();
+  const { size, mode, onClose } = useDialogContext();
+  const pxClass = mode === 'compact' ? 'px-component-inset-dialog-x-compact' : 'px-component-inset-dialog-x';
 
   // Title 텍스트 토큰: lg/xl은 heading-lg-bold, sm/md는 heading-md-semibold
   const titleClassName = size === 'lg' || size === 'xl'
@@ -216,7 +217,7 @@ const DialogHeader: React.FC<DialogHeaderProps> = ({
   const closeIconSize = size === 'sm' ? 16 : size === 'md' ? 20 : 24;
 
   return (
-    <div className={cn("flex items-start gap-component-gap-content-md w-full", className)} {...props}>
+    <div className={cn("flex items-start gap-component-gap-content-md w-full", pxClass, className)} {...props}>
       {icon && <div className="flex-shrink-0">{icon}</div>}
       <div className="flex flex-col flex-1 min-w-0">
         <h2 id="dialog-title" className={titleClassName}>
@@ -257,8 +258,11 @@ export interface DialogBodyProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 const DialogBody: React.FC<DialogBodyProps> = ({ children, className, ...props }) => {
+  const { mode } = useDialogContext();
+  const pxClass = mode === 'compact' ? 'px-component-inset-dialog-x-compact' : 'px-component-inset-dialog-x';
+
   return (
-    <div className={cn("flex-1 w-full overflow-y-auto text-body-md-medium text-text-primary", className)} {...props}>
+    <div className={cn("flex-1 w-full overflow-y-auto [scrollbar-gutter:stable] text-body-md-medium text-text-primary", pxClass, className)} {...props}>
       {children}
     </div>
   );
@@ -268,16 +272,24 @@ DialogBody.displayName = 'Dialog.Body';
 /**
  * Dialog.Footer - 다이얼로그 푸터 영역 (버튼 그룹 등)
  *
+ * 기본적으로 `justify-end`로 오른쪽 정렬됩니다.
+ * 좌우 분리 배치가 필요하면 `className="justify-between"`으로 오버라이드하세요.
+ *
  * @example
  * ```tsx
+ * // 기본: 오른쪽 정렬
  * <Dialog.Footer>
- *   <Dialog.FooterLeft>
- *     <Checkbox label="다시 보지 않기" />
- *   </Dialog.FooterLeft>
- *   <Dialog.FooterRight>
+ *   <Button variant="outline">취소</Button>
+ *   <Button variant="primary">확인</Button>
+ * </Dialog.Footer>
+ *
+ * // 좌우 분리 배치
+ * <Dialog.Footer className="justify-between">
+ *   <Option label="다시 보지 않기"><Checkbox /></Option>
+ *   <div className="flex gap-component-gap-control-group">
  *     <Button variant="outline">취소</Button>
  *     <Button variant="primary">확인</Button>
- *   </Dialog.FooterRight>
+ *   </div>
  * </Dialog.Footer>
  * ```
  */
@@ -286,62 +298,16 @@ export interface DialogFooterProps extends React.HTMLAttributes<HTMLDivElement> 
 }
 
 const DialogFooter: React.FC<DialogFooterProps> = ({ children, className, ...props }) => {
+  const { mode } = useDialogContext();
+  const pxClass = mode === 'compact' ? 'px-component-inset-dialog-x-compact' : 'px-component-inset-dialog-x';
+
   return (
-    <div className={cn("flex gap-component-gap-control-group w-full text-text-primary", className)} {...props}>
+    <div className={cn("flex items-center justify-end gap-component-gap-control-group w-full text-text-primary", pxClass, className)} {...props}>
       {children}
     </div>
   );
 };
 DialogFooter.displayName = 'Dialog.Footer';
-
-/**
- * Dialog.FooterLeft - 푸터 왼쪽 영역 (체크박스, 추가 액션 등)
- *
- * @example
- * ```tsx
- * <Dialog.FooterLeft>
- *   <Option label="동의합니다">
- *     <Checkbox />
- *   </Option>
- * </Dialog.FooterLeft>
- * ```
- */
-export interface DialogFooterLeftProps extends React.HTMLAttributes<HTMLDivElement> {
-  children: React.ReactNode;
-}
-
-const DialogFooterLeft: React.FC<DialogFooterLeftProps> = ({ children, className, ...props }) => {
-  return (
-    <div className={cn("flex gap-component-gap-control-group items-center text-text-primary", className)} {...props}>
-      {children}
-    </div>
-  );
-};
-DialogFooterLeft.displayName = 'Dialog.FooterLeft';
-
-/**
- * Dialog.FooterRight - 푸터 오른쪽 영역 (주요 버튼 그룹)
- *
- * @example
- * ```tsx
- * <Dialog.FooterRight>
- *   <Button variant="outline" onClick={onCancel}>취소</Button>
- *   <Button variant="primary" onClick={onConfirm}>확인</Button>
- * </Dialog.FooterRight>
- * ```
- */
-export interface DialogFooterRightProps extends React.HTMLAttributes<HTMLDivElement> {
-  children: React.ReactNode;
-}
-
-const DialogFooterRight: React.FC<DialogFooterRightProps> = ({ children, className, ...props }) => {
-  return (
-    <div className={cn("flex gap-component-gap-control-group ml-auto text-text-primary", className)} {...props}>
-      {children}
-    </div>
-  );
-};
-DialogFooterRight.displayName = 'Dialog.FooterRight';
 
 // ========================================
 // Export with Compound Components
@@ -351,15 +317,11 @@ type DialogComponent = typeof DialogRoot & {
   Header: typeof DialogHeader;
   Body: typeof DialogBody;
   Footer: typeof DialogFooter;
-  FooterLeft: typeof DialogFooterLeft;
-  FooterRight: typeof DialogFooterRight;
 };
 
 const Dialog = DialogRoot as DialogComponent;
 Dialog.Header = DialogHeader;
 Dialog.Body = DialogBody;
 Dialog.Footer = DialogFooter;
-Dialog.FooterLeft = DialogFooterLeft;
-Dialog.FooterRight = DialogFooterRight;
 
 export { Dialog, dialogVariants };

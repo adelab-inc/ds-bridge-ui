@@ -56,32 +56,34 @@ export const ModalStackProvider: React.FC<ModalStackProviderProps> = ({
   baseZIndex = BASE_Z_INDEX,
 }) => {
   const [stack, setStack] = React.useState<ModalStackItem[]>([]);
+  const stackRef = React.useRef<ModalStackItem[]>([]);
 
   const register = React.useCallback((id: string): number => {
-    let zIndex = baseZIndex;
+    const prev = stackRef.current;
 
-    setStack((prev) => {
-      // 이미 등록된 경우 기존 z-index 반환
-      const existing = prev.find((item) => item.id === id);
-      if (existing) {
-        zIndex = existing.zIndex;
-        return prev;
-      }
+    // 이미 등록된 경우 기존 z-index 반환
+    const existing = prev.find((item) => item.id === id);
+    if (existing) {
+      return existing.zIndex;
+    }
 
-      // 새 z-index 계산: 기존 스택의 최대값 + INCREMENT
-      const maxZIndex = prev.length > 0
-        ? Math.max(...prev.map((item) => item.zIndex))
-        : baseZIndex - Z_INDEX_INCREMENT;
-      zIndex = maxZIndex + Z_INDEX_INCREMENT;
+    // 새 z-index 계산: 기존 스택의 최대값 + INCREMENT
+    const maxZIndex = prev.length > 0
+      ? Math.max(...prev.map((item) => item.zIndex))
+      : baseZIndex - Z_INDEX_INCREMENT;
+    const zIndex = maxZIndex + Z_INDEX_INCREMENT;
 
-      return [...prev, { id, zIndex }];
-    });
+    const newStack = [...prev, { id, zIndex }];
+    stackRef.current = newStack;
+    setStack(newStack);
 
     return zIndex;
   }, [baseZIndex]);
 
   const unregister = React.useCallback((id: string) => {
-    setStack((prev) => prev.filter((item) => item.id !== id));
+    const newStack = stackRef.current.filter((item) => item.id !== id);
+    stackRef.current = newStack;
+    setStack(newStack);
   }, []);
 
   const isTopModal = React.useCallback((id: string): boolean => {

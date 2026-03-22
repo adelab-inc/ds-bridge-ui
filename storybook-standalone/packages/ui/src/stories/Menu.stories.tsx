@@ -1,159 +1,63 @@
 import * as React from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
-import { within, userEvent } from '@storybook/test';
-import { Menu, MenuItem } from '../components/Menu';
+import { Menu, type MenuItem } from '../components/Menu';
 import { Icon } from '../components/Icon';
 import { Button } from '../components/Button';
-import { Badge } from '../components/Badge';
 
-const sampleMenuData: MenuItem[] = [
-  {
-    id: '1',
-    label: '새 파일',
-    leftIcon: <Icon name="plus" />,
-    onClick: () => console.log('새 파일 클릭'),
-  },
-  {
-    id: '2',
-    label: '파일 열기',
-    leftIcon: <Icon name="post" />,
-    onClick: () => console.log('파일 열기 클릭'),
-  },
-  { id: 'divider-1' },
-  {
-    id: '3',
-    label: '저장',
-    leftIcon: <Icon name="list-alt" />,
-    badge: <Icon name="alert-success" size={18} />,
-    onClick: () => console.log('저장 클릭'),
-  },
-  {
-    id: '4',
-    label: '다른 이름으로 저장',
-    onClick: () => console.log('다른 이름으로 저장 클릭'),
-  },
-  { id: 'divider-2' },
-  {
-    id: '5',
-    label: '삭제',
-    leftIcon: <Icon name="close" />,
-    destructive: true,
-    onClick: () => console.log('삭제 클릭'),
-  },
-];
+/* ─── Menu 메인 스토리 ─── */
 
 const hierarchicalMenuData: MenuItem[] = [
   {
+    type: 'submenu',
     id: '1',
     label: '파일',
-    leftIcon: <Icon name="post" />,
     children: [
       {
+        type: 'submenu',
         id: '1-1',
         label: '새로 만들기',
-        leftIcon: <Icon name="plus" />,
         children: [
-          { id: '1-1-1', label: '텍스트 파일' },
-          { id: '1-1-2', label: 'HTML 파일' },
-          { id: '1-1-3', label: 'JavaScript 파일' },
+          { type: 'text-only', id: '1-1-1', label: '텍스트 파일' },
+          { type: 'text-only', id: '1-1-2', label: 'HTML 파일' },
+          { type: 'text-only', id: '1-1-3', label: 'JavaScript 파일' },
         ],
       },
+      { type: 'link', id: '1-2', label: '열기' },
+      { type: 'divider' },
       {
-        id: '1-2',
-        label: '열기',
-        leftIcon: <Icon name="external-link" />,
-      },
-      { id: 'divider-1' },
-      {
+        type: 'submenu',
         id: '1-3',
         label: '최근 파일',
         children: [
-          { id: '1-3-1', label: 'document.txt' },
-          { id: '1-3-2', label: 'index.html' },
-          { id: '1-3-3', label: 'app.js' },
+          { type: 'text-only', id: '1-3-1', label: 'document.txt' },
+          { type: 'text-only', id: '1-3-2', label: 'index.html' },
+          { type: 'text-only', id: '1-3-3', label: 'app.js' },
         ],
       },
     ],
   },
   {
+    type: 'submenu',
     id: '2',
     label: '편집',
-    leftIcon: <Icon name="list-alt" />,
     children: [
-      { id: '2-1', label: '실행 취소' },
-      { id: '2-2', label: '다시 실행' },
-      { id: 'divider-2' },
-      { id: '2-3', label: '잘라내기' },
-      { id: '2-4', label: '복사' },
-      { id: '2-5', label: '붙여넣기' },
+      { type: 'text-only', id: '2-1', label: '실행 취소' },
+      { type: 'text-only', id: '2-2', label: '다시 실행' },
+      { type: 'divider' },
+      { type: 'text-only', id: '2-3', label: '잘라내기' },
+      { type: 'text-only', id: '2-4', label: '복사' },
+      { type: 'text-only', id: '2-5', label: '붙여넣기' },
     ],
   },
   {
+    type: 'submenu',
     id: '3',
     label: '보기',
-    leftIcon: <Icon name="widgets" />,
     children: [
-      { id: '3-1', label: '전체 화면', badge: <Icon name="alert-success" size={18} /> },
-      { id: '3-2', label: '축소' },
-      { id: '3-3', label: '확대' },
+      { type: 'text-only', id: '3-1', label: '전체 화면' },
+      { type: 'text-only', id: '3-2', label: '축소' },
+      { type: 'text-only', id: '3-3', label: '확대' },
     ],
-  },
-];
-
-const groupedMenuData: MenuItem[] = [
-  {
-    id: 'heading-1',
-    heading: '파일 작업',
-  },
-  {
-    id: '1',
-    label: '새 파일',
-    leftIcon: <Icon name="plus" />,
-  },
-  {
-    id: '2',
-    label: '파일 열기',
-    leftIcon: <Icon name="post" />,
-  },
-  { id: 'divider-1' },
-  {
-    id: 'heading-2',
-    heading: '편집 작업',
-  },
-  {
-    id: '3',
-    label: '잘라내기',
-  },
-  {
-    id: '4',
-    label: '복사',
-  },
-  {
-    id: '5',
-    label: '붙여넣기',
-  },
-];
-
-const titleDescriptionMenuData: MenuItem[] = [
-  {
-    id: '1',
-    title: '프로필 편집',
-    description: '프로필 정보 및 설정을 변경합니다',
-    leftIcon: <Icon name="person" />,
-  },
-  {
-    id: '2',
-    title: '알림 설정',
-    description: '알림 수신 방법을 선택합니다',
-    leftIcon: <Icon name="alert-info" />,
-  },
-  { id: 'divider-1' },
-  {
-    id: '3',
-    title: '계정 삭제',
-    description: '계정을 영구적으로 삭제합니다',
-    leftIcon: <Icon name="close" />,
-    destructive: true,
   },
 ];
 
@@ -164,484 +68,324 @@ const meta: Meta<typeof Menu> = {
   argTypes: {
     size: {
       control: { type: 'select' },
-      options: ['sm', 'md'],
-      description: 'Menu size variant',
+      options: ['md', 'sm'],
     },
-    items: {
-      control: { type: 'select' },
-      options: ['basic', 'hierarchical', 'withHeadings', 'titleDescription', 'withSelected', 'withDisabled'],
-      mapping: {
-        basic: sampleMenuData,
-        hierarchical: hierarchicalMenuData,
-        withHeadings: groupedMenuData,
-        titleDescription: titleDescriptionMenuData,
-        withSelected: [
-          { id: '1', label: '작은 아이콘' },
-          { id: '2', label: '중간 아이콘', selected: true, rightIcon: <Icon name="menu-selection" size={16} /> },
-          { id: '3', label: '큰 아이콘' },
-          { id: 'divider-1' },
-          { id: '4', label: '목록' },
-          { id: '5', label: '격자' },
-        ],
-        withDisabled: [
-          { id: '1', label: '활성화됨', leftIcon: <Icon name="alert-success" /> },
-          { id: '2', label: '비활성화됨', leftIcon: <Icon name="close" />, disabled: true },
-          { id: '3', label: '활성화됨', leftIcon: <Icon name="alert-success" /> },
-          { id: 'divider-1' },
-          { id: '4', label: '삭제 (비활성)', destructive: true, disabled: true },
-        ],
+  },
+  parameters: {
+    docs: {
+      description: {
+        component: [
+          '## Figma ↔ Code 인터페이스 매핑',
+          '',
+          '### Menu 컨테이너',
+          '',
+          '| Figma Property | Code Prop | 차이점 및 이유 |',
+          '|---|---|---|',
+          '| `Size` | `size` | 동일. `md` (기본) / `sm` |',
+          '| *(없음)* | `emptyText` | Figma에 없는 코드 전용. 아이템이 없을 때 표시할 텍스트 |',
+          '| *(없음)* | `position` | Figma에 없는 코드 전용. 메뉴 표시 위치 (x, y) |',
+          '| *(없음)* | `onItemClick` | 아이템 클릭 콜백. `(item: MenuItemBase) => void` |',
+          '| *(없음)* | `onClose` | 메뉴 닫힘 콜백 |',
+          '',
+          '### Compound Component (권장 사용 방식)',
+          '',
+          '| 컴포넌트 | 용도 | 비고 |',
+          '|---|---|---|',
+          '| `Menu.Root` | 상태 관리 + Context Provider | `boundary` prop으로 메뉴 위치 제약 가능 |',
+          '| `Menu.Trigger` | 클릭 시 메뉴 토글 | children에 ref + onClick 자동 주입 |',
+          '| `Menu.ContextArea` | 우클릭 시 메뉴 표시 | `followMouse` prop으로 마우스 추적 지원 |',
+          '| `Menu.Content` | 메뉴 본체 (= Menu) | Flat API `<Menu items={...} />` 와 동일 |',
+          '',
+          '### MenuItem type (Figma Type 1:1 매핑)',
+          '',
+          'MenuItem의 `type` 필드가 Figma의 "Type" 속성과 1:1 매핑됩니다.',
+          '각 type은 필요한 content props만 허용하고, 불필요한 props는 타입 레벨에서 차단합니다.',
+          '',
+          '| Figma Type | Code `type` | 필수 props | Size 제약 |',
+          '|---|---|---|---|',
+          '| Text Only | `text-only` | — | sm/md |',
+          '| Icon Label | `icon-label` | `leadingIcon` | sm/md |',
+          '| Shortcut | `shortcut` | `shortcutText` | sm/md |',
+          '| Destructive | `destructive` | — | sm/md |',
+          '| Submenu | `submenu` | `children` | sm/md |',
+          '| Link | `link` | — | sm/md |',
+          '| Checkbox | `checkbox` | — | sm/md |',
+          '| Toggle | `toggle` | — | sm/md |',
+          '| Selection | `selection` | — | sm/md |',
+          '| Empty State | `empty-state` | — | sm/md |',
+          '| Badge | `badge` | `badgeContent` | **md only** |',
+          '| Profile | `profile` | `avatarContent`, `description` | **md only** |',
+          '| Description | `description` | `description` | **md only** |',
+          '| Icon Label Badge | `icon-label-badge` | `leadingIcon`, `badgeContent` | **md only** |',
+          '| Checkbox Label Badge | `checkbox-label-badge` | `badgeContent` | **md only** |',
+          '| Label Icon Badge | `label-icon-badge` | `closeTrailingIcon`, `badgeContent` | **md only** |',
+          '| *(구분선)* | `divider` | — | sm/md |',
+          '| *(섹션 제목)* | `heading` | `heading` | sm/md |',
+          '',
+          '### MenuItem 공통 props',
+          '',
+          '| Figma Property | Code Prop | 비고 |',
+          '|---|---|---|',
+          '| `menu` | `label` | Figma 레이어명은 `menu`이나, React 표준에 맞춰 `label`로 명명 |',
+          '| `Disabled` | `disabled` | 비활성 상태 |',
+          '| `Danger` | `danger` | destructive type에서 자동 적용, 수동 지정도 가능 |',
+          '| `Selected` | `selected` | checkbox, toggle, selection에서 선택 상태 표시 |',
+          '| `Dot Badge` | `dotBadge` | label 우측 상단에 dot badge 표시. 모든 type과 조합 가능 |',
+          '',
+          '> 개별 타입별 프리셋 스토리는 **Menu/MenuItem/Preset** 에서 확인하세요.',
+          '',
+          '---',
+          '',
+          '## API 사용 예시',
+          '',
+          '### 1. 버튼 클릭으로 메뉴 열기 (Compound Component)',
+          '',
+          '```tsx',
+          'import { Menu, type MenuItem } from \'@aplus/ui\';',
+          '',
+          'const items: MenuItem[] = [',
+          '  { type: \'icon-label\', id: \'1\', label: \'새 파일\', leadingIcon: <Icon name="add" /> },',
+          '  { type: \'icon-label\', id: \'2\', label: \'파일 열기\', leadingIcon: <Icon name="post" /> },',
+          '  { type: \'divider\' },',
+          '  { type: \'destructive\', id: \'3\', label: \'삭제\' },',
+          '];',
+          '',
+          '<Menu.Root>',
+          '  <Menu.Trigger>',
+          '    <Button label="메뉴 열기" />',
+          '  </Menu.Trigger>',
+          '  <Menu.Content items={items} onItemClick={(item) => console.log(item.id)} />',
+          '</Menu.Root>',
+          '```',
+          '',
+          '### 2. 우클릭 컨텍스트 메뉴',
+          '',
+          '```tsx',
+          '<Menu.Root>',
+          '  <Menu.ContextArea className="w-full h-full">',
+          '    <div>이 영역에서 우클릭</div>',
+          '  </Menu.ContextArea>',
+          '  <Menu.Content items={items} />',
+          '</Menu.Root>',
+          '```',
+          '',
+          '### 3. 마우스 추적 컨텍스트 메뉴',
+          '',
+          '```tsx',
+          'const followMouseOffset = { x: 12, y: 12 };',
+          '',
+          '<Menu.Root>',
+          '  <Menu.ContextArea followMouse offset={followMouseOffset}>',
+          '    <div>우클릭 후 마우스를 움직여보세요</div>',
+          '  </Menu.ContextArea>',
+          '  <Menu.Content items={items} />',
+          '</Menu.Root>',
+          '```',
+          '',
+          '### 4. 컨테이너 경계 제약',
+          '',
+          '```tsx',
+          'const containerRef = useRef<HTMLDivElement>(null);',
+          '',
+          '<div ref={containerRef} className="w-[600px]">',
+          '  <Menu.Root boundary={containerRef}>',
+          '    <Menu.Trigger>',
+          '      <Button label="메뉴 열기" />',
+          '    </Menu.Trigger>',
+          '    <Menu.Content items={items} />',
+          '  </Menu.Root>',
+          '</div>',
+          '```',
+          '',
+          '### 5. MenuItem type별 데이터 작성',
+          '',
+          '```tsx',
+          'const items: MenuItem[] = [',
+          '  // 기본 텍스트',
+          '  { type: \'text-only\', id: \'1\', label: \'기본 메뉴\' },',
+          '',
+          '  // 아이콘 + 레이블',
+          '  { type: \'icon-label\', id: \'2\', label: \'새 파일\', leadingIcon: <Icon name="add" /> },',
+          '',
+          '  // 단축키',
+          '  { type: \'shortcut\', id: \'3\', label: \'복사\', shortcutText: \'Ctrl+C\' },',
+          '',
+          '  // 서브메뉴',
+          '  { type: \'submenu\', id: \'4\', label: \'최근 파일\', children: [',
+          '    { type: \'text-only\', id: \'4-1\', label: \'document.txt\' },',
+          '  ]},',
+          '',
+          '  // 외부 링크',
+          '  { type: \'link\', id: \'5\', label: \'도움말\' },',
+          '',
+          '  // 체크박스 (다중 선택)',
+          '  { type: \'checkbox\', id: \'6\', label: \'옵션 A\', selected: true },',
+          '',
+          '  // 토글 (체크 표시)',
+          '  { type: \'toggle\', id: \'7\', label: \'자동 저장\', selected: true },',
+          '',
+          '  // 단일 선택',
+          '  { type: \'selection\', id: \'8\', label: \'항목 선택\', selected: true },',
+          '',
+          '  // 위험 동작',
+          '  { type: \'destructive\', id: \'9\', label: \'삭제\' },',
+          '',
+          '  // 배지 (md only)',
+          '  { type: \'badge\', id: \'10\', label: \'알림\', badgeContent: <Badge>3</Badge> },',
+          '',
+          '  // 프로필 (md only)',
+          '  { type: \'profile\', id: \'11\', label: \'홍길동\',',
+          '    avatarContent: <Avatar />, description: \'hong@email.com\' },',
+          '',
+          '  // 부가설명 (md only)',
+          '  { type: \'description\', id: \'12\', label: \'환경설정\',',
+          '    description: \'앱 동작을 변경합니다\' },',
+          '',
+          '  // 구분선 & 섹션 제목',
+          '  { type: \'divider\' },',
+          '  { type: \'heading\', heading: \'섹션 이름\' },',
+          '',
+          '  // 공통 옵션 조합',
+          '  { type: \'text-only\', id: \'13\', label: \'비활성\', disabled: true },',
+          '  { type: \'text-only\', id: \'14\', label: \'알림 있음\', dotBadge: true },',
+          '  { type: \'text-only\', id: \'15\', label: \'위험 텍스트\', danger: true },',
+          '];',
+          '```',
+          '',
+          '### 6. Flat API (Compound 없이 직접 사용)',
+          '',
+          '```tsx',
+          '// 위치를 직접 지정하여 메뉴 렌더링',
+          '<Menu',
+          '  items={items}',
+          '  size="md"',
+          '  onItemClick={(item) => console.log(item.id)}',
+          '  onClose={() => setOpen(false)}',
+          '/>',
+          '```',
+        ].join('\n'),
       },
-      description: 'Menu items data (select preset)',
     },
-    title: { table: { disable: true } },
-    description: { table: { disable: true } },
-    position: { table: { disable: true } },
-    triggerRef: { table: { disable: true } },
-    emptyText: { table: { disable: true } },
-    checkedIds: { table: { disable: true } },
-    onCheckChange: { table: { disable: true } },
-    mode: { table: { disable: true } },
-    onItemClick: { action: 'item clicked', table: { disable: true } },
-    onClose: { action: 'menu closed', table: { disable: true } },
-    checkboxMode: { table: { disable: true } },
   },
 };
 
 export default meta;
 type Story = StoryObj<typeof Menu>;
 
-export const Default: Story = {
-  args: {
-    size: 'md',
-    items: hierarchicalMenuData,
+const sampleMenuData: MenuItem[] = [
+  {
+    type: 'icon-label',
+    id: '1',
+    label: '새 파일',
+    leadingIcon: <Icon name="add" size={20} />,
   },
-  render: (args) => (
-    <div className="flex h-[400px] items-start justify-center pt-8">
-      <Menu {...args} className="w-[240px]" />
-    </div>
-  ),
-};
+  {
+    type: 'icon-label',
+    id: '2',
+    label: '파일 열기',
+    leadingIcon: <Icon name="post" size={20} />,
+  },
+  { type: 'divider' },
+  {
+    type: 'icon-label',
+    id: '3',
+    label: '저장',
+    leadingIcon: <Icon name="post" size={20} />,
+  },
+  {
+    type: 'text-only',
+    id: '4',
+    label: '다른 이름으로 저장',
+  },
+  { type: 'divider' },
+  {
+    type: 'destructive',
+    id: '5',
+    label: '삭제',
+  },
+];
 
-export const WithSelected: Story = {
-  args: {
-    size: 'md',
-    items: [
-      { id: '1', label: '작은 아이콘', leftIcon: <Icon name="widgets" /> },
-      { id: '2', label: '중간 아이콘', leftIcon: <Icon name="widgets" />, selected: true },
-      { id: '3', label: '큰 아이콘', leftIcon: <Icon name="widgets" /> },
-      { id: 'divider-1' },
-      { id: '4', label: '목록' },
-      { id: '5', label: '격자' },
-    ],
+const wideMenuData: MenuItem[] = [
+  {
+    type: 'icon-label',
+    id: '1',
+    label: '매우 긴 메뉴 아이템 이름이 있는 첫 번째 항목',
+    leadingIcon: <Icon name="add" size={20} />,
   },
-  render: (args) => (
-    <div className="flex h-[400px] items-start justify-center pt-8">
-      <Menu {...args} className="w-[240px]" />
-    </div>
-  ),
-};
-
-export const WithHeadings: Story = {
-  args: {
-    size: 'md',
-    items: groupedMenuData,
+  {
+    type: 'icon-label',
+    id: '2',
+    label: '또 다른 긴 메뉴 아이템 설명이 포함된 두 번째 항목',
+    leadingIcon: <Icon name="post" size={20} />,
   },
-  render: (args) => (
-    <div className="flex h-[400px] items-start justify-center pt-8">
-      <Menu {...args} className="w-[240px]" />
-    </div>
-  ),
-};
-
-export const WithDisabled: Story = {
-  args: {
-    size: 'md',
-    items: [
-      { id: '1', label: '활성화됨', leftIcon: <Icon name="alert-success" /> },
-      { id: '2', label: '비활성화됨', leftIcon: <Icon name="close" />, disabled: true },
-      { id: '3', label: '활성화됨', leftIcon: <Icon name="alert-success" /> },
-      { id: 'divider-1' },
-      { id: '4', label: '삭제 (비활성)', destructive: true, disabled: true },
-    ],
+  {
+    type: 'icon-label',
+    id: '3',
+    label: '매우매우 긴 텍스트를 가진 세 번째 메뉴 항목',
+    leadingIcon: <Icon name="post" size={20} />,
   },
-  render: (args) => (
-    <div className="flex h-[400px] items-start justify-center pt-8">
-      <Menu {...args} className="w-[240px]" />
-    </div>
-  ),
-};
-
-export const LabelOnly: Story = {
-  args: {
-    size: 'md',
-    items: [
-      { id: '1', label: '새 프로젝트 만들기' },
-      { id: '2', label: '기존 프로젝트 열기' },
-      { id: '3', label: '최근 프로젝트' },
-      { id: 'divider-1' },
-      { id: '4', label: '프로젝트 저장' },
-      { id: '5', label: '다른 이름으로 저장' },
-      { id: '6', label: '모두 저장' },
-      { id: 'divider-2' },
-      { id: '7', label: '가져오기' },
-      { id: '8', label: '내보내기' },
-      { id: '9', label: '공유하기' },
-      { id: 'divider-3' },
-      { id: '10', label: '인쇄' },
-      { id: '11', label: '인쇄 미리보기' },
-      { id: 'divider-4' },
-      { id: '12', label: '페이지 설정' },
-      { id: '13', label: '문서 속성' },
-      { id: '14', label: '버전 기록' },
-      { id: 'divider-5' },
-      { id: '15', label: '설정' },
-      { id: '16', label: '환경 설정' },
-      { id: '17', label: '키보드 단축키' },
-      { id: 'divider-6' },
-      { id: '18', label: '템플릿 관리' },
-      { id: '19', label: '플러그인 관리' },
-      { id: '20', label: '확장 프로그램' },
-      { id: 'divider-7' },
-      { id: '21', label: '도움말' },
-      { id: '22', label: '튜토리얼' },
-      { id: '23', label: '문서' },
-      { id: '24', label: '커뮤니티' },
-      { id: 'divider-8' },
-      { id: '25', label: '피드백 보내기' },
-      { id: '26', label: '버그 신고' },
-      { id: '27', label: '기능 제안' },
-      { id: 'divider-9' },
-      { id: '28', label: '라이선스 정보' },
-      { id: '29', label: '업데이트 확인' },
-      { id: '30', label: '정보' },
-      { id: 'divider-10' },
-      { id: '31', label: '종료', destructive: true },
-    ],
-  },
-  render: (args) => (
-    <div className="flex h-[600px] items-start justify-center pt-8">
-      <Menu {...args} className="w-[240px]" />
-    </div>
-  ),
-};
-
-/**
- * leftIcon + maintext + subtext 패턴의 다양한 예시
- * 다양한 사용 사례를 보여주는 실용적인 예시입니다.
- */
-export const IconWithTitleDescription: Story = {
-  args: {
-    size: 'md',
-    items: [
-      {
-        id: '1',
-        title: '새 문서 작성',
-        description: '빈 문서를 생성하여 작업을 시작합니다',
-        leftIcon: <Icon name="plus" />,
-        badge: <Badge type="dot" position="top-right" />,
-        badgeDot: true,
-      },
-      {
-        id: '2',
-        title: '템플릿에서 생성',
-        description: '미리 정의된 템플릿을 사용하여 문서를 만듭니다. 다양한 형식의 템플릿이 제공되며, 프로젝트 유형에 맞는 템플릿을 선택할 수 있습니다.',
-        leftIcon: <Icon name="post" />,
-      },
-      {
-        id: '3',
-        title: '최근 문서 열기',
-        description: '최근에 작업한 문서 목록을 확인하고 빠르게 접근할 수 있습니다. 최근 30일간 수정된 파일들이 시간순으로 정렬되어 표시됩니다.',
-        leftIcon: <Icon name="list-alt" />,
-        badge: <Badge type="dot" position="top-right" />,
-        badgeDot: true,
-      },
-      { id: 'divider-1' },
-      {
-        id: '4',
-        title: '클라우드에서 가져오기',
-        description: '클라우드 저장소에서 문서를 불러옵니다',
-        leftIcon: <Icon name="external-link" />,
-      },
-      {
-        id: '5',
-        title: '공유 문서 보기',
-        description: '다른 사용자가 공유한 문서를 확인합니다',
-        leftIcon: <Icon name="person" />,
-        badge: <Icon name="alert-info" size={18} />,
-      },
-      { id: 'divider-2' },
-      {
-        id: '6',
-        title: '모두 닫기',
-        description: '현재 열려있는 모든 문서를 닫습니다',
-        leftIcon: <Icon name="close" />,
-        destructive: true,
-      },
-    ],
-  },
-  render: (args) => (
-    <div className="flex h-[600px] items-start justify-center pt-8">
-      <Menu {...args} className="w-[240px]" />
-    </div>
-  ),
-};
-
-export const WithBadge: Story = {
-  args: {
-    size: 'md',
-    items: [
-      {
-        id: '1',
-        label: '알림',
-        leftIcon: <Icon name="alert-info" />,
-        badge: <span className="flex items-center justify-center w-[18px] h-[18px] rounded-full bg-alert-error-bg text-alert-error-text text-caption-xs-bold">3</span>,
-      },
-      {
-        id: '2',
-        label: '메시지',
-        leftIcon: <Icon name="post" />,
-        badge: <span className="flex items-center justify-center w-[18px] h-[18px] rounded-full bg-alert-warning-bg text-alert-warning-text text-caption-xs-bold">12</span>,
-      },
-      { id: 'divider-1' },
-      {
-        id: '3',
-        label: '저장 완료',
-        leftIcon: <Icon name="list-alt" />,
-        badge: <Icon name="alert-success" size={18} />,
-      },
-      {
-        id: '4',
-        label: '동기화 중',
-        leftIcon: <Icon name="external-link" />,
-        badge: <Icon name="alert-info" size={18} />,
-      },
-      {
-        id: '5',
-        label: '오류 발생',
-        leftIcon: <Icon name="close" />,
-        badge: <Icon name="alert-error" size={18} />,
-        destructive: true,
-      },
-      { id: 'divider-2' },
-      {
-        id: '6',
-        label: '새 기능',
-        leftIcon: <Icon name="plus" />,
-        badge: <span className="px-1 py-0.5 rounded text-caption-xs-bold bg-bg-accent text-text-inverse">NEW</span>,
-      },
-      {
-        id: '7',
-        label: '베타 기능',
-        leftIcon: <Icon name="widgets" />,
-        badge: <span className="px-1 py-0.5 rounded text-caption-xs-bold bg-bg-selection text-text-accent">BETA</span>,
-      },
-    ],
-  },
-  render: (args) => (
-    <div className="flex h-[600px] items-start justify-center pt-8">
-      <Menu {...args} className="w-[240px]" />
-    </div>
-  ),
-};
-
-/**
- * Badge Dot Type
- *
- * badgeDot prop과 Badge의 position="top-right"를 함께 사용하여
- * dot을 텍스트 우측상단에 배치합니다. 알림 표시 등에 적합합니다.
- */
-export const WithBadgeDot: Story = {
-  args: {
-    size: 'md',
-    items: [
-      {
-        id: '1',
-        label: '알림',
-        leftIcon: <Icon name="alert-info" />,
-        badge: <Badge type="dot" position="top-right" />,
-        badgeDot: true,
-      },
-      {
-        id: '2',
-        label: '메시지',
-        leftIcon: <Icon name="post" />,
-        badge: <Badge type="dot" position="top-right" />,
-        badgeDot: true,
-      },
-      { id: 'divider-1' },
-      {
-        id: '3',
-        label: '설정',
-        leftIcon: <Icon name="widgets" />,
-      },
-      {
-        id: '4',
-        label: '프로필',
-        leftIcon: <Icon name="person" />,
-        badge: <Badge type="dot" position="top-right" />,
-        badgeDot: true,
-      },
-    ],
-  },
-  render: (args) => (
-    <div className="flex h-[400px] items-start justify-center pt-8">
-      <Menu {...args} className="w-[240px]" />
-    </div>
-  ),
-};
-
-export const TitleDescription: Story = {
-  argTypes: {
-    title: {
-      control: { type: 'text' },
-      description: 'Menu container title',
-    },
-    description: {
-      control: { type: 'text' },
-      description: 'Menu container description',
-    },
-  },
-  args: {
-    size: 'md',
-    title: '문서 작업',
-    description: '문서 관련 작업을 선택하세요',
-    items: sampleMenuData,
-  },
-  render: (args) => (
-    <div className="flex h-[600px] items-start justify-center pt-8">
-      <Menu {...args} className="w-[240px]" />
-    </div>
-  ),
-};
+];
 
 export const WithToggleButton: Story = {
   args: {
     size: 'md',
-    items: hierarchicalMenuData,
   },
-  render: (args) => {
-    const [isOpen, setIsOpen] = React.useState(false);
-    const buttonRef = React.useRef<HTMLButtonElement>(null);
-    const [menuPosition, setMenuPosition] = React.useState<{ x: number; y: number } | undefined>();
-
-    const handleToggle = () => {
-      if (!isOpen && buttonRef.current) {
-        const rect = buttonRef.current.getBoundingClientRect();
-        setMenuPosition({
-          x: rect.left,
-          y: rect.bottom + 4,
-        });
-      }
-      setIsOpen(!isOpen);
-    };
-
-    return (
-      <div className="flex h-[600px] items-start justify-center pt-8">
-        <Button ref={buttonRef} onClick={handleToggle}>
-          메뉴 {isOpen ? '닫기' : '열기'}
-        </Button>
-        {isOpen && (
-          <Menu
-            {...args}
-            position={menuPosition}
-            triggerRef={buttonRef}
-            onClose={() => setIsOpen(false)}
-          />
-        )}
-      </div>
-    );
-  },
+  render: (args) => (
+    <div className="flex h-[600px] items-start justify-center pt-8">
+      <Menu.Root>
+        <Menu.Trigger>
+          <Button label="메뉴 열기" showStartIcon={false} showEndIcon={false} />
+        </Menu.Trigger>
+        <Menu.Content {...args} items={hierarchicalMenuData} />
+      </Menu.Root>
+    </div>
+  ),
 };
 
-const wideMenuData: MenuItem[] = [
-  {
-    id: '1',
-    label: '매우 긴 메뉴 아이템 이름이 있는 첫 번째 항목',
-    leftIcon: <Icon name="plus" />,
+export const ContextMenu: Story = {
+  args: {
+    size: 'md',
   },
-  {
-    id: '2',
-    label: '또 다른 긴 메뉴 아이템 설명이 포함된 두 번째 항목',
-    leftIcon: <Icon name="post" />,
+  render: (args) => (
+    <div className="flex h-[400px] items-center justify-center">
+      <Menu.Root>
+        <Menu.ContextArea className="w-[400px] h-[300px] border-2 border-dashed border-gray-300 flex items-center justify-center rounded-lg bg-gray-50">
+          <span className="text-sm text-gray-500">이 영역에서 우클릭하세요</span>
+        </Menu.ContextArea>
+        <Menu.Content {...args} items={sampleMenuData} />
+      </Menu.Root>
+    </div>
+  ),
+};
+
+const followMouseOffset = { x: 12, y: 12 };
+
+export const FollowMouseContextMenu: Story = {
+  args: {
+    size: 'md',
   },
-  {
-    id: '3',
-    label: '매우매우 긴 텍스트를 가진 세 번째 메뉴 항목',
-    leftIcon: <Icon name="list-alt" />,
-  },
-];
+  render: (args) => (
+    <div className="flex h-[400px] items-center justify-center">
+      <Menu.Root>
+        <Menu.ContextArea
+          followMouse
+          offset={followMouseOffset}
+          className="w-[400px] h-[300px] border-2 border-dashed border-blue-400 flex items-center justify-center rounded-lg bg-blue-50"
+        >
+          <span className="text-sm text-blue-500">우클릭 후 마우스를 움직여보세요 (offset: 12px)</span>
+        </Menu.ContextArea>
+        <Menu.Content {...args} items={sampleMenuData} />
+      </Menu.Root>
+    </div>
+  ),
+};
 
 export const MenuPositioningInContainer: Story = {
   args: {
     size: 'md',
   },
   render: (args) => {
-    const [narrowMenuOpen, setNarrowMenuOpen] = React.useState(false);
-    const [narrowMenuPositioned, setNarrowMenuPositioned] = React.useState(false);
-    const [wideMenuOpen, setWideMenuOpen] = React.useState(false);
-    const [wideMenuPositioned, setWideMenuPositioned] = React.useState(false);
-
-    const narrowButtonRef = React.useRef<HTMLButtonElement>(null);
-    const wideButtonRef = React.useRef<HTMLButtonElement>(null);
     const containerRef = React.useRef<HTMLDivElement>(null);
-
-    const [narrowMenuPosition, setNarrowMenuPosition] = React.useState<{ x: number; y: number } | undefined>();
-    const [wideMenuPosition, setWideMenuPosition] = React.useState<{ x: number; y: number } | undefined>();
-
-    const handleMenuToggle = (
-      isNarrow: boolean,
-      currentOpen: boolean,
-      setOpen: (v: boolean) => void,
-      setPositioned: (v: boolean) => void,
-      setPosition: (v: { x: number; y: number }) => void,
-      buttonRef: React.RefObject<HTMLButtonElement>
-    ) => {
-      if (!currentOpen && buttonRef.current && containerRef.current) {
-        const buttonRect = buttonRef.current.getBoundingClientRect();
-        const containerRect = containerRef.current.getBoundingClientRect();
-        const containerStyle = getComputedStyle(containerRef.current);
-        const paddingRight = parseInt(containerStyle.paddingRight);
-
-        const contentRightEdge = containerRect.right - paddingRight;
-
-        const baseY = buttonRect.bottom + 4;
-
-        // 화면 밖에서 렌더링하여 측정
-        setPosition({ x: -9999, y: baseY });
-        setPositioned(false);
-        setOpen(true);
-
-        // 메뉴가 렌더링된 후 너비 측정 및 위치 조정
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            const menuElements = document.querySelectorAll('[role="menu"]');
-            const menuElement = Array.from(menuElements).find(el => {
-              const rect = el.getBoundingClientRect();
-              return rect.top === baseY;
-            }) as HTMLElement;
-
-            if (menuElement) {
-              const menuWidth = menuElement.offsetWidth;
-
-              // 기본: 메뉴 왼쪽 = 버튼 왼쪽
-              let finalX = buttonRect.left;
-
-              // 메뉴가 컨테이너 오른쪽을 넘어가는지 체크
-              if (finalX + menuWidth > contentRightEdge) {
-                // 컨테이너 오른쪽에 맞춤
-                finalX = contentRightEdge - menuWidth;
-              }
-
-              setPosition({ x: finalX, y: baseY });
-              setPositioned(true);
-            }
-          });
-        });
-      } else {
-        setOpen(false);
-        setPositioned(false);
-      }
-    };
 
     return (
       <div className="flex h-[700px] items-start justify-center pt-8">
@@ -664,37 +408,17 @@ export const MenuPositioningInContainer: Story = {
               <span className="text-sm text-gray-700">1. 좁은 메뉴 (메뉴 왼쪽 = 버튼 왼쪽)</span>
             </div>
             <div className="flex justify-end pr-[100px]">
-              <Button
-                ref={narrowButtonRef}
-                onClick={() => handleMenuToggle(
-                  true,
-                  narrowMenuOpen,
-                  setNarrowMenuOpen,
-                  setNarrowMenuPositioned,
-                  setNarrowMenuPosition,
-                  narrowButtonRef
-                )}
-              >
-                좁은 메뉴 {narrowMenuOpen ? '닫기' : '열기'}
-              </Button>
-            </div>
-            {narrowMenuOpen && (() => {
-              const menuStyle = { opacity: narrowMenuPositioned ? 1 : 0, transition: 'opacity 0.05s' };
-              return (
-                <div style={menuStyle}>
-                  <Menu
-                    {...args}
-                    items={sampleMenuData}
-                    position={narrowMenuPosition}
-                    triggerRef={narrowButtonRef}
-                    onClose={() => {
-                      setNarrowMenuOpen(false);
-                      setNarrowMenuPositioned(false);
-                    }}
+              <Menu.Root boundary={containerRef}>
+                <Menu.Trigger>
+                  <Button
+                    label="좁은 메뉴 열기"
+                    showStartIcon={false}
+                    showEndIcon={false}
                   />
-                </div>
-              );
-            })()}
+                </Menu.Trigger>
+                <Menu.Content {...args} items={sampleMenuData} />
+              </Menu.Root>
+            </div>
           </div>
 
           {/* 넓은 메뉴 */}
@@ -703,37 +427,17 @@ export const MenuPositioningInContainer: Story = {
               <span className="text-sm text-gray-700">2. 넓은 메뉴 (컨테이너 오른쪽을 넘어가면 오른쪽 맞춤)</span>
             </div>
             <div className="flex justify-end pr-[100px]">
-              <Button
-                ref={wideButtonRef}
-                onClick={() => handleMenuToggle(
-                  false,
-                  wideMenuOpen,
-                  setWideMenuOpen,
-                  setWideMenuPositioned,
-                  setWideMenuPosition,
-                  wideButtonRef
-                )}
-              >
-                넓은 메뉴 {wideMenuOpen ? '닫기' : '열기'}
-              </Button>
-            </div>
-            {wideMenuOpen && (() => {
-              const menuStyle = { opacity: wideMenuPositioned ? 1 : 0, transition: 'opacity 0.05s' };
-              return (
-                <div style={menuStyle}>
-                  <Menu
-                    {...args}
-                    items={wideMenuData}
-                    position={wideMenuPosition}
-                    triggerRef={wideButtonRef}
-                    onClose={() => {
-                      setWideMenuOpen(false);
-                      setWideMenuPositioned(false);
-                    }}
+              <Menu.Root boundary={containerRef}>
+                <Menu.Trigger>
+                  <Button
+                    label="넓은 메뉴 열기"
+                    showStartIcon={false}
+                    showEndIcon={false}
                   />
-                </div>
-              );
-            })()}
+                </Menu.Trigger>
+                <Menu.Content {...args} items={wideMenuData} />
+              </Menu.Root>
+            </div>
           </div>
         </div>
       </div>
@@ -741,127 +445,31 @@ export const MenuPositioningInContainer: Story = {
   },
 };
 
-/**
- * Checkbox Mode (Control Prop)
- *
- * checkboxMode prop을 사용하여 MenuItem에 Checkbox를 자동으로 추가합니다.
- * MenuItem 객체는 순수 데이터만 포함하므로 Storybook에서 직렬화 오류가 발생하지 않습니다.
- */
-export const WithCheckboxMode: Story = {
-  args: {
-    size: 'md',
-  },
-  render: (args) => {
-    const [checkedIds, setCheckedIds] = React.useState(new Set(['2']));
+const headingMenuData: MenuItem[] = [
+  { type: 'heading', heading: '파일' },
+  { type: 'icon-label', id: 'h-1', label: '새 파일', leadingIcon: <Icon name="add" size={20} /> },
+  { type: 'icon-label', id: 'h-2', label: '파일 열기', leadingIcon: <Icon name="post" size={20} /> },
+  { type: 'divider' },
+  { type: 'heading', heading: '편집' },
+  { type: 'shortcut', id: 'h-3', label: '복사', shortcutText: 'Ctrl+C' },
+  { type: 'shortcut', id: 'h-4', label: '붙여넣기', shortcutText: 'Ctrl+V' },
+  { type: 'divider' },
+  { type: 'heading', heading: '기타' },
+  { type: 'destructive', id: 'h-5', label: '삭제' },
+];
 
-    // MenuItem은 순수 데이터만 (React 엘리먼트 없음!)
-    const items: MenuItem[] = [
-      {
-        id: '1',
-        label: '옵션 1',
-      },
-      {
-        id: '2',
-        label: '옵션 2',
-      },
-      {
-        id: '3',
-        label: '옵션 3',
-      },
-      {
-        id: '4',
-        label: '옵션 4 (비활성)',
-        disabled: true,
-      },
-    ];
-
-    return (
-      <div className="p-8">
-        <h3 className="mb-4 text-lg font-bold">Checkbox Mode</h3>
-        <p className="mb-4 text-sm text-gray-600">
-          checkboxMode="checkbox" prop으로 자동 렌더링
-        </p>
-        <Menu
-          {...args}
-          className="w-[240px]"
-          items={items}
-          checkboxMode="checkbox"
-          checkedIds={checkedIds}
-          onCheckChange={(id, checked) => {
-            setCheckedIds((prev) => {
-              const newSet = new Set(prev);
-              if (checked) {
-                newSet.add(id);
-              } else {
-                newSet.delete(id);
-              }
-              return newSet;
-            });
-          }}
-        />
-        <div className="mt-4 p-3 bg-blue-50 rounded">
-          <p className="text-sm font-medium">선택된 항목:</p>
-          <p className="text-sm text-gray-700">
-            {Array.from(checkedIds).join(', ') || '없음'}
-          </p>
-        </div>
+export const WithHeadingAndDivider: Story = {
+  args: { size: 'md' },
+  render: (args) => (
+    <div className="flex gap-8 p-8">
+      <div>
+        <div className="text-caption-xs-regular text-text-tertiary mb-2">md</div>
+        <Menu {...args} size="md" items={headingMenuData} className="w-[240px]" />
       </div>
-    );
-  },
-};
-
-/**
- * Radio Mode (Control Prop)
- *
- * checkboxMode="radio" prop을 사용하여 단일 선택 Radio 메뉴를 구현합니다.
- */
-export const WithRadioMode: Story = {
-  args: {
-    size: 'md',
-  },
-  render: (args) => {
-    const [selectedId, setSelectedId] = React.useState('2');
-
-    const items: MenuItem[] = [
-      {
-        id: '1',
-        label: '옵션 1',
-        description: '첫 번째 옵션',
-      },
-      {
-        id: '2',
-        label: '옵션 2',
-        description: '두 번째 옵션 (기본 선택)',
-      },
-      {
-        id: '3',
-        label: '옵션 3',
-        description: '세 번째 옵션',
-      },
-    ];
-
-    const checkedIds = new Set([selectedId]);
-
-    return (
-      <div className="p-8">
-        <h3 className="mb-4 text-lg font-bold">Radio Mode</h3>
-        <p className="mb-4 text-sm text-gray-600">
-          checkboxMode="radio" prop으로 단일 선택 구현
-        </p>
-        <Menu
-          {...args}
-          className="w-[240px]"
-          items={items}
-          checkboxMode="radio"
-          checkedIds={checkedIds}
-          onCheckChange={(id) => {
-            setSelectedId(id);
-          }}
-        />
-        <div className="mt-4 p-3 bg-green-50 rounded">
-          <p className="text-sm font-medium">선택된 옵션: {selectedId}</p>
-        </div>
+      <div>
+        <div className="text-caption-xs-regular text-text-tertiary mb-2">sm</div>
+        <Menu {...args} size="sm" items={headingMenuData} className="w-[240px]" />
       </div>
-    );
-  },
+    </div>
+  ),
 };

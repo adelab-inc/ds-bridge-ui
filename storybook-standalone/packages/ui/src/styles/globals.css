@@ -2,11 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Design Token based UI styles */
-@layer base {
-  html {
-    font-family: 'Pretendard', sans-serif;
-  }
+/* Design Token based UI styles — @layer 밖에 배치하여 Tailwind preflight 및 Storybook 기본 스타일보다 높은 우선순위 확보 */
+html,
+body {
+  font-family: 'Pretendard', sans-serif;
 }
 
 @layer components {
@@ -124,6 +123,51 @@
   animation: slide-out-right 0.3s ease-in;
 }
 
+/* ActionBar 진입/퇴장 애니메이션 (translateX(-50%) 센터링 유지) */
+@keyframes action-bar-enter {
+  0% {
+    transform: translateX(-50%) translateY(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+@keyframes action-bar-exit {
+  0% {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-50%) translateY(100%);
+    opacity: 0;
+  }
+}
+
+.animate-action-bar-enter {
+  animation: action-bar-enter 0.2s ease-out;
+}
+.animate-action-bar-exit {
+  animation: action-bar-exit 0.2s ease-in forwards;
+}
+
+/* Menu 진입 애니메이션 (Fade In + Scale Up) */
+@keyframes menu-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-menu-enter {
+  animation: menu-enter 0.1s ease-out;
+}
+
 /* Menu 컴포넌트 스크롤바 스타일 */
 .menu-scroll-container {
   position: relative;
@@ -132,15 +176,4 @@
 
 .menu-scroll-inner {
   overflow-y: auto;
-
-  /* 스크롤바 완전히 숨김 (공간도 차지하지 않음) */
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE/Edge */
-}
-
-/* Webkit browsers: 스크롤바 완전히 숨김 */
-.menu-scroll-inner::-webkit-scrollbar {
-  display: none;
-  width: 0;
-  height: 0;
 }

@@ -1,78 +1,82 @@
-import type { VariantProps } from 'class-variance-authority';
-import { cva } from 'class-variance-authority';
+import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 
 import { cn } from './utils';
-import { Icon } from './Icon';
+import { CheckboxValue, Interaction } from '../types';
 
 const checkboxVariants = cva(
-  'flex items-center justify-center flex-shrink-0 w-[18px] h-[18px] rounded-[2px] border transition-colors',
+  'flex items-center justify-center flex-shrink-0 w-[16px] h-[16px] rounded-[2px] border transition-colors',
   ({
     variants: {
-      "checked": {
-        "false": "",
-        "true": "",
+      "interaction": {
+        "default": "",
+        "disabled": "cursor-not-allowed",
+        "hover": "",
+        "pressed": "",
       },
-      "disabled": {
-        "false": "",
-        "true": "cursor-not-allowed",
+      "value": {
+        "checked": "",
+        "indeterminate": "",
+        "unchecked": "",
       },
     },
     defaultVariants: {
-      "checked": false,
-      "disabled": false,
+      "interaction": "default",
+      "value": "unchecked",
     },
     compoundVariants: [
       {
-        "checked": false,
-        "class": "border-control-stroke-default bg-bg-surface",
-        "disabled": false,
+        "class": "border-control-stroke-default bg-bg-surface hover:bg-[linear-gradient(0deg,#0000000f,#0000000f)] active:bg-[linear-gradient(0deg,#0000000f,#0000000f)]",
+        "interaction": "default",
+        "value": "unchecked",
       },
       {
-        "checked": false,
-        "class": "border-control-stroke-disabled bg-bg-surface",
-        "disabled": true,
+        "class": "border-control-stroke-disabled bg-bg-disabled-on-light",
+        "interaction": "disabled",
+        "value": "unchecked",
       },
       {
-        "checked": true,
         "class": "bg-control-bg-on border-0 hover:bg-brand-primary-hover active:bg-brand-primary-hover",
-        "disabled": false,
+        "interaction": "default",
+        "value": ["checked", "indeterminate"],
       },
       {
-        "checked": true,
         "class": "bg-control-bg-disabled border-0",
-        "disabled": true,
+        "interaction": "disabled",
+        "value": ["checked", "indeterminate"],
       },
       {
-        "checked": false,
         "class": "peer-focus-visible:shadow-[0_0_0_1px_var(--color-role-border-contrast,#FFF)_inset,0_0_0_2px_var(--color-role-focus,#0033A0)]",
-        "disabled": false,
+        "interaction": "default",
+        "value": "unchecked",
       },
       {
-        "checked": true,
         "class": "peer-focus-visible:shadow-[0_0_0_1px_var(--color-role-border-contrast,#FFF)_inset,0_0_0_2px_var(--color-role-focus,#0033A0)]",
-        "disabled": false,
+        "interaction": "default",
+        "value": ["checked", "indeterminate"],
       },
     ],
   })
 );
 
 export interface CheckboxProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'size' | 'checked'>,
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'size' | 'checked' | 'disabled' | 'value'>,
     VariantProps<typeof checkboxVariants> {
   size?: '16' | '18' | '20' | '24' | '28';
-  checked?: boolean;
-  variant?: 'checked' | 'indeterminate';
-  disabled?: boolean;
+  value?: 'unchecked' | 'checked' | 'indeterminate';
+  interaction?: 'default' | 'hover' | 'pressed' | 'disabled';
   onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
   'aria-label'?: string;
   renderContainer?: 'label' | 'div';
 }
 
 const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
-  ({ className, size = '18', checked = false, variant = 'checked', disabled = false, onChange, 'aria-label': ariaLabel, renderContainer = 'label', ...props }, ref) => {
+  ({ className, size = '18', value = CheckboxValue.UNCHECKED, interaction, onChange, 'aria-label': ariaLabel, renderContainer = 'label', ...props }, ref) => {
+    const isDisabled = interaction === Interaction.DISABLED;
+    const isChecked = value !== CheckboxValue.UNCHECKED;
+
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      if (disabled) return;
+      if (isDisabled) return;
       onChange?.(event);
     };
 
@@ -85,40 +89,46 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
       '28': 'h-[28px]',
     }[size];
 
-    const iconName = variant === 'indeterminate' ? 'checkbox-indeterminate' : 'checkbox-checked';
-
     const Container = renderContainer;
 
+    const iconColorClass = isDisabled ? 'text-control-icon-disabled' : 'text-white';
+
+    const checkIcon = (
+      <svg width="12" height="9" viewBox="0 0 12 9" fill="none" className={iconColorClass}>
+        <path d="M1 3.76923L4.5 7L11 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    );
+
+    const indeterminateIcon = (
+      <svg width="12" height="2" viewBox="0 0 12 2" fill="none" className={iconColorClass}>
+        <path d="M1 1H11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    );
+
     return (
-      <Container className={cn("inline-flex items-center cursor-pointer", containerSizeClass)}>
+      <Container className={cn("inline-flex items-center cursor-pointer", isDisabled && "cursor-not-allowed", containerSizeClass)}>
         <input
           type="checkbox"
           className="sr-only peer"
-          checked={checked}
-          disabled={disabled}
+          checked={isChecked}
+          disabled={isDisabled}
           onChange={handleChange}
           ref={ref}
           role="checkbox"
-          aria-checked={variant === 'indeterminate' ? 'mixed' : checked}
+          aria-checked={value === CheckboxValue.INDETERMINATE ? 'mixed' : value === CheckboxValue.CHECKED}
           aria-label={ariaLabel}
           {...props}
         />
         <span
           className={cn(
             checkboxVariants({
-              checked,
-              disabled,
+              value,
+              interaction,
               className,
             })
           )}
         >
-          {checked && (
-            <Icon
-              name={iconName}
-              size={12}
-              className={disabled ? 'text-control-icon-disabled' : 'text-white'}
-            />
-          )}
+          {isChecked && (value === CheckboxValue.INDETERMINATE ? indeterminateIcon : checkIcon)}
         </span>
       </Container>
     );

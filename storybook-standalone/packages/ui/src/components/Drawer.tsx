@@ -27,11 +27,11 @@ const drawerVariants = cva('flex h-screen flex-col items-center bg-bg-surface sh
     },
     compoundVariants: [
       {
-        "class": "py-component-inset-drawer-y px-component-inset-drawer-x gap-layout-stack-lg2",
+        "class": "py-component-inset-drawer-y gap-layout-stack-lg2",
         "mode": "base",
       },
       {
-        "class": "py-component-inset-drawer-y px-component-inset-drawer-x gap-layout-stack-lg2",
+        "class": "py-component-inset-drawer-y gap-layout-stack-lg2",
         "mode": "compact",
       },
     ],
@@ -137,7 +137,7 @@ const DrawerRoot = React.forwardRef<HTMLDivElement, DrawerProps>(
         {/* Backdrop (dim=true일 때만 표시) */}
         {dim && (
           <div
-            className="fixed inset-0 bg-black/50"
+            className="fixed top-0 left-0 w-screen h-screen bg-black/50"
             style={backdropStyle}
             onClick={isTopModal ? onClose : undefined}
             aria-hidden="true"
@@ -178,29 +178,44 @@ DrawerRoot.displayName = 'Drawer';
  *
  * @example
  * ```tsx
- * <Drawer.Header title="제목" />
+ * <Drawer.Header title="제목" showSubtitle={false} />
+ * <Drawer.Header title="제목" showSubtitle={true} subtitle="부제목 텍스트" />
  * ```
  */
-export interface DrawerHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
+type DrawerHeaderSubtitleProps =
+  | { showSubtitle: true; subtitle: string }
+  | { showSubtitle: false; subtitle?: never };
+
+export type DrawerHeaderProps = React.HTMLAttributes<HTMLDivElement> & {
   /** 드로워 제목 (필수) */
   title: string;
   /** 닫기 버튼 표시 여부 (기본: true) */
   showCloseButton?: boolean;
-}
+} & DrawerHeaderSubtitleProps;
 
 const DrawerHeader: React.FC<DrawerHeaderProps> = ({
   title,
+  showSubtitle,
+  subtitle,
   showCloseButton = true,
   className,
   ...props
 }) => {
-  const { onClose } = useDrawerContext();
+  const { mode, onClose } = useDrawerContext();
+  const pxClass = mode === 'compact' ? 'px-component-inset-drawer-x-compact' : 'px-component-inset-drawer-x';
 
   return (
-    <div className={cn("flex items-start gap-component-gap-content-md self-stretch", className)} {...props}>
-      <h2 id="drawer-title" className="flex-1 text-heading-lg-bold text-text-primary">
-        {title}
-      </h2>
+    <div className={cn("flex items-start gap-component-gap-content-md self-stretch", pxClass, className)} {...props}>
+      <div className="flex-1 flex flex-col gap-layout-stack-sm">
+        <h2 id="drawer-title" className="text-heading-lg-bold text-text-primary">
+          {title}
+        </h2>
+        {showSubtitle && subtitle && (
+          <p className="text-body-md text-text-primary">
+            {subtitle}
+          </p>
+        )}
+      </div>
       {showCloseButton && (
         <button
           onClick={onClose}
@@ -230,10 +245,14 @@ export interface DrawerBodyProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 const DrawerBody: React.FC<DrawerBodyProps> = ({ children, className, ...props }) => {
+  const { mode } = useDrawerContext();
+  const pxClass = mode === 'compact' ? 'px-component-inset-drawer-x-compact' : 'px-component-inset-drawer-x';
+
   return (
     <div
       className={cn(
-        "flex h-[85%] flex-col items-center gap-layout-stack-md2 self-stretch overflow-y-auto",
+        "flex h-[85%] flex-col items-center gap-layout-stack-md2 self-stretch overflow-y-auto [scrollbar-gutter:stable]",
+        pxClass,
         className
       )}
       {...props}
@@ -260,9 +279,12 @@ export interface DrawerFooterProps extends React.HTMLAttributes<HTMLDivElement> 
 }
 
 const DrawerFooter: React.FC<DrawerFooterProps> = ({ children, className, ...props }) => {
+  const { mode } = useDrawerContext();
+  const pxClass = mode === 'compact' ? 'px-component-inset-drawer-x-compact' : 'px-component-inset-drawer-x';
+
   return (
     <div
-      className={cn("flex justify-end items-center gap-component-gap-control-group flex-1 self-stretch", className)}
+      className={cn("flex justify-end items-center gap-component-gap-control-group flex-1 self-stretch", pxClass, className)}
       {...props}
     >
       {children}

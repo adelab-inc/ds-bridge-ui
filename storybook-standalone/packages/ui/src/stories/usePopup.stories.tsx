@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 import { usePopup } from '../hooks/usePopup';
 import { Button } from '../components/Button';
@@ -27,12 +27,8 @@ function BasicUsageDemo() {
       <h3 className="text-lg font-semibold mb-4">기본 사용법</h3>
 
       <div className="mb-4 flex gap-2">
-        <Button onClick={handleOpen} disabled={status === 'open'}>
-          팝업 열기
-        </Button>
-        <Button variant="outline" onClick={close} disabled={status === 'closed'}>
-          팝업 닫기
-        </Button>
+        <Button label="팝업 열기" onClick={handleOpen} interaction={status === 'open' ? 'disabled' : 'default'} showStartIcon={false} showEndIcon={false} />
+        <Button label="팝업 닫기" buttonType="outline" onClick={close} interaction={status === 'closed' ? 'disabled' : 'default'} showStartIcon={false} showEndIcon={false} />
       </div>
 
       <div className="p-4 bg-gray-100 rounded-lg mb-4">
@@ -105,19 +101,16 @@ function CloseTestDemo() {
       <h3 className="text-lg font-semibold mb-4">Close 메서드 테스트</h3>
 
       <div className="mb-4 flex gap-2">
-        <Button onClick={handleOpen} disabled={status === 'open'}>
-          팝업 열기
-        </Button>
+        <Button label="팝업 열기" onClick={handleOpen} interaction={status === 'open' ? 'disabled' : 'default'} showStartIcon={false} showEndIcon={false} />
         <Button
-          variant="destructive"
+          label="팝업 닫기 (close)"
+          buttonType="destructive"
           onClick={handleClose}
-          disabled={status === 'closed'}
-        >
-          팝업 닫기 (close)
-        </Button>
-        <Button variant="outline" onClick={clearLog}>
-          로그 초기화
-        </Button>
+          interaction={status === 'closed' ? 'disabled' : 'default'}
+          showStartIcon={false}
+          showEndIcon={false}
+        />
+        <Button label="로그 초기화" buttonType="outline" onClick={clearLog} showStartIcon={false} showEndIcon={false} />
       </div>
 
       <div className="p-4 bg-gray-100 rounded-lg mb-4">

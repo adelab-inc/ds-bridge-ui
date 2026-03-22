@@ -3,6 +3,7 @@ import * as React from 'react';
 import { cn } from './utils';
 import {
   Item as TreeMenuItem,
+  itemVariants as treeMenuItemVariants,
   TreeMenuItemData,
   TreeMenuItemDataSm,
   TreeMenuItemDataMd,
@@ -11,7 +12,7 @@ import {
 } from './TreeMenu/Item';
 import { useControllableState } from '../hooks/useControllableState';
 
-const treeMenuVariants = cva('flex flex-col max-h-[640px] overflow-y-auto', ({
+const treeMenuVariants = cva('flex flex-col max-h-[640px] overflow-y-auto p-[2px]', ({
     variants: {
       "size": {
         "md": "",
@@ -535,7 +536,7 @@ function TreeMenuInner(
   // Item에서 isMdSize 체크로 렌더링 여부 결정 (badge와 동일한 방식으로 일관성 확보)
   const renderItems = (menuItems: TreeMenuItemDataMd[], depth: number = 1): React.ReactNode => {
     return menuItems.map(item => {
-      const hasChildren = !!(item.children && item.children.length > 0);
+      const showTree = !!item.showTree;
       const isExpanded = expandedIds.has(item.id);
       const isFocused = focusedId === item.id;
       const checkState = checkStates.get(item.id) || null;
@@ -554,7 +555,6 @@ function TreeMenuInner(
             item={item}
             size={size}
             depth={Math.min(depth, 4) as 1 | 2 | 3 | 4}
-            hasChildren={hasChildren}
             isExpanded={isExpanded}
             isFocused={isFocused}
             isFirstFocusable={isFirstFocusable}
@@ -575,7 +575,7 @@ function TreeMenuInner(
             onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, item.id)}
           />
-          {hasChildren && isExpanded && (
+          {showTree && isExpanded && (
             <div role="group">
               {renderItems(item.children!, depth + 1)}
             </div>
@@ -602,8 +602,8 @@ function TreeMenuInner(
 /**
  * TreeMenu 컴포넌트 (판별 유니온 패턴)
  * size prop에 따라 타입이 자동으로 결정됩니다.
- * - size="md" (기본값): 체크박스 관련 props 사용 가능, items에 badge 사용 가능
- * - size="sm": 체크박스/뱃지 관련 props 사용 불가 (타입 에러)
+ * - size="md" (기본값): 체크박스 관련 props 사용 가능, items에 closeTrailing 사용 가능
+ * - size="sm": 체크박스/closeTrailing 관련 props 사용 불가 (타입 에러)
  */
 const TreeMenu = React.forwardRef(TreeMenuInner) as React.ForwardRefExoticComponent<
   TreeMenuProps & React.RefAttributes<HTMLDivElement>
@@ -611,4 +611,4 @@ const TreeMenu = React.forwardRef(TreeMenuInner) as React.ForwardRefExoticCompon
 
 TreeMenu.displayName = 'TreeMenu';
 
-export { TreeMenu, treeMenuVariants };
+export { TreeMenu, treeMenuVariants, treeMenuItemVariants };

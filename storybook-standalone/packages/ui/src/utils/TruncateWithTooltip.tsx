@@ -59,9 +59,10 @@ export const TruncateWithTooltip = ({ text, className }: TruncateWithTooltipProp
 export interface MultiLineTruncateWithTooltipProps {
   text: string;
   className?: string;
+  id?: string;
 }
 
-export const MultiLineTruncateWithTooltip = ({ text, className }: MultiLineTruncateWithTooltipProps) => {
+export const MultiLineTruncateWithTooltip = ({ text, className, id }: MultiLineTruncateWithTooltipProps) => {
   const [isTruncated, setIsTruncated] = React.useState(false);
   const textRef = React.useRef<HTMLSpanElement>(null);
 
@@ -94,7 +95,7 @@ export const MultiLineTruncateWithTooltip = ({ text, className }: MultiLineTrunc
   }, [checkTruncation, text]);
 
   const textElement = (
-    <span ref={textRef} className={className}>
+    <span ref={textRef} id={id} className={className}>
       {text}
     </span>
   );

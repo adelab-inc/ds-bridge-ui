@@ -1,72 +1,91 @@
-import type { VariantProps } from 'class-variance-authority';
-import { cva } from 'class-variance-authority';
+import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 
 import { cn } from './utils';
-import { Icon } from './Icon';
+import { RadioValue, Interaction } from '../types';
 
 const radioVariants = cva(
-  'flex items-center justify-center flex-shrink-0 w-[18px] h-[18px] rounded-full border transition-colors',
+  'flex items-center justify-center flex-shrink-0 w-[16px] h-[16px] rounded-full border transition-colors',
   ({
     variants: {
-      "checked": {
-        "false": "",
-        "true": "",
+      "interaction": {
+        "default": "",
+        "disabled": "cursor-not-allowed",
+        "hover": "",
+        "pressed": "",
       },
-      "disabled": {
-        "false": "",
-        "true": "cursor-not-allowed",
+      "value": {
+        "checked": "",
+        "unchecked": "",
       },
     },
     defaultVariants: {
-      "checked": false,
-      "disabled": false,
+      "interaction": "default",
+      "value": "unchecked",
     },
     compoundVariants: [
       {
-        "checked": false,
+        "class": "border-control-stroke-default bg-bg-surface hover:bg-[linear-gradient(0deg,#0000000f,#0000000f)] active:bg-[linear-gradient(0deg,#0000000f,#0000000f)]",
+        "interaction": "default",
+        "value": "unchecked",
+      },
+      {
+        "class": "border-control-stroke-default bg-bg-surface bg-[linear-gradient(0deg,#0000000f,#0000000f)]",
+        "interaction": ["hover", "pressed"],
+        "value": "unchecked",
+      },
+      {
+        "class": "border-control-stroke-disabled bg-bg-disabled-on-light",
+        "interaction": "disabled",
+        "value": "unchecked",
+      },
+      {
         "class": "border-control-stroke-default bg-bg-surface",
-        "disabled": false,
+        "interaction": "default",
+        "value": "checked",
       },
       {
-        "checked": false,
+        "class": "border-control-stroke-default bg-bg-surface",
+        "interaction": ["hover", "pressed"],
+        "value": "checked",
+      },
+      {
         "class": "border-control-stroke-disabled bg-control-bg-disabled",
-        "disabled": true,
+        "interaction": "disabled",
+        "value": "checked",
       },
       {
-        "checked": true,
-        "class": "border-control-stroke-default bg-bg-surface hover:border-control-bg-on active:border-control-bg-on peer-focus-visible:shadow-[0_0_0_1px_var(--color-role-border-contrast,#FFF)_inset,0_0_0_2px_var(--color-role-focus,#0033A0)]",
-        "disabled": false,
-      },
-      {
-        "checked": true,
-        "class": "border-control-stroke-disabled bg-control-bg-disabled",
-        "disabled": true,
-      },
-      {
-        "checked": false,
         "class": "peer-focus-visible:shadow-[0_0_0_1px_var(--color-role-border-contrast,#FFF)_inset,0_0_0_2px_var(--color-role-focus,#0033A0)]",
-        "disabled": false,
+        "interaction": "default",
+        "value": "unchecked",
+      },
+      {
+        "class": "peer-focus-visible:shadow-[0_0_0_1px_var(--color-role-border-contrast,#FFF)_inset,0_0_0_2px_var(--color-role-focus,#0033A0)]",
+        "interaction": "default",
+        "value": "checked",
       },
     ],
   })
 );
 
 export interface RadioProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'size'>,
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'size' | 'disabled' | 'value'>,
     VariantProps<typeof radioVariants> {
   size?: '16' | '18' | '20' | '24' | '28';
-  checked?: boolean;
-  disabled?: boolean;
+  value?: 'unchecked' | 'checked';
+  interaction?: 'default' | 'hover' | 'pressed' | 'disabled';
   onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
   'aria-label'?: string;
   renderContainer?: 'label' | 'div';
 }
 
 const Radio = React.forwardRef<HTMLInputElement, RadioProps>(
-  ({ className, size = '18', checked = false, disabled = false, onChange, 'aria-label': ariaLabel, renderContainer = 'label', ...props }, ref) => {
+  ({ className, size = '18', value = RadioValue.UNCHECKED, interaction, onChange, 'aria-label': ariaLabel, renderContainer = 'label', ...props }, ref) => {
+    const isDisabled = interaction === Interaction.DISABLED;
+    const isChecked = value === RadioValue.CHECKED;
+
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      if (disabled) return;
+      if (isDisabled) return;
       onChange?.(event);
     };
 
@@ -82,34 +101,32 @@ const Radio = React.forwardRef<HTMLInputElement, RadioProps>(
     const Container = renderContainer;
 
     return (
-      <Container className={cn("inline-flex items-center cursor-pointer", containerSizeClass)}>
+      <Container className={cn("group inline-flex items-center cursor-pointer", isDisabled && "cursor-not-allowed", containerSizeClass)}>
         <input
           type="radio"
           className="sr-only peer"
-          checked={checked}
-          disabled={disabled}
+          checked={isChecked}
+          disabled={isDisabled}
           onChange={handleChange}
           ref={ref}
           role="radio"
-          aria-checked={checked}
+          aria-checked={isChecked}
           aria-label={ariaLabel}
           {...props}
         />
         <span
           className={cn(
             radioVariants({
-              checked,
-              disabled,
+              value,
+              interaction,
               className,
             })
           )}
         >
-          {checked && (
-            <Icon
-              name="radio-check"
-              size={10}
-              className={disabled ? 'text-control-icon-disabled' : 'text-control-bg-on'}
-            />
+          {isChecked && (
+            <svg width="10" height="10" viewBox="0 0 10 10" className={isDisabled ? 'text-control-icon-disabled' : 'text-control-bg-on group-hover:text-brand-primary-hover group-active:text-brand-primary-hover'}>
+              <circle cx="5" cy="5" r="5" fill="currentColor" />
+            </svg>
           )}
         </span>
       </Container>

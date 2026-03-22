@@ -5,7 +5,7 @@ import greySpinner from '../assets/lottie/Grey.json';
 import redSpinner from '../assets/lottie/Red.json';
 import whiteSpinner from '../assets/lottie/White.json';
 
-type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'tertiary' | 'destructive' | 'outline-destructive';
+type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'tertiary' | 'destructive' | 'outline-destructive' | 'ghost-inverse';
 type IconButtonVariant = 'ghost' | 'secondary' | 'tertiary' | 'ghost-destructive';
 
 interface LoadingSpinnerProps {
@@ -21,6 +21,7 @@ const spinnerMap: Record<ButtonVariant | IconButtonVariant, any> = {
   tertiary: greySpinner,
   destructive: whiteSpinner,
   'outline-destructive': redSpinner,
+  'ghost-inverse': whiteSpinner,
   // IconButton variants
   ghost: greySpinner,
   'ghost-destructive': redSpinner,

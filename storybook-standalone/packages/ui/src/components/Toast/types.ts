@@ -1,5 +1,3 @@
-import type { AlertActions } from '../Alert';
-
 export type ToastPosition =
   | 'top-left'
   | 'top-center'
@@ -8,23 +6,30 @@ export type ToastPosition =
   | 'bottom-center'
   | 'bottom-right';
 
-export type ToastVariant = 'default' | 'info' | 'success' | 'warning' | 'error';
+export type ToastType = 'default' | 'info' | 'success' | 'warning' | 'error';
+
+export interface ToastAction {
+  label: string;
+  onClick: () => void;
+}
 
 export interface ToastOptions {
-  /** Toast variant */
-  variant?: ToastVariant;
+  /** Alert type (V2: variant → type) */
+  type?: ToastType;
   /** Toast title */
   title?: string;
-  /** Toast message content */
+  /** Toast message content (V2: message → body와 매핑) */
   message: React.ReactNode;
   /** Auto-dismiss duration in ms (0 = manual close only, default: 3000) */
   duration?: number;
   /** Toast position (default: 'top-right') */
   position?: ToastPosition;
-  /** Action buttons (max 2) */
-  actions?: AlertActions;
-  /** Show close button (default: true) */
-  hasCloseButton?: boolean;
+  /** Action 1 */
+  action1?: ToastAction;
+  /** Action 2 */
+  action2?: ToastAction;
+  /** Show close button (V2: hasCloseButton → showClose) (default: true) */
+  showClose?: boolean;
 }
 
 export interface Toast extends ToastOptions {

@@ -1,18 +1,25 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 import { LoadingSpinner } from './LoadingSpinner';
+import { Tooltip, type TooltipProps } from './Tooltip';
 import { cn } from './utils';
 import { useSpacingMode } from './SpacingModeProvider';
 
 const iconButtonVariants = cva('flex justify-center items-center flex-shrink-0', ({
     variants: {
-      "isDisabled": {
-        "false": "",
-        "true": "",
+      "iconButtonType": {
+        "ghost": "text-icon-interactive-default",
+        "ghost-destructive": "",
+        "secondary": "bg-bg-accent-secondary",
+        "tertiary": "bg-bg-subtle",
       },
-      "isLoading": {
-        "false": "",
-        "true": "cursor-wait",
+      "interaction": {
+        "default": "",
+        "disabled": "cursor-not-allowed",
+        "focused": "",
+        "hover": "",
+        "loading": "cursor-wait",
+        "pressed": "",
       },
       "mode": {
         "base": "",
@@ -23,19 +30,12 @@ const iconButtonVariants = cva('flex justify-center items-center flex-shrink-0',
         "md": "text-button-md-medium rounded-lg",
         "sm": "text-button-sm-medium rounded-[6px]",
       },
-      "variant": {
-        "ghost": "text-icon-interactive-default",
-        "ghost-destructive": "",
-        "secondary": "bg-bg-accent-secondary",
-        "tertiary": "bg-bg-subtle",
-      },
     },
     defaultVariants: {
-      "isDisabled": false,
-      "isLoading": false,
+      "iconButtonType": "ghost",
+      "interaction": "default",
       "mode": "base",
       "size": "md",
-      "variant": "ghost",
     },
     compoundVariants: [
       {
@@ -69,80 +69,78 @@ const iconButtonVariants = cva('flex justify-center items-center flex-shrink-0',
         "size": "sm",
       },
       {
-        "class": "hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus",
-        "isDisabled": false,
-        "isLoading": false,
-        "variant": "ghost",
+        "class": "hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus",
+        "iconButtonType": "ghost",
+        "interaction": "default",
       },
       {
         "class": "text-icon-interactive-disabled",
-        "isDisabled": true,
-        "isLoading": false,
-        "variant": "ghost",
+        "iconButtonType": "ghost",
+        "interaction": "disabled",
       },
       {
-        "class": "hover:bg-brand-secondary-hover active:bg-brand-secondary-pressed focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus",
-        "isDisabled": false,
-        "isLoading": false,
-        "variant": "secondary",
+        "class": "hover:bg-brand-secondary-hover active:bg-brand-secondary-pressed focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus",
+        "iconButtonType": "secondary",
+        "interaction": "default",
       },
       {
-        "class": "text-icon-interactive-default",
-        "isDisabled": false,
-        "variant": "secondary",
-      },
-      {
-        "class": "bg-bg-disabled-on-filled text-icon-interactive-disabled",
-        "isDisabled": true,
-        "isLoading": false,
-        "variant": "secondary",
-      },
-      {
-        "class": "hover:bg-[linear-gradient(0deg,#0000000f,#0000000f)] active:bg-[linear-gradient(0deg,#00000019,#00000019)] focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus",
-        "isDisabled": false,
-        "isLoading": false,
-        "variant": "tertiary",
-      },
-      {
-        "class": "text-icon-interactive-default",
-        "isDisabled": false,
-        "variant": "tertiary",
+        "class": "text-icon-interactive-on-secondary",
+        "iconButtonType": "secondary",
+        "interaction": ["default", "hover", "pressed", "focused"],
       },
       {
         "class": "bg-bg-disabled-on-filled text-icon-interactive-disabled",
-        "isDisabled": true,
-        "isLoading": false,
-        "variant": "tertiary",
+        "iconButtonType": "secondary",
+        "interaction": "disabled",
       },
       {
-        "class": "hover:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-hover),theme(colors.state-overlay-on-neutral-hover))] active:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-pressed),theme(colors.state-overlay-on-neutral-pressed))] focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus",
-        "isDisabled": false,
-        "isLoading": false,
-        "variant": "ghost-destructive",
+        "class": "hover:bg-[linear-gradient(0deg,#0000000f,#0000000f)] active:bg-[linear-gradient(0deg,#00000019,#00000019)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus",
+        "iconButtonType": "tertiary",
+        "interaction": "default",
+      },
+      {
+        "class": "text-icon-interactive-default",
+        "iconButtonType": "tertiary",
+        "interaction": ["default", "hover", "pressed", "focused"],
+      },
+      {
+        "class": "bg-bg-disabled-on-filled text-icon-interactive-disabled",
+        "iconButtonType": "tertiary",
+        "interaction": "disabled",
+      },
+      {
+        "class": "hover:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-hover),theme(colors.state-overlay-on-neutral-hover))] active:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-pressed),theme(colors.state-overlay-on-neutral-pressed))] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus",
+        "iconButtonType": "ghost-destructive",
+        "interaction": "default",
       },
       {
         "class": "bg-bg-surface text-icon-semantic-error",
-        "isDisabled": false,
-        "variant": "ghost-destructive",
+        "iconButtonType": "ghost-destructive",
+        "interaction": ["default", "hover", "pressed", "focused"],
       },
       {
-        "class": "bg-bg-disabled-on-light text-icon-interactive-disabled",
-        "isDisabled": true,
-        "isLoading": false,
-        "variant": "ghost-destructive",
+        "class": "text-icon-interactive-disabled",
+        "iconButtonType": "ghost-destructive",
+        "interaction": "disabled",
       },
       {
         "class": "cursor-wait",
-        "isLoading": true,
+        "interaction": "loading",
       },
     ],
   }));
 
 export interface IconButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'type' | 'disabled'>,
     VariantProps<typeof iconButtonVariants> {
-  isLoading?: boolean;
-  icon: React.ReactNode;
+  // iconButtonType, size, mode, interaction → VariantProps에서 상속
+  iconOnly: React.ReactNode;
+  /** 접근성 라벨 (필수) — 스크린 리더가 읽는 버튼 이름 */
+  'aria-label': string;
+  /** Tooltip 텍스트 (있으면 Tooltip 자동 렌더링) */
+  tooltip?: string;
+  /** Tooltip 세부 설정 */
+  tooltipProps?: Partial<Omit<TooltipProps, 'content' | 'children'>>;
   onClick?: React.MouseEventHandler<HTMLButtonElement>;
   onMouseEnter?: React.MouseEventHandler<HTMLButtonElement>;
 }
@@ -151,12 +149,13 @@ const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
   (
     {
       className,
-      variant,
+      iconButtonType,
       size,
       mode: propMode,
-      icon,
-      isLoading,
-      disabled,
+      interaction,
+      iconOnly,
+      tooltip,
+      tooltipProps,
       ...props
     },
     ref,
@@ -164,7 +163,9 @@ const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
     const contextMode = useSpacingMode();
     const mode = propMode ?? contextMode;
 
-    const isFunctionallyDisabled = isLoading || disabled;
+    const isDisabled = interaction === 'disabled';
+    const isLoading = interaction === 'loading';
+
     const iconSize = {
       lg: 24,
       md: 20,
@@ -173,23 +174,33 @@ const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
 
     const renderIcon = (iconNode: React.ReactNode) => {
       if (React.isValidElement(iconNode)) {
-        return React.cloneElement(iconNode as React.ReactElement<any>, {
+        return React.cloneElement(iconNode as React.ReactElement<{ size?: number }>, {
           size: iconSize,
         });
       }
       return iconNode;
     };
 
-    return (
+    const buttonElement = (
       <button
-        className={cn(iconButtonVariants({ variant, size, mode, isLoading: isLoading && !disabled, isDisabled: isFunctionallyDisabled, className }))}
+        className={cn(iconButtonVariants({ iconButtonType, size, mode, interaction, className }))}
         ref={ref}
-        disabled={isFunctionallyDisabled}
+        disabled={isDisabled || isLoading}
         {...props}
       >
-        {isLoading && !disabled ? <LoadingSpinner variant={variant || 'ghost'} size={iconSize} /> : renderIcon(icon)}
+        {isLoading ? <LoadingSpinner variant={iconButtonType || 'ghost'} size={iconSize} /> : renderIcon(iconOnly)}
       </button>
     );
+
+    if (tooltip) {
+      return (
+        <Tooltip content={tooltip} {...tooltipProps}>
+          {buttonElement}
+        </Tooltip>
+      );
+    }
+
+    return buttonElement;
   },
 );
 IconButton.displayName = 'IconButton';
