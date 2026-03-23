@@ -2,7 +2,11 @@
 
 import * as React from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { Cancel01Icon, Copy01Icon, Tick01Icon } from '@hugeicons/core-free-icons';
+import {
+  Cancel01Icon,
+  Copy01Icon,
+  Tick01Icon,
+} from '@hugeicons/core-free-icons';
 
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -12,6 +16,7 @@ import {
   useDescriptionVersion,
 } from '@/hooks/api/useDescriptionQuery';
 import { DescriptionHistoryItem } from './description-history-item';
+import { TypedMarkdown } from '@/components/ui/typed-markdown';
 
 interface DescriptionHistoryPanelProps {
   roomId: string;
@@ -39,10 +44,7 @@ function DescriptionHistoryPanel({ roomId }: DescriptionHistoryPanelProps) {
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
 
   // 선택된 버전 상세 조회
-  const { data: selectedVersion } = useDescriptionVersion(
-    roomId,
-    selectedId
-  );
+  const { data: selectedVersion } = useDescriptionVersion(roomId, selectedId);
 
   // 복사 상태
   const [isCopied, setIsCopied] = React.useState(false);
@@ -99,16 +101,12 @@ function DescriptionHistoryPanel({ roomId }: DescriptionHistoryPanelProps) {
       {/* 미리보기 */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {selectedVersion ? (
-          <div className="flex flex-1 flex-col p-4">
+          <div className="flex min-h-0 flex-1 flex-col p-4">
             <div className="mb-2 flex items-center justify-between">
               <span className="text-muted-foreground text-xs">
                 v{selectedVersion.version} 미리보기
               </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleCopy}
-              >
+              <Button variant="ghost" size="sm" onClick={handleCopy}>
                 <HugeiconsIcon
                   icon={isCopied ? Tick01Icon : Copy01Icon}
                   className="size-4"
@@ -117,12 +115,13 @@ function DescriptionHistoryPanel({ roomId }: DescriptionHistoryPanelProps) {
                 {isCopied ? '복사됨' : '복사'}
               </Button>
             </div>
-            <textarea
-              readOnly
-              value={selectedVersion.edited_content ?? selectedVersion.content}
-              className="bg-transparent text-foreground h-full min-h-[120px] w-full resize-none border-none text-sm leading-relaxed outline-none"
-              rows={8}
-            />
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              <TypedMarkdown>
+                {selectedVersion.edited_content ??
+                  selectedVersion.content ??
+                  ''}
+              </TypedMarkdown>
+            </div>
           </div>
         ) : (
           <div className="flex flex-1 items-center justify-center py-12">
