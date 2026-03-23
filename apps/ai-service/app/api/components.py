@@ -1055,6 +1055,56 @@ Dialog는 Compound 패턴입니다. 반드시 `Dialog.Header`, `Dialog.Body`, `D
 </Dialog>
 ```
 
+### 🚨 ModalStackProvider (Dialog/Drawer 필수 래퍼)
+Dialog 또는 Drawer가 포함된 페이지에서는 **반드시 최상위를 `ModalStackProvider`로 감싸야** 합니다.
+- z-index 자동 관리: 중첩 모달 시 자동 증가 (40 → 50 → 60)
+- ESC 키 우선순위: 최상위 모달만 ESC로 닫힘
+- Dialog/Drawer 없는 페이지에서는 불필요
+
+```tsx
+// ✅ 올바른 페이지 구조 — ModalStackProvider로 감싸기
+import { ModalStackProvider, Dialog, Drawer, Button, Field } from '@/components';
+
+const ContractPage = () => {
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
+
+  return (
+    <ModalStackProvider>
+      <div className="min-h-screen bg-[#f4f6f8] p-8">
+        {/* 페이지 콘텐츠 */}
+        <Button buttonType="primary" label="상세 보기" onClick={() => setIsDrawerOpen(true)} showStartIcon={false} showEndIcon={false} />
+
+        {/* Drawer — z-index: 40 (자동) */}
+        <Drawer open={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} size="md">
+          <Drawer.Header title="계약 상세" showSubtitle={false} />
+          <Drawer.Body>
+            <Button buttonType="destructive" label="삭제" onClick={() => setIsDialogOpen(true)} showStartIcon={false} showEndIcon={false} />
+          </Drawer.Body>
+          <Drawer.Footer>
+            <Button buttonType="outline" label="닫기" onClick={() => setIsDrawerOpen(false)} showStartIcon={false} showEndIcon={false} />
+          </Drawer.Footer>
+        </Drawer>
+
+        {/* Dialog — z-index: 50 (자동 증가, Drawer 위에 표시) */}
+        <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)} size="sm">
+          <Dialog.Header title="삭제 확인" />
+          <Dialog.Body>정말 삭제하시겠습니까?</Dialog.Body>
+          <Dialog.Footer>
+            <div className="flex gap-component-gap-control-group">
+              <Button buttonType="outline" label="취소" onClick={() => setIsDialogOpen(false)} showStartIcon={false} showEndIcon={false} />
+              <Button buttonType="destructive" label="삭제" showStartIcon={false} showEndIcon={false} />
+            </div>
+          </Dialog.Footer>
+        </Dialog>
+      </div>
+    </ModalStackProvider>
+  );
+};
+```
+- ⚠️ `ModalStackProvider` 없이 Dialog/Drawer를 사용하면 중첩 시 z-index 충돌 발생
+- ⚠️ `ModalStackProvider`는 import에 반드시 포함: `import { ModalStackProvider } from '@/components'`
+
 ### 🚨 Drawer (Compound Pattern)
 Drawer는 Compound 패턴입니다. 반드시 `Drawer.Header`, `Drawer.Body`, `Drawer.Footer`를 사용하세요.
 - 🚨 **"드로어" 요청 시 반드시 이 Drawer 컴포넌트를 사용. Dialog로 대체 금지!**
