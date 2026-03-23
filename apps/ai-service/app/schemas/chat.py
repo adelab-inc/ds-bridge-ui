@@ -111,7 +111,7 @@ class ComponentInstance(BaseModel):
     props: dict = Field(
         default_factory=dict,
         description="현재 props 값들",
-        json_schema_extra={"example": {"variant": "primary", "children": "로그인"}},
+        json_schema_extra={"example": {"buttonType": "primary", "label": "로그인"}},
     )
 
 
