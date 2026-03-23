@@ -49,6 +49,7 @@ def load_component_schema() -> tuple[dict | None, str | None]:
 AVAILABLE_COMPONENTS_WHITELIST = {
     # Basic
     "Button",
+    "Icon",
     "IconButton",
     "Link",
     # Display
@@ -405,9 +406,10 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
 
     # 테마 설정
     lines.append("### Theme")
-    lines.append("- DataGrid has `aplusGridTheme` built-in. **NO separate theme import needed.**")
+    lines.append("- 기본 테마 `'aplus'` 자동 적용 — 별도 theme prop 불필요. 한국어 로캘 자동 적용.")
     lines.append("- ❌ `import { dsRuntimeTheme } from '@/themes/agGridTheme'` — DOES NOT EXIST")
     lines.append("- ❌ `<AgGridReact theme={dsRuntimeTheme} />` — WRONG, use `<DataGrid />` instead")
+    lines.append("- ❌ `style={{ '--ag-header-background-color': 'red' }}` — 테마 토큰 직접 오버라이드 금지")
     lines.append("- ✅ `<DataGrid rowData={data} columnDefs={cols} height={400} />` — theme auto-applied")
     lines.append("")
 
@@ -572,24 +574,36 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("### ⚠️ CRITICAL: columnDefs Rules (VIOLATION = SILENT GRID FAILURE)")
     lines.append("AG Grid will **silently fail to render** (empty container, no error) if columnDefs are invalid.")
     lines.append("")
-    lines.append("**1. FLAT columnDefs ONLY — NO column groups:**")
-    lines.append("- ❌ `{ headerName: '인사정보', children: [{ field: 'name' }, { field: 'dept' }] }` — GRID DIES SILENTLY")
-    lines.append("- ❌ `marryChildren: true` — NOT SUPPORTED")
-    lines.append("- ✅ Use flat columns: `{ field: 'name', headerName: '이름' }, { field: 'dept', headerName: '부서' }`")
-    lines.append("- To visually group headers, use `headerName` prefix: `'[인사] 이름'`, `'[인사] 부서'`")
+    lines.append("**1. columnDefs — flat 권장, column group도 지원:**")
+    lines.append("- ✅ flat 권장: `{ field: 'name', headerName: '이름' }, { field: 'dept', headerName: '부서' }`")
+    lines.append("- ✅ 헤더 prefix로 시각적 그룹핑: `'[인사] 이름'`, `'[인사] 부서'`")
+    lines.append("- ✅ column group 지원: `{ headerName: '인사정보', children: [{ field: 'name' }, { field: 'dept' }] }`")
+    lines.append("- ⚠️ column group 사용 시 pinned는 group 레벨에서만 적용")
     lines.append("")
     lines.append("**2. cellRenderer — 화살표 함수 또는 named component 사용:**")
     lines.append("- ✅ `cellRenderer: (params) => <Button buttonType=\"outline\" size=\"sm\" label=\"상세\" showStartIcon={false} showEndIcon={false} />` — 디자인 시스템 Button 직접 사용")
     lines.append("- ✅ `cellRenderer: CheckboxCellRenderer` — Named component from @aplus/ui")
     lines.append("- ✅ `cellRenderer: ImageCellRenderer` — Named component from @aplus/ui")
     lines.append("- ❌ `cellRenderer: ButtonCellRenderer` — 사용 금지 (디자인 시스템 미적용, 파란색 하드코딩)")
+    lines.append("- ✅ 상태 Badge cellRenderer: `cellRenderer: (params) => <Badge type=\"status\" status={statusMap[params.value]} label={params.value} />`")
+    lines.append("- ⚠️ 분류/유형 컬럼은 cellRenderer 없이 일반 텍스트로 표시 (Tag/Badge 불필요 — 셀 내 테두리/패딩이 어색함)")
     lines.append("- For simple text formatting, use `valueFormatter`: `valueFormatter: (params) => params.value ? '활성' : '비활성'`")
     lines.append("")
     lines.append("**3. pinned — ONLY on top-level columns:**")
     lines.append("- ✅ `{ field: 'name', pinned: 'left' }` — Works on flat column")
     lines.append("- ❌ Pinned inside column group children — GRID DIES")
     lines.append("")
-    lines.append("**4. rowData — 반드시 useState 또는 useMemo로 관리:**")
+    lines.append("**4. flex 컬럼 필수 — 빈 공간 방지:**")
+    lines.append("- ⚠️ 반드시 1개 이상의 컬럼에 `flex: 1` 지정하여 그리드 전체 너비를 채울 것")
+    lines.append("- 텍스트/내용 컬럼에 `flex: 1` 권장 (이름, 제목, 내용 등 가변 길이)")
+    lines.append("- 숫자/날짜/상태/액션 컬럼은 고정 `width` 유지")
+    lines.append("- ❌ 모든 컬럼에 `width`만 사용 → 우측에 빈 공간 발생")
+    lines.append("- ❌ `{ ...COLUMN_TYPES.currencyColumn, flex: 1 }` — COLUMN_TYPES 스프레드와 flex 동시 사용 절대 금지 (순서 무관)")
+    lines.append("- ❌ `{ flex: 1, ...COLUMN_TYPES.currencyColumn }` — 동일: flex가 width를 무시하여 컬럼 과확장")
+    lines.append("- ✅ flex: 1은 텍스트 컬럼(이름, 제목, 내용)에만. COLUMN_TYPES 컬럼은 그대로 사용:")
+    lines.append("  `{ field: 'name', headerName: '이름', flex: 1 }, { field: 'amount', ...COLUMN_TYPES.currencyColumn }`")
+    lines.append("")
+    lines.append("**5. rowData — 반드시 useState 또는 useMemo로 관리:**")
     lines.append("- ❌ `const rowData = [...]` — 리렌더 시 새 배열 생성 → 체크박스 선택 해제, 스크롤 초기화 등 발생")
     lines.append("- ✅ `const [rowData, setRowData] = useState([...])` — 참조 유지되어 그리드 상태 보존")
     lines.append("")
@@ -922,7 +936,10 @@ Always respond in Korean.
 - ⚠️ **label prop으로 텍스트 전달** (children 사용 금지):
   - ✅ `<Button buttonType="primary" label="저장" showStartIcon={false} showEndIcon={false} />`
   - ❌ `<Button variant="primary">저장</Button>` — variant, children 모두 금지
-- ⚠️ **showStartIcon/showEndIcon 필수 지정** (아이콘 없으면 false)
+- ⚠️ **showStartIcon/showEndIcon 필수 지정**:
+  - 아이콘 없음: `showStartIcon={false} showEndIcon={false}`
+  - 아이콘 있음: `showStartIcon={true} startIcon={<Icon name="search" size={16} />} showEndIcon={false}`
+  - Button size별 Icon size: sm→16, md→16, lg→20
 - ⚠️ **size는 배치 위치에 따라 자동 결정** (SM 일괄 적용 절대 금지):
   - `size="lg"`: 페이지 메인 CTA (로그인, 저장 등 단독 폼 제출 버튼)
   - `size="md"`: 페이지 헤더 액션, Dialog 푸터, 필터 조회/초기화 버튼
@@ -941,6 +958,9 @@ Always respond in Korean.
 - ⚠️ **helptext** (helperText 아님): `showHelptext={true} helptext="설명"`
 - ✅ `<Field ... />` — ALWAYS self-closing
 - ❌ `<Field>children</Field>` — CRASHES (React Error #137)
+- ⚠️ **multiline (textarea)**: `<Field multiline rowsVariant="rows4" showLabel={{true}} label="내용" showHelptext={{false}} />`
+  - rowsVariant: "flexible" (1줄 시작, 자동 확장) | "rows4" | "rows6" | "rows8"
+  - ⚠️ multiline 시 showStartIcon/showEndIcon 사용 불가 — 해당 props 제거
 
 ### 🚨 Interaction Props (CRITICAL — 잘못된 prop 사용 시 스타일 미적용)
 모든 컴포넌트의 비활성/읽기전용/로딩 상태는 **`interaction` prop**을 사용합니다:
@@ -989,12 +1009,20 @@ Always respond in Korean.
   - ✅ `<Select showLabel={true} label="상태" onChange={(v) => setStatus(v)} options={options} showHelptext={false} showStartIcon={false} />`
   - ❌ `<Select onChange={(e) => setStatus(e.target.value)} />` — e.target.value 없음
 
-### Badge
-- type="status" + statusVariant: 상태 표시 전용
-  - "success": 정상, 완료, 활성
-  - "error": 실패, 해지, 오류
-  - "warning": 대기, 심사중, 주의
-  - "info": 진행중, 접수
+### Badge (⚠️ Discriminated Union — type별 props가 다름)
+- type="status": `status` prop 필수 (**statusVariant 아님!**)
+  - ✅ `<Badge type="status" status="success" label="승인" />`
+  - ✅ `<Badge type="status" status="error" label="반려" />`
+  - ✅ `<Badge type="status" status="warning" label="보류" />`
+  - ✅ `<Badge type="status" status="info" label="접수" />`
+  - ❌ `<Badge type="status" statusVariant="success" />` — 존재하지 않는 prop!
+- type="level": `level` prop 필수 ("primary" | "neutral")
+  - ✅ `<Badge type="level" level="primary" label="신규" />`
+- type="count": 숫자 카운트 표시
+  - ✅ `<Badge type="count" label="5" />`
+- type="dot": 알림 도트 (label 없음, 부모에 relative 필요)
+  - ✅ `<div className="relative"><span>알림</span><Badge type="dot" position="top-right" /></div>`
+- appearance: "solid" (기본값, 진한 배경) | "subtle" (연한 배경)
 - ❌ NEVER invent hex colors — only use exact values from the COLOR TOKEN TABLE above
 
 ### 🚨🚨 Drawer vs Dialog 구분 (절대 혼동 금지)
@@ -1047,10 +1075,8 @@ Dialog는 Compound 패턴입니다. 반드시 `Dialog.Header`, `Dialog.Body`, `D
     </div>
   </Dialog.Body>
   <Dialog.Footer>
-    <div className="flex gap-component-gap-control-group">
-      <Button buttonType="outline" label="취소" onClick={() => setIsOpen(false)} showStartIcon={false} showEndIcon={false} />
-      <Button buttonType="primary" label="확인" showStartIcon={false} showEndIcon={false} />
-    </div>
+    <Button buttonType="outline" label="취소" onClick={() => setIsOpen(false)} showStartIcon={false} showEndIcon={false} />
+    <Button buttonType="primary" label="확인" showStartIcon={false} showEndIcon={false} />
   </Dialog.Footer>
 </Dialog>
 ```
@@ -1091,10 +1117,8 @@ const ContractPage = () => {
           <Dialog.Header title="삭제 확인" />
           <Dialog.Body>정말 삭제하시겠습니까?</Dialog.Body>
           <Dialog.Footer>
-            <div className="flex gap-component-gap-control-group">
-              <Button buttonType="outline" label="취소" onClick={() => setIsDialogOpen(false)} showStartIcon={false} showEndIcon={false} />
-              <Button buttonType="destructive" label="삭제" showStartIcon={false} showEndIcon={false} />
-            </div>
+            <Button buttonType="outline" label="취소" onClick={() => setIsDialogOpen(false)} showStartIcon={false} showEndIcon={false} />
+            <Button buttonType="destructive" label="삭제" showStartIcon={false} showEndIcon={false} />
           </Dialog.Footer>
         </Dialog>
       </div>
@@ -1154,8 +1178,36 @@ Drawer는 Compound 패턴입니다. 반드시 `Drawer.Header`, `Drawer.Body`, `D
 - ⚠️ **label prop으로 텍스트 전달** (children 사용 금지):
   - ✅ `<Tag label="카테고리" />`
   - ❌ `<Tag>카테고리</Tag>` — children 금지
+- ⚠️ **variant 아님!** 기본은 prop 없이 사용, 스타일 변형은 `tagType` prop:
+  - 기본: `<Tag label="식대" />` (tagType 생략 가능)
+  - ❌ `<Tag label="식대" variant="default" />` — variant prop 존재하지 않음!
 - 색상 스와치: `<Tag tagType="swatch" color="red" label="중요" />`
-- 닫기 가능: `<Tag tagType="closable" label="제거" onClose={() => {}} />`
+- 닫기 가능: `<Tag showClose={{true}} label="제거" onClose={{() => {{}}}} />`
+
+### Icon (디자인 시스템 내장 아이콘)
+- `import {{ Icon }} from '@/components'`
+- ⚠️ **size별 사용 가능 name이 다름** (Discriminated Union):
+  - `<Icon name="search" size={{16}} />` — Button sm/md 내부 아이콘
+  - `<Icon name="search" size={{20}} />` — IconButton md, 독립 아이콘
+  - `<Icon name="search" size={{24}} />` — IconButton lg, 큰 아이콘
+- ⚠️ **size={16} 사용 가능 name** (21종):
+  add, announcement, blank, calendar, check, chevron-down, chevron-left, chevron-right, chevron-up, close, delete, dot, edit, external, loading, minus, more-vert, reset, search, star-fill, star-line
+- ⚠️ **size={20} 사용 가능 name** (56종):
+  위 16 전체 + arrow-drop-down, arrow-drop-up, arrow-right, error, filter-list, folder, folder-fill, help, image, info, link, person, post, redo, success, table, undo, video, warning, widgets 등
+- ⚠️ **size={24} 사용 가능 name** (22종):
+  add, all, arrow-drop-down, arrow-drop-up, blank, chevron-down, chevron-left, chevron-right, close, dehaze, delete, edit, filter-list, loading, menu, more-vert, person, post, search, star-fill, star-line, widgets
+- ⚠️ **존재하지 않는 name 사용 금지** — 위 목록에 없는 name은 빈 아이콘 렌더링
+- ⚠️ **size={{20}}에만 있는 아이콘 (size 16/24에 없음!)**:
+  image, info, success, warning, error, help, link, person, folder, video, table, widgets, redo, undo
+  - ❌ `<Icon name="image" size={{24}} />` — size 24에 "image" 없음! 빈 아이콘 렌더링
+  - ✅ `<Icon name="image" size={{20}} />`
+- 용도별 권장 아이콘:
+  - 액션: `add`, `delete`, `edit`, `close`, `search`, `reset`
+  - 탐색: `chevron-down`, `chevron-left`, `chevron-right`, `chevron-up`, `external`
+  - 상태: `check`, `loading`, `star-fill`, `star-line`
+  - 기타: `blank` (ActionBar 아이콘 자리), `more-vert`, `calendar`, `filter-list`
+- ❌ lucide-react, heroicons 등 외부 아이콘 라이브러리 절대 금지
+- ❌ emoji(🔍, ⭐), inline SVG(`<svg>`) 사용 금지
 
 ### IconButton
 - ⚠️ `variant` 아님! `iconButtonType` prop 사용:
@@ -1208,9 +1260,9 @@ Drawer는 Compound 패턴입니다. 반드시 `Drawer.Header`, `Drawer.Body`, `D
 - Field의 display 모드 대응. 조회 전용 화면에서 사용
 - 레이아웃: 수평 (label 왼쪽, value 오른쪽) — Field와 다름 (Field는 수직)
 - labelWidth: "compact"(120px) | "default"(160px) | "wide"(200px)
-```tsx
-<LabelValue showLabel={true} label="이름" text="홍길동" size="md" showHelptext={false} showPrefix={false} showStartIcon={false} showEndIcon={false} />
-```
+- ⚠️ **Discriminated Union 패턴** — showLabel/showHelptext/showPrefix/showStartIcon/showEndIcon 필수 지정:
+  - ✅ `<LabelValue showLabel={{true}} label="이름" text="홍길동" size="md" showHelptext={{false}} showPrefix={{false}} showStartIcon={{false}} showEndIcon={{false}} />`
+  - ❌ `<LabelValue showLabel={{true}} label="이름" text="홍길동" showHelptext={{false}} />` — showPrefix/showStartIcon/showEndIcon 누락 시 타입 에러
 
 ### TitleSection (페이지 헤더)
 - Breadcrumb + 제목(h1) + 우측 액션 영역
@@ -1298,16 +1350,12 @@ Drawer는 Compound 패턴입니다. 반드시 `Drawer.Header`, `Drawer.Body`, `D
 - **⛔ ABSOLUTELY NO icon library imports** — lucide-react, material-icons, heroicons, react-icons 등 모두 설치되어 있지 않음. import 시 앱이 크래시남
 - **⛔ NEVER `import {{ ... }} from 'lucide-react'`** — THIS WILL CRASH THE APP
 - **⛔ NEVER use emoji as icons** (🔍, ⭐, 📁, 👤) — unprofessional
-- **⛔ NEVER use IconButton** or icon props (leftIcon, rightIcon, icon on Button/Alert/Chip)
 - **⛔ NEVER use inline SVG** (`<svg>`) — 코드가 불필요하게 길어짐
-- **⛔ NO ICONS AT ALL** — 이 프로젝트에는 아이콘이 없음. 아이콘 자리에는 반드시 텍스트로 대체
-- **✅ 텍스트로만 표현**:
-  - 버튼: `<Button>검색</Button>`, `<Button>추가</Button>`, `<Button>삭제</Button>`
-  - 브레드크럼 구분자: 텍스트 `>` 또는 `/` 사용
-  - 즐겨찾기: 텍스트 버튼 `<button>즐겨찾기</button>`
-  - 닫기: 텍스트 `<button>닫기</button>` 또는 `<button>×</button>`
-  - 외부링크: 텍스트만 `<Button>이미지시스템</Button>`
-  - 이미지 참조 UI에 아이콘이 보이더라도 텍스트로 대체할 것
+- **✅ 아이콘은 디자인 시스템 `Icon` 컴포넌트만 사용**: `import {{ Icon }} from '@/components'`
+  - Button 아이콘: `<Button buttonType="tertiary" label="다운로드" showStartIcon={{true}} startIcon={{<Icon name="external" size={{16}} />}} showEndIcon={{false}} />`
+  - IconButton: `<IconButton iconOnly={{<Icon name="search" size={{20}} />}} iconButtonType="ghost" size="md" tooltip="검색" />`
+  - ⚠️ size별 사용 가능한 name이 다름 — Icon 컴포넌트 가이드 참조
+  - ⚠️ 존재하지 않는 name 사용 시 빈 아이콘 렌더링됨
 - **Profile images**: Initial Avatar — colored circle with first character
   - `<div className="w-10 h-10 rounded-full bg-[#0033a0] text-white flex items-center justify-center font-semibold text-sm">{{name.charAt(0)}}</div>`
   - Color by `name.charCodeAt(0) % 6` from design tokens: `['#0033a0','#8b5cf6','#ec4899','#ed6c02','#2e7d32','#0288d1']`
@@ -1325,7 +1373,7 @@ Drawer는 Compound 패턴입니다. 반드시 `Drawer.Header`, `Drawer.Body`, `D
    - ✅ 확인 방법: JSX에서 `<ComponentName`으로 사용한 모든 컴포넌트가 import 문에 있는지 최종 점검
 2. **REACT**: `React.useState`, `React.useEffect` directly (no import needed)
 3. **STYLING**: Tailwind CSS only (`className="..."`). `style={{{{}}}}` ONLY for dynamic JS variable values. No custom CSS.
-4. **NO EXTERNAL LIBS**: ⛔ NEVER import lucide-react, heroicons, material-icons, react-icons, framer-motion — NOT INSTALLED, WILL CRASH. No icons — use text only.
+4. **NO EXTERNAL LIBS**: ⛔ NEVER import lucide-react, heroicons, material-icons, react-icons, framer-motion — NOT INSTALLED, WILL CRASH. 아이콘은 디자인 시스템 `Icon` 컴포넌트만 사용.
 5. **ENUM PROPS**: Match context — NEVER use the same size/variant for every component on a page
    - 페이지 헤더 버튼: `size="md"`, 필터 조회 버튼: `size="md"`, DataGrid 내부: `size="sm"`, 폼 제출: `size="lg"`
    - Badge 상태: 성공="success", 실패="error", 대기="warning"
@@ -1534,6 +1582,9 @@ PRE_GENERATION_CHECKLIST = """
 9. **Discriminated Union 검증**: Field/Select에 `showLabel`, `showHelptext`, `showStartIcon`, `showEndIcon`이 모두 지정되어 있는가?
 10. **interaction 검증**: `disabled`, `isDisabled`, `readOnly`, `isReadOnly` 대신 `interaction="disabled"` / `interaction="readonly"` 사용했는가?
 11. **Button label 검증**: `<Button>텍스트</Button>` (children) 대신 `<Button label="텍스트" />` 사용했는가?
+12. **Icon 검증**: `<Icon name="...">`의 name이 해당 size에서 유효한 아이콘인가? 외부 아이콘 라이브러리를 import하지 않았는가?
+13. **Badge 검증**: `statusVariant` 사용하지 않았는가? type="status"일 때 `status` prop을 사용했는가?
+14. **DataGrid flex 검증**: 컬럼 정의에 `flex: 1`이 1개 이상 있는가? 모든 컬럼이 고정 width만 사용하면 빈 공간 발생.
 
 ---
 
@@ -1781,7 +1832,7 @@ def format_layouts(layouts: list[dict]) -> str:
                 base_key = key.split("#")[0].strip()
                 if base_key.lower() in ("label", "title", "text", "placeholder"):
                     cleaned[base_key] = value
-                # icon, show 관련은 제거 (아이콘 사용 금지 규칙과 일치)
+                # icon, show 관련 Figma 내부 키는 제거 (런타임 Icon 컴포넌트와 무관)
         return cleaned
 
     def _clean_node(node: dict) -> dict:
