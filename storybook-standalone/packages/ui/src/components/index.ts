@@ -36,4 +36,3 @@ export * from './Toast';
 export * from './Tooltip';
 export * from './TreeMenu';
 export { cn } from './utils';
-export * from '../layout';
