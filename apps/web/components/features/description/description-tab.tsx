@@ -118,7 +118,9 @@ function DescriptionTab({ roomId }: DescriptionTabProps) {
           <DescriptionVersionBanner
             version={currentVersion}
             reason={currentDescription.reason}
-            isLatest={!latestDescription || currentVersion >= latestDescription.version}
+            isLatest={
+              !latestDescription || currentVersion >= latestDescription.version
+            }
             isEditing={false}
           />
         )}
