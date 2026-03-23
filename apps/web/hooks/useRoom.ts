@@ -4,6 +4,7 @@ import { useGetRoom } from '@/hooks/api/useRoomQuery';
 import type { components } from '@ds-hub/shared-types/typescript/api/schema';
 import { useCreateRoom } from './api/useCreateRoom';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useRoomsList } from './supabase/useRoomsList';
 
 type RoomResponse = components['schemas']['RoomResponse'];
 
@@ -23,6 +24,7 @@ export function useRoom(options: UseRoomOptions = {}): UseRoomReturn {
   const searchParams = useSearchParams();
   const router = useRouter();
   const hasTriedCreate = useRef(false);
+  const hasRedirectedToExisting = useRef(false);
   const authUser = useAuthStore((s) => s.user);
   const isAuthLoading = useAuthStore((s) => s.isLoading);
 
@@ -38,12 +40,15 @@ export function useRoom(options: UseRoomOptions = {}): UseRoomReturn {
     enabled: !!crid && !isAuthLoading,
   });
 
-  // 3. 채팅방 생성 mutation
+  // 3. 프로젝트 목록 조회 (crid가 없을 때 최근 프로젝트 확인용)
+  const { rooms, isLoading: isRoomsListLoading } = useRoomsList();
+
+  // 4. 채팅방 생성 mutation
   const createRoomMutation = useCreateRoom();
 
-  // 4. 룸 생성 로직
+  // 5. crid 없을 때: 기존 프로젝트가 있으면 최근 프로젝트로 리다이렉트, 없으면 새로 생성
   useEffect(() => {
-    // Auth 상태 초기화 대기 (onAuthStateChanged 완료 전까지 스킵)
+    // Auth 상태 초기화 대기
     if (isAuthLoading) {
       return;
     }
@@ -51,6 +56,7 @@ export function useRoom(options: UseRoomOptions = {}): UseRoomReturn {
     // 이미 생성 시도했거나, 생성 중이거나, 이미 생성된 경우 스킵
     if (
       hasTriedCreate.current ||
+      hasRedirectedToExisting.current ||
       createRoomMutation.isPending ||
       createRoomMutation.data ||
       createRoomMutation.error
@@ -68,12 +74,27 @@ export function useRoom(options: UseRoomOptions = {}): UseRoomReturn {
       return;
     }
 
-    // crid가 없거나 조회 실패 시 새 룸 생성
+    // crid가 없거나 조회 실패 시
     if (!crid || fetchError) {
       if (fetchError) {
         console.warn(`Failed to fetch room ${crid}, creating new room...`);
       }
 
+      // 프로젝트 목록 로딩 중이면 대기
+      if (!crid && isRoomsListLoading) {
+        return;
+      }
+
+      // 기존 프로젝트가 있으면 가장 최근 프로젝트로 리다이렉트
+      if (!crid && rooms.length > 0) {
+        hasRedirectedToExisting.current = true;
+        const params = new URLSearchParams(searchParams.toString());
+        params.set('crid', rooms[0].id);
+        router.replace(`?${params.toString()}`);
+        return;
+      }
+
+      // 프로젝트가 없으면 새로 생성
       hasTriedCreate.current = true;
 
       createRoomMutation.mutate(
@@ -83,14 +104,13 @@ export function useRoom(options: UseRoomOptions = {}): UseRoomReturn {
         },
         {
           onSuccess: (newRoom) => {
-            // 쿼리 파라미터 업데이트
             const params = new URLSearchParams(searchParams.toString());
             params.set('crid', newRoom.id);
             router.replace(`?${params.toString()}`);
           },
           onError: (error) => {
             console.error('Failed to create room:', error);
-            hasTriedCreate.current = false; // 실패 시 재시도 가능하도록
+            hasTriedCreate.current = false;
           },
         }
       );
@@ -101,6 +121,8 @@ export function useRoom(options: UseRoomOptions = {}): UseRoomReturn {
     isFetching,
     existingRoom,
     fetchError,
+    isRoomsListLoading,
+    rooms,
     createRoomMutation,
     options.storybookUrl,
     options.userId,
@@ -109,8 +131,12 @@ export function useRoom(options: UseRoomOptions = {}): UseRoomReturn {
     router,
   ]);
 
-  // 5. 통합 상태 계산
-  const isLoading = isAuthLoading || isFetching || createRoomMutation.isPending;
+  // 6. 통합 상태 계산
+  const isLoading =
+    isAuthLoading ||
+    isFetching ||
+    isRoomsListLoading ||
+    createRoomMutation.isPending;
   const error =
     fetchError?.message || createRoomMutation.error?.message || null;
   const room = existingRoom || createRoomMutation.data || null;
