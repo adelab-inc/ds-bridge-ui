@@ -1,0 +1,236 @@
+{
+  "_meta": {
+    "generatedAt": "2026-03-23T00:58:37.553Z",
+    "sourceCount": 15
+  },
+  "Alert": {
+    "defaultProps": {
+      "type": "info",
+      "mode": "base",
+      "isToast": false,
+      "body": "이것은 알림 메시지입니다. Controls 패널에서 모든 옵션을 변경할 수 있습니다.",
+      "showIcon": true,
+      "showTitle": false,
+      "title": "알림 제목",
+      "showClose": false,
+      "showActionGroup": false,
+      "showAction1": true,
+      "action1Label": "확인",
+      "showAction2": false,
+      "action2Label": "취소"
+    },
+    "usageExample": "<Alert\n  type=\"info\"\n  mode=\"base\"\n  isToast={false}\n  body=\"이것은 알림 메시지입니다. Controls 패널에서 모든 옵션을 변경할 수 있습니다.\"\n  showIcon={true}\n  showTitle={false}\n  title=\"알림 제목\"\n  showClose={false}\n  showActionGroup={false}\n  showAction1={true}\n  action1Label=\"확인\"\n  showAction2={false}\n  action2Label=\"취소\"\n/>"
+  },
+  "Badge": {
+    "defaultProps": {
+      "type": "level",
+      "level": "primary",
+      "status": "info",
+      "mode": "base",
+      "appearance": "solid",
+      "label": "Badge",
+      "position": "top-right"
+    },
+    "usageExample": "<Badge\n  type=\"level\"\n  level=\"primary\"\n  status=\"info\"\n  mode=\"base\"\n  appearance=\"solid\"\n  label=\"Badge\"\n  position=\"top-right\"\n/>"
+  },
+  "Button": {
+    "defaultProps": {
+      "buttonType": "primary",
+      "size": "md",
+      "mode": "base",
+      "interaction": "default",
+      "label": "Button",
+      "showStartIcon": false,
+      "showEndIcon": false
+    },
+    "variants": [
+      "Primary",
+      "Secondary",
+      "Outline",
+      "Tertiary",
+      "Destructive",
+      "OutlineDestructive",
+      "GhostInverse"
+    ],
+    "usageExample": "<Button\n  buttonType=\"primary\"\n  size=\"md\"\n  mode=\"base\"\n  interaction=\"default\"\n  label=\"Button\"\n  showStartIcon={false}\n  showEndIcon={false}\n/>"
+  },
+  "Checkbox": {
+    "defaultProps": {
+      "value": "unchecked",
+      "interaction": "default",
+      "size": "18"
+    },
+    "variants": [
+      "Disabled"
+    ],
+    "usageExample": "<Checkbox value=\"unchecked\" interaction=\"default\" size=\"18\" />"
+  },
+  "Chip": {
+    "defaultProps": {
+      "label": "Chip",
+      "type": "default",
+      "size": "md",
+      "mode": "base",
+      "interaction": "default",
+      "selected": false,
+      "disabled": false,
+      "iconOnly": false,
+      "showIcon": false,
+      "showClose": false
+    },
+    "variants": [
+      "ChipGroupScroll",
+      "ChipGroupNoScroll",
+      "SingleSelection",
+      "MultipleSelection"
+    ],
+    "usageExample": "<Chip\n  label=\"Chip\"\n  type=\"default\"\n  size=\"md\"\n  mode=\"base\"\n  interaction=\"default\"\n  selected={false}\n  disabled={false}\n  iconOnly={false}\n  showIcon={false}\n  showClose={false}\n/>"
+  },
+  "Dialog": {
+    "defaultProps": {
+      "size": "md",
+      "mode": "base",
+      "title": "Dialog Title",
+      "subtitle": "This is a subtitle description",
+      "children": "Dialog content goes here. This is the body of the dialog.",
+      "primaryLabel": "확인",
+      "secondaryLabel": "취소"
+    },
+    "variants": [
+      "NestedModals",
+      "ScrollContent"
+    ],
+    "compoundPattern": "Dialog.Header, Dialog.Body, Dialog.Footer",
+    "usageExample": "<Dialog size=\"md\" open={isOpen} onClose={() => setIsOpen(false)}>\n  <Dialog.Header title=\"제목\" subtitle=\"부제목\" />\n  <Dialog.Body>내용</Dialog.Body>\n  <Dialog.Footer>\n    <Button buttonType=\"outline\" label=\"취소\" showStartIcon={false} showEndIcon={false} />\n    <Button buttonType=\"primary\" label=\"확인\" showStartIcon={false} showEndIcon={false} />\n  </Dialog.Footer>\n</Dialog>"
+  },
+  "Divider": {
+    "defaultProps": {
+      "orientation": "horizontal",
+      "tone": "default"
+    },
+    "usageExample": "<Divider orientation=\"horizontal\" tone=\"default\" />"
+  },
+  "Drawer": {
+    "defaultProps": {
+      "size": "md",
+      "mode": "base",
+      "dim": true,
+      "title": "Drawer Title",
+      "showSubtitle": false,
+      "subtitle": "부제목이 필요한 경우 여기에 적습니다.",
+      "primaryLabel": "엑셀다운로드",
+      "secondaryLabel": "닫기"
+    },
+    "variants": [
+      "WithoutDim",
+      "WithScrollableContent"
+    ],
+    "compoundPattern": "Drawer.Header, Drawer.Body, Drawer.Footer",
+    "usageExample": "<Drawer size=\"md\" open={isOpen} onClose={() => setIsOpen(false)}>\n  <Drawer.Header title=\"제목\" showSubtitle={false} />\n  <Drawer.Body>내용</Drawer.Body>\n  <Drawer.Footer>\n    <Button buttonType=\"outline\" label=\"닫기\" showStartIcon={false} showEndIcon={false} />\n    <Button buttonType=\"primary\" label=\"확인\" showStartIcon={false} showEndIcon={false} />\n  </Drawer.Footer>\n</Drawer>"
+  },
+  "Field": {
+    "defaultProps": {
+      "size": "md",
+      "mode": "base",
+      "interaction": "default",
+      "hasError": false,
+      "multiline": false,
+      "required": false,
+      "showLabel": true,
+      "label": "레이블",
+      "showHelptext": true,
+      "helptext": "도움말 텍스트입니다.",
+      "showPrefix": false,
+      "showStartIcon": false,
+      "showEndIcon": false,
+      "placeholder": "입력하세요"
+    },
+    "variants": [
+      "Multiline"
+    ],
+    "usageExample": "<Field\n  size=\"md\"\n  mode=\"base\"\n  interaction=\"default\"\n  hasError={false}\n  multiline={false}\n  required={false}\n  showLabel={true}\n  label=\"레이블\"\n  showHelptext={true}\n  helptext=\"도움말 텍스트입니다.\"\n  showPrefix={false}\n  showStartIcon={false}\n  showEndIcon={false}\n  placeholder=\"입력하세요\"\n/>"
+  },
+  "Link": {
+    "defaultProps": {
+      "to": "/",
+      "children": "Link",
+      "underline": "on-hover",
+      "tone": "link",
+      "size": "md",
+      "interaction": "default"
+    },
+    "usageExample": "<Link\n  to=\"/\"\n  children=\"Link\"\n  underline=\"on-hover\"\n  tone=\"link\"\n  size=\"md\"\n  interaction=\"default\"\n/>"
+  },
+  "Radio": {
+    "defaultProps": {
+      "value": "unchecked",
+      "interaction": "default",
+      "size": "18"
+    },
+    "variants": [
+      "Disabled"
+    ],
+    "usageExample": "<Radio value=\"unchecked\" interaction=\"default\" size=\"18\" />"
+  },
+  "Select": {
+    "defaultProps": {
+      "id": "select-story",
+      "size": "md",
+      "mode": "base",
+      "interaction": "default",
+      "showLabel": true,
+      "label": "선택 항목",
+      "required": false,
+      "showHelptext": true,
+      "helptext": "항목을 선택해주세요",
+      "showStartIcon": false,
+      "placeholder": "선택하세요"
+    },
+    "variants": [
+      "FlipPositioning",
+      "DescriptionOptions",
+      "ProfileOptions",
+      "BadgeOptions",
+      "MultiSelect",
+      "WithComplexOptions"
+    ],
+    "usageExample": "<Select\n  id=\"select-story\"\n  size=\"md\"\n  mode=\"base\"\n  interaction=\"default\"\n  showLabel={true}\n  label=\"선택 항목\"\n  required={false}\n  showHelptext={true}\n  helptext=\"항목을 선택해주세요\"\n  showStartIcon={false}\n  placeholder=\"선택하세요\"\n  options={[{ value: 'option1', label: '옵션 1' }, { value: 'option2', label: '옵션 2' }]}\n/>"
+  },
+  "Tag": {
+    "defaultProps": {
+      "label": "Tag Label",
+      "tagType": "default",
+      "color": "red",
+      "mode": "base",
+      "showClose": false
+    },
+    "variants": [
+      "TagGroupExample"
+    ],
+    "usageExample": "<Tag\n  label=\"Tag Label\"\n  tagType=\"default\"\n  color=\"red\"\n  mode=\"base\"\n  showClose={false}\n/>"
+  },
+  "ToggleSwitch": {
+    "defaultProps": {
+      "selected": "off"
+    },
+    "usageExample": "<ToggleSwitch selected=\"off\" />"
+  },
+  "Tooltip": {
+    "defaultProps": {
+      "context": "default",
+      "content": "툴팁입니다.",
+      "delay": 200,
+      "closeDelay": 500,
+      "preferredPosition": "top",
+      "truncation": false,
+      "followCursor": false
+    },
+    "variants": [
+      "TruncationFalse",
+      "TruncationTrue",
+      "AlwaysVisibleFalse",
+      "AlwaysVisibleTrue"
+    ],
+    "usageExample": "<Tooltip context=\"default\" content=\"툴팁입니다.\" delay={200} closeDelay={500} preferredPosition=\"top\" truncation={false} followCursor={false}>\n  <Button label=\"Hover me\" showStartIcon={false} showEndIcon={false} />\n</Tooltip>"
+  }
+}

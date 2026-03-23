@@ -734,6 +734,81 @@ def format_component_definitions(definitions: dict | None) -> str:
     return "\n".join(lines) + "\n"
 
 
+# ============================================================================
+# Story Examples (빌드 타임 추출 JSON)
+# ============================================================================
+
+
+def load_story_examples() -> dict | None:
+    """스토리 예제 JSON 로드 (story-examples.json)"""
+    service_root = Path(__file__).parent.parent.parent
+
+    # 1순위: storybook-standalone에서 직접 참조 (로컬 개발)
+    # 2순위: ai-service 루트 (Docker 빌드 시 deploy.sh가 복사)
+    candidates = [
+        service_root.parent.parent / "storybook-standalone" / "exports" / "story-examples.json",
+        service_root / "story-examples.json",
+    ]
+
+    for path in candidates:
+        if path.exists():
+            with open(path, encoding="utf-8") as f:
+                return json.load(f)
+
+    return None
+
+
+def format_story_examples(examples: dict | None) -> str:
+    """
+    스토리 예제를 프롬프트용 컴포넌트별 사용 예시로 포맷팅
+
+    Args:
+        examples: story-examples.json에서 로드한 dict 또는 None
+
+    Returns:
+        포맷팅된 컴포넌트별 사용 예시 문자열
+    """
+    if not examples:
+        return ""
+
+    lines = [
+        "\n## Component Usage Examples (from Design System Stories)\n",
+        "Each example below shows the **correct prop usage** from the official design system.\n",
+    ]
+
+    for comp_name in sorted(examples.keys()):
+        if comp_name.startswith("_"):
+            continue
+        if comp_name not in AVAILABLE_COMPONENTS_WHITELIST:
+            continue
+
+        comp = examples[comp_name]
+
+        # 컴포넌트 헤더
+        lines.append(f"### {comp_name}")
+
+        # Variants
+        variants = comp.get("variants")
+        if variants:
+            lines.append(f"Variants: {', '.join(f'`{v}`' for v in variants)}")
+
+        # Compound pattern
+        compound = comp.get("compoundPattern")
+        if compound:
+            lines.append(f"Sub-components: {compound}")
+
+        # 사용 예시
+        usage = comp.get("usageExample")
+        if usage:
+            lines.append("```tsx")
+            lines.append(usage)
+            lines.append("```")
+
+        lines.append("")
+
+    return "\n".join(lines) + "\n"
+
+
 # 디자인 토큰을 로드하지 못했을 때 사용할 기본값
 DEFAULT_DESIGN_TOKENS_SECTION = """## 🎨 DESIGN STANDARDS (CRITICAL - USE TAILWIND CLASSES)
 - **Typography (MUST FOLLOW EXACT TOKENS)**:
@@ -1507,12 +1582,15 @@ import { Button, Field, Select, Drawer } from '@/components';
 _schema, _error = load_component_schema()
 COMPONENT_DOCS = format_component_docs(_schema) if _schema else (_error or "Schema not loaded")
 AVAILABLE_COMPONENTS = get_available_components_note(_schema) if _schema else ""
+_story_examples = load_story_examples()
+STORY_EXAMPLES_SECTION = format_story_examples(_story_examples)
 SYSTEM_PROMPT = (
     SYSTEM_PROMPT_HEADER
     + LAYOUT_GUIDE
     + "\n## Available Components\n\n"
     + AVAILABLE_COMPONENTS
     + COMPONENT_DOCS
+    + STORY_EXAMPLES_SECTION
     + UI_PATTERN_EXAMPLES
     + PRE_GENERATION_CHECKLIST
     + RESPONSE_FORMAT_INSTRUCTIONS
@@ -1652,6 +1730,7 @@ def generate_system_prompt(
         + ag_grid_section
         + component_definitions_section
         + layouts_section
+        + STORY_EXAMPLES_SECTION
         + UI_PATTERN_EXAMPLES
         + PRE_GENERATION_CHECKLIST
         + RESPONSE_FORMAT_INSTRUCTIONS

@@ -112,6 +112,17 @@ build() {
 
     cd "$(dirname "$0")/.."
 
+    # Story 예제 추출 + 복사
+    STORYBOOK_DIR="../../storybook-standalone"
+    if [ -d "${STORYBOOK_DIR}/packages/ui/src/stories" ]; then
+        log_info "Extracting story examples..."
+        (cd "${STORYBOOK_DIR}" && pnpm story:extract)
+        cp "${STORYBOOK_DIR}/exports/story-examples.json" ./story-examples.json
+        log_info "Story examples copied to ai-service"
+    else
+        log_warn "Story files not found, skipping extraction"
+    fi
+
     docker build \
         --platform linux/amd64 \
         -t "${IMAGE_NAME}:latest" \
