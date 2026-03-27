@@ -90,15 +90,18 @@ type AlertActionGroupProps =
   | { showActionGroup?: false; showAction1?: never; action1Label?: never; action1OnClick?: never; showAction2?: never; action2Label?: never; action2OnClick?: never }
   | ({ showActionGroup: true } & AlertAction1Props & AlertAction2Props);
 
+type AlertCloseProps =
+  | { isToast: true; onClose: () => void; showClose?: boolean }
+  | { isToast?: false; onClose?: () => void; showClose?: boolean };
+
 export type AlertProps =
   Omit<React.HTMLAttributes<HTMLDivElement>, 'title'> &
-  VariantProps<typeof alertVariants> &
+  Omit<VariantProps<typeof alertVariants>, 'isToast'> &
   AlertIconProps &
   AlertTitleProps &
-  AlertActionGroupProps & {
+  AlertActionGroupProps &
+  AlertCloseProps & {
     body: React.ReactNode;
-    showClose?: boolean;
-    onClose?: () => void;
   };
 
 const stateIconMap = {
@@ -160,11 +163,17 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
         ? <Icon name={stateIconMap[type as keyof typeof stateIconMap]} size={20} />
         : null);
 
-    // default type일 때 아이콘 색상 적용
-    const iconColorClass = type === 'default' ? 'text-icon-interactive-default [&_path]:!fill-current' : '';
+    // type별 아이콘 색상 적용
+    const iconColorClass = {
+      default: 'text-icon-interactive-default',
+      info: 'text-icon-semantic-info',
+      success: 'text-icon-semantic-success',
+      warning: 'text-icon-semantic-warning',
+      error: 'text-icon-semantic-error',
+    }[type || 'default'] + ' [&_path]:!fill-current';
 
     // 닫기 버튼 표시 여부
-    const shouldShowCloseButton = showClose ?? !!onClose;
+    const shouldShowCloseButton = isToast ? true : (showClose ?? !!onClose);
 
     // 액션 버튼 렌더링
     const actionButtonClass = "text-body-sm-medium rounded py-[2px] px-[6px] -my-[2px] -mx-[6px] hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed";

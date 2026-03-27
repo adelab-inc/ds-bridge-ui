@@ -1,3 +1,4 @@
+import * as React from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { FilterBar, type FilterBarProps } from '../components/FilterBar';
@@ -70,6 +71,9 @@ const surrenderOptions = opt('제출', '미제출');
  * Figma Frame: 3254:320797
  */
 function ContractFilterBarContent() {
+  const [wmChecked, setWmChecked] = React.useState<'unchecked' | 'checked'>('unchecked');
+  const [eSign, setESign] = React.useState<'N' | 'Y'>('N');
+
   return (
     <>
       {/* ── Row 1: span-2 위주 + span-1 마무리 ── */}
@@ -123,7 +127,7 @@ function ContractFilterBarContent() {
       <div className="col-span-1">
         <OptionGroup label="WM상담" showLabel orientation="horizontal" size="sm">
           <Option label="체결" size="sm">
-            <Checkbox size="18" value="unchecked" />
+            <Checkbox size="18" value={wmChecked} onChange={() => setWmChecked(prev => prev === 'checked' ? 'unchecked' : 'checked')} />
           </Option>
         </OptionGroup>
       </div>
@@ -165,10 +169,10 @@ function ContractFilterBarContent() {
       <div className="col-span-1">
         <OptionGroup label="전자서명(A+에이전)" showLabel orientation="horizontal" size="sm">
           <Option label="N" size="sm">
-            <Radio size="18" value="checked" />
+            <Radio size="18" value={eSign === 'N' ? 'checked' : 'unchecked'} onChange={() => setESign('N')} />
           </Option>
           <Option label="Y" size="sm">
-            <Radio size="18" value="unchecked" />
+            <Radio size="18" value={eSign === 'Y' ? 'checked' : 'unchecked'} onChange={() => setESign('Y')} />
           </Option>
         </OptionGroup>
       </div>
@@ -236,6 +240,77 @@ const meta: Meta<FilterBarProps> = {
 
 export default meta;
 type Story = StoryObj<FilterBarProps>;
+
+export const ActionRightAligned: Story = {
+  name: '액션 버튼 우측 정렬',
+  args: {
+    mode: Mode.COMPACT,
+  },
+  render: (args) => (
+    <div className="max-w-[1920px] flex flex-col gap-6">
+      {/* 12컬럼 가이드 */}
+      <div className="grid grid-cols-12 gap-3">
+        {Array.from({ length: 12 }, (_, i) => (
+          <div
+            key={i}
+            className="h-6 rounded bg-blue-100 flex items-center justify-center text-blue-600 text-[11px] font-mono"
+          >
+            {i + 1}
+          </div>
+        ))}
+      </div>
+
+      {/* 케이스 1: 필터 2개(col-span-2 × 2 = 4컬럼) + 액션 2컬럼 → 6컬럼 비어도 우측 정렬 */}
+      <div>
+        <p className="text-[12px] text-text-secondary mb-1">필터 2개 (4컬럼) + actionSpan=2 → 액션이 우측 끝에 정렬</p>
+        <FilterBar mode={args.mode} onReset={() => {}} onSearch={() => {}} actionSpan={2}>
+          <div className="col-span-2">
+            <LabeledSelect label="보험사" options={opt('전체', '삼성생명')} showLabel size="sm" />
+          </div>
+          <div className="col-span-2">
+            <LabeledField label="상품명" showLabel placeholder="검색어" size="sm" />
+          </div>
+        </FilterBar>
+      </div>
+
+      {/* 케이스 2: 필터 1개(col-span-2 = 2컬럼) + 액션 2컬럼 → 8컬럼 비어도 우측 정렬 */}
+      <div>
+        <p className="text-[12px] text-text-secondary mb-1">필터 1개 (2컬럼) + actionSpan=2 → 액션이 우측 끝에 정렬</p>
+        <FilterBar mode={args.mode} onReset={() => {}} onSearch={() => {}} actionSpan={2}>
+          <div className="col-span-2">
+            <LabeledField label="키워드" showLabel placeholder="검색어 입력" size="sm" />
+          </div>
+        </FilterBar>
+      </div>
+
+      {/* 케이스 3: 필터 없이 액션만 → 전체 우측 정렬 */}
+      <div>
+        <p className="text-[12px] text-text-secondary mb-1">필터 없음 + actionSpan=2 → 액션만 우측 끝에 정렬</p>
+        <FilterBar mode={args.mode} onReset={() => {}} onSearch={() => {}} actionSpan={2}>
+          <></>
+        </FilterBar>
+      </div>
+    </div>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story: [
+          '**액션 버튼 우측 정렬**',
+          '',
+          '자식 필터가 12컬럼을 채우지 않아도, 액션 버튼(초기화 + 조회하기)은 항상 그리드 우측 끝에 고정됩니다.',
+          '`col-start` CSS Grid 속성을 통해 `actionSpan` 값에 따라 자동 계산됩니다.',
+          '',
+          '| 시나리오 | 필터 컬럼 | 빈 컬럼 | 액션 위치 |',
+          '|---|---|---|---|',
+          '| 필터 2개 (4컬럼) | 4 | 6 | 11~12 (우측 끝) |',
+          '| 필터 1개 (2컬럼) | 2 | 8 | 11~12 (우측 끝) |',
+          '| 필터 없음 | 0 | 10 | 11~12 (우측 끝) |',
+        ].join('\n'),
+      },
+    },
+  },
+};
 
 export const Default: Story = {
   name: '12컬럼 그리드 시스템',

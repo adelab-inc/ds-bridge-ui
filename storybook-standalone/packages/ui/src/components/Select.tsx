@@ -643,6 +643,12 @@ const Select = React.forwardRef<HTMLDivElement, SelectProps>(
             htmlFor={selectId}
             {...labelProps}
             className={cn(selectLabelVariants({ size, isDisabled }), labelProps?.className)}
+            onMouseDown={() => { hadMouseDownRef.current = true; }}
+            onClick={() => {
+              if (!isDisabled) {
+                (combinedRef as React.RefObject<HTMLDivElement>).current?.focus();
+              }
+            }}
           >
             <span className="truncate">{label}</span>
             {required && (
@@ -681,6 +687,7 @@ const Select = React.forwardRef<HTMLDivElement, SelectProps>(
             {...selectProps}
             className={cn(
               selectVariants({ size, mode, interaction, isOpen: isActive }),
+              'outline-none',
               isFocusVisible && 'outline outline-2 outline-focus outline-offset-[-2px]',
               !isDisabled && 'cursor-pointer',
               'select-none',
@@ -689,11 +696,19 @@ const Select = React.forwardRef<HTMLDivElement, SelectProps>(
             onMouseDown={handleMouseDown}
             onClick={handleTriggerClick}
             onKeyDown={handleTriggerKeyDown}
-            onFocus={() => {
+            onFocus={(e) => {
               if (!isDisabled) {
                 setIsFocused(true);
-                if (!hadMouseDownRef.current) {
-                  setIsFocusVisible(true);
+                if (hadMouseDownRef.current) {
+                  // 마우스 클릭으로 포커스된 경우 focus-ring 숨김
+                  setIsFocusVisible(false);
+                } else {
+                  try {
+                    setIsFocusVisible(e.currentTarget.matches(':focus-visible'));
+                  } catch {
+                    // fallback for older browsers
+                    setIsFocusVisible(true);
+                  }
                 }
                 hadMouseDownRef.current = false;
               }
@@ -701,7 +716,8 @@ const Select = React.forwardRef<HTMLDivElement, SelectProps>(
             onBlur={(e) => {
               setIsFocused(false);
               setIsFocusVisible(false);
-              hadMouseDownRef.current = false;
+              // blur 완료 후 비동기로 리셋하여 blur→재focus 시 mousedown 이벤트가 먼저 처리되도록 함
+              requestAnimationFrame(() => { hadMouseDownRef.current = false; });
 
               // 포커스가 Menu(Portal) 내부로 이동한 경우 닫지 않음
               // (마우스 클릭 시 blur → click 순서이므로, handleItemClick이 처리)

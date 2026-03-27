@@ -108,6 +108,8 @@
     "VariableID:539:137214",
     "VariableID:539:137215",
     "VariableID:539:137216",
+    "VariableID:6298:129657",
+    "VariableID:6298:129654",
     "VariableID:3370:542476",
     "VariableID:4:283",
     "VariableID:4:284",
@@ -2325,6 +2327,40 @@
       "resolvedValuesByMode": {
         "4:1": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" },
         "4:2": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:6298:129654",
+      "name": "space/component/gap/content/xxl",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:224" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 32, "alias": "VariableID:4:224", "aliasName": "space/scale/32" },
+        "4:2": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:6298:129657",
+      "name": "space/component/gap/content/xxxl",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:225" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:224" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 40, "alias": "VariableID:4:225", "aliasName": "space/scale/40" },
+        "4:2": { "resolvedValue": 32, "alias": "VariableID:4:224", "aliasName": "space/scale/32" }
       },
       "scopes": ["ALL_SCOPES"],
       "hiddenFromPublishing": false,

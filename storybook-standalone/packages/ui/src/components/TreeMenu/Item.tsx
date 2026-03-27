@@ -227,6 +227,8 @@ interface ItemPropsCommon extends Omit<React.HTMLAttributes<HTMLDivElement>, 'on
   depth?: 1 | 2 | 3 | 4;
   isExpanded?: boolean;
   isFocused?: boolean;
+  /** 선택 상태 (클릭으로 선택된 아이템) */
+  isSelected?: boolean;
   /** Tab 키로 진입 가능한 첫 번째 아이템 여부 (접근성) */
   isFirstFocusable?: boolean;
   onExpandToggle?: () => void;
@@ -297,6 +299,7 @@ function ItemInner(
     depth = 1,
     isExpanded = false,
     isFocused = false,
+    isSelected = false,
     isFirstFocusable = false,
     className,
     onExpandToggle,
@@ -325,6 +328,9 @@ function ItemInner(
 
   // showTree: item 데이터에서 가져옴 (소비자 직접 제어, lazy loading 지원)
   const showTree = !!item.showTree;
+
+  // 행 pressed 상태 (마우스 다운 중)
+  const [isPressed, setIsPressed] = React.useState(false);
 
   // 통합 hover 상태 관리
   const [hoverState, setHoverState] = React.useState<HoverState>({
@@ -408,6 +414,19 @@ function ItemInner(
   const isChecked = checkState === 'checked';
   const isIndeterminate = checkState === 'indeterminate';
 
+  // interaction 상태 결정 (6가지: default, hover, pressed, selected, selected-hover, selected-pressed)
+  const resolveInteraction = (): 'default' | 'hover' | 'pressed' | 'selected' | 'selected-hover' | 'selected-pressed' => {
+    if (item.disabled) return 'default';
+    if (isSelected) {
+      if (isPressed) return 'selected-pressed';
+      if (hoverState.isItemHovered) return 'selected-hover';
+      return 'selected';
+    }
+    if (isPressed) return 'pressed';
+    if (hoverState.isItemHovered) return 'hover';
+    return 'default';
+  };
+
   return (
     <div
       ref={ref}
@@ -415,6 +434,7 @@ function ItemInner(
       tabIndex={isFocused || isFirstFocusable ? 0 : -1}
       aria-expanded={showTree ? isExpanded : undefined}
       aria-disabled={item.disabled}
+      aria-selected={isSelected}
       aria-checked={showCheckbox ? (isIndeterminate ? 'mixed' : isChecked) : undefined}
       aria-grabbed={draggable ? isDragging : undefined}
       data-depth={depth}
@@ -424,7 +444,7 @@ function ItemInner(
         itemVariants({
           size,
           depth: String(depth) as '1' | '2' | '3' | '4',
-          interaction: hoverState.isItemHovered && !item.disabled ? 'hover' : 'default',
+          interaction: resolveInteraction(),
           disabled: !!item.disabled,
           focus: isFocused,
           danger: false,
@@ -440,7 +460,14 @@ function ItemInner(
       )}
       onClick={handleRowClick}
       onMouseEnter={() => !item.disabled && updateHover({ isItemHovered: true })}
-      onMouseLeave={() => !item.disabled && resetHoverState()}
+      onMouseLeave={() => {
+        if (!item.disabled) {
+          resetHoverState();
+          setIsPressed(false);
+        }
+      }}
+      onMouseDown={() => !item.disabled && setIsPressed(true)}
+      onMouseUp={() => !item.disabled && setIsPressed(false)}
       onKeyDown={handleKeyDown}
       // Drag & Drop 이벤트
       onDragStart={draggable ? onDragStart : undefined}
@@ -451,12 +478,12 @@ function ItemInner(
       onDrop={onDrop}
       {...restProps}
     >
-      {/* Hover 오버레이 (CSS group-hover로 표시, 체크박스 hover 시 z-index 상승) */}
+      {/* Hover 오버레이 (CSS group-hover로 표시, selected 시 CVA가 배경색 관리하므로 숨김) */}
       <div
         className={cn(
           'absolute inset-0 rounded-[4px] bg-state-overlay-on-neutral-hover pointer-events-none transition-opacity',
-          // CSS group-hover: disabled가 아닐 때만 hover 효과 적용
-          item.disabled ? 'opacity-0' : 'opacity-0 group-hover:opacity-100',
+          // CSS group-hover: disabled/selected가 아닐 때만 hover 효과 적용
+          (item.disabled || isSelected) ? 'opacity-0' : 'opacity-0 group-hover:opacity-100',
           // 체크박스 hover 시: 오버레이가 체크박스 위로 올라옴
           hoverState.isCheckboxHovered && Z_INDEX_CLASS.OVERLAY_ACTIVE
         )}

@@ -135,7 +135,8 @@ const meta: Meta<typeof Alert> = {
     },
     showClose: {
       control: 'boolean',
-      description: 'Figma: `showClose`. 닫기 버튼 표시',
+      description: 'Figma: `showClose`. 닫기 버튼 표시 (Toast일 때는 항상 표시)',
+      if: { arg: 'isToast', truthy: false },
     },
     showActionGroup: {
       control: 'boolean',

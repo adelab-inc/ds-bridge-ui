@@ -57,6 +57,7 @@ export const ModalStackProvider: React.FC<ModalStackProviderProps> = ({
 }) => {
   const [stack, setStack] = React.useState<ModalStackItem[]>([]);
   const stackRef = React.useRef<ModalStackItem[]>([]);
+  const savedOverflowRef = React.useRef('');
 
   const register = React.useCallback((id: string): number => {
     const prev = stackRef.current;
@@ -95,6 +96,30 @@ export const ModalStackProvider: React.FC<ModalStackProviderProps> = ({
     const item = stack.find((item) => item.id === id);
     return item?.zIndex ?? baseZIndex;
   }, [stack, baseZIndex]);
+
+  const prevStackLengthRef = React.useRef(0);
+
+  // Body overflow 중앙 관리: 스택 카운트 기반
+  React.useEffect(() => {
+    const prevLength = prevStackLengthRef.current;
+    prevStackLengthRef.current = stack.length;
+
+    if (stack.length > 0 && prevLength === 0) {
+      // 0→N: 현재 overflow 저장 후 hidden
+      savedOverflowRef.current = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+    } else if (stack.length === 0 && prevLength > 0) {
+      // N→0: 저장값으로 복원
+      document.body.style.overflow = savedOverflowRef.current;
+    }
+  }, [stack.length]);
+
+  // Provider unmount 시 복원
+  React.useEffect(() => {
+    return () => {
+      document.body.style.overflow = savedOverflowRef.current;
+    };
+  }, []);
 
   const value = React.useMemo<ModalStackContextValue>(
     () => ({ register, unregister, isTopModal, getZIndex }),

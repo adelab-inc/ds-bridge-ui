@@ -8,17 +8,17 @@ import { useFocusTrap } from '../hooks/useFocusTrap';
 import { useModalStack } from '../hooks/useModalStack';
 import { useSpacingMode } from './SpacingModeProvider';
 
-const drawerVariants = cva('flex h-screen flex-col items-center bg-bg-surface shadow-[0_8px_16px_0_rgba(0,0,0,0.24)]', ({
+const drawerVariants = cva('flex h-screen flex-col items-start bg-bg-surface shadow-[0_8px_16px_0_rgba(0,0,0,0.24)]', ({
     variants: {
       "mode": {
         "base": "",
         "compact": "",
       },
       "size": {
-        "lg": "w-[752px]",
-        "md": "w-[552px]",
-        "sm": "w-[352px]",
-        "xl": "w-[1152px]",
+        "lg": "w-[800px]",
+        "md": "w-[600px]",
+        "sm": "w-[400px]",
+        "xl": "w-[1200px]",
       },
     },
     defaultVariants: {
@@ -251,7 +251,7 @@ const DrawerBody: React.FC<DrawerBodyProps> = ({ children, className, ...props }
   return (
     <div
       className={cn(
-        "flex h-[85%] flex-col items-center gap-layout-stack-md2 self-stretch overflow-y-auto [scrollbar-gutter:stable]",
+        "flex flex-1 min-h-0 flex-col items-start gap-layout-stack-md2 self-stretch overflow-y-auto [scrollbar-gutter:stable]",
         pxClass,
         className
       )}
@@ -284,7 +284,7 @@ const DrawerFooter: React.FC<DrawerFooterProps> = ({ children, className, ...pro
 
   return (
     <div
-      className={cn("flex justify-end items-center gap-component-gap-control-group flex-1 self-stretch", pxClass, className)}
+      className={cn("flex justify-end items-center gap-component-gap-control-group flex-shrink-0 self-stretch", pxClass, className)}
       {...props}
     >
       {children}

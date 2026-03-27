@@ -21,6 +21,22 @@ const spanVariants = {
   12: 'col-span-12',
 } as const;
 
+/** 액션 버튼 우측 정렬을 위한 col-start variants */
+const colStartVariants = {
+  1: 'col-start-12',
+  2: 'col-start-11',
+  3: 'col-start-10',
+  4: 'col-start-9',
+  5: 'col-start-8',
+  6: 'col-start-7',
+  7: 'col-start-6',
+  8: 'col-start-5',
+  9: 'col-start-4',
+  10: 'col-start-3',
+  11: 'col-start-2',
+  12: 'col-start-1',
+} as const;
+
 const filterBarVariants = cva('grid grid-cols-12 items-end bg-bg-subtle rounded-xl w-full', ({
     variants: {
       "mode": {
@@ -53,8 +69,8 @@ export interface FilterBarProps extends React.HTMLAttributes<HTMLDivElement>, Va
   onSearch?: () => void;
   /** @default false */
   isLoading?: boolean;
-  /** 액션 버튼 영역의 col-span @default 2 */
-  actionSpan?: keyof typeof spanVariants;
+  /** 액션 버튼 영역의 col-span (1 또는 2만 허용) @default 2 */
+  actionSpan?: 1 | 2;
   /** @default true */
   showReset?: boolean;
   /** @default true */
@@ -92,7 +108,8 @@ export const FilterBar = React.forwardRef<HTMLDivElement, FilterBarProps>(
             <div
               className={cn(
                 'min-w-0 flex gap-component-gap-control-group items-end justify-end',
-                spanVariants[actionSpan]
+                spanVariants[actionSpan],
+                colStartVariants[actionSpan]
               )}
             >
               <div className="flex gap-component-gap-control-group w-full">
@@ -100,7 +117,7 @@ export const FilterBar = React.forwardRef<HTMLDivElement, FilterBarProps>(
                   <Button
                     className="shrink-0"
                     size="sm"
-                    buttonType="outline"
+                    buttonType="tertiary"
                     onClick={onReset}
                     label={resetLabel}
                     showStartIcon={false}

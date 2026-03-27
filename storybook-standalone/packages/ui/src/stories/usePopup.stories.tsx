@@ -28,7 +28,7 @@ function BasicUsageDemo() {
 
       <div className="mb-4 flex gap-2">
         <Button label="팝업 열기" onClick={handleOpen} interaction={status === 'open' ? 'disabled' : 'default'} showStartIcon={false} showEndIcon={false} />
-        <Button label="팝업 닫기" buttonType="outline" onClick={close} interaction={status === 'closed' ? 'disabled' : 'default'} showStartIcon={false} showEndIcon={false} />
+        <Button label="팝업 닫기" buttonType="tertiary" onClick={close} interaction={status === 'closed' ? 'disabled' : 'default'} showStartIcon={false} showEndIcon={false} />
       </div>
 
       <div className="p-4 bg-gray-100 rounded-lg mb-4">
@@ -110,7 +110,7 @@ function CloseTestDemo() {
           showStartIcon={false}
           showEndIcon={false}
         />
-        <Button label="로그 초기화" buttonType="outline" onClick={clearLog} showStartIcon={false} showEndIcon={false} />
+        <Button label="로그 초기화" buttonType="tertiary" onClick={clearLog} showStartIcon={false} showEndIcon={false} />
       </div>
 
       <div className="p-4 bg-gray-100 rounded-lg mb-4">

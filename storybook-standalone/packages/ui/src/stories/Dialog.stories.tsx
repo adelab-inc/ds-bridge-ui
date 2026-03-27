@@ -34,6 +34,8 @@ const meta: Meta<StoryArgs> = {
           '| `Size` | `size` | 동일 (sm/md/lg/xl) |',
           '| — | `mode` | Figma에 없는 코드 전용 속성. `SpacingModeProvider`로 일괄 제어 가능 |',
           '| `Show Scrollbar` | — | **반영 안 함**. `Dialog.Body`에 `overflow-y-auto` + size별 `max-h` 적용으로 브라우저가 자동 처리. Figma에서는 스크롤 상태 미리보기용 토글 |',
+          '| `Show Header` | `<Dialog.Header>` 유무 | Compound children 패턴으로 제어. 미사용 시 Body가 남은 공간 확장 |',
+          '| `Show Footer` | `<Dialog.Footer>` 유무 | Compound children 패턴으로 제어. 미사용 시 Body가 남은 공간 확장 |',
           '',
           '### Dialog/Body',
           '',
@@ -139,7 +141,7 @@ export const Default: Story = {
               </Option>
               <div className="flex gap-component-gap-control-group">
                 <Button
-                  buttonType="outline"
+                  buttonType="tertiary"
                   label={args.secondaryLabel || '취소'}
                   onClick={() => {
                     console.log('Secondary clicked');
@@ -240,7 +242,7 @@ export const NestedModals: Story = {
               </div>
             </Dialog.Body>
             <Dialog.Footer>
-                <Button buttonType="outline" label="취소" onClick={() => setIsSecondOpen(false)} showStartIcon={false} showEndIcon={false} />
+                <Button buttonType="tertiary" label="취소" onClick={() => setIsSecondOpen(false)} showStartIcon={false} showEndIcon={false} />
                 <Button buttonType="primary" label="닫기" onClick={() => setIsSecondOpen(false)} showStartIcon={false} showEndIcon={false} />
             </Dialog.Footer>
           </Dialog>
@@ -266,7 +268,7 @@ export const NestedModals: Story = {
               </div>
             </Dialog.Body>
             <Dialog.Footer>
-                <Button buttonType="outline" label="이것만 닫기" onClick={() => setIsThirdOpen(false)} showStartIcon={false} showEndIcon={false} />
+                <Button buttonType="tertiary" label="이것만 닫기" onClick={() => setIsThirdOpen(false)} showStartIcon={false} showEndIcon={false} />
                 <Button
                   buttonType="primary"
                   label="모두 닫기"
@@ -298,6 +300,114 @@ export const NestedModals: Story = {
     docs: {
       description: {
         story: '`ModalStackProvider`로 감싸면 중첩 모달이 자동으로 관리됩니다. z-index, ESC 키, Focus Trap이 최상위 모달에만 적용됩니다.',
+      },
+    },
+  },
+};
+
+/**
+ * Header 없이 Body와 Footer만 사용하는 패턴
+ *
+ * Figma: Show Header = false → `<Dialog.Header>` 미사용
+ */
+export const WithoutHeader: Story = {
+  render: (args) => {
+    const [isOpen, setIsOpen] = useState(false);
+
+    return (
+      <div>
+        <Button label="Open Dialog (No Header)" onClick={() => setIsOpen(true)} showStartIcon={false} showEndIcon={false} />
+        <Dialog
+          size={args.size}
+          mode={args.mode}
+          open={isOpen}
+          onClose={() => setIsOpen(false)}
+        >
+          <Dialog.Body>
+            Header 없이 Body가 남은 공간을 전부 채웁니다.
+          </Dialog.Body>
+          <Dialog.Footer>
+            <Button
+              buttonType="tertiary"
+              label="취소"
+              onClick={() => setIsOpen(false)}
+              showStartIcon={false}
+              showEndIcon={false}
+            />
+            <Button
+              buttonType="primary"
+              label="확인"
+              onClick={() => setIsOpen(false)}
+              showStartIcon={false}
+              showEndIcon={false}
+            />
+          </Dialog.Footer>
+        </Dialog>
+      </div>
+    );
+  },
+  args: {
+    size: 'md',
+    mode: 'base',
+  },
+  argTypes: {
+    title: { table: { disable: true } },
+    subtitle: { table: { disable: true } },
+    primaryLabel: { table: { disable: true } },
+    secondaryLabel: { table: { disable: true } },
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Figma `Show Header = false`. `<Dialog.Header>`를 사용하지 않으면 Body가 남은 공간을 채웁니다.',
+      },
+    },
+  },
+};
+
+/**
+ * Footer 없이 Header와 Body만 사용하는 패턴
+ *
+ * Figma: Show Footer = false → `<Dialog.Footer>` 미사용
+ */
+export const WithoutFooter: Story = {
+  render: (args) => {
+    const [isOpen, setIsOpen] = useState(false);
+
+    return (
+      <div>
+        <Button label="Open Dialog (No Footer)" onClick={() => setIsOpen(true)} showStartIcon={false} showEndIcon={false} />
+        <Dialog
+          size={args.size}
+          mode={args.mode}
+          open={isOpen}
+          onClose={() => setIsOpen(false)}
+        >
+          <Dialog.Header
+            title={args.title || 'Dialog Title'}
+            subtitle={args.subtitle}
+          />
+          <Dialog.Body>
+            다이얼로그의 본문입니다. 긴 글인 경우도 짧은 경우도 가능하며, 한 줄일 수도 아예 없을 수도 있습니다.
+          </Dialog.Body>
+        </Dialog>
+      </div>
+    );
+  },
+  args: {
+    size: 'md',
+    mode: 'base',
+    title: 'Footer 없는 Dialog',
+    subtitle: 'Body가 남은 공간을 전부 채웁니다',
+  },
+  argTypes: {
+    primaryLabel: { table: { disable: true } },
+    secondaryLabel: { table: { disable: true } },
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Figma `Show Footer = false`. `<Dialog.Footer>`를 사용하지 않으면 Body가 남은 공간을 채웁니다.',
       },
     },
   },
@@ -341,7 +451,7 @@ export const ScrollContent: Story = {
           </Dialog.Body>
           <Dialog.Footer>
             <Button
-              buttonType="outline"
+              buttonType="tertiary"
               label="취소"
               onClick={() => setIsOpen(false)}
               showStartIcon={false}
@@ -373,6 +483,125 @@ export const ScrollContent: Story = {
     docs: {
       description: {
         story: 'Body 콘텐츠가 max-h를 초과할 때 스크롤 동작을 확인합니다. Header/Footer와 Body의 좌우 패딩 정렬이 일치해야 합니다.',
+      },
+    },
+  },
+};
+
+/**
+ * 중첩 모달 동시 닫기 시 body 스크롤 복원 검증
+ *
+ * - 배경에 스크롤 가능한 긴 콘텐츠가 있는 상태에서 중첩 모달을 열고
+ * - "모두 닫기"로 동시에 닫았을 때 body 스크롤이 정상 복원되는지 확인
+ * - ModalStackProvider가 overflow를 중앙 관리하여 경합 문제를 해결
+ */
+export const NestedCloseOverflowRestore: Story = {
+  render: (args) => {
+    const [isFirstOpen, setIsFirstOpen] = useState(false);
+    const [isSecondOpen, setIsSecondOpen] = useState(false);
+
+    return (
+      <ModalStackProvider>
+        <div className="h-[200vh] p-5">
+          <div className="flex flex-col gap-4">
+            <h3 className="text-heading-md-semibold text-text-primary">
+              Body 스크롤 복원 테스트
+            </h3>
+            <p className="text-body-md-regular text-text-secondary">
+              이 페이지는 스크롤이 가능합니다. 모달을 열면 body 스크롤이 잠기고, 모두 닫으면 다시 스크롤이 가능해야 합니다.
+            </p>
+            <p className="text-body-md-regular text-text-secondary">
+              검증 방법: (1) 페이지 스크롤 확인 → (2) 첫 번째 모달 열기 → (3) 두 번째 모달 열기 → (4) "모두 닫기" 클릭 → (5) 페이지 스크롤이 다시 되는지 확인
+            </p>
+            <Button label="첫 번째 모달 열기" onClick={() => setIsFirstOpen(true)} showStartIcon={false} showEndIcon={false} />
+
+            {Array.from({ length: 20 }, (_, i) => (
+              <div key={i} className="rounded-lg border border-border-subtle p-4">
+                <p className="text-body-md-medium text-text-primary">배경 항목 {i + 1}</p>
+                <p className="text-body-sm-regular text-text-secondary">
+                  모달을 모두 닫은 후 이 영역을 스크롤할 수 있어야 합니다.
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <Dialog
+            open={isFirstOpen}
+            onClose={() => setIsFirstOpen(false)}
+            size={args.size}
+            mode={args.mode}
+          >
+            <Dialog.Header title="첫 번째 모달" subtitle="두 번째 모달을 열어보세요" />
+            <Dialog.Body>
+              <div className="flex flex-col gap-4">
+                <p>body overflow가 hidden인 상태입니다.</p>
+                <Button label="두 번째 모달 열기" onClick={() => setIsSecondOpen(true)} showStartIcon={false} showEndIcon={false} />
+              </div>
+            </Dialog.Body>
+            <Dialog.Footer>
+              <Button buttonType="primary" label="닫기" onClick={() => setIsFirstOpen(false)} showStartIcon={false} showEndIcon={false} />
+            </Dialog.Footer>
+          </Dialog>
+
+          <Dialog
+            open={isSecondOpen}
+            onClose={() => setIsSecondOpen(false)}
+            size="sm"
+            mode={args.mode}
+          >
+            <Dialog.Header title="두 번째 모달" subtitle="모두 닫기를 눌러보세요" />
+            <Dialog.Body>
+              <p>"모두 닫기" 후 배경 페이지 스크롤이 복원되어야 합니다.</p>
+            </Dialog.Body>
+            <Dialog.Footer>
+              <Button
+                buttonType="tertiary"
+                label="이것만 닫기"
+                onClick={() => setIsSecondOpen(false)}
+                showStartIcon={false}
+                showEndIcon={false}
+              />
+              <Button
+                buttonType="primary"
+                label="모두 닫기"
+                onClick={() => {
+                  setIsSecondOpen(false);
+                  setIsFirstOpen(false);
+                }}
+                showStartIcon={false}
+                showEndIcon={false}
+              />
+            </Dialog.Footer>
+          </Dialog>
+        </div>
+      </ModalStackProvider>
+    );
+  },
+  args: {
+    size: 'md',
+    mode: 'base',
+  },
+  argTypes: {
+    title: { table: { disable: true } },
+    subtitle: { table: { disable: true } },
+    primaryLabel: { table: { disable: true } },
+    secondaryLabel: { table: { disable: true } },
+  },
+  parameters: {
+    layout: 'fullscreen',
+    docs: {
+      description: {
+        story: [
+          '중첩 모달을 동시에 닫았을 때 body 스크롤이 정상 복원되는지 검증합니다.',
+          '',
+          '**검증 단계:**',
+          '1. 배경 페이지를 스크롤하여 스크롤 가능 확인',
+          '2. "첫 번째 모달 열기" → body 스크롤 잠김',
+          '3. "두 번째 모달 열기" → 중첩 상태',
+          '4. "모두 닫기" 클릭 → body 스크롤 복원 확인',
+          '',
+          '`ModalStackProvider`가 스택 카운트 기반으로 overflow를 중앙 관리하여, 개별 Dialog가 독립적으로 overflow를 캡처/복원할 때 발생하던 경합 문제를 해결합니다.',
+        ].join('\n'),
       },
     },
   },

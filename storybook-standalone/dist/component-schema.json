@@ -1,17 +1,12 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-03-22T23:16:45.811Z",
+  "generatedAt": "2026-03-27T04:46:43.170Z",
   "components": {
     "Alert": {
       "displayName": "Alert",
       "filePath": "packages/ui/src/components/Alert.tsx",
       "category": "UI",
       "props": {
-        "isToast": {
-          "type": "boolean",
-          "required": false,
-          "defaultValue": false
-        },
         "mode": {
           "type": [
             "base",
@@ -74,17 +69,25 @@
           "type": "() => void",
           "required": false
         },
-        "body": {
-          "type": "ReactNode",
-          "required": true
+        "isToast": {
+          "type": "boolean",
+          "required": false,
+          "defaultValue": false
+        },
+        "onClose": {
+          "type": [
+            "(() => void)",
+            "(() => void)"
+          ],
+          "required": false
         },
         "showClose": {
           "type": "boolean",
           "required": false
         },
-        "onClose": {
-          "type": "() => void",
-          "required": false
+        "body": {
+          "type": "ReactNode",
+          "required": true
         }
       },
       "stories": [
@@ -190,11 +193,11 @@
         "buttonType": {
           "type": [
             "destructive",
+            "ghost",
             "ghost-inverse",
-            "outline",
-            "outline-destructive",
             "primary",
             "secondary",
+            "secondary-destructive",
             "tertiary"
           ],
           "required": false
@@ -460,7 +463,7 @@
             "unchecked"
           ],
           "required": false,
-          "defaultValue": "CheckboxValue.UNCHECKED"
+          "defaultValue": "unchecked"
         },
         "interaction": {
           "type": [
@@ -1122,13 +1125,11 @@
         },
         "to": {
           "type": "string",
-          "required": false,
-          "description": "The internal route path to navigate to. This should be a relative or absolute path within your application.\nFor external URLs, use the `href` property instead."
+          "required": false
         },
         "href": {
           "type": "string",
-          "required": false,
-          "description": "This can be used instead of `to` to navigate to a fully built href, e.g. pointing to an external target."
+          "required": false
         }
       },
       "stories": [
@@ -1523,6 +1524,12 @@
           "required": false,
           "defaultValue": "vertical"
         },
+        "reserveLabelSpace": {
+          "type": "boolean",
+          "required": false,
+          "defaultValue": false,
+          "description": "FormGrid 내 무라벨 사용 시 라벨 높이만큼 빈 공간 유지 (정렬용)"
+        },
         "mode": {
           "type": [
             "base",
@@ -1574,7 +1581,7 @@
             "unchecked"
           ],
           "required": false,
-          "defaultValue": "RadioValue.UNCHECKED"
+          "defaultValue": "unchecked"
         },
         "interaction": {
           "type": [
@@ -2253,7 +2260,7 @@
             "on"
           ],
           "required": false,
-          "defaultValue": "ToggleSwitchSelected.OFF"
+          "defaultValue": "off"
         },
         "onChange": {
           "type": "(event: ChangeEvent<HTMLInputElement>) => void",

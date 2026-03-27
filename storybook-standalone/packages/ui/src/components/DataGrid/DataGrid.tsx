@@ -8,7 +8,7 @@ import { AgGridReact } from 'ag-grid-react';
 // AG Grid 기본 CSS (아이콘 폰트 포함)
 import 'ag-grid-community/styles/ag-grid.css';
 
-// AG Grid v34 Theme API (Community 기준)
+// AG Grid v34 Theme API (Enterprise 기준)
 import {
   ColDef,
   ColGroupDef,
@@ -31,8 +31,8 @@ import {
   themeAlpine,
   themeBalham,
   Theme,
-  AllCommunityModule,
-} from 'ag-grid-community';
+  AllEnterpriseModule,
+} from 'ag-grid-enterprise';
 
 // AG Grid Theme 타입 정의
 type AgGridTheme = Theme;
@@ -42,7 +42,7 @@ type ThemeParams = Parameters<typeof themeQuartz.withParams>[0];
 import { designTokens } from '../../tokens/design-tokens';
 
 // AG Grid 모듈 등록 (v34 필수) - Enterprise 기능 포함
-ModuleRegistry.registerModules([AllCommunityModule]);
+ModuleRegistry.registerModules([AllEnterpriseModule]);
 
 /** 셀 세로 정렬 cva 변형 정의 */
 const cellAlignVariants = cva('flex', {

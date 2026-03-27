@@ -270,6 +270,9 @@ const Menu = React.forwardRef<HTMLDivElement, MenuProps>(
     // depth별 포커스 인덱스 관리 (depth 0, 1, 2, ...)
     const [focusedIndexMap, setFocusedIndexMap] = React.useState<Record<number, number>>({ 0: -1 });
 
+    // 마우스 hover와 키보드 focus를 구분하기 위한 플래그
+    const isKeyboardNavRef = React.useRef(false);
+
     const mousePosRef = React.useRef<Point>({ x: 0, y: 0 });
     const prevMousePosRef = React.useRef<Point>({ x: 0, y: 0 });
     const submenuRefs = React.useRef<(HTMLDivElement | null)[]>([]);
@@ -384,6 +387,7 @@ const Menu = React.forwardRef<HTMLDivElement, MenuProps>(
     const closeDelayRef = React.useRef<NodeJS.Timeout | null>(null);
 
     const handleItemHover = (item: MenuItemBase, depth: number, focusableIndex: number) => {
+      isKeyboardNavRef.current = false;
       if (activationTimeoutRef.current) clearTimeout(activationTimeoutRef.current);
       if (closeDelayRef.current) clearTimeout(closeDelayRef.current);
 
@@ -468,6 +472,7 @@ const Menu = React.forwardRef<HTMLDivElement, MenuProps>(
 
     // 키보드 네비게이션 핸들러
     const handleKeyDown = (e: React.KeyboardEvent) => {
+      isKeyboardNavRef.current = true;
       // 현재 포커스된 요소의 depth를 가져옴
       const focusedElement = e.target as HTMLElement;
       const focusedDepth = parseInt(focusedElement.getAttribute('data-depth') || '0', 10);
@@ -627,9 +632,12 @@ const Menu = React.forwardRef<HTMLDivElement, MenuProps>(
         const hasSubmenu = item.children && item.children.length > 0;
         const isActive = activeIdPath[depth] === item.id;
         // 외부 하이라이트 제어: depth 0에서 externalHighlightedIndex가 지정되면 사용
-        const isFocused = (depth === 0 && externalHighlightedIndex !== undefined)
+        // 키보드 네비게이션일 때만 focus ring 표시 (마우스 hover 시에는 hover 스타일만)
+        const isExternalHighlight = depth === 0 && externalHighlightedIndex !== undefined && externalHighlightedIndex >= 0;
+        const isIndexMatch = isExternalHighlight
           ? externalHighlightedIndex === focusableIndex
           : currentFocusedIndex === focusableIndex;
+        const isFocused = isIndexMatch && (isExternalHighlight || isKeyboardNavRef.current);
         const currentFocusableIndex = focusableIndex;
 
         // disabled가 아닌 경우에만 포커스 인덱스 증가
@@ -659,9 +667,7 @@ const Menu = React.forwardRef<HTMLDivElement, MenuProps>(
               if (depth === 0 && onHighlightedIndexChange && !item.disabled) {
                 onHighlightedIndexChange(currentFocusableIndex);
               }
-              if (hasSubmenu) {
-                handleItemHover(hoveredItem, depth, currentFocusableIndex);
-              }
+              handleItemHover(hoveredItem, depth, currentFocusableIndex);
             }}
             depth={depth}
             isFocused={isFocused}
