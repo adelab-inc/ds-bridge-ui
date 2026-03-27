@@ -39,6 +39,10 @@ class Settings(BaseSettings):
     supabase_url: str = ""
     supabase_service_role_key: str = ""
 
+    # Supabase Storage Bucket Names
+    storage_bucket_uploads: str = "user-uploads"
+    storage_bucket_exports: str = "exports"
+
     # Chat Settings
     max_history_count: int = 10  # 대화 컨텍스트에 포함할 최대 메시지 수
     max_image_size_mb: int = 10  # 이미지 업로드 최대 크기 (MB)
