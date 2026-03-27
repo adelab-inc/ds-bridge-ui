@@ -1,6 +1,7 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import { Alert } from '../Alert';
+import type { AlertProps } from '../Alert';
 import { cn } from '../utils';
 import type { Toast, ToastPosition } from './types';
 
@@ -79,22 +80,51 @@ const ToastItem: React.FC<ToastItemProps> = ({
   const position = toast.position ?? 'top-right';
   const animationClass = getAnimationClasses(position, toast.isExiting ?? false);
 
+  // Alert V2 props 구성
+  const alertProps: Partial<AlertProps> = {
+    isToast: true,
+    type: toast.type,
+    body: toast.message,
+    showClose: toast.showClose ?? true,
+    onClose: () => onRemove(toast.id),
+  };
+
+  // showIcon: type이 default가 아니면 아이콘 표시
+  if (toast.type && toast.type !== 'default') {
+    (alertProps as AlertProps).showIcon = true;
+  }
+
+  // showTitle
+  if (toast.title) {
+    Object.assign(alertProps, { showTitle: true, title: toast.title });
+  }
+
+  // Actions
+  if (toast.action1 || toast.action2) {
+    Object.assign(alertProps, { showActionGroup: true });
+    if (toast.action1) {
+      Object.assign(alertProps, {
+        showAction1: true,
+        action1Label: toast.action1.label,
+        action1OnClick: toast.action1.onClick,
+      });
+    }
+    if (toast.action2) {
+      Object.assign(alertProps, {
+        showAction2: true,
+        action2Label: toast.action2.label,
+        action2OnClick: toast.action2.onClick,
+      });
+    }
+  }
+
   return (
     <div
       className={animationClass}
       onMouseEnter={() => onPauseTimer(toast.id)}
       onMouseLeave={() => onResumeTimer(toast.id)}
     >
-      <Alert
-        isToast
-        variant={toast.variant}
-        title={toast.title}
-        actions={toast.actions}
-        hasCloseButton={toast.hasCloseButton}
-        onClose={() => onRemove(toast.id)}
-      >
-        {toast.message}
-      </Alert>
+      <Alert {...(alertProps as AlertProps)} />
     </div>
   );
 };

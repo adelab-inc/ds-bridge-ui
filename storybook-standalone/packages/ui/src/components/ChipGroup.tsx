@@ -67,26 +67,25 @@ const ChipGroup = React.forwardRef<HTMLDivElement, ChipGroupProps>(
           }
 
           const value =
-            child.props.value || (typeof child.props.children === "string" ? child.props.children : undefined);
+            child.props.value || (typeof child.props.label === "string" ? child.props.label : undefined);
           if (!value) {
             console.warn(
-              "Chip component inside ChipGroup requires a 'value' prop or a string child for selection to work."
+              "Chip component inside ChipGroup requires a 'value' prop or a string label for selection to work."
             );
             return child;
           }
 
           const isSelected = selectedValues.includes(value);
-          const chipState = disabled ? "disabled" : isSelected ? "selected" : "default";
 
           return cloneElement(child, {
             ...child.props,
-            state: chipState,
-            selectionStyle: selectionType,
+            selected: isSelected,
+            disabled: disabled || undefined,
             onClick: disabled
               ? undefined
-              : () => {
+              : (e: React.MouseEvent<HTMLDivElement>) => {
                   handleChipClick(value);
-                  child.props.onClick?.(child.props as any);
+                  child.props.onClick?.(e);
                 },
           });
         })}

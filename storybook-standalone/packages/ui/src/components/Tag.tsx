@@ -1,10 +1,10 @@
 import React, { forwardRef, HTMLAttributes } from 'react'
 import { cva, VariantProps } from 'class-variance-authority'
-import { Icon } from './Icon'
 import { useSpacingMode } from './SpacingModeProvider'
+import { Icon } from './Icon'
 
 /**
- * colorSwatch prop에 사용 가능한 색상과 해당 Tailwind 클래스 매핑
+ * color prop에 사용 가능한 색상과 해당 Tailwind 클래스 매핑
  *
  * @internal
  */
@@ -21,38 +21,85 @@ const colorMap: Record<string, string> = {
 
 import { cn } from './utils'
 
-const tagVariants = cva('text-caption-xs-regular text-tag-default-text flex items-center self-stretch rounded-full whitespace-nowrap flex-shrink-0', ({
+const tagVariants = cva('text-caption-sm-regular text-tag-default-text flex items-center self-stretch rounded-full whitespace-nowrap flex-shrink-0', ({
     variants: {
-      "hasCloseButton": {
-        "false": "",
-        "true": "",
-      },
       "mode": {
         "base": "",
         "compact": "",
       },
-      "variant": {
+      "showClose": {
+        "false": "",
+        "true": "",
+      },
+      "tagType": {
         "default": "bg-tag-default-bg",
         "more": "border border-tag-more-border bg-tag-more-bg cursor-pointer relative",
+        "swatch": "bg-tag-default-bg",
       },
     },
     defaultVariants: {
-      "hasCloseButton": false,
       "mode": "base",
-      "variant": "default",
+      "showClose": false,
+      "tagType": "default",
     },
     compoundVariants: [
       {
-        "class": "py-component-inset-pill-y pr-component-inset-pill-x pl-component-inset-pill-with-icon-x gap-component-gap-icon-label-xs",
+        "class": "py-component-inset-pill-y px-component-inset-pill-x gap-component-gap-icon-label-xs",
         "mode": "base",
+        "showClose": false,
+        "tagType": "default",
       },
       {
-        "class": "py-component-inset-pill-y-compact pr-component-inset-pill-x-compact pl-component-inset-pill-with-icon-x-compact gap-component-gap-icon-label-xs-compact",
+        "class": "py-component-inset-pill-y-compact px-component-inset-pill-x-compact gap-component-gap-icon-label-xs-compact",
         "mode": "compact",
+        "showClose": false,
+        "tagType": "default",
       },
       {
-        "class": "before:absolute before:inset-0 before:rounded-full before:bg-transparent hover:before:bg-black/[0.06] active:before:bg-black/[0.10] before:transition-colors",
-        "variant": "more",
+        "class": "py-component-inset-pill-y pl-component-inset-pill-x pr-component-inset-pill-with-icon-x gap-component-gap-icon-label-xs",
+        "mode": "base",
+        "showClose": true,
+        "tagType": "default",
+      },
+      {
+        "class": "py-component-inset-pill-y-compact pl-component-inset-pill-x-compact pr-component-inset-pill-with-icon-x-compact gap-component-gap-icon-label-xs-compact",
+        "mode": "compact",
+        "showClose": true,
+        "tagType": "default",
+      },
+      {
+        "class": "py-component-inset-pill-y px-component-inset-pill-x gap-component-gap-icon-label-xs",
+        "mode": "base",
+        "showClose": false,
+        "tagType": "swatch",
+      },
+      {
+        "class": "py-component-inset-pill-y-compact px-component-inset-pill-x-compact gap-component-gap-icon-label-xs-compact",
+        "mode": "compact",
+        "showClose": false,
+        "tagType": "swatch",
+      },
+      {
+        "class": "py-component-inset-pill-y pl-component-inset-pill-x pr-component-inset-pill-with-icon-x gap-component-gap-icon-label-xs",
+        "mode": "base",
+        "showClose": true,
+        "tagType": "swatch",
+      },
+      {
+        "class": "py-component-inset-pill-y-compact pl-component-inset-pill-x-compact pr-component-inset-pill-with-icon-x-compact gap-component-gap-icon-label-xs-compact",
+        "mode": "compact",
+        "showClose": true,
+        "tagType": "swatch",
+      },
+      {
+        "class": "py-component-inset-pill-y px-component-inset-pill-x before:absolute before:inset-0 before:rounded-full before:bg-transparent hover:before:bg-black/[0.06] active:before:bg-black/[0.10] before:transition-colors",
+        "mode": "base",
+        "tagType": "more",
+      },
+      {
+        "class": "py-component-inset-pill-y-compact px-component-inset-pill-x-compact before:absolute before:inset-0 before:rounded-full before:bg-transparent hover:before:bg-black/[0.06] active:before:bg-black/[0.10] before:transition-colors",
+        "mode": "compact",
+        "tagType": "more",
       },
     ],
   }))
@@ -66,84 +113,49 @@ const tagVariants = cva('text-caption-xs-regular text-tag-default-text flex item
  * @example
  * ```tsx
  * // 기본 태그
- * <Tag>카테고리</Tag>
+ * <Tag label="카테고리" />
  *
  * // 색상 표시가 있는 태그
- * <Tag colorSwatch="red">중요</Tag>
+ * <Tag tagType={TagType.SWATCH} color={TagColor.RED} label="중요" />
  *
  * // 제거 가능한 태그
- * <Tag hasCloseButton onClose={() => console.log('제거')}>
- *   제거 가능
- * </Tag>
+ * <Tag label="제거 가능" showClose={true} onClose={() => console.log('제거')} />
  *
  * // More 버튼 (TagGroup에서 사용)
- * <Tag variant="more">+5</Tag>
+ * <Tag tagType={TagType.MORE} label="+5" />
  * ```
  */
-interface TagProps extends HTMLAttributes<HTMLDivElement>, VariantProps<typeof tagVariants> {
-  /**
-   * 태그 제거 버튼 클릭 시 호출될 콜백 함수
-   *
-   * ⚠️ hasCloseButton prop과 함께 사용해야 제거 버튼이 표시됩니다.
-   *
-   * @example
-   * ```tsx
-   * <Tag hasCloseButton onClose={() => handleRemove(id)}>
-   *   제거 가능 태그
-   * </Tag>
-   * ```
-   */
-  onClose?: () => void
 
-  /**
-   * 태그 왼쪽에 표시될 색상 점 (6px × 6px 원형)
-   *
-   * 8가지 색상을 지원합니다:
-   * - `'red'` - 빨강
-   * - `'orange'` - 주황
-   * - `'yellow'` - 노랑
-   * - `'lime'` - 연두
-   * - `'green'` - 초록
-   * - `'cyan'` - 청록
-   * - `'violet'` - 보라
-   * - `'pink'` - 분홍
-   *
-   * ⚠️ 잘못된 색상을 전달하면 개발 환경에서 console.warn이 출력되고,
-   * 색상 점이 렌더링되지 않습니다.
-   *
-   * @default undefined (색상 점 미표시)
-   *
-   * @example
-   * ```tsx
-   * <Tag colorSwatch="red">빨간색 표시</Tag>
-   * <Tag colorSwatch="green">초록색 표시</Tag>
-   * ```
-   */
-  colorSwatch?: keyof typeof colorMap
-}
+// showClose discriminated union — showClose 값에 따라 onClose 타입 제어
+type CloseProps =
+  | { showClose: true; onClose: () => void }
+  | { showClose?: false; onClose?: never }
+
+// tagType × showClose 교차 discriminated union
+// more 타입은 color, showClose, onClose 모두 차단
+type TagVariantProps =
+  | ({ tagType?: 'default'; color?: never } & CloseProps)
+  | ({ tagType: 'swatch'; color: string } & CloseProps)
+  | { tagType: 'more'; color?: never; showClose?: false; onClose?: never }
+
+type TagProps = Omit<HTMLAttributes<HTMLDivElement>, 'children'> &
+  VariantProps<typeof tagVariants> &
+  TagVariantProps & {
+    /** 태그 텍스트 */
+    label: React.ReactNode
+  }
 
 /**
- * children prop에서 텍스트를 추출하여 접근성 레이블에 사용
+ * label prop에서 텍스트를 추출하여 접근성 레이블에 사용
  *
  * 복잡한 ReactNode (JSX Element 등)는 "태그"로 fallback 처리하여
  * aria-label이 항상 의미 있는 텍스트를 가지도록 보장합니다.
  *
- * @param children - Tag 컴포넌트의 children prop
- * @returns 추출된 텍스트 또는 "태그" fallback
- *
  * @internal
- *
- * @example
- * ```ts
- * extractTextFromChildren("카테고리")  // "카테고리"
- * extractTextFromChildren(123)        // "123"
- * extractTextFromChildren("")         // "태그" (빈 문자열 fallback)
- * extractTextFromChildren(<div>복잡</div>)  // "태그" (복잡한 노드 fallback)
- * ```
  */
-const extractTextFromChildren = (children: React.ReactNode): string => {
-  if (typeof children === 'string' || typeof children === 'number') {
-    const text = String(children).trim()
+const extractTextFromLabel = (label: React.ReactNode): string => {
+  if (typeof label === 'string' || typeof label === 'number') {
+    const text = String(label).trim()
     return text || '태그'
   }
   return '태그'
@@ -158,9 +170,9 @@ const extractTextFromChildren = (children: React.ReactNode): string => {
  * ## 주요 기능
  *
  * - **기본 태그**: 텍스트만 표시하는 간단한 태그
- * - **색상 표시**: 8가지 색상의 점(6px)으로 시각적 구분
- * - **제거 가능**: 닫기 버튼으로 사용자가 태그 제거 가능
- * - **More 버튼**: TagGroup에서 숨겨진 태그 수를 표시하는 특수 variant
+ * - **색상 표시**: 8가지 색상의 점(6px)으로 시각적 구분 (`tagType="swatch"`)
+ * - **제거 가능**: 닫기 버튼으로 사용자가 태그 제거 가능 (`showClose={true}`)
+ * - **More 버튼**: TagGroup에서 숨겨진 태그 수를 표시하는 특수 타입 (`tagType="more"`)
  * - **완전한 접근성**: 키보드 내비게이션, 스크린 리더 지원 (WCAG 2.1 AA)
  *
  * ## 접근성
@@ -169,71 +181,68 @@ const extractTextFromChildren = (children: React.ReactNode): string => {
  * - 장식용 요소(색상 점, 아이콘)는 `aria-hidden="true"`로 숨김
  * - 키보드로 닫기 버튼 포커스 및 작동 가능
  *
- * ## 엣지 케이스 처리
- *
- * - 잘못된 `colorSwatch` 값: console.warn 출력 후 무시 (개발 환경)
- * - `hasCloseButton={true}`, `onClose` 없음: 닫기 버튼 렌더링 안 함
- * - 빈 children: aria-label이 "태그 태그 제거"로 fallback
- *
  * @example
  * ```tsx
  * // 기본 사용
- * <Tag>카테고리</Tag>
+ * <Tag label="카테고리" />
  *
  * // 색상 표시
- * <Tag colorSwatch="red">중요</Tag>
- * <Tag colorSwatch="green">완료</Tag>
+ * <Tag tagType={TagType.SWATCH} color={TagColor.RED} label="중요" />
  *
  * // 제거 가능한 태그
- * <Tag
- *   hasCloseButton
- *   onClose={() => handleRemove(id)}
- * >
- *   React
- * </Tag>
+ * <Tag label="React" showClose={true} onClose={() => handleRemove(id)} />
  *
  * // TagGroup과 함께 사용
  * <TagGroup>
- *   <Tag colorSwatch="cyan">디자인</Tag>
- *   <Tag colorSwatch="violet">개발</Tag>
- *   <Tag colorSwatch="pink">기획</Tag>
+ *   <Tag tagType={TagType.SWATCH} color={TagColor.CYAN} label="디자인" />
+ *   <Tag tagType={TagType.SWATCH} color={TagColor.VIOLET} label="개발" />
  * </TagGroup>
  * ```
  */
 const Tag = forwardRef<HTMLDivElement, TagProps>(
-  ({ className, variant, mode: propMode, colorSwatch, hasCloseButton, children, onClose, ...props }, ref) => {
+  (allProps, ref) => {
+    const {
+      className,
+      tagType,
+      mode: propMode,
+      showClose,
+      label,
+      ...rest
+    } = allProps
+
+    // discriminated union에서 color, onClose 추출
+    const color = 'color' in allProps ? (allProps as { color: string }).color : undefined
+    const onClose = 'onClose' in allProps ? (allProps as { onClose: () => void }).onClose : undefined
+
     const contextMode = useSpacingMode();
     const mode = propMode ?? contextMode;
 
-    // 방어 코드: colorSwatch 유효성 검증
+    // 방어 코드: color 유효성 검증 (tagType="swatch" 일 때)
     let swatchColorClass = ''
-    if (colorSwatch) {
-      if (colorSwatch in colorMap) {
-        swatchColorClass = colorMap[colorSwatch]
+    if (tagType === 'swatch' && color) {
+      if (color in colorMap) {
+        swatchColorClass = colorMap[color]
       } else if (process.env.NODE_ENV !== 'production') {
-        console.warn(`[Tag] Invalid colorSwatch: "${colorSwatch}". Valid colors: ${Object.keys(colorMap).join(', ')}`)
+        console.warn(`[Tag] Invalid color: "${color}". Valid colors: ${Object.keys(colorMap).join(', ')}`)
       }
     }
 
     // 방어 코드: aria-label용 텍스트 추출
-    const tagText = extractTextFromChildren(children)
-
-    // 방어 코드: onClose가 없으면 hasCloseButton 무시
-    const shouldShowCloseButton = hasCloseButton && onClose
+    const tagText = extractTextFromLabel(label)
 
     return (
-      <div ref={ref} className={cn(tagVariants({ variant, mode, className }))} {...props}>
-        {colorSwatch && swatchColorClass && (
+      <div ref={ref} className={cn(tagVariants({ tagType, mode, showClose: showClose ?? false, className }))} {...rest}>
+        {tagType === 'swatch' && swatchColorClass && (
           <div data-testid="color-swatch" className={`w-[6px] h-[6px] rounded-full ${swatchColorClass}`} aria-hidden="true" />
         )}
-        {children}
-        {shouldShowCloseButton && (
+        {label}
+        {showClose && onClose && (
           <button
             onClick={onClose}
             aria-label={`${tagText} 태그 제거`}
-            className="flex items-center justify-center rounded-full w-[12px] h-[12px] p-[1px] -m-[1px] hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed"
+            className="flex items-center justify-center rounded-full w-[16px] h-[16px] p-[2px] -m-[2px] hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed"
           >
-            <Icon name="close" size={12} aria-hidden="true" />
+            <Icon name="close" size={16} aria-hidden="true" />
           </button>
         )}
       </div>

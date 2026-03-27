@@ -3,30 +3,132 @@ import * as React from 'react';
 import { Checkbox } from '../Checkbox';
 import { Icon } from '../Icon';
 import { cn } from '../utils';
+import { CheckboxValue, Interaction } from '../../types';
 
-const itemVariants = cva('relative flex items-center py-component-inset-menu-item-y px-component-inset-menu-item-x gap-layout-stack-md text-text-primary', ({
+const itemVariants = cva('relative flex items-center py-component-inset-menu-item-y px-component-inset-menu-item-x gap-component-gap-icon-label-md text-text-primary rounded-[4px] outline-none', ({
     variants: {
+      "danger": {
+        "false": "",
+        "true": "",
+      },
       "depth": {
         "1": "",
         "2": "pl-8",
         "3": "pl-12",
         "4": "pl-16",
       },
+      "disabled": {
+        "false": "cursor-pointer",
+        "true": "cursor-not-allowed",
+      },
+      "empty": {
+        "false": "",
+        "true": "",
+      },
+      "focus": {
+        "false": "",
+        "true": "",
+      },
+      "interaction": {
+        "default": "",
+        "hover": "",
+        "pressed": "",
+        "selected": "",
+        "selected-hover": "",
+        "selected-pressed": "",
+      },
       "size": {
         "md": "text-button-md-medium",
         "sm": "text-button-sm-medium",
       },
-      "state": {
-        "default": "cursor-pointer",
-        "disabled": "text-text-disabled cursor-not-allowed",
-        "hover": "rounded-[4px] cursor-pointer",
-      },
     },
     defaultVariants: {
+      "danger": false,
       "depth": "1",
+      "disabled": false,
+      "empty": false,
+      "focus": false,
+      "interaction": "default",
       "size": "md",
-      "state": "default",
     },
+    compoundVariants: [
+      {
+        "class": "text-text-primary",
+        "danger": false,
+        "disabled": false,
+        "interaction": "default",
+      },
+      {
+        "class": "bg-state-overlay-on-neutral-hover",
+        "danger": false,
+        "disabled": false,
+        "interaction": "hover",
+      },
+      {
+        "class": "bg-state-overlay-on-colored-pressed",
+        "danger": false,
+        "disabled": false,
+        "interaction": "pressed",
+      },
+      {
+        "class": "bg-bg-selection",
+        "disabled": false,
+        "interaction": "selected",
+      },
+      {
+        "class": "bg-brand-selection-hover",
+        "disabled": false,
+        "interaction": "selected-hover",
+      },
+      {
+        "class": "bg-brand-selection-pressed",
+        "disabled": false,
+        "interaction": "selected-pressed",
+      },
+      {
+        "class": "opacity-40",
+        "disabled": true,
+      },
+      {
+        "class": "bg-bg-selection opacity-40",
+        "disabled": true,
+        "interaction": "selected",
+      },
+      {
+        "class": "shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]",
+        "disabled": false,
+        "focus": true,
+      },
+      {
+        "class": "text-semantic-error text-button-md-medium",
+        "danger": true,
+        "disabled": false,
+        "size": "md",
+      },
+      {
+        "class": "text-semantic-error text-button-sm-medium",
+        "danger": true,
+        "disabled": false,
+        "size": "sm",
+      },
+      {
+        "class": "bg-state-overlay-on-neutral-hover",
+        "danger": true,
+        "disabled": false,
+        "interaction": "hover",
+      },
+      {
+        "class": "bg-state-overlay-on-colored-pressed",
+        "danger": true,
+        "disabled": false,
+        "interaction": "pressed",
+      },
+      {
+        "class": "opacity-40",
+        "danger": true,
+        "disabled": true,
+      },
+    ],
   }));
 
 /**
@@ -66,22 +168,26 @@ export type TreeMenuSize = 'sm' | 'md';
 interface TreeMenuItemDataBase {
   id: string;
   label: string;
+  /** chevron 표시 여부 (Figma: Show tree). true면 펼침/접힘 가능. 기본 false */
+  showTree?: boolean;
   expandIcon?: React.ReactNode;
-  hoverActionIcon?: React.ReactNode;
-  onHoverActionClick?: () => void;
+  /** Trailing 슬롯 — hover 시 표시되는 액션 아이콘 (Figma: Show Trailing) */
+  trailing?: React.ReactNode;
+  /** Trailing 클릭 핸들러 */
+  onTrailingClick?: () => void;
   disabled?: boolean;
 }
 
 /**
- * MD 전용 속성 (체크박스, 뱃지)
+ * MD 전용 속성 (체크박스, Close Trailing)
  */
 interface TreeMenuItemDataMdOnly {
   /** 체크박스 표시 여부 (MD only) */
   showCheckbox?: boolean;
-  /** 뱃지 (MD only) */
-  badge?: React.ReactNode;
-  /** badge를 텍스트 우측상단에 absolute로 배치 (dot badge용, MD only) */
-  badgeDot?: boolean;
+  /** Close Trailing 슬롯 — Badge 등 (MD only, Figma: Show Close Trailing) */
+  closeTrailing?: React.ReactNode;
+  /** closeTrailing을 텍스트 우측상단에 absolute로 배치 (dot badge용, MD only) */
+  closeTrailingDot?: boolean;
 }
 
 /**
@@ -119,7 +225,6 @@ export type DropPosition = 'before' | 'after' | 'inside';
  */
 interface ItemPropsCommon extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onClick' | 'onDragStart' | 'onDragEnd' | 'onDragOver' | 'onDragEnter' | 'onDragLeave' | 'onDrop'> {
   depth?: 1 | 2 | 3 | 4;
-  hasChildren?: boolean;
   isExpanded?: boolean;
   isFocused?: boolean;
   /** Tab 키로 진입 가능한 첫 번째 아이템 여부 (접근성) */
@@ -190,7 +295,6 @@ function ItemInner(
     item,
     size: rawSize = 'md',
     depth = 1,
-    hasChildren = false,
     isExpanded = false,
     isFocused = false,
     isFirstFocusable = false,
@@ -218,6 +322,9 @@ function ItemInner(
 
   // item을 MD 타입으로 단언 (내부 구현용)
   const mdItem = item as TreeMenuItemDataMd;
+
+  // showTree: item 데이터에서 가져옴 (소비자 직접 제어, lazy loading 지원)
+  const showTree = !!item.showTree;
 
   // 통합 hover 상태 관리
   const [hoverState, setHoverState] = React.useState<HoverState>({
@@ -250,7 +357,7 @@ function ItemInner(
   // 펼침 아이콘 클릭 (버블링 방지)
   const handleExpandClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!item.disabled && hasChildren) {
+    if (!item.disabled && showTree) {
       onExpandToggle?.();
     }
   };
@@ -261,11 +368,11 @@ function ItemInner(
     }
   };
 
-  // hover 액션 아이콘 클릭 (버블링 방지)
-  const handleActionClick = (e: React.MouseEvent) => {
+  // trailing 클릭 (버블링 방지)
+  const handleTrailingClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!item.disabled) {
-      item.onHoverActionClick?.();
+      item.onTrailingClick?.();
     }
   };
 
@@ -285,7 +392,7 @@ function ItemInner(
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      if (hasChildren) {
+      if (showTree) {
         onExpandToggle?.();
       } else {
         onItemClick?.();
@@ -295,7 +402,7 @@ function ItemInner(
 
   // 체크박스/뱃지 표시 여부 (TypeScript가 SM에서 사용 방지)
   const showCheckbox = checkboxMode && mdItem.showCheckbox !== false;
-  const showBadge = !!mdItem.badge;
+  const showCloseTrailing = !!mdItem.closeTrailing;
 
   // 체크 상태 결정
   const isChecked = checkState === 'checked';
@@ -306,7 +413,7 @@ function ItemInner(
       ref={ref}
       role="treeitem"
       tabIndex={isFocused || isFirstFocusable ? 0 : -1}
-      aria-expanded={hasChildren ? isExpanded : undefined}
+      aria-expanded={showTree ? isExpanded : undefined}
       aria-disabled={item.disabled}
       aria-checked={showCheckbox ? (isIndeterminate ? 'mixed' : isChecked) : undefined}
       aria-grabbed={draggable ? isDragging : undefined}
@@ -317,9 +424,14 @@ function ItemInner(
         itemVariants({
           size,
           depth: String(depth) as '1' | '2' | '3' | '4',
-          state: item.disabled ? 'disabled' : (hoverState.isItemHovered ? 'hover' : 'default'),
+          interaction: hoverState.isItemHovered && !item.disabled ? 'hover' : 'default',
+          disabled: !!item.disabled,
+          focus: isFocused,
+          danger: false,
+          empty: false,
         }),
-        item.disabled && 'cursor-not-allowed',
+        // focus ring이 인접 아이템에 가려지지 않도록 z-index 상승
+        isFocused && !item.disabled && 'relative z-[1]',
         // 드래그 중인 아이템 스타일
         isDragging && 'opacity-50',
         // 드래그 가능 커서
@@ -366,13 +478,13 @@ function ItemInner(
       )}
 
 
-      {/* 왼쪽 콘텐츠 그룹: (icon+checkbox) -8px- (text) -8px- (badge) */}
+      {/* 왼쪽 콘텐츠 그룹: (icon+checkbox) -8px- (text) -8px- (closeTrailing) */}
       <div className="flex items-center gap-component-gap-icon-label-md min-w-0 flex-1">
         {/* 펼침 아이콘 + 체크박스 그룹 (4px gap) */}
-        {(hasChildren || showCheckbox) && (
+        {(showTree || showCheckbox) && (
           <div className="flex items-center gap-component-gap-icon-label-xs flex-shrink-0">
             {/* 펼침 아이콘 영역 */}
-            {hasChildren && (
+            {showTree && (
               <div
                 className={cn(
                   'flex-shrink-0 flex items-center justify-center rounded-full transition-colors',
@@ -391,7 +503,7 @@ function ItemInner(
                   <Icon
                     name={isExpanded ? 'chevron-down' : 'chevron-right'}
                     size={iconSize}
-                    className={item.disabled ? 'text-icon-disabled' : 'text-icon-primary'}
+                    className="text-icon-interactive-default"
                   />
                 )}
               </div>
@@ -413,9 +525,8 @@ function ItemInner(
               >
                 <Checkbox
                   size="16"
-                  checked={isChecked || isIndeterminate}
-                  variant={isIndeterminate ? 'indeterminate' : 'checked'}
-                  disabled={item.disabled}
+                  value={isIndeterminate ? CheckboxValue.INDETERMINATE : isChecked ? CheckboxValue.CHECKED : CheckboxValue.UNCHECKED}
+                  interaction={item.disabled ? Interaction.DISABLED : Interaction.DEFAULT}
                   onChange={handleCheckboxChange}
                   renderContainer="label"
                   tabIndex={-1}
@@ -426,11 +537,11 @@ function ItemInner(
         )}
 
         {/* 텍스트 영역 (클릭은 행 전체에서 처리) */}
-        {showBadge && mdItem.badgeDot ? (
-          // dot badge: 텍스트 우측상단에 absolute 배치
+        {showCloseTrailing && mdItem.closeTrailingDot ? (
+          // dot closeTrailing: 텍스트 우측상단에 absolute 배치
           <span className="relative inline-flex items-start min-w-0">
             <span className="truncate">{item.label}</span>
-            {mdItem.badge}
+            {mdItem.closeTrailing}
           </span>
         ) : (
           <span className="truncate">
@@ -438,16 +549,16 @@ function ItemInner(
           </span>
         )}
 
-        {/* 뱃지 영역 (dot badge 제외) */}
-        {showBadge && !mdItem.badgeDot && (
+        {/* Close Trailing 영역 (dot 제외) */}
+        {showCloseTrailing && !mdItem.closeTrailingDot && (
           <div className="flex-shrink-0">
-            {mdItem.badge}
+            {mdItem.closeTrailing}
           </div>
         )}
       </div>
 
-      {/* hover 액션 아이콘 영역 (CSS group-hover로 표시, 오른쪽 끝 배치) */}
-      {item.hoverActionIcon && (
+      {/* Trailing 슬롯 — hover 시 표시 (CSS group-hover, 오른쪽 끝 배치) */}
+      {item.trailing && (
         <div
           className={cn(
             'flex-shrink-0 flex items-center justify-center rounded-full transition-all',
@@ -459,13 +570,13 @@ function ItemInner(
             hoverState.actionIcon === 'hover' && 'bg-state-overlay-on-neutral-hover',
             hoverState.actionIcon === 'pressed' && 'bg-state-overlay-on-neutral-pressed'
           )}
-          onClick={handleActionClick}
+          onClick={handleTrailingClick}
           onMouseEnter={() => updateHover({ actionIcon: 'hover' })}
           onMouseLeave={() => updateHover({ actionIcon: 'default' })}
           onMouseDown={() => updateHover({ actionIcon: 'pressed' })}
           onMouseUp={() => updateHover({ actionIcon: 'hover' })}
         >
-          {item.hoverActionIcon}
+          {item.trailing}
         </div>
       )}
     </div>
@@ -484,4 +595,4 @@ const Item = React.forwardRef(ItemInner) as React.ForwardRefExoticComponent<
 
 Item.displayName = 'Item';
 
-export { Item };
+export { Item, itemVariants };

@@ -3,8 +3,9 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import { Divider } from './Divider';
 import { cn } from './utils';
-import { Heading as MenuHeading } from './Menu/Heading';
-import { Item as MenuItemComponent } from './Menu/Item';
+import { Heading as MenuHeading, headingVariants as menuHeadingVariants } from './Menu/Heading';
+import { Item as MenuItemComponent, itemVariants as menuItemVariants } from './Menu/Item';
+import type { MenuItemBase, MenuItem } from '../types';
 
 const menuVariants = cva('flex flex-col max-h-[640px] min-w-[200px] max-w-[400px] rounded-lg border border-border-default bg-bg-surface shadow-[0_2px_4px_0_rgba(0,0,0,0.16)]', ({
     variants: {
@@ -26,6 +27,158 @@ const menuVariants = cva('flex flex-col max-h-[640px] min-w-[200px] max-w-[400px
 /** 2D 좌표를 나타내는 타입 */
 type Point = { x: number; y: number };
 
+// ─── Compound Component Context ───
+
+interface MenuContextValue {
+  isOpen: boolean;
+  position: { x: number; y: number } | undefined;
+  triggerRef: React.RefObject<HTMLElement> | undefined;
+  boundaryRef: React.RefObject<HTMLElement> | undefined;
+  contentRef: React.RefObject<HTMLElement>;
+  open: () => void;
+  close: () => void;
+  setPosition: (pos: { x: number; y: number }) => void;
+}
+
+const MenuContext = React.createContext<MenuContextValue | null>(null);
+
+const useMenuContext = () => React.useContext(MenuContext);
+
+// ─── Menu.Root ───
+
+interface MenuRootProps {
+  children: React.ReactNode;
+  /** 메뉴 위치를 이 요소 경계 내로 제약 */
+  boundary?: React.RefObject<HTMLElement>;
+}
+
+const MenuRoot: React.FC<MenuRootProps> = ({ children, boundary }) => {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [position, setPosition] = React.useState<{ x: number; y: number } | undefined>();
+  const triggerRef = React.useRef<HTMLElement>(null);
+  const contentRef = React.useRef<HTMLElement>(null);
+
+  const contextValue: MenuContextValue = {
+    isOpen,
+    position,
+    triggerRef,
+    boundaryRef: boundary,
+    contentRef,
+    open: () => setIsOpen(true),
+    close: () => setIsOpen(false),
+    setPosition,
+  };
+
+  return (
+    <MenuContext.Provider value={contextValue}>
+      {children}
+    </MenuContext.Provider>
+  );
+};
+
+// ─── Menu.Trigger ───
+
+interface MenuTriggerProps {
+  children: React.ReactElement;
+}
+
+const MenuTrigger: React.FC<MenuTriggerProps> = ({ children }) => {
+  const ctx = useMenuContext();
+  if (!ctx) throw new Error('Menu.Trigger must be used within Menu.Root');
+
+  const handleClick = () => {
+    if (ctx.isOpen) {
+      ctx.close();
+    } else {
+      const el = ctx.triggerRef?.current;
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        ctx.setPosition({ x: rect.left, y: rect.bottom + 4 });
+      }
+      ctx.open();
+    }
+  };
+
+  // mousedown에서 열기를 처리하면 click 시점에 이미 메뉴가 마운트되어 포커스 가능
+  // preventDefault로 브라우저 기본 포커스 이동을 차단하여 메뉴 포커스가 유지됨
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!ctx.isOpen) {
+      e.preventDefault(); // 버튼에 포커스가 가는 것을 방지
+    }
+  };
+
+  return React.cloneElement(children, {
+    ref: ctx.triggerRef,
+    onClick: handleClick,
+    onMouseDown: handleMouseDown,
+  });
+};
+
+// ─── Menu.ContextArea ───
+
+interface MenuContextAreaProps {
+  children: React.ReactNode;
+  className?: string;
+  /** true이면 메뉴가 열린 상태에서 마우스 이동 시 메뉴가 커서를 따라다닙니다. */
+  followMouse?: boolean;
+  /** 커서로부터 메뉴의 오프셋 (px). 기본값 { x: 0, y: 4 } */
+  offset?: { x?: number; y?: number };
+}
+
+const MenuContextArea: React.FC<MenuContextAreaProps> = ({ children, className, followMouse = false, offset }) => {
+  const ctx = useMenuContext();
+  if (!ctx) throw new Error('Menu.ContextArea must be used within Menu.Root');
+
+  const ox = offset?.x ?? 0;
+  const oy = offset?.y ?? 4;
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    ctx.setPosition({ x: e.clientX + ox, y: e.clientY + oy });
+    ctx.open();
+  };
+
+  const cachedRect = React.useRef<DOMRect | null>(null);
+  const margin = Math.max(Math.abs(ox), Math.abs(oy)) + 4;
+
+  // 메뉴 열림/닫힘 시 rect 캐시
+  React.useEffect(() => {
+    if (ctx.isOpen) {
+      requestAnimationFrame(() => {
+        const contentEl = ctx.contentRef?.current;
+        if (contentEl) cachedRect.current = contentEl.getBoundingClientRect();
+      });
+    } else {
+      cachedRect.current = null;
+    }
+  }, [ctx.isOpen, ctx.contentRef]);
+
+  const handleMouseMove = followMouse
+    ? (e: React.MouseEvent) => {
+        if (!ctx.isOpen) return;
+        // 캐시된 rect로 히트 테스트
+        const rect = cachedRect.current;
+        if (rect) {
+          if (
+            e.clientX >= rect.left - margin &&
+            e.clientX <= rect.right + margin &&
+            e.clientY >= rect.top - margin &&
+            e.clientY <= rect.bottom + margin
+          ) {
+            return;
+          }
+        }
+        ctx.setPosition({ x: e.clientX + ox, y: e.clientY + oy });
+      }
+    : undefined;
+
+  return (
+    <div className={className} onContextMenu={handleContextMenu} onMouseMove={handleMouseMove}>
+      {children}
+    </div>
+  );
+};
+
 /**
  * Safe Triangle 알고리즘: 점이 삼각형 내부에 있는지 확인
  * 마우스가 하위 메뉴로 이동하는 동안 다른 메뉴 항목이 활성화되지 않도록 합니다.
@@ -39,27 +192,6 @@ const isPointInTriangle = (p: Point, a: Point, b: Point, c: Point): boolean => {
 };
 
 /**
- * MenuItem 데이터 구조
- */
-export interface MenuItem {
-  id: string;
-  label?: string;
-  title?: string;
-  description?: string;
-  heading?: string;
-  leftIcon?: React.ReactNode;
-  rightIcon?: React.ReactNode;
-  badge?: React.ReactNode;
-  /** badge를 텍스트 우측상단에 absolute로 배치 (dot badge용) */
-  badgeDot?: boolean;
-  onClick?: () => void;
-  disabled?: boolean;
-  destructive?: boolean;
-  selected?: boolean;
-  children?: MenuItem[];
-}
-
-/**
  * Menu Props
  */
 export interface MenuProps
@@ -67,19 +199,24 @@ export interface MenuProps
     VariantProps<typeof menuVariants> {
   items: MenuItem[];
   position?: { x: number; y: number };
-  onItemClick?: (item: MenuItem) => void;
+  onItemClick?: (item: MenuItemBase) => void;
   onClose?: () => void;
   triggerRef?: React.RefObject<HTMLElement>;
-  title?: string;
-  description?: string;
+  /** 메뉴 위치를 이 컨테이너 내부로 제약합니다. triggerRef와 함께 사용하면 스크롤 추적 시에도 컨테이너 경계를 벗어나지 않습니다. */
+  containerRef?: React.RefObject<HTMLElement>;
   emptyText?: string;
-
-  /** 체크박스/라디오 모드 */
-  checkboxMode?: 'none' | 'checkbox' | 'radio';
-  /** 체크된 항목 ID 목록 */
-  checkedIds?: Set<string>;
-  /** 체크 상태 변경 핸들러 */
-  onCheckChange?: (id: string, checked: boolean) => void;
+  /** 리스트 컨테이너의 ARIA role. 기본값 "menu". Select에서는 "listbox"로 override */
+  listRole?: string;
+  /** 개별 아이템의 ARIA role. 기본값 "menuitem". Select에서는 "option"으로 override */
+  itemRole?: string;
+  /** 메뉴 열릴 때 메뉴 컨테이너에 자동 포커스 여부. 기본값 true. Select에서는 false로 설정 */
+  autoFocusMenu?: boolean;
+  /** 외부에서 제어하는 하이라이트 인덱스 (Select의 aria-activedescendant용). 지정 시 내부 focusedIndexMap[0] 대신 사용 */
+  highlightedIndex?: number;
+  /** 하이라이트 인덱스 변경 콜백 (마우스 hover 시 외부 상태 동기화) */
+  onHighlightedIndexChange?: (index: number) => void;
+  /** 아이템 DOM id 접두사. 지정 시 각 아이템에 id="{prefix}-{item.id}" 부여 */
+  itemIdPrefix?: string;
 }
 
 /**
@@ -91,26 +228,47 @@ const Menu = React.forwardRef<HTMLDivElement, MenuProps>(
       className,
       size,
       items,
-      position,
+      position: propPosition,
       onItemClick,
-      onClose,
-      triggerRef,
-      title,
-      description,
+      onClose: propOnClose,
+      triggerRef: propTriggerRef,
+      containerRef: propContainerRef,
       emptyText = '값이 없습니다',
-      checkboxMode = 'none',
-      checkedIds,
-      onCheckChange,
+      listRole,
+      itemRole,
+      autoFocusMenu = true,
+      highlightedIndex: externalHighlightedIndex,
+      onHighlightedIndexChange,
+      itemIdPrefix,
       ...props
     },
     ref
   ) => {
+    const ctx = useMenuContext();
+
+    // context가 있으면 context 값 사용, 없으면 prop 값 사용
+    const triggerRef = propTriggerRef ?? ctx?.triggerRef;
+    const containerRef = propContainerRef ?? ctx?.boundaryRef;
+    const position = propPosition ?? ctx?.position;
+    const onClose = propOnClose ?? ctx?.close;
+
     const internalRef = React.useRef<HTMLDivElement>(null);
     const menuRef = (ref as React.RefObject<HTMLDivElement>) || internalRef;
+
+    // compound 모드: contentRef를 menuRef와 동기화
+    React.useEffect(() => {
+      if (ctx?.contentRef) {
+        (ctx.contentRef as React.MutableRefObject<HTMLElement | null>).current = menuRef.current;
+        return () => {
+          (ctx.contentRef as React.MutableRefObject<HTMLElement | null>).current = null;
+        };
+      }
+    });
+
     const [activeIdPath, setActiveIdPath] = React.useState<string[]>([]);
 
     // depth별 포커스 인덱스 관리 (depth 0, 1, 2, ...)
-    const [focusedIndexMap, setFocusedIndexMap] = React.useState<Record<number, number>>({ 0: 0 });
+    const [focusedIndexMap, setFocusedIndexMap] = React.useState<Record<number, number>>({ 0: -1 });
 
     const mousePosRef = React.useRef<Point>({ x: 0, y: 0 });
     const prevMousePosRef = React.useRef<Point>({ x: 0, y: 0 });
@@ -129,12 +287,13 @@ const Menu = React.forwardRef<HTMLDivElement, MenuProps>(
       return () => window.removeEventListener('mousemove', handleMouseMove);
     }, []);
 
-    // 메뉴 열릴 때 첫 항목에 자동 포커스
+    // 메뉴 열릴 때 메뉴 컨테이너에 포커스 (아이템은 키보드 탐색 시작 시 포커스)
+    const isOpen = ctx?.isOpen;
     React.useEffect(() => {
-      if (itemRefsMap.current[0]?.[0]) {
-        itemRefsMap.current[0][0].focus();
+      if (isOpen && autoFocusMenu) {
+        menuRef.current?.focus();
       }
-    }, []);
+    }, [isOpen, autoFocusMenu]);
 
     React.useEffect(() => {
       if (!onClose) return;
@@ -177,8 +336,56 @@ const Menu = React.forwardRef<HTMLDivElement, MenuProps>(
       return () => window.removeEventListener('resize', handleResize);
     }, [activeIdPath.length]);
 
-    const handleItemHover = (item: MenuItem, depth: number, focusableIndex: number) => {
+    // triggerRef 기반 위치 추적 (스크롤/리사이즈 시 메뉴가 트리거에 붙어있도록)
+    const [trackedPosition, setTrackedPosition] = React.useState<{ x: number; y: number } | null>(null);
+    // containerRef 제약 시 메뉴 너비 캐싱
+    const measuredWidthRef = React.useRef(0);
+    // viewport 경계 보정된 위치
+    const [correctedPosition, setCorrectedPosition] = React.useState<{ x: number; y: number } | null>(null);
+
+    React.useEffect(() => {
+      if (!triggerRef?.current) return;
+
+      const updatePosition = () => {
+        const triggerRect = triggerRef.current?.getBoundingClientRect();
+        if (!triggerRect) return;
+
+        let x = triggerRect.left;
+        const y = triggerRect.bottom + 4;
+
+        // containerRef가 있으면 메뉴가 컨테이너 오른쪽을 넘어가지 않도록 제약
+        if (containerRef?.current && measuredWidthRef.current > 0) {
+          const containerRect = containerRef.current.getBoundingClientRect();
+          const pr = parseInt(getComputedStyle(containerRef.current).paddingRight || '0');
+          const rightEdge = containerRect.right - pr;
+          if (x + measuredWidthRef.current > rightEdge) {
+            x = rightEdge - measuredWidthRef.current;
+          }
+        }
+
+        setTrackedPosition({ x, y });
+      };
+
+      // 초기 위치 계산
+      updatePosition();
+
+      // 스크롤 시 메뉴 닫기
+      const handleScroll = () => {
+        propOnClose?.();
+      };
+      window.addEventListener('scroll', handleScroll, true);
+      window.addEventListener('resize', updatePosition);
+      return () => {
+        window.removeEventListener('scroll', handleScroll, true);
+        window.removeEventListener('resize', updatePosition);
+      };
+    }, [triggerRef, containerRef, propOnClose]);
+
+    const closeDelayRef = React.useRef<NodeJS.Timeout | null>(null);
+
+    const handleItemHover = (item: MenuItemBase, depth: number, focusableIndex: number) => {
       if (activationTimeoutRef.current) clearTimeout(activationTimeoutRef.current);
+      if (closeDelayRef.current) clearTimeout(closeDelayRef.current);
 
       const newPath = activeIdPath.slice(0, depth);
       newPath.push(item.id);
@@ -202,6 +409,15 @@ const Menu = React.forwardRef<HTMLDivElement, MenuProps>(
         }
       }
 
+      // 서브메뉴가 열려있는데 서브메뉴 없는 아이템으로 이동 시 Close Delay 적용
+      const hasChildren = item.children && item.children.length > 0;
+      if (!hasChildren && activeIdPath.length > depth) {
+        closeDelayRef.current = setTimeout(() => {
+          setActiveIdPath(newPath);
+        }, 300);
+        return;
+      }
+
       setActiveIdPath(newPath);
     };
 
@@ -213,7 +429,7 @@ const Menu = React.forwardRef<HTMLDivElement, MenuProps>(
       setActiveIdPath([]);
     };
 
-    const handleItemClickInternal = (item: MenuItem) => {
+    const handleItemClickInternal = (item: MenuItemBase) => {
       // 하위 메뉴가 있으면 토글 (열기/닫기)
       if (item.children?.length) {
         const newPath = [...activeIdPath];
@@ -241,12 +457,11 @@ const Menu = React.forwardRef<HTMLDivElement, MenuProps>(
     };
 
     // 포커스 가능한 아이템 목록 생성 (heading, divider 제외)
-    const getFocusableItems = (menuItems: MenuItem[]): MenuItem[] => {
+    const getFocusableItems = (menuItems: MenuItem[]): MenuItemBase[] => {
       return menuItems.filter(
-        (item) =>
-          !item.heading &&
-          !item.id.startsWith('divider') &&
-          item.id !== 'divider' &&
+        (item): item is MenuItemBase =>
+          item.type !== 'divider' &&
+          item.type !== 'heading' &&
           !item.disabled
       );
     };
@@ -261,29 +476,32 @@ const Menu = React.forwardRef<HTMLDivElement, MenuProps>(
       let targetMenuItems = items;
       for (let i = 0; i < focusedDepth; i++) {
         const parentId = activeIdPath[i];
-        const parent = targetMenuItems.find(item => item.id === parentId);
+        const parent = targetMenuItems.find(
+          (item): item is MenuItemBase => item.type !== 'divider' && item.type !== 'heading' && item.id === parentId
+        );
         if (parent?.children) {
           targetMenuItems = parent.children;
         }
       }
 
       const focusableItems = getFocusableItems(targetMenuItems);
-      const currentFocusedIndex = focusedIndexMap[focusedDepth] || 0;
-      const currentItem = focusableItems[currentFocusedIndex];
+      const currentFocusedIndex = focusedIndexMap[focusedDepth] ?? -1;
+      const currentItem = currentFocusedIndex >= 0 ? focusableItems[currentFocusedIndex] : undefined;
 
       switch (e.key) {
-        case 'ArrowDown':
+        case 'ArrowDown': {
           e.preventDefault();
-          const nextIndex = (currentFocusedIndex + 1) % focusableItems.length;
+          const nextIndex = currentFocusedIndex < 0 ? 0 : (currentFocusedIndex + 1) % focusableItems.length;
           setFocusedIndexMap(prev => ({ ...prev, [focusedDepth]: nextIndex }));
           setTimeout(() => {
             itemRefsMap.current[focusedDepth]?.[nextIndex]?.focus();
           }, 0);
           break;
+        }
 
-        case 'ArrowUp':
+        case 'ArrowUp': {
           e.preventDefault();
-          const prevIndex = currentFocusedIndex - 1 < 0
+          const prevIndex = currentFocusedIndex <= 0
             ? focusableItems.length - 1
             : currentFocusedIndex - 1;
           setFocusedIndexMap(prev => ({ ...prev, [focusedDepth]: prevIndex }));
@@ -291,6 +509,7 @@ const Menu = React.forwardRef<HTMLDivElement, MenuProps>(
             itemRefsMap.current[focusedDepth]?.[prevIndex]?.focus();
           }, 0);
           break;
+        }
 
         case 'ArrowRight':
           e.preventDefault();
@@ -373,36 +592,44 @@ const Menu = React.forwardRef<HTMLDivElement, MenuProps>(
 
     // MenuItem만 렌더링 (하위 메뉴 제외)
     const renderMenuItems = (menuItems: MenuItem[], depth: number = 0): React.ReactNode => {
+      // 서브메뉴 계층 제한 경고 (최대 3단계 권장)
+      if (process.env.NODE_ENV !== 'production' && depth > 3) {
+        console.warn(`[Menu] 서브메뉴 depth ${depth}단계 감지. 최대 3단계까지만 권장합니다.`);
+      }
+
       // depth별 itemRefs 배열 초기화
       if (!itemRefsMap.current[depth]) {
         itemRefsMap.current[depth] = [];
       }
 
       let focusableIndex = 0;
-      const currentFocusedIndex = focusedIndexMap[depth] || 0;
+      const currentFocusedIndex = focusedIndexMap[depth] ?? -1;
 
-      return menuItems.map((item) => {
+      return menuItems.map((item, index) => {
         // Heading
-        if (item.heading) {
+        if (item.type === 'heading') {
           return (
-            <React.Fragment key={item.id}>
+            <React.Fragment key={item.id || `heading-${index}`}>
               <MenuHeading>{item.heading}</MenuHeading>
             </React.Fragment>
           );
         }
 
         // Divider
-        if (item.id === 'divider' || item.id.startsWith('divider-')) {
+        if (item.type === 'divider') {
           return (
-            <div key={item.id} className="py-component-inset-menu-divider-y px-component-inset-menu-item-x">
-              <Divider />
+            <div key={item.id || `divider-${index}`} className="py-component-inset-menu-divider-y px-component-inset-menu-item-x">
+              <Divider tone="subtle" />
             </div>
           );
         }
 
         const hasSubmenu = item.children && item.children.length > 0;
         const isActive = activeIdPath[depth] === item.id;
-        const isFocused = currentFocusedIndex === focusableIndex;
+        // 외부 하이라이트 제어: depth 0에서 externalHighlightedIndex가 지정되면 사용
+        const isFocused = (depth === 0 && externalHighlightedIndex !== undefined)
+          ? externalHighlightedIndex === focusableIndex
+          : currentFocusedIndex === focusableIndex;
         const currentFocusableIndex = focusableIndex;
 
         // disabled가 아닌 경우에만 포커스 인덱스 증가
@@ -423,10 +650,15 @@ const Menu = React.forwardRef<HTMLDivElement, MenuProps>(
                 itemRefsMap.current[depth][currentFocusableIndex] = el;
               }
             }}
+            id={depth === 0 && itemIdPrefix ? `${itemIdPrefix}-${item.id}` : undefined}
             item={itemWithSelected}
             size={size || 'md'}
             onItemClick={handleItemClickInternal}
-            onItemHover={(hoveredItem: MenuItem) => {
+            onItemHover={(hoveredItem: MenuItemBase) => {
+              // 외부 하이라이트 동기화 (마우스 hover 시)
+              if (depth === 0 && onHighlightedIndexChange && !item.disabled) {
+                onHighlightedIndexChange(currentFocusableIndex);
+              }
               if (hasSubmenu) {
                 handleItemHover(hoveredItem, depth, currentFocusableIndex);
               }
@@ -434,9 +666,7 @@ const Menu = React.forwardRef<HTMLDivElement, MenuProps>(
             depth={depth}
             isFocused={isFocused}
             isExpanded={isActive}
-            checkboxMode={checkboxMode}
-            isChecked={checkedIds?.has(item.id)}
-            onCheckChange={onCheckChange}
+            itemRole={itemRole}
           />
         );
       });
@@ -459,12 +689,14 @@ const Menu = React.forwardRef<HTMLDivElement, MenuProps>(
 
       for (let depth = 0; depth < activeIdPath.length; depth++) {
         const activeId = activeIdPath[depth];
-        const activeItem = currentItems.find(item => item.id === activeId);
+        const activeItem = currentItems.find(
+          (item): item is MenuItemBase => item.type !== 'divider' && item.type !== 'heading' && item.id === activeId
+        );
 
         if (activeItem?.children && activeItem.children.length > 0) {
           // 부모 MenuItem의 viewport 기준 위치 계산 (Portal용)
-          const focusedIndex = focusedIndexMap[depth] || 0;
-          const parentElement = itemRefsMap.current[depth]?.[focusedIndex];
+          const focusedIndex = focusedIndexMap[depth] ?? 0;
+          const parentElement = itemRefsMap.current[depth]?.[Math.max(0, focusedIndex)];
 
           if (parentElement) {
             const rect = parentElement.getBoundingClientRect();
@@ -491,7 +723,9 @@ const Menu = React.forwardRef<HTMLDivElement, MenuProps>(
               previousPlacement = 'right';
             }
 
-            parentTop = rect.top;
+            // 서브메뉴 수직 정렬: 부모 아이템 Top = 서브메뉴 첫 아이템 Top (메뉴 패딩 4px 보정)
+            const SUBMENU_Y_OFFSET = -4;
+            parentTop = rect.top + SUBMENU_Y_OFFSET;
 
             // 화면 아래 경계 체크 (서브메뉴가 화면 아래로 넘어가는 경우)
             const estimatedHeight = Math.min(activeItem.children.length * 40, 400);
@@ -512,13 +746,18 @@ const Menu = React.forwardRef<HTMLDivElement, MenuProps>(
               key={'submenu-' + depth + '-' + activeId}
               ref={(el) => (submenuRefs.current[depth] = el)}
               className={cn(
-                menuVariants({ size: size || 'md' })
+                menuVariants({ size: size || 'md' }),
+                'relative flex flex-col animate-menu-enter'
               )}
               style={submenuStyle}
-              role="menu"
+              role={listRole || "menu"}
               aria-orientation="vertical"
             >
-              {renderMenuItems(activeItem.children, depth + 1)}
+              <div className="menu-scroll-container">
+                <div className="menu-scroll-inner py-component-inset-menu-y px-component-inset-menu-x max-h-[640px]">
+                  {renderMenuItems(activeItem.children, depth + 1)}
+                </div>
+              </div>
             </div>
           );
 
@@ -537,11 +776,88 @@ const Menu = React.forwardRef<HTMLDivElement, MenuProps>(
       return null;
     };
 
-    const positionStyles = position
+    // containerRef 제약: 메뉴 렌더 후 너비 측정 → 위치 재계산
+    React.useEffect(() => {
+      if (!containerRef?.current || !menuRef.current) return;
+      const width = menuRef.current.offsetWidth;
+      if (width > 0 && width !== measuredWidthRef.current) {
+        measuredWidthRef.current = width;
+        // 측정 후 위치 즉시 재계산
+        if (triggerRef?.current) {
+          const triggerRect = triggerRef.current.getBoundingClientRect();
+          const containerRect = containerRef.current.getBoundingClientRect();
+          const pr = parseInt(getComputedStyle(containerRef.current).paddingRight || '0');
+          const rightEdge = containerRect.right - pr;
+          let x = triggerRect.left;
+          if (x + width > rightEdge) {
+            x = rightEdge - width;
+          }
+          setTrackedPosition({ x, y: triggerRect.bottom + 4 });
+        }
+      }
+    });
+
+    // triggerRef 기반 추적 위치 > position prop > 없음
+    const effectivePosition = triggerRef?.current ? trackedPosition : position;
+
+    // Viewport boundary correction: effectivePosition 기준으로 메뉴 크기 측정 후 보정
+    const prevEffectivePosRef = React.useRef<{ x: number; y: number } | null | undefined>(undefined);
+    React.useLayoutEffect(() => {
+      const el = menuRef.current;
+      if (!el || !effectivePosition) {
+        if (correctedPosition) setCorrectedPosition(null);
+        prevEffectivePosRef.current = effectivePosition;
+        return;
+      }
+
+      // effectivePosition이 변경되지 않았으면 재계산 스킵 (무한루프 방지)
+      const prev = prevEffectivePosRef.current;
+      if (prev && prev.x === effectivePosition.x && prev.y === effectivePosition.y) return;
+      prevEffectivePosRef.current = effectivePosition;
+
+      const menuW = el.offsetWidth;
+      const menuH = el.offsetHeight;
+      // clientWidth/clientHeight: 스크롤바 제외한 실제 보이는 영역
+      const vw = document.documentElement.clientWidth;
+      const vh = document.documentElement.clientHeight;
+      const { x, y } = effectivePosition;
+
+      let newX = x;
+      let newY = y;
+      let needsCorrection = false;
+
+      // X축: viewport 오른쪽 벗어남 → 커서 왼쪽으로 Flip
+      if (x + menuW > vw) {
+        newX = Math.max(0, x - menuW);
+        needsCorrection = true;
+      }
+
+      // Y축: viewport 하단 벗어남
+      if (y + menuH > vh) {
+        if (triggerRef?.current) {
+          // 버튼 클릭: 트리거 위쪽으로 Flip
+          const triggerRect = triggerRef.current.getBoundingClientRect();
+          newY = Math.max(0, triggerRect.top - menuH - 4);
+        } else {
+          // 우클릭: 커서 위쪽으로 Flip
+          newY = Math.max(0, y - menuH);
+        }
+        needsCorrection = true;
+      }
+
+      setCorrectedPosition(needsCorrection ? { x: newX, y: newY } : null);
+    });
+
+    // compound 모드에서 isOpen=false이면 렌더링 안 함
+    if (ctx && !ctx.isOpen) return null;
+
+    // viewport 보정된 위치가 있으면 우선 사용
+    const finalPosition = correctedPosition ?? effectivePosition;
+    const positionStyles = finalPosition
       ? {
           position: 'fixed' as const,
-          left: `${position.x}px`,
-          top: `${position.y}px`,
+          left: `${finalPosition.x}px`,
+          top: `${finalPosition.y}px`,
           zIndex: 9999,
         }
       : {};
@@ -549,30 +865,31 @@ const Menu = React.forwardRef<HTMLDivElement, MenuProps>(
     return (
       <div
         ref={menuRef}
-        role="menu"
+        role={listRole || "menu"}
+        tabIndex={-1}
         aria-orientation="vertical"
-        className={cn(menuVariants({ size, className }), 'relative flex flex-col')}
+        className={cn(menuVariants({ size, className }), 'relative flex flex-col outline-none animate-menu-enter')}
         style={positionStyles}
         onKeyDown={handleKeyDown}
+        onBlur={(e) => {
+          const related = e.relatedTarget as Node | null;
+          // 포커스가 메뉴(컨테이너 + 서브메뉴 Portal) 바깥으로 나가면 focus 인덱스 리셋
+          const isInsideMenu = menuRef.current?.contains(related);
+          const isInsideSubmenu = submenuRefs.current.some(ref => ref?.contains(related));
+          if (!isInsideMenu && !isInsideSubmenu) {
+            setFocusedIndexMap({ 0: -1 });
+          }
+        }}
         onMouseLeave={handleMenuMouseLeave}
         {...props}
       >
-        {(title || description) && (
-          <div
-            className={cn(
-              "flex flex-col gap-layout-stack-xs self-stretch py-component-inset-menu-item-y px-component-inset-menu-item-x",
-              items.length > 0 && "border-b border-border-primary"
-            )}
-          >
-            {title && <div className="text-label-md-bold text-text-primary">{title}</div>}
-            {description && <div className="text-body-sm-regular text-text-secondary">{description}</div>}
-          </div>
-        )}
         <div className="menu-scroll-container">
-          <div className={cn("menu-scroll-inner py-component-inset-menu-y px-component-inset-menu-x", size === 'sm' ? 'max-h-[180px]' : 'max-h-[224px]')}>
+          <div className="menu-scroll-inner py-component-inset-menu-y px-component-inset-menu-x max-h-[640px]">
             {items.length === 0 ? (
               emptyText ? (
                 <div
+                  role="status"
+                  aria-live="polite"
                   className={cn(
                     'py-component-inset-menu-item-y px-component-inset-menu-item-x text-center text-text-tertiary',
                     size === 'sm' ? 'text-button-sm-medium' : 'text-button-md-medium'
@@ -593,4 +910,22 @@ const Menu = React.forwardRef<HTMLDivElement, MenuProps>(
 );
 Menu.displayName = 'Menu';
 
-export { Menu, menuVariants };
+// ─── Compound Export ───
+
+const MenuContent = Menu;
+
+type MenuComponent = typeof Menu & {
+  Root: typeof MenuRoot;
+  Trigger: typeof MenuTrigger;
+  ContextArea: typeof MenuContextArea;
+  Content: typeof MenuContent;
+};
+
+const MenuCompound = Menu as MenuComponent;
+MenuCompound.Root = MenuRoot;
+MenuCompound.Trigger = MenuTrigger;
+MenuCompound.ContextArea = MenuContextArea;
+MenuCompound.Content = MenuContent;
+
+export { MenuCompound as Menu, menuVariants, menuItemVariants, menuHeadingVariants };
+export type { MenuItemBase, MenuItemDivider, MenuItemHeading, MenuItem } from '../types';

@@ -2,31 +2,45 @@ import type { Meta, StoryObj } from '@storybook/react';
 import React from 'react';
 
 import { ToggleSwitch } from '../components/ToggleSwitch';
+import { ToggleSwitchSelected } from '../types';
 
 const meta: Meta<typeof ToggleSwitch> = {
   title: 'UI/ToggleSwitch',
   component: ToggleSwitch,
   parameters: {
     layout: 'centered',
+    docs: {
+      description: {
+        component: [
+          '## Figma ↔ Code 인터페이스 매핑',
+          '',
+          '| Figma Property | Code Prop | 차이점 및 이유 |',
+          '|---|---|---|',
+          '| `selected` | `selected` | 동일. `on` / `off` / `disabled` |',
+          '',
+          '### V1 → V2 변경 사항',
+          '',
+          '| V1 | V2 | 변경 내용 |',
+          '|---|---|---|',
+          '| `checked` (boolean) + `disabled` (boolean) | `selected` (enum) | Figma `selected` 1:1 대응. `ToggleSwitchSelected.ON` / `.OFF` / `.DISABLED` |',
+        ].join('\n'),
+      },
+    },
   },
   tags: ['autodocs'],
   argTypes: {
-    checked: {
-      control: 'boolean',
-      description: 'ToggleSwitch의 체크 상태를 설정합니다.',
-    },
-    disabled: {
-      control: 'boolean',
-      description: 'ToggleSwitch를 비활성화합니다.',
+    selected: {
+      control: 'select',
+      options: Object.values(ToggleSwitchSelected),
+      description: 'Figma: `selected`. 토글 상태 (on/off/disabled)',
     },
     'aria-label': {
       control: 'text',
-      description: '접근성을 위한 ARIA 레이블입니다.',
+      description: '접근성을 위한 ARIA 레이블',
     },
   },
   args: {
-    checked: false,
-    disabled: false,
+    selected: ToggleSwitchSelected.OFF,
     'aria-label': 'Toggle switch',
   },
 };
@@ -36,42 +50,22 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: (args) => {
-    const [checked, setChecked] = React.useState(args.checked ?? false);
+    const [selected, setSelected] = React.useState<'on' | 'off' | 'disabled'>(args.selected ?? ToggleSwitchSelected.OFF);
 
     React.useEffect(() => {
-      setChecked(args.checked ?? false);
-    }, [args.checked]);
+      setSelected(args.selected ?? ToggleSwitchSelected.OFF);
+    }, [args.selected]);
 
     return (
-      <div className="flex flex-col gap-4">
-        <ToggleSwitch
-          checked={checked}
-          disabled={args.disabled}
-          onChange={(e) => !args.disabled && setChecked(e.target.checked)}
-          aria-label={args['aria-label']}
-        />
-        <p className="text-sm">상태: {checked ? 'ON' : 'OFF'}</p>
-      </div>
+      <ToggleSwitch
+        selected={selected}
+        onChange={() => {
+          if (selected !== ToggleSwitchSelected.DISABLED) {
+            setSelected(selected === ToggleSwitchSelected.ON ? ToggleSwitchSelected.OFF : ToggleSwitchSelected.ON);
+          }
+        }}
+        aria-label={args['aria-label']}
+      />
     );
-  },
-};
-
-export const Disabled: Story = {
-  render: (args) => {
-    return (
-      <div className="flex flex-col gap-4">
-        <ToggleSwitch
-          checked={args.checked}
-          disabled={args.disabled}
-          aria-label={args['aria-label']}
-        />
-        <p className="text-sm">상태: {args.checked ? 'ON' : 'OFF'} (비활성화)</p>
-      </div>
-    );
-  },
-  args: {
-    checked: false,
-    disabled: true,
-    'aria-label': 'Disabled toggle switch',
   },
 };

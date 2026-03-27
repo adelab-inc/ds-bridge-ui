@@ -117,6 +117,7 @@
       "focus": "#0033a0",
       "hue-cyan-300": "#69d3e5",
       "hue-cyan-500": "#06b6d4",
+      "hue-cyan-700": "#107b95",
       "hue-cyan-800": "#155e75",
       "hue-green-300": "#7adc9e",
       "hue-green-500": "#22c55e",
@@ -132,6 +133,7 @@
       "hue-pink-800": "#9d174d",
       "hue-red-300": "#f58e8e",
       "hue-red-500": "#ef4444",
+      "hue-red-700": "#b52929",
       "hue-red-800": "#991b1b",
       "hue-violet-300": "#b99df9",
       "hue-violet-500": "#8b5cf6",
@@ -212,6 +214,8 @@
       "text-semantic-on-info": "#014361",
       "text-semantic-on-success": "#1e4620",
       "text-semantic-on-warning": "#663c00",
+      "text-semantic-success": "#2e7d32",
+      "text-semantic-warning": "#ed6c02",
       "text-tertiary": "#6c757d",
       "tint-brand-primary-500-08": "#ecf0fa",
       "tint-brand-primary-500-12": "#e2e9f7",
@@ -247,11 +251,19 @@
         "Pretendard",
         "sans-serif"
       ],
+      "typography-body-md-bold": [
+        "Pretendard",
+        "sans-serif"
+      ],
       "typography-body-md-medium": [
         "Pretendard",
         "sans-serif"
       ],
       "typography-body-md-regular": [
+        "Pretendard",
+        "sans-serif"
+      ],
+      "typography-body-sm-bold": [
         "Pretendard",
         "sans-serif"
       ],
@@ -308,10 +320,6 @@
         "sans-serif"
       ],
       "typography-chip-label-sm-medium": [
-        "Pretendard",
-        "sans-serif"
-      ],
-      "typography-display-caption-lg-medium": [
         "Pretendard",
         "sans-serif"
       ],
@@ -405,6 +413,12 @@
           "lineHeight": "28px"
         }
       ],
+      "typography-body-md-bold": [
+        "16px",
+        {
+          "lineHeight": "24px"
+        }
+      ],
       "typography-body-md-medium": [
         "16px",
         {
@@ -415,6 +429,12 @@
         "16px",
         {
           "lineHeight": "24px"
+        }
+      ],
+      "typography-body-sm-bold": [
+        "14px",
+        {
+          "lineHeight": "20px"
         }
       ],
       "typography-body-sm-medium": [
@@ -444,7 +464,7 @@
       "typography-button-sm-medium": [
         "14px",
         {
-          "lineHeight": "20px"
+          "lineHeight": "16px"
         }
       ],
       "typography-caption-sm-medium": [
@@ -460,33 +480,33 @@
         }
       ],
       "typography-caption-xs-medium": [
-        "14px",
+        "12px",
         {
           "lineHeight": "16px"
         }
       ],
       "typography-caption-xs-regular": [
-        "14px",
+        "12px",
         {
           "lineHeight": "16px"
         }
       ],
       "typography-chart-axis-label-regular": [
-        "14px",
+        "16px",
         {
-          "lineHeight": "20px"
+          "lineHeight": "24px"
         }
       ],
       "typography-chart-graph-label-medium-num": [
-        "14px",
+        "16px",
         {
-          "lineHeight": "20px"
+          "lineHeight": "24px"
         }
       ],
       "typography-chart-legend-medium": [
-        "14px",
+        "16px",
         {
-          "lineHeight": "20px"
+          "lineHeight": "24px"
         }
       ],
       "typography-chip-label-md-medium": [
@@ -499,12 +519,6 @@
         "12px",
         {
           "lineHeight": "16px"
-        }
-      ],
-      "typography-display-caption-lg-medium": [
-        "18px",
-        {
-          "lineHeight": "24px"
         }
       ],
       "typography-display-caption-md-medium": [
@@ -522,7 +536,7 @@
       "typography-display-unit-lg-medium": [
         "18px",
         {
-          "lineHeight": "24px"
+          "lineHeight": "36px"
         }
       ],
       "typography-display-value-xl-semibold-num": [
@@ -552,7 +566,7 @@
       "typography-form-helper-text-sm-regular": [
         "12px",
         {
-          "lineHeight": "20px"
+          "lineHeight": "16px"
         }
       ],
       "typography-form-label-md-medium": [
@@ -604,29 +618,31 @@
         }
       ],
       "typography-table-cell-number-regular-num": [
-        "16px",
+        "14px",
         {
-          "lineHeight": "24px"
+          "lineHeight": "20px"
         }
       ],
       "typography-table-cell-text-regular": [
-        "16px",
+        "14px",
         {
-          "lineHeight": "24px"
+          "lineHeight": "20px"
         }
       ],
       "typography-table-header-medium": [
-        "16px",
+        "14px",
         {
-          "lineHeight": "24px"
+          "lineHeight": "20px"
         }
       ]
     },
     "fontWeight": {
       "typography-body-lg-medium": 500,
       "typography-body-lg-regular": 400,
+      "typography-body-md-bold": 700,
       "typography-body-md-medium": 500,
       "typography-body-md-regular": 400,
+      "typography-body-sm-bold": 700,
       "typography-body-sm-medium": 500,
       "typography-body-sm-regular": 400,
       "typography-button-lg-medium": 500,
@@ -641,7 +657,6 @@
       "typography-chart-legend-medium": 500,
       "typography-chip-label-md-medium": 500,
       "typography-chip-label-sm-medium": 500,
-      "typography-display-caption-lg-medium": 500,
       "typography-display-caption-md-medium": 500,
       "typography-display-indicator-md-medium": 500,
       "typography-display-unit-lg-medium": 500,
@@ -683,9 +698,9 @@
       "component-gap-content-xs-compact": "2px",
       "component-gap-control-group": "8px",
       "component-gap-control-group-compact": "6px",
-      "component-gap-dialog-items": "24px",
+      "component-gap-dialog-items": "20px",
       "component-gap-dialog-items-compact": "20px",
-      "component-gap-dialog-structure": "32px",
+      "component-gap-dialog-structure": "24px",
       "component-gap-dialog-structure-compact": "24px",
       "component-gap-field-group-x": "24px",
       "component-gap-field-group-x-compact": "20px",
@@ -711,10 +726,10 @@
       "component-gap-tab-group-compact": "12px",
       "component-gap-tag-group": "4px",
       "component-gap-tag-group-compact": "4px",
-      "component-inset-action-bar-x": "32px",
+      "component-inset-action-bar-x": "24px",
       "component-inset-action-bar-x-compact": "24px",
-      "component-inset-action-bar-y": "16px",
-      "component-inset-action-bar-y-compact": "12px",
+      "component-inset-action-bar-y": "12px",
+      "component-inset-action-bar-y-compact": "8px",
       "component-inset-alert-inline-x": "16px",
       "component-inset-alert-inline-x-compact": "14px",
       "component-inset-alert-inline-y": "12px",
@@ -783,6 +798,10 @@
       "component-inset-item-x-compact": "12px",
       "component-inset-item-y": "8px",
       "component-inset-item-y-compact": "6px",
+      "component-inset-label-value-x": "12px",
+      "component-inset-label-value-x-compact": "12px",
+      "component-inset-label-value-y": "6px",
+      "component-inset-label-value-y-compact": "6px",
       "component-inset-list-x": "12px",
       "component-inset-list-x-compact": "12px",
       "component-inset-list-y": "12px",
@@ -813,10 +832,10 @@
       "component-inset-pill-x-compact": "8px",
       "component-inset-pill-y": "2px",
       "component-inset-pill-y-compact": "2px",
-      "component-inset-popover-x": "12px",
-      "component-inset-popover-x-compact": "10px",
-      "component-inset-popover-y": "10px",
-      "component-inset-popover-y-compact": "8px",
+      "component-inset-popover-x": "16px",
+      "component-inset-popover-x-compact": "12px",
+      "component-inset-popover-y": "12px",
+      "component-inset-popover-y-compact": "10px",
       "component-inset-post-x": "32px",
       "component-inset-post-x-compact": "32px",
       "component-inset-post-y": "32px",
@@ -1058,6 +1077,8 @@
     "component-inset-input-y": "space/component/inset/input/y",
     "component-inset-item-x": "space/component/inset/item/x",
     "component-inset-item-y": "space/component/inset/item/y",
+    "component-inset-label-value-x": "space/component/inset/label-value/x",
+    "component-inset-label-value-y": "space/component/inset/label-value/y",
     "component-inset-list-x": "space/component/inset/list/x",
     "component-inset-list-y": "space/component/inset/list/y",
     "component-inset-menu-divider-y": "space/component/inset/menu/divider/y",
@@ -1119,6 +1140,7 @@
     "focus": "color/role/focus",
     "hue-cyan-300": "color/palette/hue/cyan/300",
     "hue-cyan-500": "color/palette/hue/cyan/500",
+    "hue-cyan-700": "color/palette/hue/cyan/700",
     "hue-cyan-800": "color/palette/hue/cyan/800",
     "hue-green-300": "color/palette/hue/green/300",
     "hue-green-500": "color/palette/hue/green/500",
@@ -1134,6 +1156,7 @@
     "hue-pink-800": "color/palette/hue/pink/800",
     "hue-red-300": "color/palette/hue/red/300",
     "hue-red-500": "color/palette/hue/red/500",
+    "hue-red-700": "color/palette/hue/red/700",
     "hue-red-800": "color/palette/hue/red/800",
     "hue-violet-300": "color/palette/hue/violet/300",
     "hue-violet-500": "color/palette/hue/violet/500",
@@ -1233,6 +1256,8 @@
     "text-semantic-on-info": "color/role/text/semantic/on-info",
     "text-semantic-on-success": "color/role/text/semantic/on-success",
     "text-semantic-on-warning": "color/role/text/semantic/on-warning",
+    "text-semantic-success": "color/role/text/semantic/success",
+    "text-semantic-warning": "color/role/text/semantic/warning",
     "text-tertiary": "color/role/text/tertiary",
     "tint-brand-primary-500-08": "color/palette/tint/brand-primary/500-08",
     "tint-brand-primary-500-12": "color/palette/tint/brand-primary/500-12",
@@ -1260,8 +1285,10 @@
     "tint-yellow-500-12": "color/palette/tint/yellow/500-12",
     "typography-body-lg-medium": "body/lg/medium",
     "typography-body-lg-regular": "body/lg/regular",
+    "typography-body-md-bold": "body/md/bold",
     "typography-body-md-medium": "body/md/medium",
     "typography-body-md-regular": "body/md/regular",
+    "typography-body-sm-bold": "body/sm/bold",
     "typography-body-sm-medium": "body/sm/medium",
     "typography-body-sm-regular": "body/sm/regular",
     "typography-button-lg-medium": "button/lg/medium",
@@ -1276,7 +1303,6 @@
     "typography-chart-legend-medium": "chart/legend/medium",
     "typography-chip-label-md-medium": "chip/label/md/medium",
     "typography-chip-label-sm-medium": "chip/label/sm/medium",
-    "typography-display-caption-lg-medium": "display/caption/lg/medium",
     "typography-display-caption-md-medium": "display/caption/md/medium",
     "typography-display-indicator-md-medium": "display/indicator/md/medium",
     "typography-display-unit-lg-medium": "display/unit/lg/medium",
@@ -1298,7 +1324,7 @@
     "typography-table-header-medium": "table/header/medium"
   },
   "metadata": {
-    "generatedAt": "2026-02-09T09:07:06Z",
+    "generatedAt": "2026-03-22T23:16:01Z",
     "generator": "aplus-cli",
     "version": "1.0.0"
   }

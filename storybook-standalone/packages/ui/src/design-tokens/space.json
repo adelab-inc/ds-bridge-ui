@@ -45,6 +45,11 @@
     "VariableID:4:241",
     "VariableID:4:242",
     "VariableID:230:16581",
+    "VariableID:605:31464",
+    "VariableID:605:49996",
+    "VariableID:659:12564",
+    "VariableID:4870:92530",
+    "VariableID:4870:92531",
     "VariableID:4:275",
     "VariableID:4:276",
     "VariableID:4:244",
@@ -113,15 +118,12 @@
     "VariableID:345:5559",
     "VariableID:3058:253426",
     "VariableID:574:172300",
-    "VariableID:605:31464",
-    "VariableID:605:49996",
-    "VariableID:659:12564",
     "VariableID:966:14446",
     "VariableID:966:14447",
     "VariableID:966:14448",
     "VariableID:966:14449",
-    "VariableID:1073:57650",
     "VariableID:966:14432",
+    "VariableID:1073:57650",
     "VariableID:966:14434",
     "VariableID:1073:57657",
     "VariableID:1073:57654",
@@ -1340,11 +1342,11 @@
       "description": "[L3] 다이얼로그의 부품(헤더, 바디, 푸터) 사이 결속을 위한 전용 구조 간격",
       "type": "FLOAT",
       "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:224" },
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" },
         "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" }
       },
       "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 32, "alias": "VariableID:4:224", "aliasName": "space/scale/32" },
+        "4:1": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" },
         "4:2": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" }
       },
       "scopes": ["GAP"],
@@ -1994,12 +1996,12 @@
       "description": "팝오버의 좌우 여백",
       "type": "FLOAT",
       "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:140:6218" }
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" }
       },
       "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
-        "4:2": { "resolvedValue": 10, "alias": "VariableID:140:6218", "aliasName": "space/scale/10" }
+        "4:1": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" },
+        "4:2": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" }
       },
       "scopes": ["ALL_SCOPES"],
       "hiddenFromPublishing": false,
@@ -2011,12 +2013,12 @@
       "description": "팝오버의 상하 여백",
       "type": "FLOAT",
       "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:140:6218" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:140:6218" }
       },
       "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 10, "alias": "VariableID:140:6218", "aliasName": "space/scale/10" },
-        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
+        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
+        "4:2": { "resolvedValue": 10, "alias": "VariableID:140:6218", "aliasName": "space/scale/10" }
       },
       "scopes": ["ALL_SCOPES"],
       "hiddenFromPublishing": false,
@@ -2215,11 +2217,11 @@
       "description": "[L1] 다이얼로그 바디 내부에 배치되는 요소들 사이의 배치 간격",
       "type": "FLOAT",
       "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" },
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:222" },
         "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:222" }
       },
       "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" },
+        "4:1": { "resolvedValue": 20, "alias": "VariableID:4:222", "aliasName": "space/scale/20" },
         "4:2": { "resolvedValue": 20, "alias": "VariableID:4:222", "aliasName": "space/scale/20" }
       },
       "scopes": ["ALL_SCOPES"],
@@ -2249,11 +2251,11 @@
       "description": "",
       "type": "FLOAT",
       "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:224" },
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" },
         "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:223" }
       },
       "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 32, "alias": "VariableID:4:224", "aliasName": "space/scale/32" },
+        "4:1": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" },
         "4:2": { "resolvedValue": 24, "alias": "VariableID:4:223", "aliasName": "space/scale/24" }
       },
       "scopes": ["ALL_SCOPES"],
@@ -2266,12 +2268,12 @@
       "description": "",
       "type": "FLOAT",
       "valuesByMode": {
-        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:221" },
-        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" }
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:219" }
       },
       "resolvedValuesByMode": {
-        "4:1": { "resolvedValue": 16, "alias": "VariableID:4:221", "aliasName": "space/scale/16" },
-        "4:2": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" }
+        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
+        "4:2": { "resolvedValue": 8, "alias": "VariableID:4:219", "aliasName": "space/scale/8" }
       },
       "scopes": ["ALL_SCOPES"],
       "hiddenFromPublishing": false,
@@ -2289,6 +2291,40 @@
       "resolvedValuesByMode": {
         "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
         "4:2": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4870:92530",
+      "name": "space/component/inset/label-value/x",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:220" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" },
+        "4:2": { "resolvedValue": 12, "alias": "VariableID:4:220", "aliasName": "space/scale/12" }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4870:92531",
+      "name": "space/component/inset/label-value/y",
+      "description": "",
+      "type": "FLOAT",
+      "valuesByMode": {
+        "4:1": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" },
+        "4:2": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:218" }
+      },
+      "resolvedValuesByMode": {
+        "4:1": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" },
+        "4:2": { "resolvedValue": 6, "alias": "VariableID:4:218", "aliasName": "space/scale/6" }
       },
       "scopes": ["ALL_SCOPES"],
       "hiddenFromPublishing": false,

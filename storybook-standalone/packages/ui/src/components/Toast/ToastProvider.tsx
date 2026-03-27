@@ -75,7 +75,7 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({
       position,
       duration,
       createdAt: Date.now(),
-      hasCloseButton: options.hasCloseButton ?? true,
+      showClose: options.showClose ?? true,
     };
 
     setToasts((prev) => {

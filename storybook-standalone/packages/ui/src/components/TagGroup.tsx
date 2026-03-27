@@ -6,8 +6,9 @@ import { Tag } from './Tag'
 const tagGroupVariants = cva('flex', ({
     variants: {
       "layout": {
-        "horizontalScroll": "flex-nowrap",
-        "singleLineWithMore": "",
+        "collapsible": "",
+        "horizontalScroll": "flex-nowrap overflow-x-auto",
+        "inline": "flex-nowrap overflow-hidden",
         "wrap": "",
       },
       "mode": {
@@ -35,32 +36,24 @@ const tagGroupVariants = cva('flex', ({
  * TagGroup 컴포넌트 Props
  *
  * 여러 Tag 컴포넌트를 그룹화하고 다양한 레이아웃으로 표시합니다.
- * 태그가 많을 경우 자동으로 줄바꿈하거나, 스크롤하거나, 일부만 보여주고
- * "더보기" 버튼으로 확장할 수 있습니다.
  *
  * @example
  * ```tsx
  * // 기본 래핑 레이아웃
  * <TagGroup>
- *   <Tag>디자인</Tag>
- *   <Tag>개발</Tag>
- *   <Tag>기획</Tag>
+ *   <Tag label="디자인" />
+ *   <Tag label="개발" />
  * </TagGroup>
  *
- * // 가로 스크롤
- * <TagGroup layout="horizontalScroll">
- *   {tags.map(tag => <Tag key={tag.id}>{tag.name}</Tag>)}
- * </TagGroup>
- *
- * // 더보기 버튼
- * <TagGroup layout="singleLineWithMore" maxVisibleTags={3}>
- *   {tags.map(tag => <Tag key={tag.id}>{tag.name}</Tag>)}
+ * // 한 줄 + 더보기
+ * <TagGroup layout="collapsible" maxVisibleTags={3}>
+ *   {tags.map(tag => <Tag key={tag.id} label={tag.name} />)}
  * </TagGroup>
  * ```
  */
 interface TagGroupProps extends HTMLAttributes<HTMLDivElement>, VariantProps<typeof tagGroupVariants> {
   /**
-   * `layout="singleLineWithMore"` 모드에서 처음에 보여줄 태그 개수
+   * `layout="collapsible"` 모드에서 처음에 보여줄 태그 개수
    *
    * 지정한 개수를 초과하는 태그는 "+N" 버튼 뒤에 숨겨지며,
    * 사용자가 버튼을 클릭하면 모든 태그를 펼쳐서 볼 수 있습니다.
@@ -69,21 +62,6 @@ interface TagGroupProps extends HTMLAttributes<HTMLDivElement>, VariantProps<typ
    *
    * ⚠️ **엣지 케이스 처리**:
    * - `0` 이하의 값은 자동으로 `1`로 조정됩니다.
-   * - 이유: 태그를 하나도 안 보여주면 사용자가 혼란스러워하므로,
-   *   최소 1개는 항상 표시하는 것이 더 나은 UX입니다.
-   *
-   * @example
-   * ```tsx
-   * // 처음에 3개만 보여주고 나머지는 "+N" 버튼으로
-   * // Tag 4, Tag 5는 숨겨지고 "+2" 버튼이 표시됨
-   * <TagGroup layout="singleLineWithMore" maxVisibleTags={3}>
-   *   <Tag>Tag 1</Tag>
-   *   <Tag>Tag 2</Tag>
-   *   <Tag>Tag 3</Tag>
-   *   <Tag>Tag 4</Tag>
-   *   <Tag>Tag 5</Tag>
-   * </TagGroup>
-   * ```
    */
   maxVisibleTags?: number
 }
@@ -92,26 +70,15 @@ interface TagGroupProps extends HTMLAttributes<HTMLDivElement>, VariantProps<typ
  * TagGroup 컴포넌트
  *
  * 여러 Tag 컴포넌트를 하나의 그룹으로 묶어 다양한 레이아웃으로 표시합니다.
- * 태그 개수와 사용 맥락에 따라 최적의 레이아웃을 선택할 수 있습니다.
  *
- * ## 레이아웃 옵션
+ * ## Figma ↔ Code 레이아웃 매핑
  *
- * ### 1. `wrap` (기본값)
- * 태그가 많으면 자동으로 여러 줄로 줄바꿈됩니다.
- * - 사용 예: 필터 칩, 카테고리 목록
- * - 장점: 모든 태그가 항상 보임
- *
- * ### 2. `horizontalScroll`
- * 한 줄로 표시하고 가로 스크롤이 생깁니다.
- * - 사용 예: 탭 메뉴, 캐러셀 형태의 태그
- * - 장점: 세로 공간 절약
- * - 주의: Scrollbar 컴포넌트로 감싸서 사용해야 스크롤이 표시됩니다.
- *
- * ### 3. `singleLineWithMore`
- * 일부만 표시하고 나머지는 "+N" 버튼으로 숨깁니다.
- * - 사용 예: 프로필 태그, 미리보기 태그
- * - 장점: 공간 효율적, 필요시에만 확장
- * - 동작: 버튼 클릭 시 모든 태그 펼침 (2행 구조)
+ * | Figma | Code `layout` | 동작 |
+ * |-------|---------------|------|
+ * | `TagGroup/Inline` | `inline` | 한 줄 배열, 넘치면 잘림 (overflow hidden) |
+ * | `TagGroup/Wrap` | `wrap` (기본값) | 자동 줄바꿈 |
+ * | `TagGroup/Collapsible` | `collapsible` | 한 줄 + "+N" 더보기 버튼 |
+ * | — | `horizontalScroll` | 코드 전용. 한 줄 + 가로 스크롤 |
  *
  * ## 접근성
  *
@@ -119,55 +86,33 @@ interface TagGroupProps extends HTMLAttributes<HTMLDivElement>, VariantProps<typ
  * - `role="button"`, `tabIndex={0}` 적용
  * - `aria-label`: "N개 태그 더보기" / "태그 접기"
  * - `aria-expanded`: 펼침/접힘 상태 전달
- * - WCAG 2.1 AA 수준 준수
- *
- * ## 엣지 케이스 처리
- *
- * - `maxVisibleTags <= 0`: 자동으로 1로 조정 (최소 1개는 보여줌)
- * - 빈 children: 빈 div만 렌더링 (에러 없음)
- * - `totalTags <= maxVisibleTags`: More 버튼 표시 안 함
  *
  * @example
  * ```tsx
- * // 기본 사용 (wrap 레이아웃)
- * <TagGroup>
- *   <Tag colorSwatch="red">디자인</Tag>
- *   <Tag colorSwatch="blue">개발</Tag>
- *   <Tag colorSwatch="green">기획</Tag>
+ * // Figma: TagGroup/Inline — 한 줄, 넘치면 잘림
+ * <TagGroup layout="inline">
+ *   <Tag label="React" />
+ *   <Tag label="TypeScript" />
  * </TagGroup>
  *
- * // 가로 스크롤 (Scrollbar 필요)
- * <Scrollbar>
- *   <TagGroup layout="horizontalScroll">
- *     {tags.map(tag => (
- *       <Tag key={tag.id} colorSwatch={tag.color}>
- *         {tag.name}
- *       </Tag>
- *     ))}
- *   </TagGroup>
- * </Scrollbar>
- *
- * // 더보기 버튼 (처음에 3개만 표시)
- * // Next.js, Storybook은 숨겨지고 "+2" 버튼 표시
- * <TagGroup layout="singleLineWithMore" maxVisibleTags={3}>
- *   <Tag>React</Tag>
- *   <Tag>TypeScript</Tag>
- *   <Tag>Tailwind</Tag>
- *   <Tag>Next.js</Tag>
- *   <Tag>Storybook</Tag>
+ * // Figma: TagGroup/Wrap — 자동 줄바꿈 (기본값)
+ * <TagGroup>
+ *   <Tag label="React" />
+ *   <Tag label="TypeScript" />
  * </TagGroup>
  *
- * // 제거 가능한 태그 그룹
- * <TagGroup>
- *   {selectedTags.map(tag => (
- *     <Tag
- *       key={tag.id}
- *       hasCloseButton
- *       onClose={() => removeTag(tag.id)}
- *     >
- *       {tag.name}
- *     </Tag>
- *   ))}
+ * // Figma: TagGroup/Collapsible — 한 줄 + 더보기
+ * <TagGroup layout="collapsible" maxVisibleTags={3}>
+ *   <Tag label="React" />
+ *   <Tag label="TypeScript" />
+ *   <Tag label="Tailwind" />
+ *   <Tag label="Next.js" />
+ *   <Tag label="Storybook" />
+ * </TagGroup>
+ *
+ * // 코드 전용: 가로 스크롤
+ * <TagGroup layout="horizontalScroll">
+ *   {tags.map(tag => <Tag key={tag.id} label={tag.name} />)}
  * </TagGroup>
  * ```
  */
@@ -190,15 +135,14 @@ const TagGroup = forwardRef<HTMLDivElement, TagGroupProps>(
     }
 
     const visibleTags = useMemo(() => {
-      if (layout !== 'singleLineWithMore' || totalTags <= validMaxVisibleTags) {
+      if (layout !== 'collapsible' || totalTags <= validMaxVisibleTags) {
         return childrenArray
       }
-      // singleLineWithMore: 항상 maxVisibleTags만 첫 줄에 표시
       return childrenArray.slice(0, validMaxVisibleTags)
     }, [childrenArray, layout, validMaxVisibleTags, totalTags])
 
     const remainingTags = useMemo(() => {
-      if (layout !== 'singleLineWithMore' || !isExpanded || totalTags <= validMaxVisibleTags) {
+      if (layout !== 'collapsible' || !isExpanded || totalTags <= validMaxVisibleTags) {
         return []
       }
       return childrenArray.slice(validMaxVisibleTags)
@@ -206,7 +150,7 @@ const TagGroup = forwardRef<HTMLDivElement, TagGroupProps>(
 
     // 방어 코드: hiddenTagsCount 음수 방지
     const hiddenTagsCount = Math.max(0, totalTags - validMaxVisibleTags)
-    const canBeCollapsed = layout === 'singleLineWithMore' && totalTags > validMaxVisibleTags
+    const canBeCollapsed = layout === 'collapsible' && totalTags > validMaxVisibleTags
 
     return (
       <div ref={ref} className={cn(tagGroupVariants({ layout, className }), layout === 'wrap' && 'flex-wrap', canBeCollapsed && 'flex-col')} {...props}>
@@ -215,7 +159,8 @@ const TagGroup = forwardRef<HTMLDivElement, TagGroupProps>(
             <div className="flex flex-nowrap gap-component-gap-tag-group">
               {visibleTags}
               <Tag
-                variant="more"
+                tagType="more"
+                label={isExpanded ? '접기' : `+${hiddenTagsCount}`}
                 onClick={handleToggle}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
@@ -228,9 +173,7 @@ const TagGroup = forwardRef<HTMLDivElement, TagGroupProps>(
                 aria-label={isExpanded ? '태그 접기' : `${hiddenTagsCount}개 태그 더보기`}
                 aria-expanded={isExpanded}
                 className="ml-auto"
-              >
-                {isExpanded ? '접기' : `+${hiddenTagsCount}`}
-              </Tag>
+              />
             </div>
             {isExpanded && remainingTags.length > 0 && (
               <div className="flex flex-wrap gap-component-gap-tag-group">

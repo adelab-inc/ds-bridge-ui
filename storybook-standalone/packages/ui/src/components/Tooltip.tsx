@@ -6,8 +6,12 @@ import * as ReactDOM from 'react-dom';
 import { cn } from './utils';
 import { useSpacingMode } from './SpacingModeProvider';
 
-const tooltipVariants = cva('flex justify-center items-center rounded-md border border-border-default bg-bg-surface shadow-md text-text-primary text-caption-xs-regular word-break-keep-all', ({
+const tooltipVariants = cva('rounded-md bg-bg-surface text-text-primary word-break-keep-all', ({
     variants: {
+      "context": {
+        "contrast": "border border-border-default shadow-lg",
+        "default": "border border-border-subtle shadow-md",
+      },
       "mode": {
         "base": "",
         "compact": "",
@@ -18,6 +22,7 @@ const tooltipVariants = cva('flex justify-center items-center rounded-md border 
       },
     },
     defaultVariants: {
+      "context": "default",
       "mode": "base",
       "truncation": false,
     },
@@ -31,11 +36,11 @@ const tooltipVariants = cva('flex justify-center items-center rounded-md border 
         "mode": "compact",
       },
       {
-        "class": "max-w-[320px] line-clamp-2",
+        "class": "max-w-[320px] max-h-[96px] overflow-hidden text-caption-xs-regular",
         "truncation": false,
       },
       {
-        "class": "max-w-[500px] max-h-[320px] overflow-y-auto break-all",
+        "class": "max-w-[500px] max-h-[256px] overflow-y-auto break-all text-body-sm-regular",
         "truncation": true,
       },
     ],
@@ -68,6 +73,7 @@ const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(
       className,
       content,
       children,
+      context,
       truncation,
       delay = 300,
       closeDelay = 100,
@@ -95,12 +101,26 @@ const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(
     const closeTimeoutRef = React.useRef<NodeJS.Timeout>();
     const animationTimeoutRef = React.useRef<NodeJS.Timeout>();
     const tooltipId = React.useId();
+    // CSS class에서 정의된 원본 max-height를 캐싱 (최초 1회)
+    const cssMaxHeightRef = React.useRef<number | null>(null);
 
     // 위치 계산 함수
     const calculatePosition = React.useCallback(() => {
       if (!triggerRef.current || !tooltipRef.current) return;
 
-      const tooltipRect = tooltipRef.current.getBoundingClientRect();
+      const tooltipEl = tooltipRef.current;
+      const tooltipWidth = tooltipEl.getBoundingClientRect().width;
+
+      // CSS class의 원본 max-height를 최초 1회 캐싱 (inline style 적용 전)
+      if (cssMaxHeightRef.current === null) {
+        const computed = window.getComputedStyle(tooltipEl);
+        const parsed = parseFloat(computed.maxHeight);
+        cssMaxHeightRef.current = isNaN(parsed) ? Infinity : parsed;
+      }
+
+      // 참조 높이: scrollHeight(전체 콘텐츠)를 CSS max-height로 제한
+      // inline style을 건드리지 않으므로 스크롤 위치가 보존됨
+      const referenceHeight = Math.min(tooltipEl.scrollHeight, cssMaxHeightRef.current);
 
       // followCursor 모드: 마우스 커서 위치 기반
       if (followCursor) {
@@ -110,11 +130,11 @@ const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(
         };
 
         // 화면 경계 체크 및 조정
-        if (calculatedCoords.left + tooltipRect.width > window.innerWidth) {
-          calculatedCoords.left = cursorPos.x - tooltipRect.width - cursorOffset.x;
+        if (calculatedCoords.left + tooltipWidth > window.innerWidth) {
+          calculatedCoords.left = cursorPos.x - tooltipWidth - cursorOffset.x;
         }
-        if (calculatedCoords.top + tooltipRect.height > window.innerHeight) {
-          calculatedCoords.top = cursorPos.y - tooltipRect.height - cursorOffset.y;
+        if (calculatedCoords.top + referenceHeight > window.innerHeight) {
+          calculatedCoords.top = cursorPos.y - referenceHeight - cursorOffset.y;
         }
         if (calculatedCoords.left < 0) {
           calculatedCoords.left = 0;
@@ -135,51 +155,68 @@ const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(
         (p, i, arr) => arr.indexOf(p) === i,
       ) as Position[];
 
-      let calculatedCoords = { top: 0, left: 0 };
-      let finalPosition: Position = preferredPosition;
-
-      for (const pos of positions) {
-        let newCoords = { top: 0, left: 0 };
-
+      const getCoords = (pos: Position) => {
         switch (pos) {
           case 'top':
-            newCoords = {
-              top: triggerRect.top - tooltipRect.height - gap,
-              left: triggerRect.left + triggerRect.width / 2 - tooltipRect.width / 2,
+            return {
+              top: triggerRect.top - referenceHeight - gap,
+              left: triggerRect.left + triggerRect.width / 2 - tooltipWidth / 2,
             };
-            break;
           case 'bottom':
-            newCoords = {
+            return {
               top: triggerRect.bottom + gap,
-              left: triggerRect.left + triggerRect.width / 2 - tooltipRect.width / 2,
+              left: triggerRect.left + triggerRect.width / 2 - tooltipWidth / 2,
             };
-            break;
           case 'left':
-            newCoords = {
-              top: triggerRect.top + triggerRect.height / 2 - tooltipRect.height / 2,
-              left: triggerRect.left - tooltipRect.width - gap,
+            return {
+              top: triggerRect.top + triggerRect.height / 2 - referenceHeight / 2,
+              left: triggerRect.left - tooltipWidth - gap,
             };
-            break;
           case 'right':
-            newCoords = {
-              top: triggerRect.top + triggerRect.height / 2 - tooltipRect.height / 2,
+            return {
+              top: triggerRect.top + triggerRect.height / 2 - referenceHeight / 2,
               left: triggerRect.right + gap,
             };
-            break;
         }
+      };
 
-        // 화면 경계 체크
-        const isInViewport =
-          newCoords.top >= 0 &&
-          newCoords.left >= 0 &&
-          newCoords.top + tooltipRect.height <= window.innerHeight &&
-          newCoords.left + tooltipRect.width <= window.innerWidth;
+      const isInViewport = (coords: { top: number; left: number }) =>
+        coords.top >= 0 &&
+        coords.left >= 0 &&
+        coords.top + referenceHeight <= window.innerHeight &&
+        coords.left + tooltipWidth <= window.innerWidth;
 
-        if (isInViewport) {
-          calculatedCoords = newCoords;
+      // 1차: 완전히 viewport 안에 들어가는 위치 찾기
+      let calculatedCoords = getCoords(positions[0]);
+      let finalPosition: Position = positions[0];
+
+      for (const pos of positions) {
+        const coords = getCoords(pos);
+        if (isInViewport(coords)) {
+          calculatedCoords = coords;
           finalPosition = pos;
           break;
         }
+      }
+
+      // 2차: 어떤 방향에도 완전히 안 맞으면, 가용 공간이 가장 큰 방향 선택 후 높이 조정
+      if (!isInViewport(calculatedCoords)) {
+        const spaceTop = triggerRect.top - gap;
+        const spaceBottom = window.innerHeight - triggerRect.bottom - gap;
+        const bestVertical: Position = spaceBottom >= spaceTop ? 'bottom' : 'top';
+        const availableSpace = Math.max(spaceTop, spaceBottom);
+
+        finalPosition = bestVertical;
+        calculatedCoords = getCoords(bestVertical);
+        calculatedCoords.left = Math.max(0, Math.min(calculatedCoords.left, window.innerWidth - tooltipWidth));
+
+        // 가용 공간이 참조 높이보다 작으면 max-height를 축소하여 viewport 안에 수용
+        if (availableSpace < referenceHeight) {
+          tooltipEl.style.maxHeight = `${availableSpace}px`;
+        }
+      } else {
+        // viewport에 맞으면 동적 제한 해제 (CSS class max-height로 복원)
+        tooltipEl.style.maxHeight = '';
       }
 
       setCoords(calculatedCoords);
@@ -345,14 +382,14 @@ const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(
             <div
               id={tooltipId}
               ref={tooltipRef}
-              className={cn(tooltipVariants({ mode, truncation, className }))}
+              className={cn(tooltipVariants({ context, mode, truncation, className }))}
               style={tooltipStyle}
               role="tooltip"
               onMouseEnter={preventClose}
               onMouseLeave={handleMouseLeave}
               {...props}
             >
-              {content}
+              {truncation ? content : <div className="line-clamp-5">{content}</div>}
             </div>,
             document.body,
           )}
@@ -363,4 +400,4 @@ const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(
 
 Tooltip.displayName = 'Tooltip';
 
-export { Tooltip };
+export { Tooltip, tooltipVariants };

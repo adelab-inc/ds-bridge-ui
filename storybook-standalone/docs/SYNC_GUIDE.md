@@ -191,3 +191,4 @@ git checkout -- dist/component-schema.json
 | 2026-01-27 | 최초 작성 |
 | 2026-02-09 | hooks/, utils/ 동기화 대상 추가 (Dialog, Drawer, TreeMenu, Select, Menu/Item 참조) |
 | 2026-02-09 | Compound Component fallback 로직 추가 (Dialog, Drawer props 추출) |
+| 2026-03-23 | 동기화 실행: ActionBar, FilterBar, LabelValue, Popover, TitleSection 신규 추가 / Pagination 컴포넌트·스토리·hook 제거 (소스에서 삭제됨) |
