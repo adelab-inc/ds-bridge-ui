@@ -212,3 +212,4 @@ git checkout -- dist/component-schema.json
 | 2026-02-09 | Compound Component fallback 로직 추가 (Dialog, Drawer props 추출) |
 | 2026-03-23 | 동기화 실행: ActionBar, FilterBar, LabelValue, Popover, TitleSection 신규 추가 / Pagination 컴포넌트·스토리·hook 제거 (소스에서 삭제됨) |
 | 2026-03-27 | 동기화 실행: layout/ 디렉토리 신규 추가 (FormGrid, GridLayout, RowPattern 등) / Button variant 개편 (outline→ghost, outline-destructive→secondary-destructive) / Dialog·Drawer 버그 수정 / 디자인 토큰 업데이트 (semantic-error-500, gap 토큰) / FilterBar actionSpan 개선 / Chromatic Build 34 피드백 22건 반영 / Link RouterLinkProps 제거 |
+| 2026-03-27 | 추가 동기화: DataGrid 컴포넌트 수정 반영 / tokens/design-tokens.ts 동기화 / tailwind.preset.js 동기화 (semantic-error 컬러 #c62828, gap 토큰 xxl·xxxl 추가) |
