@@ -73,10 +73,6 @@ const meta: Meta<typeof Link> = {
     to: { table: { disable: true } },
     href: { table: { disable: true } },
     className: { table: { disable: true } },
-    hash: { table: { disable: true } },
-    state: { table: { disable: true } },
-    from: { table: { disable: true } },
-    unsafeRelative: { table: { disable: true } },
   },
 };
 

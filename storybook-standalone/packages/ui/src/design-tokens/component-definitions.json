@@ -5,10 +5,10 @@
       "buttonType": {
         "primary": "bg-bg-accent",
         "secondary": "bg-bg-accent-secondary",
-        "outline": "outline outline-1 outline-border-accent",
-        "tertiary": "bg-bg-container-medium",
+        "ghost": "",
+        "tertiary": "bg-bg-container-high",
         "destructive": "",
-        "outline-destructive": "outline outline-1",
+        "secondary-destructive": "bg-bg-semantic-error-subtle",
         "ghost-inverse": ""
       },
       "size": {
@@ -66,9 +66,14 @@
         "class": "bg-bg-disabled-on-filled text-text-disabled"
       },
       {
-        "buttonType": ["outline", "outline-destructive"],
+        "buttonType": "ghost",
         "interaction": "disabled",
-        "class": "bg-bg-disabled-on-light outline outline-1 outline-border-disabled text-text-disabled"
+        "class": "text-text-disabled"
+      },
+      {
+        "buttonType": "secondary-destructive",
+        "interaction": "disabled",
+        "class": "bg-bg-disabled-on-light text-text-disabled"
       },
       {
         "buttonType": "tertiary",
@@ -83,32 +88,32 @@
       {
         "buttonType": "primary",
         "interaction": "default",
-        "class": "hover:bg-brand-primary-hover active:bg-brand-primary-pressed focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus"
+        "class": "hover:bg-brand-primary-hover active:bg-brand-primary-pressed focus-visible:outline-none focus-visible:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]"
       },
       {
         "buttonType": "secondary",
         "interaction": "default",
-        "class": "hover:bg-brand-secondary-hover active:bg-brand-secondary-pressed focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus"
+        "class": "hover:bg-brand-secondary-hover active:bg-brand-secondary-pressed focus-visible:outline-none focus-visible:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]"
       },
       {
-        "buttonType": "outline",
+        "buttonType": "ghost",
         "interaction": "default",
-        "class": "hover:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-hover),theme(colors.state-overlay-on-neutral-hover))] active:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-pressed),theme(colors.state-overlay-on-neutral-pressed))] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus"
+        "class": "hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed focus-visible:outline-none focus-visible:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]"
       },
       {
         "buttonType": "tertiary",
         "interaction": "default",
-        "class": "hover:bg-[linear-gradient(0deg,#0000000f,#0000000f)] active:bg-[linear-gradient(0deg,#00000019,#00000019)] focus-visible:outline-none focus-visible:bg-bg-subtle focus-visible:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]"
+        "class": "hover:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-hover),theme(colors.state-overlay-on-neutral-hover))] active:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-pressed),theme(colors.state-overlay-on-neutral-pressed))] focus-visible:outline-none focus-visible:bg-bg-subtle focus-visible:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]"
       },
       {
         "buttonType": "destructive",
         "interaction": "default",
-        "class": "hover:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-colored-hover),theme(colors.state-overlay-on-colored-hover))] active:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-colored-pressed),theme(colors.state-overlay-on-colored-pressed))] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus"
+        "class": "hover:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-colored-hover),theme(colors.state-overlay-on-colored-hover))] active:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-colored-pressed),theme(colors.state-overlay-on-colored-pressed))] focus-visible:outline-none focus-visible:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]"
       },
       {
-        "buttonType": "outline-destructive",
+        "buttonType": "secondary-destructive",
         "interaction": "default",
-        "class": "hover:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-hover),theme(colors.state-overlay-on-neutral-hover))] active:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-pressed),theme(colors.state-overlay-on-neutral-pressed))] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus"
+        "class": "hover:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-colored-hover),theme(colors.state-overlay-on-colored-hover))] active:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-colored-pressed),theme(colors.state-overlay-on-colored-pressed))] focus-visible:outline-none focus-visible:shadow-[0_0_0_1px_theme(colors.border-semantic-error)_inset,0_0_0_2px_theme(colors.focus)]"
       },
       {
         "buttonType": "ghost-inverse",
@@ -126,7 +131,7 @@
         "class": "text-text-primary"
       },
       {
-        "buttonType": "outline",
+        "buttonType": "ghost",
         "interaction": ["default", "hover", "pressed", "focused", "loading"],
         "class": "text-text-accent"
       },
@@ -141,7 +146,7 @@
         "class": "text-text-inverse"
       },
       {
-        "buttonType": "outline-destructive",
+        "buttonType": "secondary-destructive",
         "interaction": ["default", "hover", "pressed", "focused", "loading"],
         "class": "text-text-semantic-error"
       },
@@ -154,16 +159,6 @@
         "buttonType": "destructive",
         "interaction": ["default", "hover", "pressed", "focused", "loading"],
         "class": "bg-bg-semantic-error"
-      },
-      {
-        "buttonType": "outline-destructive",
-        "interaction": ["default", "hover", "pressed", "focused", "loading"],
-        "class": "bg-bg-surface"
-      },
-      {
-        "buttonType": "outline",
-        "interaction": ["default", "hover", "pressed", "focused", "loading"],
-        "class": "bg-bg-surface"
       }
     ],
     "defaultVariants": {
@@ -234,7 +229,7 @@
       {
         "iconButtonType": "ghost",
         "interaction": "default",
-        "class": "hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus"
+        "class": "hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed focus-visible:outline-none focus-visible:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]"
       },
       {
         "iconButtonType": "ghost",
@@ -244,7 +239,7 @@
       {
         "iconButtonType": "secondary",
         "interaction": "default",
-        "class": "hover:bg-brand-secondary-hover active:bg-brand-secondary-pressed focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus"
+        "class": "hover:bg-brand-secondary-hover active:bg-brand-secondary-pressed focus-visible:outline-none focus-visible:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]"
       },
       {
         "iconButtonType": "secondary",
@@ -259,7 +254,7 @@
       {
         "iconButtonType": "tertiary",
         "interaction": "default",
-        "class": "hover:bg-[linear-gradient(0deg,#0000000f,#0000000f)] active:bg-[linear-gradient(0deg,#00000019,#00000019)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus"
+        "class": "hover:bg-[linear-gradient(0deg,#0000000f,#0000000f)] active:bg-[linear-gradient(0deg,#00000019,#00000019)] focus-visible:outline-none focus-visible:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]"
       },
       {
         "iconButtonType": "tertiary",
@@ -274,7 +269,7 @@
       {
         "iconButtonType": "ghost-destructive",
         "interaction": "default",
-        "class": "hover:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-hover),theme(colors.state-overlay-on-neutral-hover))] active:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-pressed),theme(colors.state-overlay-on-neutral-pressed))] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus"
+        "class": "hover:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-hover),theme(colors.state-overlay-on-neutral-hover))] active:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-pressed),theme(colors.state-overlay-on-neutral-pressed))] focus-visible:outline-none focus-visible:shadow-[0_0_0_1px_theme(colors.border-semantic-error)_inset,0_0_0_2px_theme(colors.focus)]"
       },
       {
         "iconButtonType": "ghost-destructive",
@@ -725,13 +720,13 @@
     }
   },
   "drawer": {
-    "base": "flex h-screen flex-col items-center bg-bg-surface shadow-[0_8px_16px_0_rgba(0,0,0,0.24)]",
+    "base": "flex h-screen flex-col items-start bg-bg-surface shadow-[0_8px_16px_0_rgba(0,0,0,0.24)]",
     "variants": {
       "size": {
-        "sm": "w-[352px]",
-        "md": "w-[552px]",
-        "lg": "w-[752px]",
-        "xl": "w-[1152px]"
+        "sm": "w-[400px]",
+        "md": "w-[600px]",
+        "lg": "w-[800px]",
+        "xl": "w-[1200px]"
       },
       "mode": {
         "base": "",

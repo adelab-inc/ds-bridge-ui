@@ -219,7 +219,7 @@ const DialogHeader: React.FC<DialogHeaderProps> = ({
   return (
     <div className={cn("flex items-start gap-component-gap-content-md w-full", pxClass, className)} {...props}>
       {icon && <div className="flex-shrink-0">{icon}</div>}
-      <div className="flex flex-col flex-1 min-w-0">
+      <div className="flex flex-col flex-1 min-w-0 gap-layout-stack-xs">
         <h2 id="dialog-title" className={titleClassName}>
           {title}
         </h2>

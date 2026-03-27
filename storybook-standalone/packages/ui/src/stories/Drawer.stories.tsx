@@ -54,6 +54,7 @@ const meta: Meta<StoryArgs> = {
           '### Drawer/Footer',
           '| Figma 속성 | Code prop | 비고 |',
           '|---|---|---|',
+          '| Show Footer | `<Drawer.Footer>` 유무 | Compound children 패턴으로 제어. 미사용 시 Body가 남은 공간 확장 |',
           '| Show 2Action | `children` | React children 패턴 |',
           '| Show 3Action | `children` | React children 패턴 |',
           '| Show Control Group | `children` | React children 패턴 |',
@@ -140,7 +141,7 @@ export const Default: Story = {
           </Drawer.Body>
           <Drawer.Footer>
             <Button
-              buttonType="outline"
+              buttonType="tertiary"
               label={args.secondaryLabel || '닫기'}
               onClick={() => setIsOpen(false)}
               showStartIcon={false}
@@ -154,6 +155,39 @@ export const Default: Story = {
               showEndIcon={false}
             />
           </Drawer.Footer>
+        </Drawer>
+      </div>
+    );
+  },
+  args: { ...defaultArgs },
+};
+
+/**
+ * Footer 없이 드로워를 열면 Body가 남은 공간을 전부 채웁니다.
+ * Figma: Show Footer = false → `<Drawer.Footer>` 미사용
+ */
+export const WithoutFooter: Story = {
+  render: (args) => {
+    const [isOpen, setIsOpen] = useState(false);
+
+    const headerProps = args.showSubtitle
+      ? { title: args.title || 'Drawer Title', showSubtitle: true as const, subtitle: args.subtitle || '부제목이 필요한 경우 여기에 적습니다.' }
+      : { title: args.title || 'Drawer Title', showSubtitle: false as const };
+
+    return (
+      <div>
+        <Button label="Open Drawer (No Footer)" onClick={() => setIsOpen(true)} showStartIcon={false} showEndIcon={false} />
+        <Drawer
+          size={args.size}
+          mode={args.mode}
+          dim={args.dim}
+          open={isOpen}
+          onClose={() => setIsOpen(false)}
+        >
+          <Drawer.Header {...headerProps} />
+          <Drawer.Body>
+            {args.children || 'Footer 없이 Body가 남은 공간을 전부 채웁니다.'}
+          </Drawer.Body>
         </Drawer>
       </div>
     );
@@ -233,7 +267,7 @@ export const WithScrollableContent: Story = {
           </Drawer.Body>
           <Drawer.Footer>
             <Button
-              buttonType="outline"
+              buttonType="tertiary"
               label={args.secondaryLabel || '취소'}
               onClick={() => setIsOpen(false)}
               showStartIcon={false}

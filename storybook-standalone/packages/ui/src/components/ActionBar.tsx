@@ -50,14 +50,17 @@ const positionClasses: Record<ActionBarPosition, string> = {
 /** 컨테이너 너비에 맞게 표시 가능한 children 수를 계산하는 훅 */
 function useVisibleCount(
   toolbarRef: React.RefObject<HTMLDivElement | null>,
+  buttonWrapperRef: React.RefObject<HTMLDivElement | null>,
   childCount: number,
-  gap: number,
+  containerGap: number,
+  buttonGap: number,
 ): number {
   const [visibleCount, setVisibleCount] = React.useState(childCount);
 
   React.useLayoutEffect(() => {
     const toolbar = toolbarRef.current;
-    if (!toolbar || childCount === 0) return;
+    const buttonWrapper = buttonWrapperRef.current;
+    if (!toolbar || !buttonWrapper || childCount === 0) return;
 
     const calculate = () => {
       const toolbarWidth = toolbar.clientWidth;
@@ -66,24 +69,25 @@ function useVisibleCount(
         setVisibleCount(childCount);
         return;
       }
-      const children = toolbar.children;
+      const toolbarChildren = toolbar.children;
 
       // 고정 영역: 닫기 버튼 + 카운트 + 구분선 (앞 3개 요소)
       const fixedCount = 3;
       let fixedWidth = 0;
-      for (let i = 0; i < fixedCount && i < children.length; i++) {
-        fixedWidth += (children[i] as HTMLElement).offsetWidth;
+      for (let i = 0; i < fixedCount && i < toolbarChildren.length; i++) {
+        fixedWidth += (toolbarChildren[i] as HTMLElement).offsetWidth;
       }
-      // 고정 영역 gap (fixedCount개 요소 사이 gap)
-      fixedWidth += fixedCount * gap;
+      // 고정 영역 gap (fixedCount개 요소 사이 + 버튼 wrapper 앞 gap)
+      fixedWidth += (fixedCount + 1) * containerGap;
 
       const availableWidth = toolbarWidth - fixedWidth;
+      const buttons = buttonWrapper.children;
       let usedWidth = 0;
       let count = 0;
 
-      for (let i = fixedCount; i < children.length; i++) {
-        const childWidth = (children[i] as HTMLElement).offsetWidth;
-        const nextWidth = usedWidth + childWidth + (count > 0 ? gap : 0);
+      for (let i = 0; i < buttons.length; i++) {
+        const childWidth = (buttons[i] as HTMLElement).offsetWidth;
+        const nextWidth = usedWidth + childWidth + (count > 0 ? buttonGap : 0);
         if (nextWidth > availableWidth) break;
         usedWidth = nextWidth;
         count++;
@@ -92,13 +96,12 @@ function useVisibleCount(
       setVisibleCount(count);
     };
 
-    // 초기 측정 시 모든 children을 보여준 상태에서 측정
     calculate();
 
     const ro = new ResizeObserver(calculate);
     ro.observe(toolbar);
     return () => ro.disconnect();
-  }, [toolbarRef, childCount, gap]);
+  }, [toolbarRef, buttonWrapperRef, childCount, containerGap, buttonGap]);
 
   return visibleCount;
 }
@@ -120,6 +123,7 @@ const ActionBar = React.forwardRef<HTMLDivElement, ActionBarProps>(
     const [shouldRender, setShouldRender] = React.useState(visible);
     const [isExiting, setIsExiting] = React.useState(false);
     const internalRef = React.useRef<HTMLDivElement>(null);
+    const buttonWrapperRef = React.useRef<HTMLDivElement>(null);
 
     // 외부 ref와 내부 ref 병합
     const setRefs = React.useCallback(
@@ -151,8 +155,9 @@ const ActionBar = React.forwardRef<HTMLDivElement, ActionBarProps>(
     }, [visible]);
 
     const childArray = React.Children.toArray(children);
-    const GAP = 16; // layout-inline-lg2 토큰 값
-    const visibleCount = useVisibleCount(internalRef, childArray.length, GAP);
+    const CONTAINER_GAP = 16; // layout-inline-lg2 토큰 값
+    const BUTTON_GAP = 8; // component-gap-control-group 토큰 값
+    const visibleCount = useVisibleCount(internalRef, buttonWrapperRef, childArray.length, CONTAINER_GAP, BUTTON_GAP);
 
     if (!shouldRender) return null;
 
@@ -192,8 +197,10 @@ const ActionBar = React.forwardRef<HTMLDivElement, ActionBarProps>(
         {/* 구분선 */}
         <div className="w-px h-4 bg-border-inverse flex-shrink-0" />
 
-        {/* 액션 버튼 영역 — 컨테이너에 맞는 수만 렌더링 */}
-        {childArray.slice(0, visibleCount)}
+        {/* 액션 버튼 영역 — 버튼 그룹은 control-group gap(8px) 적용 */}
+        <div ref={buttonWrapperRef} className="flex items-center gap-component-gap-control-group">
+          {childArray.slice(0, visibleCount)}
+        </div>
       </div>
     );
   },

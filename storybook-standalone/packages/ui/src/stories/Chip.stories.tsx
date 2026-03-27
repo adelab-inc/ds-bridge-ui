@@ -176,11 +176,11 @@ export const Default: Story = {
   },
 };
 
-/** disabled 외 모든 컨트롤 숨김 (ChipGroup 스토리 공용) */
+/** disabled, size 외 모든 컨트롤 숨김 (ChipGroup 스토리 공용) */
 const chipGroupArgTypes = {
   label: { table: { disable: true } },
   type: { table: { disable: true } },
-  size: { table: { disable: true } },
+  size: { control: 'select', options: ['md', 'sm'], description: 'ChipGroup 내 Chip 사이즈' },
   mode: { table: { disable: true } },
   interaction: { table: { disable: true } },
   selected: { table: { disable: true } },
@@ -190,11 +190,11 @@ const chipGroupArgTypes = {
   icon: { table: { disable: true } },
 };
 
-export const ChipGroupScroll: StoryObj<{ disabled: boolean }> = {
+export const ChipGroupScroll: StoryObj<{ disabled: boolean; size: 'md' | 'sm' }> = {
   argTypes: chipGroupArgTypes as Record<string, unknown>,
   render: (args) => (
     <div className="w-[420px] overflow-x-auto">
-      <ChipGroup variant="scroll" disabled={args.disabled}>
+      <ChipGroup variant="scroll" disabled={args.disabled} size={args.size}>
         <Chip label="Chip 1" showIcon={false} showClose={false} iconOnly={false} />
         <Chip label="Chip 2" showIcon={false} showClose={false} iconOnly={false} />
         <Chip label="Chip 3" showIcon={false} showClose={false} iconOnly={false} />
@@ -208,13 +208,14 @@ export const ChipGroupScroll: StoryObj<{ disabled: boolean }> = {
   ),
   args: {
     disabled: false,
+    size: 'md',
   },
 };
 
-export const ChipGroupNoScroll: StoryObj<{ disabled: boolean }> = {
+export const ChipGroupNoScroll: StoryObj<{ disabled: boolean; size: 'md' | 'sm' }> = {
   argTypes: chipGroupArgTypes as Record<string, unknown>,
   render: (args) => (
-    <ChipGroup variant="no-scroll" className="w-[400px]" disabled={args.disabled}>
+    <ChipGroup variant="no-scroll" className="w-[400px]" disabled={args.disabled} size={args.size}>
       <Chip label="Chip 1" showIcon={false} showClose={false} iconOnly={false} />
       <Chip label="Chip 2" showIcon={false} showClose={false} iconOnly={false} />
       <Chip label="Chip 3" showIcon={false} showClose={false} iconOnly={false} />
@@ -227,15 +228,16 @@ export const ChipGroupNoScroll: StoryObj<{ disabled: boolean }> = {
   ),
   args: {
     disabled: false,
+    size: 'md',
   },
 };
 
-export const SingleSelection: StoryObj<{ disabled: boolean }> = {
+export const SingleSelection: StoryObj<{ disabled: boolean; size: 'md' | 'sm' }> = {
   argTypes: chipGroupArgTypes as Record<string, unknown>,
   render: (args) => {
     const chips = ["Apple", "Banana", "Cherry", "Date", "Elderberry"];
     return (
-      <ChipGroup selectionType="single" defaultValue="Apple" className="w-[400px]" variant="no-scroll" disabled={args.disabled}>
+      <ChipGroup selectionType="single" defaultValue="Apple" className="w-[400px]" variant="no-scroll" disabled={args.disabled} size={args.size}>
         {chips.map((chip) => (
           <Chip key={chip} value={chip} label={chip} showIcon={false} showClose={false} iconOnly={false} />
         ))}
@@ -244,15 +246,16 @@ export const SingleSelection: StoryObj<{ disabled: boolean }> = {
   },
   args: {
     disabled: false,
+    size: 'md',
   },
 };
 
-export const MultipleSelection: StoryObj<{ disabled: boolean }> = {
+export const MultipleSelection: StoryObj<{ disabled: boolean; size: 'md' | 'sm' }> = {
   argTypes: chipGroupArgTypes as Record<string, unknown>,
   render: (args) => {
     const chips = ["Apple", "Banana", "Cherry", "Date", "Elderberry"];
     return (
-      <ChipGroup selectionType="multiple" defaultValue={["Apple", "Cherry"]} className="w-[400px]" variant="no-scroll" disabled={args.disabled}>
+      <ChipGroup selectionType="multiple" defaultValue={["Apple", "Cherry"]} className="w-[400px]" variant="no-scroll" disabled={args.disabled} size={args.size}>
         {chips.map((chip) => (
           <Chip key={chip} value={chip} label={chip} showIcon={false} showClose={false} iconOnly={false} />
         ))}
@@ -261,5 +264,24 @@ export const MultipleSelection: StoryObj<{ disabled: boolean }> = {
   },
   args: {
     disabled: false,
+    size: 'md',
+  },
+};
+
+export const ChipGroupWithClose: StoryObj<{ disabled: boolean; size: 'md' | 'sm' }> = {
+  argTypes: chipGroupArgTypes as Record<string, unknown>,
+  render: (args) => {
+    const chips = ["Apple", "Banana", "Cherry", "Date", "Elderberry"];
+    return (
+      <ChipGroup selectionType="multiple" defaultValue={["Apple", "Cherry"]} className="w-[400px]" variant="no-scroll" disabled={args.disabled} size={args.size}>
+        {chips.map((chip) => (
+          <Chip key={chip} value={chip} label={chip} showIcon={false} showClose={true} iconOnly={false} />
+        ))}
+      </ChipGroup>
+    );
+  },
+  args: {
+    disabled: false,
+    size: 'md',
   },
 };

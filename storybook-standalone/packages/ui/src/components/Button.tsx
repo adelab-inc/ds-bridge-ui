@@ -3,17 +3,18 @@ import * as React from 'react';
 import { LoadingSpinner } from './LoadingSpinner';
 import { cn } from './utils';
 import { useSpacingMode } from './SpacingModeProvider';
+import { designTokens } from '../tokens/design-tokens';
 
 const buttonVariants = cva('inline-flex justify-center items-center', ({
     variants: {
       "buttonType": {
         "destructive": "",
+        "ghost": "",
         "ghost-inverse": "",
-        "outline": "outline outline-1 outline-border-accent",
-        "outline-destructive": "outline outline-1",
         "primary": "bg-bg-accent",
         "secondary": "bg-bg-accent-secondary",
-        "tertiary": "bg-bg-container-medium",
+        "secondary-destructive": "bg-bg-semantic-error-subtle",
+        "tertiary": "bg-bg-container-high",
       },
       "interaction": {
         "default": "",
@@ -76,8 +77,13 @@ const buttonVariants = cva('inline-flex justify-center items-center', ({
         "interaction": "disabled",
       },
       {
-        "buttonType": ["outline", "outline-destructive"],
-        "class": "bg-bg-disabled-on-light outline outline-1 outline-border-disabled text-text-disabled",
+        "buttonType": "ghost",
+        "class": "text-text-disabled",
+        "interaction": "disabled",
+      },
+      {
+        "buttonType": "secondary-destructive",
+        "class": "bg-bg-disabled-on-light text-text-disabled",
         "interaction": "disabled",
       },
       {
@@ -92,32 +98,32 @@ const buttonVariants = cva('inline-flex justify-center items-center', ({
       },
       {
         "buttonType": "primary",
-        "class": "hover:bg-brand-primary-hover active:bg-brand-primary-pressed focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus",
+        "class": "hover:bg-brand-primary-hover active:bg-brand-primary-pressed focus-visible:outline-none focus-visible:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]",
         "interaction": "default",
       },
       {
         "buttonType": "secondary",
-        "class": "hover:bg-brand-secondary-hover active:bg-brand-secondary-pressed focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus",
+        "class": "hover:bg-brand-secondary-hover active:bg-brand-secondary-pressed focus-visible:outline-none focus-visible:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]",
         "interaction": "default",
       },
       {
-        "buttonType": "outline",
-        "class": "hover:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-hover),theme(colors.state-overlay-on-neutral-hover))] active:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-pressed),theme(colors.state-overlay-on-neutral-pressed))] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus",
+        "buttonType": "ghost",
+        "class": "hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed focus-visible:outline-none focus-visible:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]",
         "interaction": "default",
       },
       {
         "buttonType": "tertiary",
-        "class": "hover:bg-[linear-gradient(0deg,#0000000f,#0000000f)] active:bg-[linear-gradient(0deg,#00000019,#00000019)] focus-visible:outline-none focus-visible:bg-bg-subtle focus-visible:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]",
+        "class": "hover:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-hover),theme(colors.state-overlay-on-neutral-hover))] active:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-pressed),theme(colors.state-overlay-on-neutral-pressed))] focus-visible:outline-none focus-visible:bg-bg-subtle focus-visible:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]",
         "interaction": "default",
       },
       {
         "buttonType": "destructive",
-        "class": "hover:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-colored-hover),theme(colors.state-overlay-on-colored-hover))] active:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-colored-pressed),theme(colors.state-overlay-on-colored-pressed))] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus",
+        "class": "hover:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-colored-hover),theme(colors.state-overlay-on-colored-hover))] active:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-colored-pressed),theme(colors.state-overlay-on-colored-pressed))] focus-visible:outline-none focus-visible:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]",
         "interaction": "default",
       },
       {
-        "buttonType": "outline-destructive",
-        "class": "hover:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-hover),theme(colors.state-overlay-on-neutral-hover))] active:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-pressed),theme(colors.state-overlay-on-neutral-pressed))] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus",
+        "buttonType": "secondary-destructive",
+        "class": "hover:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-colored-hover),theme(colors.state-overlay-on-colored-hover))] active:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-colored-pressed),theme(colors.state-overlay-on-colored-pressed))] focus-visible:outline-none focus-visible:shadow-[0_0_0_1px_theme(colors.border-semantic-error)_inset,0_0_0_2px_theme(colors.focus)]",
         "interaction": "default",
       },
       {
@@ -136,7 +142,7 @@ const buttonVariants = cva('inline-flex justify-center items-center', ({
         "interaction": ["default", "hover", "pressed", "focused", "loading"],
       },
       {
-        "buttonType": "outline",
+        "buttonType": "ghost",
         "class": "text-text-accent",
         "interaction": ["default", "hover", "pressed", "focused", "loading"],
       },
@@ -151,7 +157,7 @@ const buttonVariants = cva('inline-flex justify-center items-center', ({
         "interaction": ["default", "hover", "pressed", "focused", "loading"],
       },
       {
-        "buttonType": "outline-destructive",
+        "buttonType": "secondary-destructive",
         "class": "text-text-semantic-error",
         "interaction": ["default", "hover", "pressed", "focused", "loading"],
       },
@@ -163,16 +169,6 @@ const buttonVariants = cva('inline-flex justify-center items-center', ({
       {
         "buttonType": "destructive",
         "class": "bg-bg-semantic-error",
-        "interaction": ["default", "hover", "pressed", "focused", "loading"],
-      },
-      {
-        "buttonType": "outline-destructive",
-        "class": "bg-bg-surface",
-        "interaction": ["default", "hover", "pressed", "focused", "loading"],
-      },
-      {
-        "buttonType": "outline",
-        "class": "bg-bg-surface",
         "interaction": ["default", "hover", "pressed", "focused", "loading"],
       },
     ],
@@ -225,15 +221,23 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       sm: 16,
     }[size || 'md'];
 
+    const spinnerLineHeight = {
+      lg: (designTokens.fontSize['typography-button-lg-medium'][1] as { lineHeight: string }).lineHeight,
+      md: (designTokens.fontSize['typography-button-md-medium'][1] as { lineHeight: string }).lineHeight,
+      sm: (designTokens.fontSize['typography-button-sm-medium'][1] as { lineHeight: string }).lineHeight,
+    }[size || 'md'];
+
+    const spinnerContainerStyle = { height: spinnerLineHeight };
+
     const iconColorClass = isDisabled
       ? 'text-icon-interactive-disabled'
       : {
           primary: 'text-icon-interactive-inverse',
           secondary: 'text-icon-interactive-on-secondary',
-          outline: 'text-icon-interactive-on-selection',
+          ghost: 'text-icon-interactive-on-selection',
           tertiary: 'text-icon-interactive-default',
           destructive: 'text-icon-interactive-inverse',
-          'outline-destructive': 'text-icon-semantic-error',
+          'secondary-destructive': 'text-icon-semantic-error',
           'ghost-inverse': 'text-icon-interactive-inverse',
         }[buttonType || 'primary'];
 
@@ -261,7 +265,9 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
               {showEndIcon && <LoadingSpinner variant={buttonType || 'primary'} size={iconSize} />}
             </>
           ) : (
-            <LoadingSpinner variant={buttonType || 'primary'} size={iconSize} />
+            <span className="inline-flex items-center justify-center" style={spinnerContainerStyle}>
+              <LoadingSpinner variant={buttonType || 'primary'} size={iconSize} />
+            </span>
           )
         ) : (
           <>

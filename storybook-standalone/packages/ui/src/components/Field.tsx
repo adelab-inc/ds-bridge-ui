@@ -393,6 +393,7 @@ const Field = React.forwardRef<HTMLInputElement | HTMLTextAreaElement, FieldProp
     };
 
     const handleFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      setIsEditing(true);
       if (!hadMouseDownRef.current) {
         setIsFocusVisible(true);
       }
@@ -403,7 +404,8 @@ const Field = React.forwardRef<HTMLInputElement | HTMLTextAreaElement, FieldProp
     const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setIsEditing(false);
       setIsFocusVisible(false);
-      hadMouseDownRef.current = false;
+      // blur 완료 후 비동기로 리셋하여 blur→재focus 시 mousedown 이벤트가 먼저 처리되도록 함
+      requestAnimationFrame(() => { hadMouseDownRef.current = false; });
       props.onBlur?.(e);
     };
 
@@ -459,7 +461,7 @@ const Field = React.forwardRef<HTMLInputElement | HTMLTextAreaElement, FieldProp
     });
 
     return (
-      <div className={containerClassName}>
+      <div className={containerClassName} onMouseDown={handleMouseDown}>
         {showLabel && (
           <label
             htmlFor={inputId}
@@ -483,7 +485,6 @@ const Field = React.forwardRef<HTMLInputElement | HTMLTextAreaElement, FieldProp
 
         <div
           className={inputWrapperClassName}
-          onMouseDown={handleMouseDown}
         >
           {!multiline && showPrefix && (
             <span className={fieldPrefixVariants({ size, isDisabled })}>

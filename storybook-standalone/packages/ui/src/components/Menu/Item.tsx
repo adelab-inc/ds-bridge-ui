@@ -8,6 +8,21 @@ import type { MenuItemBase, MenuItem, LeadingType, TrailingType } from '../../ty
 import { Badge } from '../Badge';
 import { TruncateWithTooltip, MultiLineTruncateWithTooltip } from '../../utils';
 
+/** Profile 타입 기본 아바타 아이콘 (Figma Type=avatar 고정) */
+const avatarMaskStyle = { maskType: 'alpha' as const };
+const DefaultAvatar = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+    <mask id="menu-avatar-mask" style={avatarMaskStyle} maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
+      <circle cx="12" cy="12" r="12" fill="#F4F6F8" />
+    </mask>
+    <g mask="url(#menu-avatar-mask)">
+      <circle cx="12" cy="12" r="12" fill="#98B3EE" />
+      <path fillRule="evenodd" clipRule="evenodd" d="M12.0216 15C16.9557 15 20.9636 18.985 20.9923 23.9189L20.9992 25H3.0568L3.05094 24.0234C3.02199 19.0488 7.04694 15.0001 12.0216 15ZM11.9962 4.84961C14.2054 4.84961 15.9962 6.64047 15.9962 8.84961C15.9962 11.0587 14.2054 12.8496 11.9962 12.8496C9.78725 12.8495 7.99626 11.0586 7.99625 8.84961C7.99625 6.64056 9.78724 4.84976 11.9962 4.84961Z" fill="#ECEFF3" />
+      <circle cx="12" cy="12" r="11.5" stroke="#98B3EE" />
+    </g>
+  </svg>
+);
+
 const itemVariants = cva('flex items-center transition-colors rounded-[4px] outline-none', ({
     variants: {
       "danger": {
@@ -431,8 +446,8 @@ const Item = React.forwardRef<HTMLDivElement, ItemProps>(
           );
         case 'avatar':
           return (
-            <span className="flex-shrink-0 inline-flex items-center justify-center w-[24px] h-[24px]">
-              {resolved.leadingContent}
+            <span className="flex-shrink-0 inline-flex items-center justify-center w-[24px] h-[24px] rounded-full overflow-hidden">
+              {resolved.leadingContent ?? <DefaultAvatar />}
             </span>
           );
         case 'tree':
