@@ -1238,7 +1238,7 @@ LAYOUT_GUIDE = """
 
 **RP-1(조회형) 레이아웃에서 FilterBar, ActionButtons, Grid는 반드시 하나의 Section Card 안에 포함되어야 합니다.**
 
-- Title(h1)만 Section Card **바깥**에 위치
+- Title Bar(브레드크럼 + 버튼)는 Section Card **바깥** 상단에 위치
 - FilterBar, ActionButtons, DataGrid/Table은 모두 **같은 하나의 `bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6`** 안에 배치
 - ❌ FilterBar와 Grid를 **별도 카드**로 분리 금지
 - ❌ FilterBar, ActionButtons, Grid를 카드 없이 **직접 나열** 금지
@@ -1246,8 +1246,23 @@ LAYOUT_GUIDE = """
 #### RP-1 올바른 구조:
 ```tsx
 <div className="min-h-screen bg-[#f4f6f8] p-8">
-  {/* Title — Section Card 바깥 */}
-  <h1 className="text-2xl font-bold text-[#212529] mb-5">계약 관리</h1>
+  {/* Title Bar — 제목 + 브레드크럼 + 버튼 한 줄, Section Card 바깥 */}
+  <div className="flex items-center justify-between mb-5">
+    <div className="flex items-center gap-5">
+      <h1 className="text-2xl font-bold text-[#212529]">계약 관리</h1>
+      <nav className="flex items-center gap-1.5 text-sm text-[#868e96]">
+        <span className="hover:text-[#495057] cursor-pointer">홈</span>
+        <span>/</span>
+        <span className="hover:text-[#495057] cursor-pointer">계약</span>
+        <span>/</span>
+        <span className="text-[#495057]">계약 관리</span>
+      </nav>
+    </div>
+    <div className="flex items-center gap-2">
+      <Button variant="outline" size="sm">엑셀 다운로드</Button>
+      <Button variant="primary" size="sm">신규 등록</Button>
+    </div>
+  </div>
 
   {/* 🚨 하나의 Section Card 안에 FilterBar + ActionButtons + Grid 모두 포함 */}
   <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6">
@@ -1273,7 +1288,8 @@ LAYOUT_GUIDE = """
 #### ❌ 잘못된 구조 (FilterBar와 Grid가 분리됨):
 ```tsx
 {/* ❌ 이렇게 하면 안 됨 */}
-<h1>계약 관리</h1>
+<nav>홈 / 계약 / 계약 관리</nav>
+<h1>계약 관리</h1>  {/* ❌ 브레드크럼과 별도 행 금지! 한 줄에 배치해야 함 */}
 <div className="bg-white ...">FilterBar + Buttons</div>  {/* 카드 1 */}
 <div className="bg-white ...">Grid</div>                  {/* 카드 2 — 분리됨! */}
 ```
@@ -1297,6 +1313,7 @@ PRE_GENERATION_CHECKLIST = """
 5. **ENUM variety**: 같은 variant/size를 모든 컴포넌트에 반복하지 않았는가?
 6. **Section Card**: 조회형(RP-1) 화면에서 FilterBar + ActionButtons + Grid가 **하나의 Section Card** 안에 있는가? 별도 카드로 분리되지 않았는가?
 7. **Drawer vs Dialog 검증**: 코드에 `<Dialog`가 있으면 다시 확인! 상세보기·등록·수정·편집 폼이면 → `<Drawer`로 교체! Dialog는 삭제 확인/단순 알림에만 허용. 필드 3개 이상 폼에 Dialog 사용 = 무조건 Drawer로 변경.
+8. **⛔ 아이콘 import 금지**: `lucide-react`, `heroicons`, `react-icons`, `material-icons` import가 코드에 있는가? → **즉시 삭제!** 아이콘은 텍스트로 대체. `import { ... } from 'lucide-react'` = **앱 크래시**.
 
 ---
 
@@ -1350,6 +1367,8 @@ SYSTEM_PROMPT_FOOTER = """## 🎯 DESIGN CONSISTENCY CHECKLIST
 - **Borders**: `border border-[#dee2e6]` only. Never other gray shades.
 - **PROPS VALIDATION**: Use exact enum values (`variant="primary"` NOT `variant="blue"`). Don't hallucinate props.
 - **DRAWER vs DIALOG**: "드로어" 요청 → `Drawer` 컴포넌트 사용 (Dialog 금지). "다이얼로그/모달/팝업" → `Dialog`.
+- **TITLE BAR**: 브레드크럼 + h1 제목 + 액션 버튼은 반드시 **한 줄**에 배치. ❌ 브레드크럼과 h1을 별도 행으로 분리 금지!
+- **⛔ NO ICONS**: `lucide-react`, `heroicons`, `react-icons` import 절대 금지 — 미설치, 앱 크래시. 아이콘은 텍스트로 대체.
 
 Create a premium, completed result."""
 
@@ -1369,7 +1388,17 @@ const MemberDetail = () => {
 
   return (
     <div className="min-h-screen bg-[#f4f6f8] p-8">
-      <h1 className="text-2xl font-bold text-[#212529] mb-6">회원 상세</h1>
+      {/* Title Bar — 제목 + 브레드크럼 한 줄 */}
+      <div className="flex items-center gap-5 mb-6">
+        <h1 className="text-2xl font-bold text-[#212529]">회원 상세</h1>
+        <nav className="flex items-center gap-1.5 text-sm text-[#868e96]">
+          <span className="hover:text-[#495057] cursor-pointer">홈</span>
+          <span>/</span>
+          <span className="hover:text-[#495057] cursor-pointer">회원관리</span>
+          <span>/</span>
+          <span className="text-[#495057]">회원 상세</span>
+        </nav>
+      </div>
       <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6">
         {/* Section: 기본 정보 — 2-column grid */}
         <h2 className="text-lg font-semibold text-[#212529] mb-4">기본 정보</h2>
@@ -1437,22 +1466,32 @@ export default MemberDetail;
 - 필터 버튼: 반드시 `size="md"` (sm 금지)
 - 🚨 **Grid는 FilterBar와 같은 Section Card 안에 배치. 별도 카드 금지!**
 
-### Breadcrumb (경로 표시)
-경로 표시가 필요할 때 페이지 상단에 Breadcrumb 스타일로 배치:
+### Title Bar (브레드크럼 + 페이지 제목 + 액션 버튼 — 한 줄)
+타이틀 영역은 브레드크럼, 페이지 제목(h1), 액션 버튼이 모두 **한 줄(HORIZONTAL)**에 배치:
 ```tsx
-{/* Breadcrumb — 페이지 타이틀 위에 배치 */}
-<nav className="flex items-center gap-1.5 text-sm text-[#868e96] mb-3">
-  <span className="hover:text-[#495057] cursor-pointer">홈</span>
-  <span>/</span>
-  <span className="hover:text-[#495057] cursor-pointer">인사관리</span>
-  <span>/</span>
-  <span className="text-[#212529] font-medium">발령등록</span>
-</nav>
-<h1 className="text-2xl font-bold text-[#212529] mb-6">발령등록</h1>
+{/* Title Bar — 제목 + 브레드크럼 + 버튼 한 줄 */}
+<div className="flex items-center justify-between mb-5">
+  <div className="flex items-center gap-5">
+    <h1 className="text-2xl font-bold text-[#212529]">발령등록</h1>
+    <nav className="flex items-center gap-1.5 text-sm text-[#868e96]">
+      <span className="hover:text-[#495057] cursor-pointer">홈</span>
+      <span>/</span>
+      <span className="hover:text-[#495057] cursor-pointer">인사관리</span>
+      <span>/</span>
+      <span className="text-[#495057]">발령등록</span>
+    </nav>
+  </div>
+  <div className="flex items-center gap-2">
+    <Button variant="outline" size="sm">신계약등록</Button>
+    <Button variant="secondary" size="sm">이미지시스템</Button>
+  </div>
+</div>
 ```
-- 마지막 항목만 `text-[#212529] font-medium` (현재 페이지)
-- 구분자: `/` 또는 `>`
-- 위치: 항상 페이지 타이틀(h1) 바로 위
+- 🚨 **h1 제목, 브레드크럼, 버튼이 반드시 같은 한 줄에 위치**
+- 좌측: **h1 제목이 먼저**, 그 옆에 브레드크럼 (`flex items-center gap-5`)
+- 우측: 액션 버튼을 `flex items-center gap-2`로 배치
+- ❌ 브레드크럼과 h1을 **별도 행으로 분리 금지** (두 줄 레이아웃 금지)
+- 액션 버튼이 없으면 버튼 `<div>` 생략
 
 ### DataGrid 선택 액션 바
 그리드에서 체크박스 선택 시 상단에 액션 바를 표시:
