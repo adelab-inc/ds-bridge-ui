@@ -131,6 +131,15 @@ await esbuild.build({
               export const themeBalham = { withParams: () => ({}) };
               export default {};
             `;
+          } else if (args.path.includes("ag-grid-enterprise")) {
+            contents = `
+              export const ModuleRegistry = { registerModules: () => {} };
+              export const AllEnterpriseModule = {};
+              export const themeQuartz = { withParams: () => ({}) };
+              export const themeAlpine = { withParams: () => ({}) };
+              export const themeBalham = { withParams: () => ({}) };
+              export default {};
+            `;
           } else if (args.path.includes("ag-grid-react")) {
             contents = `
               export const AgGridReact = () => null;
