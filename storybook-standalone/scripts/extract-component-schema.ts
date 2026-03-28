@@ -386,7 +386,109 @@ async function main(): Promise<void> {
     }
   }
 
-  // 4. 결과 저장
+  // 4. Completeness check: Storybook에서 발견되지 않은 컴포넌트 스캔
+  console.log('\n🔍 Completeness check: Storybook 미발견 컴포넌트 스캔 중...');
+
+  const COMPONENT_DIRS = [
+    path.join(ROOT_DIR, 'packages/ui/src/components'),
+    path.join(ROOT_DIR, 'packages/ui/src/layout'),
+  ];
+
+  for (const dir of COMPONENT_DIRS) {
+    if (!fs.existsSync(dir)) continue;
+
+    const entries = fs.readdirSync(dir).filter((f) => {
+      if (f === 'index.ts' || f === 'index.tsx' || f === 'utils.ts') return false;
+      const fullPath = path.join(dir, f);
+      return f.endsWith('.tsx') || fs.statSync(fullPath).isDirectory();
+    });
+
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry);
+
+      if (fs.statSync(fullPath).isDirectory()) {
+        // 디렉토리: 내부 .tsx 파일 모두 스캔 (index.ts는 re-export만 하므로 제외)
+        const tsxFiles = fs.readdirSync(fullPath)
+          .filter((f) => f.endsWith('.tsx'))
+          .map((f) => path.join(fullPath, f));
+
+        for (const tsxFile of tsxFiles) {
+          try {
+            const docs: ComponentDoc[] = parser.parse(tsxFile);
+            for (const doc of docs) {
+              if (combinedSchema.components[doc.displayName]) continue;
+
+              const propsSchema: Record<string, PropSchema> = {};
+              for (const [propName, propInfo] of Object.entries(doc.props)) {
+                propsSchema[propName] = {
+                  type: extractPropType(propInfo),
+                  required: propInfo.required,
+                  ...(propInfo.defaultValue && { defaultValue: parseDefaultValue(propInfo.defaultValue) }),
+                  ...(propInfo.description && { description: propInfo.description }),
+                };
+              }
+
+              // 0-props 항목 건너뛰기 (유틸리티 함수, 상수, 타입 등)
+              if (Object.keys(propsSchema).length === 0) continue;
+
+              const category = dir.includes('/layout') ? 'Layout' : 'UI';
+              combinedSchema.components[doc.displayName] = {
+                displayName: doc.displayName,
+                filePath: toRelativePath(tsxFile),
+                category,
+                props: propsSchema,
+                stories: [],
+              };
+
+              console.log(
+                `   ⚠️  ${doc.displayName}: ${Object.keys(propsSchema).length}개 props (Storybook 미발견 — completeness check)`
+              );
+            }
+          } catch (error) {
+            // 개별 파일 파싱 오류 무시
+          }
+        }
+      } else {
+        // 단일 .tsx 파일
+        try {
+          const docs: ComponentDoc[] = parser.parse(fullPath);
+          for (const doc of docs) {
+            if (combinedSchema.components[doc.displayName]) continue;
+
+            const propsSchema: Record<string, PropSchema> = {};
+            for (const [propName, propInfo] of Object.entries(doc.props)) {
+              propsSchema[propName] = {
+                type: extractPropType(propInfo),
+                required: propInfo.required,
+                ...(propInfo.defaultValue && { defaultValue: parseDefaultValue(propInfo.defaultValue) }),
+                ...(propInfo.description && { description: propInfo.description }),
+              };
+            }
+
+            // 0-props 항목 건너뛰기 (유틸리티 함수, 상수, 타입 등)
+            if (Object.keys(propsSchema).length === 0) continue;
+
+            const category = dir.includes('/layout') ? 'Layout' : 'UI';
+            combinedSchema.components[doc.displayName] = {
+              displayName: doc.displayName,
+              filePath: toRelativePath(fullPath),
+              category,
+              props: propsSchema,
+              stories: [],
+            };
+
+            console.log(
+              `   ⚠️  ${doc.displayName}: ${Object.keys(propsSchema).length}개 props (Storybook 미발견 — completeness check)`
+            );
+          }
+        } catch (error) {
+          // 파싱 오류 무시
+        }
+      }
+    }
+  }
+
+  // 5. 결과 저장
   console.log('\n💾 결과 저장 중...');
   const outputDir = path.dirname(OUTPUT_PATH);
   if (!fs.existsSync(outputDir)) {

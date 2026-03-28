@@ -11,8 +11,9 @@ interface PopoverStoryArgs {
   sideOffset: number;
 }
 
-const meta: Meta = {
+const meta: Meta<typeof Popover> = {
   title: 'UI/Popover',
+  component: Popover,
   parameters: {
     layout: 'centered',
     docs: {
