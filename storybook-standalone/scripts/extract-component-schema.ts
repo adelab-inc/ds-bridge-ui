@@ -498,6 +498,41 @@ async function main(): Promise<void> {
   fs.writeFileSync(OUTPUT_PATH, JSON.stringify(combinedSchema, null, 2), 'utf-8');
 
   console.log(`   ✅ ${OUTPUT_PATH}`);
+
+  // 6. Slim 버전 생성 (AI 서비스용 — components.py가 사용하는 필드만)
+  console.log('\n📦 Slim 버전 생성 중...');
+  const SLIM_OUTPUT_PATH = path.join(ROOT_DIR, 'dist/component-schema.slim.json');
+
+  const slimSchema: Record<string, unknown> = {
+    components: Object.fromEntries(
+      Object.entries(combinedSchema.components).map(([name, comp]) => [
+        name,
+        {
+          category: comp.category,
+          props: Object.fromEntries(
+            Object.entries(comp.props).map(([propName, prop]) => [
+              propName,
+              {
+                type: prop.type,
+                required: prop.required,
+                ...(prop.defaultValue !== undefined && { defaultValue: prop.defaultValue }),
+              },
+            ])
+          ),
+        },
+      ])
+    ),
+  };
+
+  fs.writeFileSync(SLIM_OUTPUT_PATH, JSON.stringify(slimSchema), 'utf-8');
+
+  const fullSize = Buffer.byteLength(JSON.stringify(combinedSchema, null, 2), 'utf-8');
+  const slimSize = Buffer.byteLength(JSON.stringify(slimSchema), 'utf-8');
+  const reduction = ((1 - slimSize / fullSize) * 100).toFixed(1);
+
+  console.log(`   ✅ ${SLIM_OUTPUT_PATH}`);
+  console.log(`   📊 Full: ${(fullSize / 1024).toFixed(1)}KB → Slim: ${(slimSize / 1024).toFixed(1)}KB (${reduction}% 감소)`);
+
   console.log(
     `\n🎉 완료! ${Object.keys(combinedSchema.components).length}개 컴포넌트 스키마 생성됨`
   );
