@@ -417,7 +417,7 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     for prop_name, prop_info in props.items():
         prop_type = prop_info.get("type", "any")
         required = prop_info.get("required", False)
-        default = prop_info.get("default")
+        default = prop_info.get("defaultValue", prop_info.get("default"))
         prop_desc = prop_info.get("description", "")
 
         type_str = format_prop_type(prop_type)
