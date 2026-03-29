@@ -488,20 +488,14 @@ async function main(): Promise<void> {
     }
   }
 
-  // 5. 결과 저장
+  // 5. 결과 저장 (경량화 버전)
+  // [DEPRECATED] Full 스키마(pretty-printed, 전체 필드) 출력은 더 이상 사용하지 않음.
+  // 경량화 버전(category + props의 type/required/defaultValue만)을 component-schema.json으로 직접 출력.
   console.log('\n💾 결과 저장 중...');
   const outputDir = path.dirname(OUTPUT_PATH);
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
   }
-
-  fs.writeFileSync(OUTPUT_PATH, JSON.stringify(combinedSchema, null, 2), 'utf-8');
-
-  console.log(`   ✅ ${OUTPUT_PATH}`);
-
-  // 6. Slim 버전 생성 (AI 서비스용 — components.py가 사용하는 필드만)
-  console.log('\n📦 Slim 버전 생성 중...');
-  const SLIM_OUTPUT_PATH = path.join(ROOT_DIR, 'dist/component-schema.slim.json');
 
   const slimSchema: Record<string, unknown> = {
     components: Object.fromEntries(
@@ -524,13 +518,13 @@ async function main(): Promise<void> {
     ),
   };
 
-  fs.writeFileSync(SLIM_OUTPUT_PATH, JSON.stringify(slimSchema), 'utf-8');
+  fs.writeFileSync(OUTPUT_PATH, JSON.stringify(slimSchema), 'utf-8');
 
   const fullSize = Buffer.byteLength(JSON.stringify(combinedSchema, null, 2), 'utf-8');
   const slimSize = Buffer.byteLength(JSON.stringify(slimSchema), 'utf-8');
   const reduction = ((1 - slimSize / fullSize) * 100).toFixed(1);
 
-  console.log(`   ✅ ${SLIM_OUTPUT_PATH}`);
+  console.log(`   ✅ ${OUTPUT_PATH}`);
   console.log(`   📊 Full: ${(fullSize / 1024).toFixed(1)}KB → Slim: ${(slimSize / 1024).toFixed(1)}KB (${reduction}% 감소)`);
 
   console.log(
