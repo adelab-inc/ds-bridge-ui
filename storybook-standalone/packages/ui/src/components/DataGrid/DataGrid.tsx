@@ -8,7 +8,7 @@ import { AgGridReact } from 'ag-grid-react';
 // AG Grid 기본 CSS (아이콘 폰트 포함)
 import 'ag-grid-community/styles/ag-grid.css';
 
-// AG Grid v34 Theme API (Community 기준)
+// AG Grid v34 Theme API (Enterprise 기준)
 import {
   ColDef,
   ColGroupDef,
@@ -31,8 +31,8 @@ import {
   themeAlpine,
   themeBalham,
   Theme,
-  AllCommunityModule,
-} from 'ag-grid-community';
+  AllEnterpriseModule,
+} from 'ag-grid-enterprise';
 
 // AG Grid Theme 타입 정의
 type AgGridTheme = Theme;
@@ -42,7 +42,7 @@ type ThemeParams = Parameters<typeof themeQuartz.withParams>[0];
 import { designTokens } from '../../tokens/design-tokens';
 
 // AG Grid 모듈 등록 (v34 필수) - Enterprise 기능 포함
-ModuleRegistry.registerModules([AllCommunityModule]);
+ModuleRegistry.registerModules([AllEnterpriseModule]);
 
 /** 셀 세로 정렬 cva 변형 정의 */
 const cellAlignVariants = cva('flex', {
@@ -427,6 +427,38 @@ const getAplusThemeStyles = () => `
     font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
     font-size: 14px !important;
     color: #212529 !important;
+  }
+
+  /* 숫자 셀 Tabular Nums - 자릿수 정렬을 위한 고정 등폭 숫자 */
+  .ag-right-aligned-cell {
+    font-variant-numeric: tabular-nums !important;
+  }
+
+  /* 중앙 정렬 셀/헤더 */
+  .ag-center-aligned-cell {
+    text-align: center !important;
+  }
+  .ag-center-aligned-header .ag-header-cell-label {
+    justify-content: center !important;
+  }
+
+  /* Row Number 컬럼 - 셀과 동일한 배경색 (헤더 색상이 아닌 흰색) */
+  .ag-row .ag-cell.ag-row-number-cell {
+    background-color: ${designTokens.colors['bg-surface']} !important;
+  }
+
+  /* 합계칸 (pinnedBottom) - 헤더와 동일한 배경색, 셀과 동일한 폰트 */
+  .ag-floating-bottom .ag-row {
+    background-color: ${designTokens.colors['bg-canvas']} !important;
+    font-weight: 400 !important;
+  }
+  .ag-floating-bottom .ag-row .ag-cell {
+    background-color: ${designTokens.colors['bg-canvas']} !important;
+  }
+
+  /* 유효성 검사 탈락 셀 - 2px inset 보더 */
+  .ag-cell.ag-cell-invalid {
+    box-shadow: inset 0 0 0 2px ${designTokens.colors['semantic-error']} !important;
   }
 
   /* Checkbox Column */
@@ -1166,6 +1198,180 @@ export const ImageCellRenderer: React.FC<ICellRendererParams> = props => {
 };
 
 /**
+ * Badge 셀 렌더러 - 상태 정보를 Badge(subtle) 컴포넌트로 표시합니다
+ *
+ * @example
+ * // columnDefs에서 사용
+ * { field: 'status', cellRenderer: BadgeCellRenderer }
+ *
+ * // 데이터: { status: 'success' } → 초록색 뱃지 "success"
+ * // 커스텀 라벨 매핑은 cellRendererParams로 전달
+ * {
+ *   field: 'status',
+ *   cellRenderer: BadgeCellRenderer,
+ *   cellRendererParams: {
+ *     labelMap: { approved: '승인', rejected: '거절', pending: '대기' },
+ *     statusMap: { approved: 'success', rejected: 'error', pending: 'warning' },
+ *     appearance: 'subtle', // 'solid' | 'subtle' (기본: 'subtle')
+ *   }
+ * }
+ */
+export type BadgeCellRendererParams = {
+  /** 값 → 표시 라벨 매핑 (미지정 시 값 그대로 표시) */
+  labelMap?: Record<string, string>;
+  /** 값 → Badge status 매핑 (미지정 시 값 자체를 status로 사용) */
+  statusMap?: Record<string, 'info' | 'success' | 'warning' | 'error'>;
+  /** Badge appearance (기본: 'subtle') */
+  appearance?: 'solid' | 'subtle';
+};
+
+const VALID_STATUSES = new Set(['info', 'success', 'warning', 'error']);
+
+export const BadgeCellRenderer: React.FC<ICellRendererParams & BadgeCellRendererParams> = props => {
+  const { value, labelMap, statusMap, appearance = 'subtle' } = props as ICellRendererParams & BadgeCellRendererParams;
+  if (value == null || value === '') return <span style={{ display: 'flex', justifyContent: 'center' }}>-</span>;
+
+  const stringValue = String(value);
+  const label = labelMap?.[stringValue] ?? stringValue;
+  const status = statusMap?.[stringValue] ?? (VALID_STATUSES.has(stringValue) ? stringValue : 'info');
+
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', height: '100%' }}>
+      <span
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          padding: '2px 8px',
+          borderRadius: '9999px',
+          fontSize: '12px',
+          lineHeight: '16px',
+          fontWeight: 400,
+          backgroundColor: designTokens.colors[`badge-status-${status}-subtle-bg` as keyof typeof designTokens.colors]
+            || designTokens.colors['badge-status-info-subtle-bg'],
+          color: designTokens.colors[`badge-status-${status}-subtle-text` as keyof typeof designTokens.colors]
+            || designTokens.colors['badge-status-info-subtle-text'],
+          ...(appearance === 'solid' ? {
+            backgroundColor: designTokens.colors[`bg-semantic-${status}` as keyof typeof designTokens.colors]
+              || designTokens.colors['brand-primary'],
+            color: '#ffffff',
+          } : {}),
+        }}
+      >
+        {label}
+      </span>
+    </span>
+  );
+};
+
+/**
+ * 증감 셀 렌더러 - 수치의 상승/하락을 컬러와 기호(▲▼)로 표시합니다
+ * 색각 이상자 배려를 위해 반드시 기호를 동반합니다.
+ *
+ * @example
+ * // columnDefs에서 사용
+ * { field: 'profit', cellRenderer: TrendCellRenderer }
+ *
+ * // 데이터: { profit: 1500 } → "▲ 1,500" (빨간색)
+ * // 데이터: { profit: -300 } → "▼ 300" (청록색)
+ * // 데이터: { profit: 0 } → "0" (기본 색상)
+ *
+ * // 커스텀 옵션
+ * {
+ *   field: 'profit',
+ *   cellRenderer: TrendCellRenderer,
+ *   cellRendererParams: {
+ *     showSign: true,        // +/- 기호도 함께 표시 (기본: false)
+ *     formatNumber: true,    // 천단위 콤마 (기본: true)
+ *     suffix: '%',           // 값 뒤에 붙일 접미사
+ *     zeroDisplay: '-',      // 0일 때 표시할 문자 (기본: '0')
+ *   }
+ * }
+ */
+export type TrendCellRendererParams = {
+  /** +/- 기호 함께 표시 여부 (기본: false, ▲▼ 기호는 항상 표시) */
+  showSign?: boolean;
+  /** 천단위 콤마 포맷 (기본: true) */
+  formatNumber?: boolean;
+  /** 값 뒤에 붙일 접미사 (예: '%', '원') */
+  suffix?: string;
+  /** 0일 때 표시할 문자 (기본: '0') */
+  zeroDisplay?: string;
+};
+
+export const TrendCellRenderer: React.FC<ICellRendererParams & TrendCellRendererParams> = props => {
+  const {
+    value,
+    showSign = false,
+    formatNumber = true,
+    suffix = '',
+    zeroDisplay = '0',
+  } = props as ICellRendererParams & TrendCellRendererParams;
+
+  if (value == null || value === '') return <span style={{ display: 'flex', justifyContent: 'flex-end' }}>-</span>;
+
+  const numValue = Number(value);
+  if (isNaN(numValue)) return <span style={{ display: 'flex', justifyContent: 'flex-end' }}>{value}</span>;
+
+  // 0인 경우
+  if (numValue === 0) {
+    return (
+      <span style={{ display: 'flex', justifyContent: 'flex-end', fontVariantNumeric: 'tabular-nums' }}>
+        {zeroDisplay}{suffix}
+      </span>
+    );
+  }
+
+  const isPositive = numValue > 0;
+  const absValue = Math.abs(numValue);
+  const formattedValue = formatNumber ? absValue.toLocaleString('ko-KR') : String(absValue);
+  const arrow = isPositive ? '▲' : '▼';
+  const sign = showSign ? (isPositive ? '+' : '-') : '';
+  const color = isPositive
+    ? designTokens.colors['hue-red-700']    // 상승: #b52929
+    : designTokens.colors['hue-cyan-700'];  // 하락: #107b95
+
+  return (
+    <span style={{
+      display: 'flex',
+      justifyContent: 'flex-end',
+      alignItems: 'center',
+      color,
+      fontVariantNumeric: 'tabular-nums',
+      gap: '2px',
+    }}>
+      <span style={{ fontSize: '10px', lineHeight: 1 }}>{arrow}</span>
+      {sign}{formattedValue}{suffix}
+    </span>
+  );
+};
+
+/**
+ * 편집 가능 셀 렌더러 인터페이스 (구현 예정)
+ * 조회 모드에서 일부 셀만 입력/수정 가능할 때 시각적 단서를 제공합니다.
+ *
+ * - Rule A (데이터 없음): 플레이스홀더 텍스트 + placeholder 색상
+ * - Rule B (데이터 있음): 텍스트 + 우측 연필 아이콘
+ *
+ * @example
+ * {
+ *   field: 'memo',
+ *   cellRenderer: EditableCellRenderer,
+ *   cellRendererParams: {
+ *     placeholder: '내용을 입력해주세요',
+ *     onEdit: (data) => openEditor(data),
+ *   }
+ * }
+ */
+export interface EditableCellRendererParams {
+  /** 데이터 없을 때 표시할 플레이스홀더 텍스트 */
+  placeholder?: string;
+  /** 편집 아이콘 클릭 시 콜백 */
+  onEdit?: (data: any) => void;
+  /** 편집 가능 여부 판단 함수 (기본: true) */
+  isEditable?: (data: any) => boolean;
+}
+
+/**
  * AG Grid 컴포넌트 Props 인터페이스
  * AG Grid 컴포넌트에서 사용할 수 있는 모든 속성들을 정의합니다
  */
@@ -1314,6 +1520,35 @@ export interface DataGridProps {
   /** 셀 세로 정렬 (기본값: 'center') */
   cellVerticalAlign?: CellVerticalAlign;
 
+  /**
+   * 행 가로선(Row Line) 표시 여부 (기본값: false)
+   * true: 행 사이 가로 구분선 표시
+   * false: 구분선 없이 깔끔한 형태
+   */
+  showRowLine?: boolean;
+
+  /**
+   * 빈 값(null/undefined/'') 표시 문자 (기본값: '-')
+   * 데이터가 없는 셀에 표시할 문자를 지정합니다.
+   * false로 설정하면 빈 값 치환을 비활성화합니다.
+   */
+  emptyValueDisplay?: string | false;
+
+  /** 셀 사이 세로선(Column Border) 표시 여부 (기본값: false) */
+  showColumnBorder?: boolean;
+
+  /** 헤더 세로선 표시 여부 (기본값: true) */
+  showHeaderColumnBorder?: boolean;
+
+  /** 행 높이 (기본값: 40) */
+  rowHeight?: number;
+
+  /** 헤더 높이 (기본값: 42) */
+  headerHeight?: number;
+
+  /** 데이터가 없을 때 표시할 메시지 (기본값: '표시할 데이터가 없습니다') */
+  noRowsMessage?: string;
+
   /** 엔터프라이즈 기능들은 cellSelection.handle로 통합됨 */
 
   /** AG Grid 추가 속성 - pass-through */
@@ -1403,6 +1638,13 @@ export const DataGrid: React.FC<DataGridProps> = ({
   enableAdvancedFilter,
   showColumnMenu = false,
   cellVerticalAlign = 'center',
+  showRowLine = false,
+  emptyValueDisplay = '-',
+  showColumnBorder = false,
+  showHeaderColumnBorder = true,
+  rowHeight: rowHeightProp,
+  headerHeight: headerHeightProp,
+  noRowsMessage,
   ...props
 }) => {
   // AG Grid 레퍼런스
@@ -1412,18 +1654,26 @@ export const DataGrid: React.FC<DataGridProps> = ({
 
   // 테마 해결 로직
   const resolvedTheme = useMemo(() => {
+    // props 기반 테마 파라미터 오버라이드
+    const propsOverrides: ThemeParams = {
+      // Row Line (행 가로선)
+      ...(showRowLine
+        ? { rowBorder: { style: 'solid', width: 1, color: '#0000001f' } }
+        : { rowBorder: false }),
+      // Column Border (셀 세로선)
+      columnBorder: showColumnBorder,
+      // Header Column Border (헤더 세로선)
+      headerColumnBorder: showHeaderColumnBorder,
+    };
+
     // theme이 문자열(프리셋)인 경우
     if (typeof theme === 'string') {
       const baseTheme = GRID_THEMES[theme as GridThemePreset] || GRID_THEMES.aplus;
-      // themeParams가 있으면 오버라이드 적용
-      if (themeParams) {
-        return baseTheme.withParams(themeParams);
-      }
-      return baseTheme;
+      return baseTheme.withParams({ ...propsOverrides, ...themeParams });
     }
-    // theme이 AG Grid Theme 객체인 경우 직접 사용
-    return theme;
-  }, [theme, themeParams]);
+    // theme이 AG Grid Theme 객체인 경우
+    return (theme as any).withParams ? (theme as any).withParams(propsOverrides) : theme;
+  }, [theme, themeParams, showRowLine, showColumnBorder, showHeaderColumnBorder]);
 
   // Advanced Filter 스타일 동적 주입
   React.useEffect(() => {
@@ -1474,21 +1724,43 @@ export const DataGrid: React.FC<DataGridProps> = ({
     // Cleanup은 하지 않음 - 다른 DataGrid 인스턴스가 사용할 수 있음
   }, [theme]);
 
+  // 빈 값(Null/Undefined) → emptyValueDisplay 표시 기본 valueFormatter
+  const nullSafeValueFormatter = useCallback(
+    (params: ValueFormatterParams) => {
+      // emptyValueDisplay가 false이면 빈 값 치환 비활성화
+      const placeholder = emptyValueDisplay === false ? '' : emptyValueDisplay;
+
+      // 사용자 정의 valueFormatter가 있으면 우선 적용
+      if (defaultColDef?.valueFormatter && typeof defaultColDef.valueFormatter === 'function') {
+        const result = defaultColDef.valueFormatter(params);
+        if (placeholder && (result == null || result === '')) return placeholder;
+        return result;
+      }
+      if (placeholder && (params.value == null || params.value === '')) return placeholder;
+      return params.value;
+    },
+    [defaultColDef, emptyValueDisplay]
+  );
+
   // 기본 컬럼 정의 메모이제이션
   const memoizedDefaultColDef = useMemo(
-    () => ({
-      sortable: enableSorting,
-      filter: enableFilter,
-      resizable: true,
-      suppressMenu: !showColumnMenu, // 메뉴 아이콘 기본 숨김
-      menuTabs: ['filterMenuTab' as any, 'generalMenuTab' as any],
-      cellClass: cn(
-        cellAlignVariants({ verticalAlign: cellVerticalAlign }),
-        defaultColDef?.cellClass as string | undefined
-      ),
-      ...defaultColDef,
-    }),
-    [enableSorting, enableFilter, showColumnMenu, cellVerticalAlign, defaultColDef]
+    () => {
+      const { valueFormatter: _userFormatter, ...restDefaultColDef } = defaultColDef || {};
+      return {
+        sortable: enableSorting,
+        filter: enableFilter,
+        resizable: true,
+        suppressMenu: !showColumnMenu, // 메뉴 아이콘 기본 숨김
+        menuTabs: ['filterMenuTab' as any, 'generalMenuTab' as any],
+        cellClass: cn(
+          cellAlignVariants({ verticalAlign: cellVerticalAlign }),
+          defaultColDef?.cellClass as string | undefined
+        ),
+        ...restDefaultColDef,
+        valueFormatter: nullSafeValueFormatter,
+      };
+    },
+    [enableSorting, enableFilter, showColumnMenu, cellVerticalAlign, defaultColDef, nullSafeValueFormatter]
   );
 
   // 그리드 준비 이벤트 핸들러
@@ -1503,8 +1775,13 @@ export const DataGrid: React.FC<DataGridProps> = ({
     [onGridReady]
   );
 
+  // noRowsMessage locale 오버라이드
+  const localeText = useMemo(() => {
+    if (!noRowsMessage) return AG_GRID_LOCALE_KO;
+    return { ...AG_GRID_LOCALE_KO, noRowsToShow: noRowsMessage };
+  }, [noRowsMessage]);
+
   // 그리드 옵션 메모이제이션
-  // themeParams에서 rowHeight, headerHeight를 추출하여 그리드 옵션에도 적용
   const gridOptions: GridOptions = useMemo(
     () => ({
       rowData,
@@ -1529,11 +1806,9 @@ export const DataGrid: React.FC<DataGridProps> = ({
       loadingOverlayComponent,
       noRowsOverlayComponent,
       suppressMenuHide: !showColumnMenu, // 메뉴 아이콘 hover 시에도 숨김 유지
-      suppressMovableColumns: false,
-      localeText: AG_GRID_LOCALE_KO,
-      // Figma 디자인 기준 기본 높이 설정 (aplus 테마)
-      rowHeight: typeof themeParams?.rowHeight === 'number' ? themeParams.rowHeight : 40,
-      headerHeight: typeof themeParams?.headerHeight === 'number' ? themeParams.headerHeight : 42,
+      localeText,
+      rowHeight: rowHeightProp ?? (typeof themeParams?.rowHeight === 'number' ? themeParams.rowHeight : 40),
+      headerHeight: headerHeightProp ?? (typeof themeParams?.headerHeight === 'number' ? themeParams.headerHeight : 42),
       ...(enableAdvancedFilter !== undefined && { enableAdvancedFilter }),
       ...props,
     }),
@@ -1561,6 +1836,9 @@ export const DataGrid: React.FC<DataGridProps> = ({
       noRowsOverlayComponent,
       enableAdvancedFilter,
       showColumnMenu,
+      localeText,
+      rowHeightProp,
+      headerHeightProp,
       themeParams,
       props,
     ]
@@ -1618,11 +1896,29 @@ export const COLUMN_TYPES = {
     cellClass: 'ag-right-aligned-cell',
     headerClass: 'ag-right-aligned-header',
   },
-  /** 날짜 컬럼 타입 */
+  /** 날짜 컬럼 타입 - 고정 길이 데이터이므로 중앙 정렬 */
   dateColumn: {
     filter: 'agDateColumnFilter',
     cellEditor: 'agDateCellEditor',
     width: 150,
+    cellClass: 'ag-center-aligned-cell',
+    headerClass: 'ag-center-aligned-header',
+  },
+  /** 상태 컬럼 타입 - 짧은 단어/상태 표시용 중앙 정렬 */
+  statusColumn: {
+    width: 120,
+    cellClass: 'ag-center-aligned-cell',
+    headerClass: 'ag-center-aligned-header',
+    sortable: false,
+    filter: false,
+  },
+  /** 아이콘/버튼 컬럼 타입 - 중앙 정렬 */
+  iconColumn: {
+    width: 80,
+    cellClass: 'ag-center-aligned-cell',
+    headerClass: 'ag-center-aligned-header',
+    sortable: false,
+    filter: false,
   },
   /** 통화 컬럼 타입 */
   currencyColumn: {
@@ -1631,7 +1927,7 @@ export const COLUMN_TYPES = {
     cellClass: 'ag-right-aligned-cell',
     headerClass: 'ag-right-aligned-header',
     valueFormatter: (params: ValueFormatterParams) => {
-      if (params.value == null) return '';
+      if (params.value == null) return '-';
       return new Intl.NumberFormat('ko-KR', {
         style: 'currency',
         currency: 'KRW',
@@ -1645,7 +1941,7 @@ export const COLUMN_TYPES = {
     cellClass: 'ag-right-aligned-cell',
     headerClass: 'ag-right-aligned-header',
     valueFormatter: (params: ValueFormatterParams) => {
-      if (params.value == null) return '';
+      if (params.value == null) return '-';
       return `${params.value}%`;
     },
   },

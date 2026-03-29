@@ -4,7 +4,12 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { FormGrid, FormGridCell } from '../layout/FormGrid';
 import { LabelValue } from '../components/LabelValue';
 import { Field } from '../components/Field';
+import { OptionGroup } from '../components/OptionGroup';
+import { Option } from '../components/Option';
+import { Radio } from '../components/Radio';
+import { Checkbox } from '../components/Checkbox';
 import { SpacingModeProvider } from '../components/SpacingModeProvider';
+import { CheckboxValue, RadioValue } from '../types';
 
 /**
  * FieldGroup 내부 Field는 label·helptext 없이 사용하므로
@@ -75,6 +80,7 @@ const meta: Meta<typeof FormGrid> = {
         ].join('\n'),
       },
     },
+    controls: { include: ['columns', 'title'] },
   },
   argTypes: {
     columns: {
@@ -271,4 +277,277 @@ export const ColumnsComparison: Story = {
       ))}
     </div>
   ),
+};
+
+// ─── OptionGroup Wrap (옵션이 많을 때 줄바꿈) ───
+export const OptionGroupWrap: Story = {
+  name: 'OptionGroup - 옵션 많을 때 Wrap',
+  render: () => {
+    const [selected, setSelected] = React.useState('opt1');
+    const optionLabels = Array.from({ length: 8 }, (_, i) => `옵션 ${i + 1}`);
+
+    return (
+      <FormGrid columns={3} title="옵션 그룹 Wrap 확인">
+        <FormGridCell colSpan={2}>
+          <OptionGroup label="카테고리 선택" showLabel orientation="horizontal" size="md">
+            {optionLabels.map((label) => (
+              <Option key={label} label={label}>
+                <Radio
+                  value={selected === label ? RadioValue.CHECKED : RadioValue.UNCHECKED}
+                  onChange={() => setSelected(label)}
+                  aria-label={label}
+                />
+              </Option>
+            ))}
+          </OptionGroup>
+        </FormGridCell>
+        <FormGridCell>
+          <SimpleField showLabel label="비고" placeholder="비고 입력" size="md" showHelptext={false} showPrefix={false} showStartIcon={false} showEndIcon={false} />
+        </FormGridCell>
+      </FormGrid>
+    );
+  },
+};
+
+// ─── Field + OptionGroup 상단 정렬 ───
+export const FieldWithOptionGroupAlignment: Story = {
+  name: 'Field + OptionGroup 상단 정렬',
+  render: () => {
+    const [values, setValues] = React.useState<Record<string, CheckboxValue>>({
+      '동의 1': CheckboxValue.CHECKED,
+      '동의 2': CheckboxValue.UNCHECKED,
+      '동의 3': CheckboxValue.UNCHECKED,
+    });
+
+    return (
+      <div className="flex flex-col gap-10">
+        <div>
+          <p className="mb-2 text-sm font-semibold text-gray-500">OptionGroup 라벨 있음</p>
+          <FormGrid columns={3} title="필드 + 옵션 그룹">
+            <FormGridCell>
+              <SimpleField showLabel label="이름" placeholder="이름 입력" size="md" showHelptext={false} showPrefix={false} showStartIcon={false} showEndIcon={false} />
+            </FormGridCell>
+            <FormGridCell>
+              <SimpleField showLabel label="부서" placeholder="부서 입력" size="md" showHelptext={false} showPrefix={false} showStartIcon={false} showEndIcon={false} />
+            </FormGridCell>
+            <FormGridCell>
+              <OptionGroup label="동의 항목" showLabel orientation="horizontal" size="md">
+                {Object.keys(values).map((key) => (
+                  <Option key={key} label={key}>
+                    <Checkbox
+                      value={values[key]}
+                      onChange={(e) =>
+                        setValues((prev) => ({
+                          ...prev,
+                          [key]: e.target.checked ? CheckboxValue.CHECKED : CheckboxValue.UNCHECKED,
+                        }))
+                      }
+                      aria-label={key}
+                    />
+                  </Option>
+                ))}
+              </OptionGroup>
+            </FormGridCell>
+          </FormGrid>
+        </div>
+
+        <div>
+          <p className="mb-2 text-sm font-semibold text-gray-500">OptionGroup 라벨 없음 (showLabel=false)</p>
+          <FormGrid columns={3} title="필드 + 옵션 그룹 (무라벨)">
+            <FormGridCell>
+              <SimpleField showLabel label="이름" placeholder="이름 입력" size="md" showHelptext={false} showPrefix={false} showStartIcon={false} showEndIcon={false} />
+            </FormGridCell>
+            <FormGridCell>
+              <SimpleField showLabel label="부서" placeholder="부서 입력" size="md" showHelptext={false} showPrefix={false} showStartIcon={false} showEndIcon={false} />
+            </FormGridCell>
+            <FormGridCell>
+              <OptionGroup label="동의 항목" showLabel={false} reserveLabelSpace orientation="horizontal" size="md">
+                {Object.keys(values).map((key) => (
+                  <Option key={key} label={key}>
+                    <Checkbox
+                      value={values[key]}
+                      onChange={(e) =>
+                        setValues((prev) => ({
+                          ...prev,
+                          [key]: e.target.checked ? CheckboxValue.CHECKED : CheckboxValue.UNCHECKED,
+                        }))
+                      }
+                      aria-label={key}
+                    />
+                  </Option>
+                ))}
+              </OptionGroup>
+            </FormGridCell>
+          </FormGrid>
+        </div>
+      </div>
+    );
+  },
+};
+
+// ─── OptionGroup Wrap + OptionGroup 상단 정렬 ───
+export const OptionGroupPairAlignment: Story = {
+  name: 'OptionGroup Wrap + OptionGroup 상단 정렬',
+  render: () => {
+    const [selected, setSelected] = React.useState('카테고리 1');
+    const [values, setValues] = React.useState<Record<string, CheckboxValue>>({
+      '항목 A': CheckboxValue.CHECKED,
+      '항목 B': CheckboxValue.UNCHECKED,
+      '항목 C': CheckboxValue.UNCHECKED,
+    });
+
+    const manyOptions = Array.from({ length: 10 }, (_, i) => `카테고리 ${i + 1}`);
+
+    return (
+      <div className="flex flex-col gap-10">
+        <div>
+          <p className="mb-2 text-sm font-semibold text-gray-500">colSpan=2 Wrap OptionGroup + 1칸 OptionGroup</p>
+          <FormGrid columns={3} title="옵션 그룹 나란히 배치">
+            <FormGridCell colSpan={2}>
+              <OptionGroup label="카테고리 (많은 옵션 - Wrap)" showLabel orientation="horizontal" size="md">
+                {manyOptions.map((label) => (
+                  <Option key={label} label={label}>
+                    <Radio
+                      value={selected === label ? RadioValue.CHECKED : RadioValue.UNCHECKED}
+                      onChange={() => setSelected(label)}
+                      aria-label={label}
+                    />
+                  </Option>
+                ))}
+              </OptionGroup>
+            </FormGridCell>
+            <FormGridCell>
+              <OptionGroup label="확인 항목" showLabel orientation="horizontal" size="md">
+                {Object.keys(values).map((key) => (
+                  <Option key={key} label={key}>
+                    <Checkbox
+                      value={values[key]}
+                      onChange={(e) =>
+                        setValues((prev) => ({
+                          ...prev,
+                          [key]: e.target.checked ? CheckboxValue.CHECKED : CheckboxValue.UNCHECKED,
+                        }))
+                      }
+                      aria-label={key}
+                    />
+                  </Option>
+                ))}
+              </OptionGroup>
+            </FormGridCell>
+          </FormGrid>
+        </div>
+
+        <div>
+          <p className="mb-2 text-sm font-semibold text-gray-500">왼쪽 라벨 + 오른쪽 무라벨</p>
+          <FormGrid columns={3} title="카테고리(라벨) + 확인(무라벨)">
+            <FormGridCell colSpan={2}>
+              <OptionGroup label="카테고리 (많은 옵션 - Wrap)" showLabel orientation="horizontal" size="md">
+                {manyOptions.map((label) => (
+                  <Option key={label} label={label}>
+                    <Radio
+                      value={selected === label ? RadioValue.CHECKED : RadioValue.UNCHECKED}
+                      onChange={() => setSelected(label)}
+                      aria-label={label}
+                    />
+                  </Option>
+                ))}
+              </OptionGroup>
+            </FormGridCell>
+            <FormGridCell>
+              <OptionGroup label="확인 항목" showLabel={false} reserveLabelSpace orientation="horizontal" size="md">
+                {Object.keys(values).map((key) => (
+                  <Option key={key} label={key}>
+                    <Checkbox
+                      value={values[key]}
+                      onChange={(e) =>
+                        setValues((prev) => ({
+                          ...prev,
+                          [key]: e.target.checked ? CheckboxValue.CHECKED : CheckboxValue.UNCHECKED,
+                        }))
+                      }
+                      aria-label={key}
+                    />
+                  </Option>
+                ))}
+              </OptionGroup>
+            </FormGridCell>
+          </FormGrid>
+        </div>
+
+        <div>
+          <p className="mb-2 text-sm font-semibold text-gray-500">왼쪽 무라벨 + 오른쪽 라벨</p>
+          <FormGrid columns={3} title="카테고리(무라벨) + 확인(라벨)">
+            <FormGridCell colSpan={2}>
+              <OptionGroup label="카테고리" showLabel={false} reserveLabelSpace orientation="horizontal" size="md">
+                {manyOptions.map((label) => (
+                  <Option key={label} label={label}>
+                    <Radio
+                      value={selected === label ? RadioValue.CHECKED : RadioValue.UNCHECKED}
+                      onChange={() => setSelected(label)}
+                      aria-label={label}
+                    />
+                  </Option>
+                ))}
+              </OptionGroup>
+            </FormGridCell>
+            <FormGridCell>
+              <OptionGroup label="확인 항목" showLabel orientation="horizontal" size="md">
+                {Object.keys(values).map((key) => (
+                  <Option key={key} label={key}>
+                    <Checkbox
+                      value={values[key]}
+                      onChange={(e) =>
+                        setValues((prev) => ({
+                          ...prev,
+                          [key]: e.target.checked ? CheckboxValue.CHECKED : CheckboxValue.UNCHECKED,
+                        }))
+                      }
+                      aria-label={key}
+                    />
+                  </Option>
+                ))}
+              </OptionGroup>
+            </FormGridCell>
+          </FormGrid>
+        </div>
+
+        <div>
+          <p className="mb-2 text-sm font-semibold text-gray-500">양쪽 모두 무라벨</p>
+          <FormGrid columns={3} title="카테고리(무라벨) + 확인(무라벨)">
+            <FormGridCell colSpan={2}>
+              <OptionGroup label="카테고리" showLabel={false} orientation="horizontal" size="md">
+                {manyOptions.map((label) => (
+                  <Option key={label} label={label}>
+                    <Radio
+                      value={selected === label ? RadioValue.CHECKED : RadioValue.UNCHECKED}
+                      onChange={() => setSelected(label)}
+                      aria-label={label}
+                    />
+                  </Option>
+                ))}
+              </OptionGroup>
+            </FormGridCell>
+            <FormGridCell>
+              <OptionGroup label="확인 항목" showLabel={false} orientation="horizontal" size="md">
+                {Object.keys(values).map((key) => (
+                  <Option key={key} label={key}>
+                    <Checkbox
+                      value={values[key]}
+                      onChange={(e) =>
+                        setValues((prev) => ({
+                          ...prev,
+                          [key]: e.target.checked ? CheckboxValue.CHECKED : CheckboxValue.UNCHECKED,
+                        }))
+                      }
+                      aria-label={key}
+                    />
+                  </Option>
+                ))}
+              </OptionGroup>
+            </FormGridCell>
+          </FormGrid>
+        </div>
+      </div>
+    );
+  },
 };

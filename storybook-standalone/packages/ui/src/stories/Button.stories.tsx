@@ -184,11 +184,11 @@ export const Secondary: Story = {
   render: (args) => <ButtonWithIconSelect {...args} />,
 };
 
-export const Outline: Story = {
-  name: 'Outline',
+export const Ghost: Story = {
+  name: 'Ghost',
   args: {
     ...Primary.args,
-    buttonType: ButtonType.OUTLINE,
+    buttonType: ButtonType.GHOST,
   },
   render: (args) => <ButtonWithIconSelect {...args} />,
 };
@@ -211,11 +211,11 @@ export const Destructive: Story = {
   render: (args) => <ButtonWithIconSelect {...args} />,
 };
 
-export const OutlineDestructive: Story = {
-  name: 'Outline Destructive',
+export const SecondaryDestructive: Story = {
+  name: 'Secondary Destructive',
   args: {
     ...Primary.args,
-    buttonType: ButtonType.OUTLINE_DESTRUCTIVE,
+    buttonType: ButtonType.SECONDARY_DESTRUCTIVE,
   },
   render: (args) => <ButtonWithIconSelect {...args} />,
 };

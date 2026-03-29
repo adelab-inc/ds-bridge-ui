@@ -111,12 +111,12 @@
     "VariableID:4:150",
     "VariableID:4:79",
     "VariableID:4:151",
-    "VariableID:336:5732",
-    "VariableID:336:5727",
-    "VariableID:336:5733",
-    "VariableID:336:5730",
     "VariableID:336:5728",
+    "VariableID:336:5730",
     "VariableID:336:5735",
+    "VariableID:336:5732",
+    "VariableID:336:5733",
+    "VariableID:336:5727",
     "VariableID:336:5729",
     "VariableID:336:5724",
     "VariableID:4:98",
@@ -143,13 +143,13 @@
     "VariableID:206:4166",
     "VariableID:206:4167",
     "VariableID:206:4168",
-    "VariableID:2291:26547",
-    "VariableID:2291:26541",
-    "VariableID:2291:26545",
-    "VariableID:2291:26543",
-    "VariableID:2291:26546",
     "VariableID:206:4169",
+    "VariableID:2291:26543",
+    "VariableID:2291:26545",
+    "VariableID:2291:26541",
     "VariableID:2291:26542",
+    "VariableID:2291:26547",
+    "VariableID:2291:26546",
     "VariableID:2291:26538",
     "VariableID:336:5696",
     "VariableID:4761:90016",
@@ -157,15 +157,15 @@
     "VariableID:2291:26540",
     "VariableID:336:5705",
     "VariableID:336:5706",
-    "VariableID:336:5714",
-    "VariableID:336:5707",
-    "VariableID:336:5718",
-    "VariableID:336:5709",
     "VariableID:336:5712",
+    "VariableID:336:5709",
+    "VariableID:336:5718",
+    "VariableID:336:5707",
+    "VariableID:336:5714",
     "VariableID:336:5716",
     "VariableID:336:5719",
-    "VariableID:336:5717",
     "VariableID:4761:90015",
+    "VariableID:336:5717",
     "VariableID:336:5715",
     "VariableID:336:5713",
     "VariableID:336:5710",
@@ -609,12 +609,10 @@
       "name": "color/palette/semantic/error/500",
       "description": "",
       "type": "COLOR",
-      "valuesByMode": {
-        "4:0": { "r": 0.8274509906768799, "g": 0.18431372940540314, "b": 0.18431372940540314, "a": 1 }
-      },
+      "valuesByMode": { "4:0": { "r": 0.7764706015586853, "g": 0.1568627506494522, "b": 0.1568627506494522, "a": 1 } },
       "resolvedValuesByMode": {
         "4:0": {
-          "resolvedValue": { "r": 0.8274509906768799, "g": 0.18431372940540314, "b": 0.18431372940540314, "a": 1 },
+          "resolvedValue": { "r": 0.7764706015586853, "g": 0.1568627506494522, "b": 0.1568627506494522, "a": 1 },
           "alias": null
         }
       },
@@ -886,7 +884,7 @@
       "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:79" } },
       "resolvedValuesByMode": {
         "4:0": {
-          "resolvedValue": { "r": 0.8274509906768799, "g": 0.18431372940540314, "b": 0.18431372940540314, "a": 1 },
+          "resolvedValue": { "r": 0.7764706015586853, "g": 0.1568627506494522, "b": 0.1568627506494522, "a": 1 },
           "alias": "VariableID:4:79",
           "aliasName": "color/palette/semantic/error/500"
         }
@@ -1273,7 +1271,7 @@
       "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:95" } },
       "resolvedValuesByMode": {
         "4:0": {
-          "resolvedValue": { "r": 0.8274509906768799, "g": 0.18431372940540314, "b": 0.18431372940540314, "a": 1 },
+          "resolvedValue": { "r": 0.7764706015586853, "g": 0.1568627506494522, "b": 0.1568627506494522, "a": 1 },
           "alias": "VariableID:4:95",
           "aliasName": "color/role/semantic/error"
         }
@@ -2020,7 +2018,7 @@
       "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:494:9453" } },
       "resolvedValuesByMode": {
         "4:0": {
-          "resolvedValue": { "r": 0.8274509906768799, "g": 0.18431372940540314, "b": 0.18431372940540314, "a": 1 },
+          "resolvedValue": { "r": 0.7764706015586853, "g": 0.1568627506494522, "b": 0.1568627506494522, "a": 1 },
           "alias": "VariableID:494:9453",
           "aliasName": "color/role/border/semantic-error"
         }
@@ -3111,7 +3109,7 @@
       "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:95" } },
       "resolvedValuesByMode": {
         "4:0": {
-          "resolvedValue": { "r": 0.8274509906768799, "g": 0.18431372940540314, "b": 0.18431372940540314, "a": 1 },
+          "resolvedValue": { "r": 0.7764706015586853, "g": 0.1568627506494522, "b": 0.1568627506494522, "a": 1 },
           "alias": "VariableID:4:95",
           "aliasName": "color/role/semantic/error"
         }
@@ -3645,7 +3643,7 @@
       "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:95" } },
       "resolvedValuesByMode": {
         "4:0": {
-          "resolvedValue": { "r": 0.8274509906768799, "g": 0.18431372940540314, "b": 0.18431372940540314, "a": 1 },
+          "resolvedValue": { "r": 0.7764706015586853, "g": 0.1568627506494522, "b": 0.1568627506494522, "a": 1 },
           "alias": "VariableID:4:95",
           "aliasName": "color/role/semantic/error"
         }
@@ -3747,7 +3745,7 @@
       "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:95" } },
       "resolvedValuesByMode": {
         "4:0": {
-          "resolvedValue": { "r": 0.8274509906768799, "g": 0.18431372940540314, "b": 0.18431372940540314, "a": 1 },
+          "resolvedValue": { "r": 0.7764706015586853, "g": 0.1568627506494522, "b": 0.1568627506494522, "a": 1 },
           "alias": "VariableID:4:95",
           "aliasName": "color/role/semantic/error"
         }

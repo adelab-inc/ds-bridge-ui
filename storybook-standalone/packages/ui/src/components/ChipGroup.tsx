@@ -33,6 +33,7 @@ const chipGroupVariants = cva('flex', ({
 export interface ChipGroupProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof chipGroupVariants> {
+  size?: "md" | "sm";
   selectionType?: "single" | "multiple";
   children: React.ReactNode;
   defaultValue?: string | string[];
@@ -40,11 +41,12 @@ export interface ChipGroupProps
 }
 
 const ChipGroup = React.forwardRef<HTMLDivElement, ChipGroupProps>(
-  ({ className, variant, selectionType = "multiple", children, defaultValue, disabled, ...props }, ref) => {
+  ({ className, variant, size, selectionType = "multiple", children, defaultValue, disabled, ...props }, ref) => {
     const [selectedValues, setSelectedValues] = useState<string[]>(() => {
       if (!defaultValue) return [];
       return Array.isArray(defaultValue) ? defaultValue : [defaultValue];
     });
+    const [removedValues, setRemovedValues] = useState<string[]>([]);
 
     const handleChipClick = (value: string) => {
       if (!selectionType) return;
@@ -57,6 +59,12 @@ const ChipGroup = React.forwardRef<HTMLDivElement, ChipGroupProps>(
         const newSelection = prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value];
         return newSelection;
       });
+    };
+
+    const handleChipClose = (value: string, originalOnClose?: () => void) => {
+      setRemovedValues((prev) => [...prev, value]);
+      setSelectedValues((prev) => prev.filter((v) => v !== value));
+      originalOnClose?.();
     };
 
     return (
@@ -75,10 +83,13 @@ const ChipGroup = React.forwardRef<HTMLDivElement, ChipGroupProps>(
             return child;
           }
 
+          if (removedValues.includes(value)) return null;
+
           const isSelected = selectedValues.includes(value);
 
           return cloneElement(child, {
             ...child.props,
+            ...(size ? { size } : {}),
             selected: isSelected,
             disabled: disabled || undefined,
             onClick: disabled
@@ -87,6 +98,9 @@ const ChipGroup = React.forwardRef<HTMLDivElement, ChipGroupProps>(
                   handleChipClick(value);
                   child.props.onClick?.(e);
                 },
+            ...(child.props.showClose
+              ? { onClose: () => handleChipClose(value, child.props.onClose) }
+              : {}),
           });
         })}
       </div>

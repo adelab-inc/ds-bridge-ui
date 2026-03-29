@@ -48,8 +48,8 @@ const meta: Meta<typeof Alert> = {
       if: { arg: 'showTitle', truthy: true },
     },
     showClose: {
-      control: 'boolean',
-      description: 'Figma: `showClose`. 닫기 버튼 표시',
+      table: { disable: true },
+      description: 'Toast에서는 항상 닫기 버튼 표시',
     },
     showActionGroup: {
       control: 'boolean',
@@ -103,7 +103,6 @@ export const Default: Story = {
     showTitle: false,
     title: '알림 제목',
     body: '이것은 매우 긴 메시지입니다. Toast에서는 2줄까지만 표시되고 나머지는 잘립니다. 이 텍스트는 2줄을 초과하는 긴 내용을 테스트하기 위한 것입니다. 충분히 길어야 2줄 제한이 적용되는 것을 확인할 수 있습니다.',
-    showClose: true,
     onClose: () => console.log('close'),
     showActionGroup: false,
     showAction1: true,

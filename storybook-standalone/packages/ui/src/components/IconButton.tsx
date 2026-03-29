@@ -69,7 +69,7 @@ const iconButtonVariants = cva('flex justify-center items-center flex-shrink-0',
         "size": "sm",
       },
       {
-        "class": "hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus",
+        "class": "hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed focus-visible:outline-none focus-visible:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]",
         "iconButtonType": "ghost",
         "interaction": "default",
       },
@@ -79,7 +79,7 @@ const iconButtonVariants = cva('flex justify-center items-center flex-shrink-0',
         "interaction": "disabled",
       },
       {
-        "class": "hover:bg-brand-secondary-hover active:bg-brand-secondary-pressed focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus",
+        "class": "hover:bg-brand-secondary-hover active:bg-brand-secondary-pressed focus-visible:outline-none focus-visible:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]",
         "iconButtonType": "secondary",
         "interaction": "default",
       },
@@ -94,7 +94,7 @@ const iconButtonVariants = cva('flex justify-center items-center flex-shrink-0',
         "interaction": "disabled",
       },
       {
-        "class": "hover:bg-[linear-gradient(0deg,#0000000f,#0000000f)] active:bg-[linear-gradient(0deg,#00000019,#00000019)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus",
+        "class": "hover:bg-[linear-gradient(0deg,#0000000f,#0000000f)] active:bg-[linear-gradient(0deg,#00000019,#00000019)] focus-visible:outline-none focus-visible:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]",
         "iconButtonType": "tertiary",
         "interaction": "default",
       },
@@ -109,7 +109,7 @@ const iconButtonVariants = cva('flex justify-center items-center flex-shrink-0',
         "interaction": "disabled",
       },
       {
-        "class": "hover:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-hover),theme(colors.state-overlay-on-neutral-hover))] active:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-pressed),theme(colors.state-overlay-on-neutral-pressed))] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus",
+        "class": "hover:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-hover),theme(colors.state-overlay-on-neutral-hover))] active:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-pressed),theme(colors.state-overlay-on-neutral-pressed))] focus-visible:outline-none focus-visible:shadow-[0_0_0_1px_theme(colors.border-semantic-error)_inset,0_0_0_2px_theme(colors.focus)]",
         "iconButtonType": "ghost-destructive",
         "interaction": "default",
       },
@@ -188,7 +188,7 @@ const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
         disabled={isDisabled || isLoading}
         {...props}
       >
-        {isLoading ? <LoadingSpinner variant={iconButtonType || 'ghost'} size={iconSize} /> : renderIcon(iconOnly)}
+        {isLoading ? <LoadingSpinner variant={iconButtonType || 'ghost'} size={iconSize} componentType="iconButton" /> : renderIcon(iconOnly)}
       </button>
     );
 

@@ -120,6 +120,9 @@ const meta: Meta<typeof TreeMenu> = {
     onItemClick: { table: { disable: true } },
     draggable: { table: { disable: true } },
     onItemMove: { table: { disable: true } },
+    defaultSelectedId: { table: { disable: true } },
+    selectedId: { table: { disable: true } },
+    onSelectedChange: { table: { disable: true } },
   },
 };
 
@@ -718,7 +721,7 @@ export const ControlledExpandState: Story = {
         {/* 외부 제어 버튼 */}
         <div className="flex gap-2">
           <Button size="sm" buttonType="primary" label="모두 펼치기" onClick={handleExpandAll} showStartIcon={false} showEndIcon={false} />
-          <Button size="sm" buttonType="outline" label="모두 접기" onClick={handleCollapseAll} showStartIcon={false} showEndIcon={false} />
+          <Button size="sm" buttonType="tertiary" label="모두 접기" onClick={handleCollapseAll} showStartIcon={false} showEndIcon={false} />
         </div>
 
         {/* 현재 상태 표시 */}
@@ -1088,7 +1091,7 @@ export const Draggable: Story = {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex gap-2">
-          <Button size="sm" buttonType="outline" label="초기화" onClick={handleReset} showStartIcon={false} showEndIcon={false} />
+          <Button size="sm" buttonType="tertiary" label="초기화" onClick={handleReset} showStartIcon={false} showEndIcon={false} />
         </div>
         <p className="text-sm text-text-secondary">
           아이템을 드래그하여 순서를 변경하거나 다른 아이템 안으로 이동할 수 있습니다.
@@ -1194,8 +1197,8 @@ export const DraggableLongList: Story = {
       <div className="flex flex-col gap-4">
         <div className="flex gap-2 flex-wrap">
           <Button size="sm" buttonType="primary" label="모두 펼치기" onClick={handleExpandAll} showStartIcon={false} showEndIcon={false} />
-          <Button size="sm" buttonType="outline" label="모두 접기" onClick={handleCollapseAll} showStartIcon={false} showEndIcon={false} />
-          <Button size="sm" buttonType="outline" label="초기화" onClick={handleReset} showStartIcon={false} showEndIcon={false} />
+          <Button size="sm" buttonType="tertiary" label="모두 접기" onClick={handleCollapseAll} showStartIcon={false} showEndIcon={false} />
+          <Button size="sm" buttonType="tertiary" label="초기화" onClick={handleReset} showStartIcon={false} showEndIcon={false} />
         </div>
         <p className="text-sm text-text-secondary">
           <strong>자동 스크롤 테스트:</strong> 아이템을 드래그해서 컨테이너 상/하단 가장자리로 이동해 보세요.

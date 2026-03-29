@@ -1,17 +1,12 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-03-22T23:16:45.811Z",
+  "generatedAt": "2026-03-28T06:57:50.141Z",
   "components": {
     "Alert": {
       "displayName": "Alert",
       "filePath": "packages/ui/src/components/Alert.tsx",
       "category": "UI",
       "props": {
-        "isToast": {
-          "type": "boolean",
-          "required": false,
-          "defaultValue": false
-        },
         "mode": {
           "type": [
             "base",
@@ -74,17 +69,25 @@
           "type": "() => void",
           "required": false
         },
-        "body": {
-          "type": "ReactNode",
-          "required": true
+        "isToast": {
+          "type": "boolean",
+          "required": false,
+          "defaultValue": false
+        },
+        "onClose": {
+          "type": [
+            "(() => void)",
+            "(() => void)"
+          ],
+          "required": false
         },
         "showClose": {
           "type": "boolean",
           "required": false
         },
-        "onClose": {
-          "type": "() => void",
-          "required": false
+        "body": {
+          "type": "ReactNode",
+          "required": true
         }
       },
       "stories": [
@@ -190,11 +193,11 @@
         "buttonType": {
           "type": [
             "destructive",
+            "ghost",
             "ghost-inverse",
-            "outline",
-            "outline-destructive",
             "primary",
             "secondary",
+            "secondary-destructive",
             "tertiary"
           ],
           "required": false
@@ -460,7 +463,7 @@
             "unchecked"
           ],
           "required": false,
-          "defaultValue": "CheckboxValue.UNCHECKED"
+          "defaultValue": "unchecked"
         },
         "interaction": {
           "type": [
@@ -668,6 +671,15 @@
             "test",
             "autodocs"
           ]
+        },
+        {
+          "id": "ui-dialog--nested-modals",
+          "name": "Nested Modals",
+          "tags": [
+            "dev",
+            "test",
+            "autodocs"
+          ]
         }
       ]
     },
@@ -697,6 +709,82 @@
         {
           "id": "ui-divider--default",
           "name": "Default",
+          "tags": [
+            "dev",
+            "test",
+            "autodocs"
+          ]
+        }
+      ]
+    },
+    "Drawer": {
+      "displayName": "Drawer",
+      "filePath": "packages/ui/src/components/Drawer.tsx",
+      "category": "UI",
+      "props": {
+        "open": {
+          "type": "boolean",
+          "required": false,
+          "description": "드로워 열림 상태"
+        },
+        "onClose": {
+          "type": "() => void",
+          "required": true,
+          "description": "닫기 핸들러"
+        },
+        "dim": {
+          "type": "boolean",
+          "required": false,
+          "description": "Dim(배경 어둡게) 처리 여부 (기본: true)"
+        },
+        "mode": {
+          "type": [
+            "base",
+            "compact"
+          ],
+          "required": false
+        },
+        "size": {
+          "type": [
+            "lg",
+            "md",
+            "sm",
+            "xl"
+          ],
+          "required": false
+        }
+      },
+      "stories": [
+        {
+          "id": "ui-drawer--default",
+          "name": "Default",
+          "tags": [
+            "dev",
+            "test",
+            "autodocs"
+          ]
+        },
+        {
+          "id": "ui-drawer--without-dim",
+          "name": "Without Dim",
+          "tags": [
+            "dev",
+            "test",
+            "autodocs"
+          ]
+        },
+        {
+          "id": "ui-drawer--all-sizes",
+          "name": "All Sizes",
+          "tags": [
+            "dev",
+            "test",
+            "autodocs"
+          ]
+        },
+        {
+          "id": "ui-drawer--with-scrollable-content",
+          "name": "With Scrollable Content",
           "tags": [
             "dev",
             "test",
@@ -1122,13 +1210,11 @@
         },
         "to": {
           "type": "string",
-          "required": false,
-          "description": "The internal route path to navigate to. This should be a relative or absolute path within your application.\nFor external URLs, use the `href` property instead."
+          "required": false
         },
         "href": {
           "type": "string",
-          "required": false,
-          "description": "This can be used instead of `to` to navigate to a fully built href, e.g. pointing to an external target."
+          "required": false
         }
       },
       "stories": [
@@ -1176,8 +1262,8 @@
           ]
         },
         {
-          "id": "ui-menu--label-only",
-          "name": "Label Only",
+          "id": "ui-menu--with-headings",
+          "name": "With Headings",
           "tags": [
             "dev",
             "test",
@@ -1185,8 +1271,17 @@
           ]
         },
         {
-          "id": "ui-menu--item-title-description",
-          "name": "Item Title Description",
+          "id": "ui-menu--with-disabled",
+          "name": "With Disabled",
+          "tags": [
+            "dev",
+            "test",
+            "autodocs"
+          ]
+        },
+        {
+          "id": "ui-menu--label-only",
+          "name": "Label Only",
           "tags": [
             "dev",
             "test",
@@ -1269,53 +1364,130 @@
     },
     "Item": {
       "displayName": "Item",
-      "filePath": "packages/ui/src/components/Menu/Item.tsx",
+      "filePath": "packages/ui/src/components/TreeMenu/Item.tsx",
       "category": "UI",
       "props": {
-        "item": {
-          "type": "MenuItemBase",
-          "required": true
-        },
         "size": {
           "type": [
-            "sm",
-            "md"
+            "md",
+            "sm"
           ],
-          "required": false,
-          "defaultValue": "md"
-        },
-        "onItemClick": {
-          "type": "(item: MenuItemBase) => void",
           "required": false
         },
-        "onItemHover": {
-          "type": "(item: MenuItemBase) => void",
-          "required": false
+        "item": {
+          "type": [
+            "TreeMenuItemDataSm",
+            "TreeMenuItemDataMd"
+          ],
+          "required": true
         },
         "depth": {
-          "type": "number",
-          "required": false,
-          "defaultValue": 0
-        },
-        "isFocused": {
-          "type": "boolean",
-          "required": false,
-          "defaultValue": false
+          "type": [
+            "1",
+            "2",
+            "3",
+            "4"
+          ],
+          "required": false
         },
         "isExpanded": {
           "type": "boolean",
-          "required": false,
-          "defaultValue": false
+          "required": false
         },
-        "itemRole": {
-          "type": "string",
+        "isFocused": {
+          "type": "boolean",
+          "required": false
+        },
+        "isSelected": {
+          "type": "boolean",
           "required": false,
-          "description": "아이템의 ARIA role override. 기본값은 menuitem (checkable이면 menuitemcheckbox). Select에서는 \"option\""
+          "description": "선택 상태 (클릭으로 선택된 아이템)"
+        },
+        "isFirstFocusable": {
+          "type": "boolean",
+          "required": false,
+          "description": "Tab 키로 진입 가능한 첫 번째 아이템 여부 (접근성)"
+        },
+        "onExpandToggle": {
+          "type": "() => void",
+          "required": false
+        },
+        "onItemClick": {
+          "type": "() => void",
+          "required": false
+        },
+        "draggable": {
+          "type": "boolean",
+          "required": false,
+          "description": "드래그 가능 여부"
+        },
+        "isDragging": {
+          "type": "boolean",
+          "required": false,
+          "description": "현재 드래그 중인 아이템인지 여부"
+        },
+        "dragOverPosition": {
+          "type": [
+            "before",
+            "after",
+            "inside"
+          ],
+          "required": false,
+          "description": "현재 드롭 대상 위치 (인디케이터 표시용)"
+        },
+        "onDragStart": {
+          "type": "(e: DragEvent<Element>) => void",
+          "required": false,
+          "description": "드래그 시작 핸들러"
+        },
+        "onDragEnd": {
+          "type": "(e: DragEvent<Element>) => void",
+          "required": false,
+          "description": "드래그 종료 핸들러"
+        },
+        "onDragOver": {
+          "type": "(e: DragEvent<Element>) => void",
+          "required": false,
+          "description": "드래그 오버 핸들러"
+        },
+        "onDragEnter": {
+          "type": "(e: DragEvent<Element>) => void",
+          "required": false,
+          "description": "드래그 진입 핸들러"
+        },
+        "onDragLeave": {
+          "type": "(e: DragEvent<Element>) => void",
+          "required": false,
+          "description": "드래그 이탈 핸들러"
+        },
+        "onDrop": {
+          "type": "(e: DragEvent<Element>) => void",
+          "required": false,
+          "description": "드롭 핸들러"
+        },
+        "checkboxMode": {
+          "type": "boolean",
+          "required": false,
+          "description": "체크박스 모드 (MD only)"
+        },
+        "checkState": {
+          "type": [
+            "checked",
+            "unchecked",
+            "indeterminate"
+          ],
+          "required": false,
+          "description": "체크 상태 (MD only)"
+        },
+        "onCheckChange": {
+          "type": "(checked: boolean) => void",
+          "required": false,
+          "description": "체크 상태 변경 핸들러 (MD only)"
         }
       },
       "stories": [
         {
-          "id": "ui-menu--default",
+          "id": "ui-treemenu--default",
           "name": "Default",
           "tags": [
             "dev",
@@ -1324,8 +1496,8 @@
           ]
         },
         {
-          "id": "ui-menu--with-selected",
-          "name": "With Selected",
+          "id": "ui-treemenu--with-checkbox",
+          "name": "With Checkbox",
           "tags": [
             "dev",
             "test",
@@ -1333,34 +1505,7 @@
           ]
         },
         {
-          "id": "ui-menu--label-only",
-          "name": "Label Only",
-          "tags": [
-            "dev",
-            "test",
-            "autodocs"
-          ]
-        },
-        {
-          "id": "ui-menu--item-title-description",
-          "name": "Item Title Description",
-          "tags": [
-            "dev",
-            "test",
-            "autodocs"
-          ]
-        },
-        {
-          "id": "ui-menu--icon-with-title-description",
-          "name": "Icon With Title Description",
-          "tags": [
-            "dev",
-            "test",
-            "autodocs"
-          ]
-        },
-        {
-          "id": "ui-menu--with-badge",
+          "id": "ui-treemenu--with-badge",
           "name": "With Badge",
           "tags": [
             "dev",
@@ -1369,8 +1514,8 @@
           ]
         },
         {
-          "id": "ui-menu--with-badge-dot",
-          "name": "With Badge Dot",
+          "id": "ui-treemenu--with-hover-action",
+          "name": "With Hover Action",
           "tags": [
             "dev",
             "test",
@@ -1378,8 +1523,8 @@
           ]
         },
         {
-          "id": "ui-menu--title-description",
-          "name": "Title Description",
+          "id": "ui-treemenu--deep-nested",
+          "name": "Deep Nested",
           "tags": [
             "dev",
             "test",
@@ -1387,8 +1532,8 @@
           ]
         },
         {
-          "id": "ui-menu--with-toggle-button",
-          "name": "With Toggle Button",
+          "id": "ui-treemenu--with-disabled",
+          "name": "With Disabled",
           "tags": [
             "dev",
             "test",
@@ -1396,8 +1541,8 @@
           ]
         },
         {
-          "id": "ui-menu--menu-positioning-in-container",
-          "name": "Menu Positioning In Container",
+          "id": "ui-treemenu--checkbox-with-badge",
+          "name": "Checkbox With Badge",
           "tags": [
             "dev",
             "test",
@@ -1405,8 +1550,8 @@
           ]
         },
         {
-          "id": "ui-menu--with-checkbox-mode",
-          "name": "With Checkbox Mode",
+          "id": "ui-treemenu--single-tree-menu-item",
+          "name": "Single Tree Menu Item",
           "tags": [
             "dev",
             "test",
@@ -1414,8 +1559,35 @@
           ]
         },
         {
-          "id": "ui-menu--with-radio-mode",
-          "name": "With Radio Mode",
+          "id": "ui-treemenu--controlled-expand-state",
+          "name": "Controlled Expand State",
+          "tags": [
+            "dev",
+            "test",
+            "autodocs"
+          ]
+        },
+        {
+          "id": "ui-treemenu--in-section",
+          "name": "In Section",
+          "tags": [
+            "dev",
+            "test",
+            "autodocs"
+          ]
+        },
+        {
+          "id": "ui-treemenu--draggable",
+          "name": "Draggable",
+          "tags": [
+            "dev",
+            "test",
+            "autodocs"
+          ]
+        },
+        {
+          "id": "ui-treemenu--draggable-long-list",
+          "name": "Draggable Long List",
           "tags": [
             "dev",
             "test",
@@ -1523,6 +1695,12 @@
           "required": false,
           "defaultValue": "vertical"
         },
+        "reserveLabelSpace": {
+          "type": "boolean",
+          "required": false,
+          "defaultValue": false,
+          "description": "FormGrid 내 무라벨 사용 시 라벨 높이만큼 빈 공간 유지 (정렬용)"
+        },
         "mode": {
           "type": [
             "base",
@@ -1574,7 +1752,7 @@
             "unchecked"
           ],
           "required": false,
-          "defaultValue": "RadioValue.UNCHECKED"
+          "defaultValue": "unchecked"
         },
         "interaction": {
           "type": [
@@ -1704,6 +1882,15 @@
         {
           "id": "ui-segment--disabled",
           "name": "Disabled",
+          "tags": [
+            "dev",
+            "test",
+            "autodocs"
+          ]
+        },
+        {
+          "id": "ui-segment--with-gap",
+          "name": "With Gap",
           "tags": [
             "dev",
             "test",
@@ -1857,6 +2044,15 @@
             "test",
             "autodocs"
           ]
+        },
+        {
+          "id": "ui-select--with-complex-options",
+          "name": "복합 옵션",
+          "tags": [
+            "dev",
+            "test",
+            "autodocs"
+          ]
         }
       ]
     },
@@ -1939,6 +2135,15 @@
         {
           "id": "ui-tab--disabled",
           "name": "Disabled",
+          "tags": [
+            "dev",
+            "test",
+            "autodocs"
+          ]
+        },
+        {
+          "id": "ui-tab--with-gap",
+          "name": "With Gap",
           "tags": [
             "dev",
             "test",
@@ -2253,7 +2458,7 @@
             "on"
           ],
           "required": false,
-          "defaultValue": "ToggleSwitchSelected.OFF"
+          "defaultValue": "off"
         },
         "onChange": {
           "type": "(event: ChangeEvent<HTMLInputElement>) => void",
@@ -2459,6 +2664,1151 @@
           ]
         }
       ]
+    },
+    "ActionBar": {
+      "displayName": "ActionBar",
+      "filePath": "packages/ui/src/components/ActionBar.tsx",
+      "category": "UI",
+      "props": {
+        "count": {
+          "type": "number",
+          "required": true,
+          "description": "선택된 항목 수 (필수)"
+        },
+        "visible": {
+          "type": "boolean",
+          "required": false,
+          "defaultValue": true,
+          "description": "표시/숨김 + 애니메이션"
+        },
+        "onClose": {
+          "type": "() => void",
+          "required": false,
+          "description": "X 버튼 클릭 콜백"
+        },
+        "selectionLabel": {
+          "type": "string",
+          "required": false,
+          "defaultValue": "개 선택됨",
+          "description": "i18n용 라벨 커스텀 (기본: '개 선택됨')"
+        },
+        "children": {
+          "type": "ReactNode",
+          "required": true,
+          "description": "액션 버튼들 (소비자가 Button ghost-inverse 직접 전달)"
+        },
+        "position": {
+          "type": [
+            "absolute",
+            "fixed"
+          ],
+          "required": false,
+          "defaultValue": "fixed"
+        }
+      },
+      "stories": []
+    },
+    "ChipGroup": {
+      "displayName": "ChipGroup",
+      "filePath": "packages/ui/src/components/ChipGroup.tsx",
+      "category": "UI",
+      "props": {
+        "size": {
+          "type": [
+            "md",
+            "sm"
+          ],
+          "required": false
+        },
+        "selectionType": {
+          "type": [
+            "single",
+            "multiple"
+          ],
+          "required": false,
+          "defaultValue": "multiple"
+        },
+        "defaultValue": {
+          "type": [
+            "string",
+            "string[]"
+          ],
+          "required": false
+        },
+        "disabled": {
+          "type": "boolean",
+          "required": false
+        },
+        "mode": {
+          "type": [
+            "base",
+            "compact"
+          ],
+          "required": false
+        },
+        "variant": {
+          "type": [
+            "no-scroll",
+            "scroll"
+          ],
+          "required": false
+        }
+      },
+      "stories": []
+    },
+    "DataGrid": {
+      "displayName": "DataGrid",
+      "filePath": "packages/ui/src/components/DataGrid/DataGrid.tsx",
+      "category": "UI",
+      "props": {
+        "rowData": {
+          "type": "any[]",
+          "required": true,
+          "description": "그리드에 표시할 행 데이터 배열"
+        },
+        "columnDefs": {
+          "type": "any[]",
+          "required": true,
+          "description": "컬럼 정의 배열"
+        },
+        "theme": {
+          "type": "any",
+          "required": false,
+          "defaultValue": "aplus",
+          "description": "그리드 테마 선택\n- 'aplus': Design Tokens 기반 커스텀 테마 (기본값, 권장)\n- 'quartz': AG Grid Quartz 테마\n- 'alpine': AG Grid Alpine 테마\n- 'balham': AG Grid Balham 테마\n- AgGridTheme: 직접 생성한 커스텀 테마 객체\n@example // 프리셋 사용\n<DataGrid theme=\"alpine\" />\n\n// 커스텀 테마 사용\nimport { createGridTheme } from '@aplus/ui';\nconst myTheme = createGridTheme('aplus', { accentColor: '#ff0000' });\n<DataGrid theme={myTheme} />"
+        },
+        "themeParams": {
+          "type": "any",
+          "required": false,
+          "description": "테마 파라미터 오버라이드 (theme이 프리셋일 때만 적용)\ntheme prop에 지정된 프리셋 테마에 추가 파라미터를 적용합니다\n@example <DataGrid\n  theme=\"aplus\"\n  themeParams={{ accentColor: '#10b981', rowHeight: 48 }}\n/>"
+        },
+        "height": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "required": false,
+          "defaultValue": 400,
+          "description": "그리드 높이"
+        },
+        "width": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "required": false,
+          "defaultValue": "100%",
+          "description": "그리드 너비"
+        },
+        "className": {
+          "type": "string",
+          "required": false,
+          "defaultValue": "",
+          "description": "추가 CSS 클래스명"
+        },
+        "pagination": {
+          "type": "boolean",
+          "required": false,
+          "defaultValue": false,
+          "description": "페이지네이션 활성화 여부"
+        },
+        "paginationPageSize": {
+          "type": "number",
+          "required": false,
+          "defaultValue": 10,
+          "description": "페이지당 행 수"
+        },
+        "paginationPageSizeSelector": {
+          "type": "number[]",
+          "required": false,
+          "defaultValue": "[10, 20, 50, 100]",
+          "description": "페이지 크기 선택 옵션"
+        },
+        "domLayout": {
+          "type": [
+            "normal",
+            "autoHeight",
+            "print"
+          ],
+          "required": false,
+          "defaultValue": "normal",
+          "description": "DOM 레이아웃 타입"
+        },
+        "rowSelection": {
+          "type": [
+            "single",
+            "multiple"
+          ],
+          "required": false,
+          "description": "행 선택 모드 (단일/다중)"
+        },
+        "enableFilter": {
+          "type": "boolean",
+          "required": false,
+          "defaultValue": true,
+          "description": "필터링 활성화 여부"
+        },
+        "enableSorting": {
+          "type": "boolean",
+          "required": false,
+          "defaultValue": true,
+          "description": "정렬 활성화 여부"
+        },
+        "quickFilterText": {
+          "type": "string",
+          "required": false,
+          "description": "빠른 필터 텍스트"
+        },
+        "loading": {
+          "type": "boolean",
+          "required": false,
+          "defaultValue": false,
+          "description": "로딩 상태"
+        },
+        "loadingOverlayComponent": {
+          "type": "string",
+          "required": false,
+          "description": "로딩 오버레이 컴포넌트"
+        },
+        "noRowsOverlayComponent": {
+          "type": "string",
+          "required": false,
+          "description": "데이터 없음 오버레이 컴포넌트"
+        },
+        "animateRows": {
+          "type": "boolean",
+          "required": false,
+          "defaultValue": true,
+          "description": "행 애니메이션 활성화 여부"
+        },
+        "autoGroupColumnDef": {
+          "type": "ColDef",
+          "required": false,
+          "description": "자동 그룹 컬럼 정의"
+        },
+        "editType": {
+          "type": "\"fullRow\"",
+          "required": false,
+          "description": "편집 타입"
+        },
+        "stopEditingWhenCellsLoseFocus": {
+          "type": "boolean",
+          "required": false,
+          "defaultValue": true,
+          "description": "셀 포커스 잃을 때 편집 중단 여부"
+        },
+        "cellSelection": {
+          "type": "boolean",
+          "required": false,
+          "defaultValue": false,
+          "description": "셀 선택 활성화 여부"
+        },
+        "enableCharts": {
+          "type": "boolean",
+          "required": false,
+          "defaultValue": false,
+          "description": "차트 기능 활성화 여부"
+        },
+        "onGridReady": {
+          "type": "(event: GridReadyEvent) => void",
+          "required": false,
+          "description": "그리드 준비 완료 이벤트"
+        },
+        "onSelectionChanged": {
+          "type": "(event: SelectionChangedEvent) => void",
+          "required": false,
+          "description": "선택 변경 이벤트"
+        },
+        "onCellClicked": {
+          "type": "(event: CellClickedEvent) => void",
+          "required": false,
+          "description": "셀 클릭 이벤트"
+        },
+        "onRowSelected": {
+          "type": "(event: RowSelectedEvent) => void",
+          "required": false,
+          "description": "행 선택 이벤트"
+        },
+        "onFilterChanged": {
+          "type": "(event: FilterChangedEvent) => void",
+          "required": false,
+          "description": "필터 변경 이벤트"
+        },
+        "onSortChanged": {
+          "type": "(event: SortChangedEvent) => void",
+          "required": false,
+          "description": "정렬 변경 이벤트"
+        },
+        "onCellValueChanged": {
+          "type": "(event: CellValueChangedEvent) => void",
+          "required": false,
+          "description": "셀 값 변경 이벤트"
+        },
+        "onColumnMoved": {
+          "type": "(event: ColumnMovedEvent) => void",
+          "required": false,
+          "description": "컬럼 이동 이벤트"
+        },
+        "onRowDataChanged": {
+          "type": "() => void",
+          "required": false,
+          "description": "행 데이터 변경 이벤트"
+        },
+        "getRowId": {
+          "type": "(params: GetRowIdParams) => string",
+          "required": false,
+          "description": "행 ID 생성 함수"
+        },
+        "getRowClass": {
+          "type": [
+            "(params: RowClassParams) => string",
+            "string[]"
+          ],
+          "required": false,
+          "description": "행 CSS 클래스 생성 함수"
+        },
+        "defaultColDef": {
+          "type": "ColDef",
+          "required": false,
+          "description": "모든 컬럼에 적용될 기본 속성"
+        },
+        "sideBar": {
+          "type": "any",
+          "required": false,
+          "defaultValue": false,
+          "description": "사이드바 설정 (필터, 컬럼 등)"
+        },
+        "maintainColumnOrder": {
+          "type": "boolean",
+          "required": false,
+          "defaultValue": true,
+          "description": "컬럼 순서를 유지합니다. true일 경우 컬럼을 드래그해도 원래 순서로 돌아갑니다."
+        },
+        "rowModelType": {
+          "type": [
+            "clientSide",
+            "infinite",
+            "viewport",
+            "serverSide"
+          ],
+          "required": false,
+          "defaultValue": "clientSide",
+          "description": "행 모델 타입"
+        },
+        "enableAdvancedFilter": {
+          "type": "boolean",
+          "required": false,
+          "description": "Advanced Filter 활성화 여부"
+        },
+        "showColumnMenu": {
+          "type": "boolean",
+          "required": false,
+          "defaultValue": false,
+          "description": "컬럼 헤더 메뉴 아이콘 표시 여부 (기본값: false)"
+        },
+        "cellVerticalAlign": {
+          "type": [
+            "top",
+            "center",
+            "bottom"
+          ],
+          "required": false,
+          "defaultValue": "center",
+          "description": "셀 세로 정렬 (기본값: 'center')"
+        },
+        "showRowLine": {
+          "type": "boolean",
+          "required": false,
+          "defaultValue": false,
+          "description": "행 가로선(Row Line) 표시 여부 (기본값: false)\ntrue: 행 사이 가로 구분선 표시\nfalse: 구분선 없이 깔끔한 형태"
+        },
+        "emptyValueDisplay": {
+          "type": [
+            "string",
+            "false"
+          ],
+          "required": false,
+          "defaultValue": "-",
+          "description": "빈 값(null/undefined/'') 표시 문자 (기본값: '-')\n데이터가 없는 셀에 표시할 문자를 지정합니다.\nfalse로 설정하면 빈 값 치환을 비활성화합니다."
+        },
+        "showColumnBorder": {
+          "type": "boolean",
+          "required": false,
+          "defaultValue": false,
+          "description": "셀 사이 세로선(Column Border) 표시 여부 (기본값: false)"
+        },
+        "showHeaderColumnBorder": {
+          "type": "boolean",
+          "required": false,
+          "defaultValue": true,
+          "description": "헤더 세로선 표시 여부 (기본값: true)"
+        },
+        "rowHeight": {
+          "type": "number",
+          "required": false,
+          "description": "행 높이 (기본값: 40)"
+        },
+        "headerHeight": {
+          "type": "number",
+          "required": false,
+          "description": "헤더 높이 (기본값: 42)"
+        },
+        "noRowsMessage": {
+          "type": "string",
+          "required": false,
+          "description": "데이터가 없을 때 표시할 메시지 (기본값: '표시할 데이터가 없습니다')"
+        },
+        "suppressRowClickSelection": {
+          "type": "boolean",
+          "required": false,
+          "description": "행 클릭 선택 억제"
+        },
+        "groupDisplayType": {
+          "type": [
+            "singleColumn",
+            "multipleColumns",
+            "groupRows",
+            "custom"
+          ],
+          "required": false,
+          "description": "그룹 표시 타입"
+        },
+        "groupDefaultExpanded": {
+          "type": "number",
+          "required": false,
+          "description": "그룹 기본 펼침 레벨"
+        },
+        "readOnlyEdit": {
+          "type": "boolean",
+          "required": false,
+          "description": "읽기 전용 편집"
+        },
+        "enableRangeSelection": {
+          "type": "boolean",
+          "required": false,
+          "description": "범위 선택 활성화"
+        },
+        "treeData": {
+          "type": "boolean",
+          "required": false,
+          "description": "트리 데이터 모드"
+        },
+        "enableCellTextSelection": {
+          "type": "boolean",
+          "required": false,
+          "description": "셀 텍스트 선택 활성화"
+        },
+        "getDataPath": {
+          "type": "(data: any) => string[]",
+          "required": false,
+          "description": "트리 데이터 경로 함수"
+        },
+        "suppressAggFuncInHeader": {
+          "type": "boolean",
+          "required": false,
+          "description": "집계 함수 헤더 억제"
+        },
+        "pinnedTopRowData": {
+          "type": "any[]",
+          "required": false,
+          "description": "상단 고정 행 데이터"
+        },
+        "pinnedBottomRowData": {
+          "type": "any[]",
+          "required": false,
+          "description": "하단 고정 행 데이터"
+        },
+        "context": {
+          "type": "any",
+          "required": false,
+          "description": "컨텍스트 객체"
+        },
+        "onRowDoubleClicked": {
+          "type": "(event: any) => void",
+          "required": false,
+          "description": "행 더블 클릭 이벤트"
+        },
+        "getRowStyle": {
+          "type": "(params: any) => any",
+          "required": false,
+          "description": "행 스타일 함수"
+        },
+        "rowGroupPanelShow": {
+          "type": [
+            "always",
+            "never",
+            "onlyWhenGrouping"
+          ],
+          "required": false,
+          "description": "행 그룹 패널 표시"
+        },
+        "aggFuncs": {
+          "type": "Record<string, (params: any) => any>",
+          "required": false,
+          "description": "사용자 정의 집계 함수"
+        },
+        "suppressMovableColumns": {
+          "type": "boolean",
+          "required": false,
+          "description": "컬럼 이동 억제"
+        }
+      },
+      "stories": []
+    },
+    "FilterBar": {
+      "displayName": "FilterBar",
+      "filePath": "packages/ui/src/components/FilterBar.tsx",
+      "category": "UI",
+      "props": {
+        "mode": {
+          "type": [
+            "base",
+            "compact"
+          ],
+          "required": false,
+          "defaultValue": "base"
+        },
+        "onReset": {
+          "type": "() => void",
+          "required": false,
+          "description": "초기화 버튼 클릭 콜백"
+        },
+        "onSearch": {
+          "type": "() => void",
+          "required": false,
+          "description": "조회하기 버튼 클릭 콜백"
+        },
+        "isLoading": {
+          "type": "boolean",
+          "required": false,
+          "defaultValue": false
+        },
+        "actionSpan": {
+          "type": [
+            "1",
+            "2"
+          ],
+          "required": false,
+          "defaultValue": 2,
+          "description": "액션 버튼 영역의 col-span (1 또는 2만 허용)"
+        },
+        "showReset": {
+          "type": "boolean",
+          "required": false,
+          "defaultValue": true
+        },
+        "showSearch": {
+          "type": "boolean",
+          "required": false,
+          "defaultValue": true
+        },
+        "resetLabel": {
+          "type": "string",
+          "required": false,
+          "defaultValue": "초기화"
+        },
+        "searchLabel": {
+          "type": "string",
+          "required": false,
+          "defaultValue": "조회하기"
+        }
+      },
+      "stories": []
+    },
+    "Icon": {
+      "displayName": "Icon",
+      "filePath": "packages/ui/src/components/Icon.tsx",
+      "category": "UI",
+      "props": {
+        "name": {
+          "type": [
+            "add",
+            "announcement",
+            "blank",
+            "calendar",
+            "check",
+            "chevron-down",
+            "chevron-left",
+            "chevron-right",
+            "chevron-up",
+            "close",
+            "delete",
+            "dot",
+            "edit",
+            "external",
+            "loading",
+            "minus",
+            "more-vert",
+            "reset",
+            "search",
+            "star-fill",
+            "star-line",
+            "dummy",
+            "all",
+            "arrow-drop-down",
+            "arrow-drop-up",
+            "arrow-right",
+            "error",
+            "filter-list",
+            "folder",
+            "folder-fill",
+            "format-align-center",
+            "format-align-left",
+            "format-align-right",
+            "format-bold",
+            "format-color-text",
+            "format-color-text-bg",
+            "format-italic",
+            "format-list-bulleted",
+            "format-list-numbered",
+            "format-underlined",
+            "help",
+            "image",
+            "info",
+            "keyboard-arrow-left",
+            "keyboard-arrow-right",
+            "keyboard-double-arrow-left",
+            "keyboard-double-arrow-right",
+            "link",
+            "menu",
+            "person",
+            "post",
+            "redo",
+            "success",
+            "table",
+            "undo",
+            "video",
+            "warning",
+            "widgets",
+            "dehaze",
+            "quick-mail",
+            "quick-webfex",
+            "quick-remote-support",
+            "quick-approval",
+            "quick-task-notification",
+            "quick-sms",
+            "quick-car-comparison",
+            "quick-it-request",
+            "quick-partners"
+          ],
+          "required": true
+        },
+        "size": {
+          "type": "number",
+          "required": false,
+          "defaultValue": 24
+        }
+      },
+      "stories": []
+    },
+    "LabelValue": {
+      "displayName": "LabelValue",
+      "filePath": "packages/ui/src/components/LabelValue.tsx",
+      "category": "UI",
+      "props": {
+        "size": {
+          "type": [
+            "md",
+            "sm"
+          ],
+          "required": false,
+          "defaultValue": "md"
+        },
+        "labelWidth": {
+          "type": [
+            "default",
+            "compact",
+            "wide"
+          ],
+          "required": false,
+          "defaultValue": "default"
+        },
+        "mode": {
+          "type": [
+            "compact",
+            "base"
+          ],
+          "required": false
+        },
+        "text": {
+          "type": "string",
+          "required": true
+        },
+        "className": {
+          "type": "string",
+          "required": false
+        },
+        "showLabel": {
+          "type": "boolean",
+          "required": true
+        },
+        "label": {
+          "type": "string",
+          "required": false
+        },
+        "showHelptext": {
+          "type": "boolean",
+          "required": true
+        },
+        "helptext": {
+          "type": "string",
+          "required": false
+        },
+        "showPrefix": {
+          "type": "boolean",
+          "required": true
+        },
+        "prefix": {
+          "type": "ReactNode",
+          "required": false
+        },
+        "showStartIcon": {
+          "type": "boolean",
+          "required": true
+        },
+        "startIcon": {
+          "type": "ReactNode",
+          "required": false
+        },
+        "showEndIcon": {
+          "type": "boolean",
+          "required": true
+        },
+        "endIcon": {
+          "type": "ReactNode",
+          "required": false
+        }
+      },
+      "stories": []
+    },
+    "LoadingSpinner": {
+      "displayName": "LoadingSpinner",
+      "filePath": "packages/ui/src/components/LoadingSpinner.tsx",
+      "category": "UI",
+      "props": {
+        "variant": {
+          "type": [
+            "primary",
+            "secondary",
+            "ghost",
+            "tertiary",
+            "destructive",
+            "secondary-destructive",
+            "ghost-inverse",
+            "ghost-destructive"
+          ],
+          "required": true
+        },
+        "size": {
+          "type": "number",
+          "required": false,
+          "defaultValue": 20
+        },
+        "componentType": {
+          "type": [
+            "button",
+            "iconButton"
+          ],
+          "required": false,
+          "defaultValue": "button"
+        }
+      },
+      "stories": []
+    },
+    "ModalStackProvider": {
+      "displayName": "ModalStackProvider",
+      "filePath": "packages/ui/src/components/ModalStackProvider.tsx",
+      "category": "UI",
+      "props": {
+        "baseZIndex": {
+          "type": "number",
+          "required": false,
+          "defaultValue": 40,
+          "description": "기본 z-index 시작값 (기본: 40)"
+        }
+      },
+      "stories": []
+    },
+    "SpacingModeProvider": {
+      "displayName": "SpacingModeProvider",
+      "filePath": "packages/ui/src/components/SpacingModeProvider.tsx",
+      "category": "UI",
+      "props": {
+        "mode": {
+          "type": [
+            "base",
+            "compact"
+          ],
+          "required": false,
+          "defaultValue": "base",
+          "description": "Spacing mode to apply to all child components"
+        }
+      },
+      "stories": []
+    },
+    "TagGroup": {
+      "displayName": "TagGroup",
+      "filePath": "packages/ui/src/components/TagGroup.tsx",
+      "category": "UI",
+      "props": {
+        "maxVisibleTags": {
+          "type": "number",
+          "required": false,
+          "defaultValue": "Infinity (모든 태그 표시)\n\n⚠️ **엣지 케이스 처리**:\n- `0` 이하의 값은 자동으로 `1`로 조정됩니다.",
+          "description": "`layout=\"collapsible\"` 모드에서 처음에 보여줄 태그 개수\n\n지정한 개수를 초과하는 태그는 \"+N\" 버튼 뒤에 숨겨지며,\n사용자가 버튼을 클릭하면 모든 태그를 펼쳐서 볼 수 있습니다."
+        },
+        "layout": {
+          "type": [
+            "collapsible",
+            "horizontalScroll",
+            "inline",
+            "wrap"
+          ],
+          "required": false
+        },
+        "mode": {
+          "type": [
+            "base",
+            "compact"
+          ],
+          "required": false
+        }
+      },
+      "stories": []
+    },
+    "TitleSection": {
+      "displayName": "TitleSection",
+      "filePath": "packages/ui/src/components/TitleSection.tsx",
+      "category": "UI",
+      "props": {
+        "title": {
+          "type": "string",
+          "required": false,
+          "description": "Figma: Title — 페이지 제목 (h1) = breadcrumb 마지막 항목 (항상 Menu1)"
+        },
+        "children": {
+          "type": "ReactNode",
+          "required": false,
+          "description": "우측 Actions 영역"
+        },
+        "mode": {
+          "type": [
+            "base",
+            "compact"
+          ],
+          "required": false
+        },
+        "showMenu2": {
+          "type": "boolean",
+          "required": false,
+          "defaultValue": true
+        },
+        "showMenu3": {
+          "type": "boolean",
+          "required": false,
+          "defaultValue": true
+        },
+        "showMenu4": {
+          "type": "boolean",
+          "required": false,
+          "defaultValue": false
+        },
+        "menu2": {
+          "type": "string",
+          "required": false,
+          "description": "Figma: Menu2 — Title 바로 위 상위 경로"
+        },
+        "menu3": {
+          "type": "string",
+          "required": false,
+          "description": "Figma: Menu3 — Menu2 위 상위 경로"
+        },
+        "menu4": {
+          "type": "string",
+          "required": false,
+          "description": "Figma: Menu4 — Menu3 위 최상위 경로"
+        },
+        "showBreadcrumb": {
+          "type": "boolean",
+          "required": false,
+          "defaultValue": true,
+          "description": "Figma: Show Breadcrumb — Breadcrumb 섹션 표시 여부"
+        },
+        "favorite": {
+          "type": "boolean",
+          "required": false,
+          "description": "Figma: favorite — 즐겨찾기 별 아이콘 표시 상태"
+        },
+        "onFavoriteChange": {
+          "type": "(favorite: boolean) => void",
+          "required": false,
+          "description": "즐겨찾기 토글 콜백"
+        }
+      },
+      "stories": []
+    },
+    "TreeMenu": {
+      "displayName": "TreeMenu",
+      "filePath": "packages/ui/src/components/TreeMenu.tsx",
+      "category": "UI",
+      "props": {
+        "size": {
+          "type": [
+            "md",
+            "sm"
+          ],
+          "required": false,
+          "description": "트리 메뉴 사이즈"
+        },
+        "items": {
+          "type": [
+            "TreeMenuItemDataSm[]",
+            "TreeMenuItemDataMd[]"
+          ],
+          "required": true,
+          "description": "트리 메뉴 아이템 데이터 (SM)\n트리 메뉴 아이템 데이터 (MD)"
+        },
+        "onItemClick": {
+          "type": [
+            "((item: TreeMenuItemDataSm) => void)",
+            "((item: TreeMenuItemDataMd) => void)"
+          ],
+          "required": false,
+          "description": "아이템 클릭 핸들러 (SM)\n아이템 클릭 핸들러 (MD)"
+        },
+        "defaultExpandedIds": {
+          "type": "Set<string>",
+          "required": false,
+          "description": "초기 펼침 상태 - Uncontrolled 모드 (기본: 모두 닫힘)"
+        },
+        "expandedIds": {
+          "type": "Set<string>",
+          "required": false,
+          "description": "현재 펼침 상태 - Controlled 모드"
+        },
+        "onExpandChange": {
+          "type": "(expandedIds: Set<string>) => void",
+          "required": false,
+          "description": "펼침 상태 변경 콜백 - Controlled 모드에서 필수"
+        },
+        "onExpandToggle": {
+          "type": "(id: string, isExpanded: boolean) => void",
+          "required": false,
+          "description": "단일 아이템 토글 콜백 (디버깅/로깅용, 선택적)"
+        },
+        "defaultSelectedId": {
+          "type": "string",
+          "required": false,
+          "description": "초기 선택 아이템 ID - Uncontrolled 모드"
+        },
+        "selectedId": {
+          "type": "string",
+          "required": false,
+          "description": "현재 선택 아이템 ID - Controlled 모드"
+        },
+        "onSelectedChange": {
+          "type": "(selectedId: string) => void",
+          "required": false,
+          "description": "선택 상태 변경 콜백"
+        },
+        "draggable": {
+          "type": "boolean",
+          "required": false,
+          "description": "드래그 앤 드롭 활성화"
+        },
+        "onItemMove": {
+          "type": "(draggedItemId: string, targetItemId: string, position: DropPosition) => void",
+          "required": false,
+          "description": "아이템 이동 콜백 - 드래그 앤 드롭 완료 시 호출"
+        },
+        "checkboxMode": {
+          "type": "boolean",
+          "required": false,
+          "description": "체크박스 모드 활성화 (MD only)"
+        },
+        "checkedIds": {
+          "type": "Set<string>",
+          "required": false,
+          "description": "체크된 아이템 ID Set (MD only)"
+        },
+        "onCheckChange": {
+          "type": "(id: string, checked: boolean, affectedIds: string[]) => void",
+          "required": false,
+          "description": "체크 상태 변경 핸들러 (부모-자식 연동 로직 포함, MD only)"
+        }
+      },
+      "stories": []
+    },
+    "FormGrid": {
+      "displayName": "FormGrid",
+      "filePath": "packages/ui/src/layout/FormGrid.tsx",
+      "category": "Layout",
+      "props": {
+        "columns": {
+          "type": [
+            "2",
+            "1",
+            "3",
+            "4"
+          ],
+          "required": false
+        },
+        "title": {
+          "type": "string",
+          "required": false
+        }
+      },
+      "stories": []
+    },
+    "FormGridCell": {
+      "displayName": "FormGridCell",
+      "filePath": "packages/ui/src/layout/FormGrid.tsx",
+      "category": "Layout",
+      "props": {
+        "colSpan": {
+          "type": [
+            "2",
+            "1",
+            "3",
+            "4"
+          ],
+          "required": false,
+          "defaultValue": 1
+        },
+        "align": {
+          "type": [
+            "start",
+            "center",
+            "end"
+          ],
+          "required": false,
+          "description": "셀의 수직 정렬 (기본: FormGrid의 items-start 상속)"
+        }
+      },
+      "stories": []
+    },
+    "GridLayout": {
+      "displayName": "GridLayout",
+      "filePath": "packages/ui/src/layout/GridLayout.tsx",
+      "category": "Layout",
+      "props": {
+        "type": {
+          "type": [
+            "A",
+            "B",
+            "C",
+            "C-2",
+            "D",
+            "D-2",
+            "E",
+            "F",
+            "G",
+            "H"
+          ],
+          "required": false,
+          "defaultValue": "A"
+        },
+        "className": {
+          "type": "string",
+          "required": false
+        },
+        "gap": {
+          "type": "string",
+          "required": false
+        }
+      },
+      "stories": []
+    },
+    "RowPattern": {
+      "displayName": "RowPattern",
+      "filePath": "packages/ui/src/layout/RowPattern.tsx",
+      "category": "Layout",
+      "props": {
+        "pattern": {
+          "type": [
+            "RP-1",
+            "RP-2",
+            "RP-3",
+            "RP-4",
+            "RP-5",
+            "RP-6",
+            "RP-7",
+            "RP-8"
+          ],
+          "required": false
+        },
+        "className": {
+          "type": "string",
+          "required": false
+        }
+      },
+      "stories": []
+    },
+    "RowSlot": {
+      "displayName": "RowSlot",
+      "filePath": "packages/ui/src/layout/RowPattern.tsx",
+      "category": "Layout",
+      "props": {
+        "slot": {
+          "type": [
+            "filter",
+            "actions",
+            "grid",
+            "detail",
+            "form",
+            "summary",
+            "navigation",
+            "section",
+            "info",
+            "tab"
+          ],
+          "required": true
+        },
+        "className": {
+          "type": "string",
+          "required": false
+        }
+      },
+      "stories": []
+    },
+    "SectionColumnProvider": {
+      "displayName": "SectionColumnProvider",
+      "filePath": "packages/ui/src/layout/SectionColumnProvider.tsx",
+      "category": "Layout",
+      "props": {
+        "columnSize": {
+          "type": [
+            "2",
+            "3",
+            "4",
+            "6",
+            "8",
+            "9",
+            "12"
+          ],
+          "required": true
+        },
+        "gridType": {
+          "type": [
+            "A",
+            "B",
+            "C",
+            "C-2",
+            "D",
+            "D-2",
+            "E",
+            "F",
+            "G",
+            "H"
+          ],
+          "required": true
+        },
+        "sectionIndex": {
+          "type": "number",
+          "required": true
+        }
+      },
+      "stories": []
     }
   }
 }
