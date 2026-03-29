@@ -19,7 +19,7 @@ yarn.lock
 # ========================================
 dist/*
 !dist/component-schema.json
-!dist/component-schema.slim.json
+
 dist-ssr/
 build/
 out/
