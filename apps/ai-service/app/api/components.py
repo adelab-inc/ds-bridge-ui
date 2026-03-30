@@ -1033,11 +1033,12 @@ Drawer는 Compound 패턴입니다. 반드시 `Drawer.Header`, `Drawer.Body`, `D
 - ❌ `<Checkbox label="동의합니다" />` — label prop 없음
 
 ### IconButton
-- iconOnly={<Icon name="..." size={20} />}
-- iconButtonType="ghost"|"ghost-destructive"
-- tooltip="설명" (Tooltip 래핑 불필요)
+- icon={<Icon name="..." size={20} />} (required)
+- variant="ghost"|"ghost-destructive"|"secondary"|"tertiary"
+- size="lg"|"md"|"sm"
 - interaction="disabled"|"loading"
-- ✅ `<IconButton iconOnly={<Icon name="search" size={20} />} iconButtonType="ghost" size="md" aria-label="검색" tooltip="검색" />`
+- ✅ `<IconButton icon={<Icon name="search" size={20} />} variant="ghost" size="md" />`
+- ❌ `<IconButton iconOnly={...} iconButtonType="ghost" />` — iconOnly, iconButtonType prop 없음
 
 ### ActionBar
 - DataGrid/리스트 선택 시 플로팅 액션바
@@ -1134,7 +1135,8 @@ Drawer는 Compound 패턴입니다. 반드시 `Drawer.Header`, `Drawer.Body`, `D
 - **✅ Icon 컴포넌트 사용**: `<Icon name="search" size={20} />` — `@aplus/ui`의 내장 아이콘만 사용
   - Icon size별 용도: 16=Button sm, 18=Checkbox/Radio, 20=Button md/IconButton/Select, 24=IconButton lg
   - 주요 아이콘: add, arrow-right, blank, calendar, check, chevron-down, close, delete, edit, external, filter-list, info, search, settings, star-fill, star-line, undo, redo, widgets
-- **✅ IconButton**: 아이콘만 있는 버튼: `<IconButton iconOnly={{<Icon name="search" size={{20}} />}} iconButtonType="ghost" tooltip="검색" />`
+- **✅ IconButton**: 아이콘만 있는 버튼: `<IconButton icon={<Icon name="search" size={20} />} variant="ghost" />`
+- **❌ IconButton 잘못된 예시**: `<IconButton iconOnly={...} iconButtonType="ghost" />` — iconOnly, iconButtonType은 존재하지 않는 prop
 - **✅ Button 아이콘**: `<Button buttonType="outline" label="다운로드" showStartIcon={{true}} startIcon={{<Icon name="external" size={{16}} />}} showEndIcon={{false}} />`
 - **Profile images**: Initial Avatar — colored circle with first character
   - `<div className="w-10 h-10 rounded-full bg-[#0033a0] text-white flex items-center justify-center font-semibold text-sm">{{name.charAt(0)}}</div>`
@@ -1832,9 +1834,10 @@ DESCRIPTION_SYSTEM_PROMPT = """\
 1. 마크다운 제목 계층: # (파트) > ## (섹션) > ### ■ (소섹션) > - (불릿)
 2. 대단원(## 섹션) 사이에는 반드시 구분선(---)을 넣으세요.
 3. 불릿 항목에 볼드(**text**)를 절대 사용하지 마세요. plain text만 사용하세요.
-4. 코드 수준의 상세(함수명, 변수명, CSS 클래스, 색상코드, 디자인 토큰명, 픽셀값 등)를 절대 포함하지 마세요.
-   - 잘못된 예: handleSearch 함수를 통해..., suppressMovable: true, 배경색(#f4f6f8), bg/disabled, 8px 라운드
+4. 코드 수준의 상세(함수명, 변수명, CSS 클래스, 색상코드, 디자인 토큰명, 픽셀값, 영문 필드명 등)를 절대 포함하지 마세요.
+   - 잘못된 예: handleSearch 함수를 통해..., suppressMovable: true, 배경색(#f4f6f8), bg/disabled, 8px 라운드, orgName, hqName
    - 올바른 예: 조회 버튼 클릭 시 조건 기반 재조회, 컬럼 이동 불가, 배경색 회색 계열
+   - 그리드 컬럼 테이블의 "컬럼명" 열에도 영문 camelCase 필드명을 사용하지 마세요. 한글 표시명만 사용하세요.
 5. 코드에 해당 요소가 없으면 해당 섹션은 통째로 생략하세요.
 6. 테이블(표)은 마크다운 테이블 문법을 사용하세요.
 
@@ -1930,9 +1933,9 @@ DESCRIPTION_SYSTEM_PROMPT = """\
 
 ### ■ (항목명) 코드 목록
 
-| 표시 텍스트 | 코드값 | 정렬순서 | 비고 |
-|-----------|--------|---------|------|
-| (사용자에게 보이는 텍스트) | (시스템 내부 코드) | (숫자) | (기본 선택값 등) |
+| 표시 텍스트 | 정렬순서 | 비고 |
+|-----------|---------|------|
+| (사용자에게 보이는 텍스트) | (숫자) | (기본 선택값 등) |
 
 ---
 
@@ -1942,9 +1945,9 @@ DESCRIPTION_SYSTEM_PROMPT = """\
 
 ### ■ 목록 컬럼 정의
 
-| No | 컬럼명 | 표시명 | 정렬 | 너비 | 비고 |
-|----|--------|-------|------|------|------|
-| 1 | (필드명) | (헤더 텍스트) | 좌/중/우 | (비율) | (클릭 동작, 포맷 등) |
+| No | 표시명 | 정렬 | 너비 | 비고 |
+|----|-------|------|------|------|
+| 1 | (헤더 텍스트) | 좌/중/우 | (비율) | (클릭 동작, 포맷 등) |
 
 ### ■ 목록 동작
 
@@ -2135,7 +2138,11 @@ DESCRIPTION_SYSTEM_PROMPT = """\
 9. 권한별 차이가 있는 UI는 ※ 표기로 조건 명시
 10. 불릿 항목에 볼드(**text**)를 절대 사용하지 마세요
 11. 색상은 자연어로만 표현 (헥스코드, 디자인 토큰, 픽셀값 절대 사용 금지)
-12. Part 2, Part 3는 코드에서 해당 내용이 확인되는 경우에만 작성하고, 추측으로 채우지 마세요
+12. Part 2, Part 3는 코드에서 해당 내용이 확인되는 경우에만 작성하고, 추측으로 채우지 마세요. 유효성 체크, 오류 메시지, 접근 권한 등은 코드에 실제 구현(조건문, try-catch, 권한 분기 등)이 있을 때만 기술하세요. 코드에 없는 업무 규칙을 추론하여 작성하지 마세요. 코드에 에러 처리 로직이 없으면 오류/예외 처리 섹션 자체를 생략하세요
+13. 필터바에 초기화/조회 버튼이 있으면 버튼 그룹에 반드시 포함하세요. 드로어/다이얼로그 내부의 버튼(초기화, 조회, 선택, 취소, 닫기 등)도 빠짐없이 기술하세요. 타이틀 영역의 보조 버튼(즐겨찾기, 새로고침 등)도 포함하세요
+14. [중요] 모든 그리드(메인, 드로어, 다이얼로그 포함)의 컬럼은 반드시 마크다운 테이블로 작성하고, 1컬럼 = 1행으로 개별 나열하세요. 불릿(-)이나 서술형으로 컬럼을 설명하지 마세요. "보플 ~ 기타", "접촉 상세 항목", "업적현황 항목들" 등으로 여러 컬럼을 묶거나 압축하는 것을 절대 금지합니다. 드로어 내부 그리드도 메인 그리드와 동일한 | No | 표시명 | 정렬 | ... | 테이블 형식으로 모든 컬럼을 나열하세요
+15. 팝업/다이얼로그 내부에 결과 테이블이 있는 경우, 해당 테이블의 컬럼도 별도 정의 테이블로 작성하세요
+16. 출력 마지막에 "작성 규칙 준수 확인" 같은 자체 검증 문구를 추가하지 마세요. 명세서 본문만 작성하세요
 
 ---
 
@@ -2234,20 +2241,20 @@ DESCRIPTION_SYSTEM_PROMPT = """\
 
 ### ■ 한도 코드 목록
 
-| 표시 텍스트 | 코드값 | 정렬순서 | 비고 |
-|-----------|--------|---------|------|
-| 전체 | all | 1 | 기본 선택값 |
-| 회사 | company | 2 | - |
-| 부서 | department | 3 | - |
-| 개인 | personal | 4 | - |
+| 표시 텍스트 | 정렬순서 | 비고 |
+|-----------|---------|------|
+| 전체 | 1 | 기본 선택값 |
+| 회사 | 2 | - |
+| 부서 | 3 | - |
+| 개인 | 4 | - |
 
 ### ■ 신청/승인 코드 목록
 
-| 표시 텍스트 | 코드값 | 정렬순서 | 비고 |
-|-----------|--------|---------|------|
-| 전체 | all | 1 | 기본 선택값 |
-| 신청 | applied | 2 | - |
-| 승인 | approved | 3 | - |
+| 표시 텍스트 | 정렬순서 | 비고 |
+|-----------|---------|------|
+| 전체 | 1 | 기본 선택값 |
+| 신청 | 2 | - |
+| 승인 | 3 | - |
 
 ---
 
@@ -2255,21 +2262,21 @@ DESCRIPTION_SYSTEM_PROMPT = """\
 
 ### ■ 메인 테이블 컬럼 정의
 
-| No | 컬럼명 | 표시명 | 정렬 | 너비 | 비고 |
-|----|--------|-------|------|------|------|
-| 1 | checkbox | - | 중 | - | 행 선택 체크박스 |
-| 2 | rowNumber | 번호 | 중 | - | 자동 순번 |
-| 3 | status | 상태 | 중 | - | 배지 (신청/승인) |
-| 4 | category | 구분 | 좌 | - | 개인/회사 |
-| 5 | dzonCode | 더존코드 | 중 | - | 네 자리 숫자 형식 |
-| 6 | deptOrPerson | 부서/개인 | 좌 | - | - |
-| 7 | budgetMonth | 예산년월 | 중 | - | YYYY-MM |
-| 8 | summary | 적요 | 좌 | - | - |
-| 9 | amount | 금액 | 우 | - | 천 단위 쉼표 |
-| 10 | regDate | 등록일 | 중 | - | YYYY-MM-DD |
-| 11 | regUser | 등록자 | 좌 | - | - |
-| 12 | approver | 승인자 | 좌 | - | - |
-| 13 | approvedAt | 승인일시 | 중 | - | YYYY-MM-DD HH:MM:SS |
+| No | 표시명 | 정렬 | 너비 | 비고 |
+|----|-------|------|------|------|
+| 1 | - | 중 | - | 행 선택 체크박스 |
+| 2 | 번호 | 중 | - | 자동 순번 |
+| 3 | 상태 | 중 | - | 배지 (신청/승인) |
+| 4 | 구분 | 좌 | - | 개인/회사 |
+| 5 | 더존코드 | 중 | - | 네 자리 숫자 형식 |
+| 6 | 부서/개인 | 좌 | - | - |
+| 7 | 예산년월 | 중 | - | YYYY-MM |
+| 8 | 적요 | 좌 | - | - |
+| 9 | 금액 | 우 | - | 천 단위 쉼표 |
+| 10 | 등록일 | 중 | - | YYYY-MM-DD |
+| 11 | 등록자 | 좌 | - | - |
+| 12 | 승인자 | 좌 | - | - |
+| 13 | 승인일시 | 중 | - | YYYY-MM-DD HH:MM:SS |
 
 ### ■ 목록 동작
 
@@ -2361,17 +2368,17 @@ DESCRIPTION_SYSTEM_PROMPT = """\
 
 #### 개인마감 테이블
 
-| No | 컬럼명 | 표시명 | 정렬 | 너비 | 비고 |
-|----|--------|-------|------|------|------|
-| 1 | rowNumber | 번호 | 중 | - | 자동 순번 |
-| 2 | category | 구분 | 좌 | - | 개인/부서 |
-| 3 | status | 상태 | 중 | - | -/마감(예산마감일) |
-| 4 | dzonCode | 더존코드 | 중 | - | 네 자리 숫자 형식 |
-| 5 | deptOrPerson | 부서/개인 | 좌 | - | 해당 예산년월·더존코드 매칭 |
-| 6 | totalLimit | 총한도 | 우 | - | 천 단위 쉼표 |
-| 7 | usedLimit | 사용한도 | 우 | - | 천 단위 쉼표 |
-| 8 | remainLimit | 잔여한도 | 우 | - | 자동 계산(총한도-사용한도), 천 단위 쉼표 |
-| 9 | summary | 적요 | 좌 | - | - |
+| No | 표시명 | 정렬 | 너비 | 비고 |
+|----|-------|------|------|------|
+| 1 | 번호 | 중 | - | 자동 순번 |
+| 2 | 구분 | 좌 | - | 개인/부서 |
+| 3 | 상태 | 중 | - | -/마감(예산마감일) |
+| 4 | 더존코드 | 중 | - | 네 자리 숫자 형식 |
+| 5 | 부서/개인 | 좌 | - | 해당 예산년월·더존코드 매칭 |
+| 6 | 총한도 | 우 | - | 천 단위 쉼표 |
+| 7 | 사용한도 | 우 | - | 천 단위 쉼표 |
+| 8 | 잔여한도 | 우 | - | 자동 계산(총한도-사용한도), 천 단위 쉼표 |
+| 9 | 적요 | 좌 | - | - |
 
 #### 버튼
 
