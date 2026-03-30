@@ -2,6 +2,7 @@ import json
 import logging
 import time
 
+from app.core.config import get_settings
 from app.services.supabase_db import get_supabase_client
 
 logger = logging.getLogger(__name__)
@@ -11,19 +12,19 @@ logger = logging.getLogger(__name__)
 # Bucket Mapping
 # ============================================================================
 
-BUCKET_PREFIXES: dict[str, str] = {
-    "exports/": "exports",
-    "user_uploads/": "user-uploads",
-}
-
 
 def _resolve_bucket_and_path(storage_path: str) -> tuple[str, str]:
     """스토리지 경로를 (bucket_name, path_within_bucket)으로 분리"""
-    for prefix, bucket in BUCKET_PREFIXES.items():
+    settings = get_settings()
+    bucket_prefixes: dict[str, str] = {
+        "exports/": settings.storage_bucket_exports,
+        "user_uploads/": settings.storage_bucket_uploads,
+    }
+    for prefix, bucket in bucket_prefixes.items():
         if storage_path.startswith(prefix):
             return bucket, storage_path[len(prefix):]
     # Default to exports bucket
-    return "exports", storage_path
+    return settings.storage_bucket_exports, storage_path
 
 
 # ============================================================================

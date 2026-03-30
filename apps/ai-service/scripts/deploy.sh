@@ -187,6 +187,10 @@ deploy_simple() {
     [ -n "${SUPABASE_URL}" ] && ENV_VARS="${ENV_VARS}@SUPABASE_URL=${SUPABASE_URL}"
     [ -n "${SUPABASE_SERVICE_ROLE_KEY}" ] && ENV_VARS="${ENV_VARS}@SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}"
 
+    # Storage bucket names (prod)
+    ENV_VARS="${ENV_VARS}@STORAGE_BUCKET_UPLOADS=user-uploads"
+    ENV_VARS="${ENV_VARS}@STORAGE_BUCKET_EXPORTS=exports"
+
     gcloud run deploy "${SERVICE_NAME}" \
         --image "${IMAGE_NAME}:latest" \
         --platform managed \
