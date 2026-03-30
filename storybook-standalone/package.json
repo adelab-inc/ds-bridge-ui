@@ -17,6 +17,7 @@
     "build:ui": "turbo build --filter=@aplus/ui",
     "build:validator": "pnpm --filter storybook-validator build",
     "schema:extract": "tsx scripts/extract-component-schema.ts",
+    "ag-grid:extract": "tsx scripts/extract-ag-grid-tokens.ts",
     "lint": "turbo lint",
     "test": "turbo test",
     "type-check": "turbo type-check",
