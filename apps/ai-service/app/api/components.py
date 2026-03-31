@@ -1032,13 +1032,15 @@ Drawer는 Compound 패턴입니다. 반드시 `Drawer.Header`, `Drawer.Body`, `D
 - ✅ `<Option label="동의합니다"><Checkbox value="unchecked" onChange={fn} /></Option>`
 - ❌ `<Checkbox label="동의합니다" />` — label prop 없음
 
-### IconButton
-- icon={<Icon name="..." size={20} />} (required)
-- variant="ghost"|"ghost-destructive"|"secondary"|"tertiary"
+### IconButton (⚠️ Button과 prop이 다름!)
+- **iconOnly={<Icon name="..." size={20} />}** ← 필수! 아이콘 전달 prop
+- **iconButtonType="ghost"|"ghost-destructive"|"secondary"|"tertiary"**
 - size="lg"|"md"|"sm"
 - interaction="disabled"|"loading"
-- ✅ `<IconButton icon={<Icon name="search" size={20} />} variant="ghost" size="md" />`
-- ❌ `<IconButton iconOnly={...} iconButtonType="ghost" />` — iconOnly, iconButtonType prop 없음
+- aria-label="설명" ← 필수! 접근성 라벨
+- tooltip="툴팁 텍스트" ← 선택
+- ✅ `<IconButton iconOnly={<Icon name="search" size={20} />} iconButtonType="ghost" size="md" aria-label="검색" />`
+- ✅ `<IconButton iconOnly={<Icon name="more-vert" size={20} />} iconButtonType="tertiary" size="md" aria-label="더보기" />`
 
 ### ActionBar
 - DataGrid/리스트 선택 시 플로팅 액션바
@@ -1133,10 +1135,16 @@ Drawer는 Compound 패턴입니다. 반드시 `Drawer.Header`, `Drawer.Body`, `D
 - **⛔ NEVER use emoji as icons** (🔍, ⭐, 📁, 👤) — unprofessional
 - **⛔ NEVER use inline SVG** (`<svg>`) — 코드가 불필요하게 길어짐
 - **✅ Icon 컴포넌트 사용**: `<Icon name="search" size={20} />` — `@aplus/ui`의 내장 아이콘만 사용
-  - Icon size별 용도: 16=Button sm, 18=Checkbox/Radio, 20=Button md/IconButton/Select, 24=IconButton lg
-  - 주요 아이콘: add, arrow-right, blank, calendar, check, chevron-down, close, delete, edit, external, filter-list, info, search, settings, star-fill, star-line, undo, redo, widgets
-- **✅ IconButton**: 아이콘만 있는 버튼: `<IconButton icon={<Icon name="search" size={20} />} variant="ghost" />`
-- **❌ IconButton 잘못된 예시**: `<IconButton iconOnly={...} iconButtonType="ghost" />` — iconOnly, iconButtonType은 존재하지 않는 prop
+  - ⚠️ **size별 사용 가능한 아이콘이 다름!** 존재하지 않는 조합은 "Icon not found" 에러 발생
+  - **size={20} (기본, 58개)**: add, all, arrow-drop-down, arrow-drop-up, arrow-right, blank, calendar, check, chevron-down, chevron-left, chevron-right, chevron-up, close, delete, dot, edit, error, external, filter-list, folder, folder-fill, format-align-center, format-align-left, format-align-right, format-bold, format-color-text, format-color-text-bg, format-italic, format-list-bulleted, format-list-numbered, format-underlined, help, image, info, keyboard-arrow-left, keyboard-arrow-right, keyboard-double-arrow-left, keyboard-double-arrow-right, link, loading, menu, minus, more-vert, person, post, redo, reset, search, star-fill, star-line, success, table, undo, video, warning, widgets
+  - **size={16} (23개)**: add, announcement, blank, calendar, check, chevron-down, chevron-left, chevron-right, chevron-up, close, delete, dot, edit, external, loading, minus, more-vert, reset, search, star-fill, star-line
+  - **size={24} (21개)**: add, all, arrow-drop-down, arrow-drop-up, blank, chevron-down, chevron-left, chevron-right, close, dehaze, delete, edit, filter-list, loading, menu, more-vert, person, post, search, star-fill, star-line, widgets
+  - **size={18} (6개만!)**: add, chevron-down, chevron-left, chevron-right, chevron-up, dummy — ⚠️ 거의 사용하지 말 것!
+  - 🔑 **규칙**: 아이콘 사용 시 반드시 해당 size에 존재하는 이름인지 위 목록에서 확인. 확실하지 않으면 **size={20}** 사용
+- **✅ IconButton**: 아이콘만 있는 버튼 — `iconOnly` prop과 `iconButtonType` prop 사용:
+  - `<IconButton iconOnly={<Icon name="search" size={20} />} iconButtonType="ghost" aria-label="검색" />`
+  - `<IconButton iconOnly={<Icon name="more-vert" size={20} />} iconButtonType="tertiary" size="md" aria-label="더보기" />`
+  - ⚠️ IconButton prop은 Button과 다름: `iconOnly=`, `iconButtonType=`, `aria-label=` 필수
 - **✅ Button 아이콘**: `<Button buttonType="outline" label="다운로드" showStartIcon={{true}} startIcon={{<Icon name="external" size={{16}} />}} showEndIcon={{false}} />`
 - **Profile images**: Initial Avatar — colored circle with first character
   - `<div className="w-10 h-10 rounded-full bg-[#0033a0] text-white flex items-center justify-center font-semibold text-sm">{{name.charAt(0)}}</div>`
@@ -1152,12 +1160,13 @@ Drawer는 Compound 패턴입니다. 반드시 `Drawer.Header`, `Drawer.Body`, `D
    - ❌ NEVER import types (HTMLInputElement, ChangeEvent, MouseEvent) — define inline
    - Unused imports = CRASH, Missing imports = CRASH
    - ✅ 확인 방법: JSX에서 `<ComponentName`으로 사용한 모든 컴포넌트가 import 문에 있는지 최종 점검
+   - ⛔ NEVER define custom components (`const Divider = ...`, `const Card = ...`) when same-name component exists in Available Components — import해서 사용! 직접 정의 시 런타임 충돌(SyntaxError: Identifier already declared)
 2. **REACT**: `React.useState`, `React.useEffect` directly (no import needed)
 3. **STYLING**: Tailwind CSS only (`className="..."`). `style={{{{}}}}` ONLY for dynamic JS variable values. No custom CSS.
 4. **NO EXTERNAL LIBS**: ⛔ NEVER import lucide-react, heroicons, material-icons, react-icons, framer-motion — NOT INSTALLED, WILL CRASH. No icons — use text only.
 5. **ENUM PROPS**: Match context — NEVER use the same size/variant for every component on a page
    - 페이지 헤더 버튼: `size="md"`, 필터 조회 버튼: `size="md"`, DataGrid 내부: `size="sm"`, 폼 제출: `size="lg"`
-   - Button: `buttonType` prop 사용 (❌ `variant` 금지), `label` prop (❌ `children` 금지)
+   - Button: `buttonType` prop 사용 (❌ `variant` 금지). IconButton: `iconButtonType` prop 사용 (❌ `buttonType` 금지), `iconOnly` prop 사용, `aria-label` 필수. Button은 `label` prop (❌ `children` 금지)
    - Badge 상태: 성공="success", 실패="error", 대기="warning"
    - ❌ 모든 Button에 동일한 size 적용 금지 — 위치마다 다르게 설정
 7. **ZERO OMISSION**: If user asks for 5 fields, implement ALL 5. Missing features = FAILURE.
@@ -1363,12 +1372,13 @@ PRE_GENERATION_CHECKLIST = """
 2. **Whitelist**: 사용한 컴포넌트가 모두 Available Components에 있는가?
 3. **Import 완전성**: JSX에서 `<ComponentName`으로 사용한 모든 컴포넌트가 import에 포함되어 있는가? (Icon 포함) 누락된 import = ReferenceError CRASH.
 4. **Complete output**: `...` 이나 `// 나머지 동일` 같은 생략이 없는가?
-5. **buttonType 확인**: `variant=` 를 사용하지 않았는가? → `buttonType=` 으로 교체. `<Button>children</Button>` → `<Button label="..." />`로 교체.
+5. **Button/IconButton prop 확인**: Button에 `variant=` 사용 → `buttonType=`으로 교체. IconButton은 `iconButtonType=`과 `iconOnly=`와 `aria-label=`이 올바른 prop. `<Button>children</Button>` → `<Button label="..." />`로 교체.
 6. **interaction 확인**: `disabled`, `isDisabled`, `isLoading`, `isReadOnly` prop을 사용하지 않았는가? → `interaction="disabled"` / `"loading"` / `"readonly"` 로 교체.
 7. **Discriminated Union**: `showLabel` 없이 `label`만 전달하거나, `showHelptext` 없이 `helptext`만 전달하지 않았는가?
 8. **Section Card**: 조회형(RP-1) 화면에서 FilterBar + Grid가 **하나의 Section Card** 안에 있는가?
 9. **Drawer vs Dialog 검증**: 코드에 `<Dialog`가 있으면 다시 확인! 상세보기·등록·수정·편집 폼이면 → `<Drawer`로 교체!
 10. **⛔ 외부 아이콘 import 금지**: `lucide-react`, `heroicons`, `react-icons` import가 코드에 있는가? → **즉시 삭제!** 내장 `<Icon name="..." />` 만 사용.
+11. **⛔ 커스텀 컴포넌트 재정의 금지**: `const Divider = ...`, `const Card = ...` 등 Available Components에 이미 존재하는 이름으로 컴포넌트를 직접 정의했는가? → 삭제하고 `@/components`에서 import!
 
 ---
 
@@ -1419,7 +1429,7 @@ SYSTEM_PROMPT_FOOTER = """## 🎯 DESIGN CONSISTENCY CHECKLIST
 - **Colors**: Use ONLY hex values from the color token table. NEVER invent hex codes.
 - **Shadows**: `shadow-sm` only. Never `shadow`, `shadow-md`, `shadow-lg`.
 - **Borders**: `border border-[#dee2e6]` only. Never other gray shades.
-- **PROPS VALIDATION**: Use exact enum values (`buttonType="primary"` NOT `variant="primary"`). Don't hallucinate props.
+- **PROPS VALIDATION**: Button은 `buttonType=` 사용 (NOT `variant=`). IconButton은 `iconButtonType=` + `iconOnly=` + `aria-label=` 사용. Don't hallucinate props.
 - **interaction PROP**: disabled/readOnly/loading → `interaction` prop 사용. ❌ `isDisabled`, `disabled`, `isReadOnly` 금지.
 - **DISCRIMINATED UNION**: showLabel + label, showHelptext + helptext는 반드시 짝으로 사용.
 - **DRAWER vs DIALOG**: "드로어" 요청 → `Drawer` 컴포넌트 사용 (Dialog 금지). "다이얼로그/모달/팝업" → `Dialog`.
@@ -1504,10 +1514,14 @@ export default MemberDetail;
 ```tsx
 {/* TitleSection — 브레드크럼 + 제목 + 액션 버튼 자동 배치 */}
 <TitleSection title="발령등록" menu2="인사관리" showBreadcrumb={true} showMenu2={true} showMenu3={false} showMenu4={false} mode="base">
-  <Button buttonType="outline" size="sm" label="신계약등록" showStartIcon={false} showEndIcon={false} />
-  <Button buttonType="secondary" size="sm" label="이미지시스템" showStartIcon={false} showEndIcon={false} />
+  <div className="flex items-center gap-2">
+    <Button buttonType="outline" size="md" label="엑셀 다운로드" showStartIcon={true} startIcon={<Icon name="external" size={18} />} showEndIcon={false} />
+    <Button buttonType="primary" size="md" label="신규 등록" showStartIcon={true} startIcon={<Icon name="add" size={18} />} showEndIcon={false} />
+    <IconButton iconOnly={<Icon name="more-vert" size={20} />} iconButtonType="ghost" size="md" aria-label="더보기" />
+  </div>
 </TitleSection>
 ```
+- ⚠️ **IconButton**: `iconOnly=` prop으로 아이콘 전달, `iconButtonType=`으로 스타일 지정, `aria-label=` 필수
 - ✅ TitleSection children에 액션 버튼 배치 → 우측 자동 정렬
 - 액션 버튼이 없으면 children 생략
 

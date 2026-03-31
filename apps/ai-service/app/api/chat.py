@@ -278,6 +278,41 @@ async def build_conversation_history(
 
 FILE_TAG_PATTERN = re.compile(r'<file\s+path="([^"]+)">([\s\S]*?)</file>')
 
+# Icon size별 사용 가능한 이름 (존재하지 않는 조합 보정용)
+_ICON_NAMES_BY_SIZE: dict[int, set[str]] = {
+    16: {"add", "announcement", "blank", "calendar", "check", "chevron-down", "chevron-left", "chevron-right", "chevron-up", "close", "delete", "dot", "edit", "external", "loading", "minus", "more-vert", "reset", "search", "star-fill", "star-line"},
+    18: {"add", "chevron-down", "chevron-left", "chevron-right", "chevron-up", "dummy"},
+    20: {"add", "all", "arrow-drop-down", "arrow-drop-up", "arrow-right", "blank", "calendar", "check", "chevron-down", "chevron-left", "chevron-right", "chevron-up", "close", "delete", "dot", "edit", "error", "external", "filter-list", "folder", "folder-fill", "format-align-center", "format-align-left", "format-align-right", "format-bold", "format-color-text", "format-color-text-bg", "format-italic", "format-list-bulleted", "format-list-numbered", "format-underlined", "help", "image", "info", "keyboard-arrow-left", "keyboard-arrow-right", "keyboard-double-arrow-left", "keyboard-double-arrow-right", "link", "loading", "menu", "minus", "more-vert", "person", "post", "redo", "reset", "search", "star-fill", "star-line", "success", "table", "undo", "video", "warning", "widgets"},
+    24: {"add", "all", "arrow-drop-down", "arrow-drop-up", "blank", "chevron-down", "chevron-left", "chevron-right", "close", "dehaze", "delete", "edit", "filter-list", "loading", "menu", "more-vert", "person", "post", "search", "star-fill", "star-line", "widgets"},
+}
+_ICON_TAG_PATTERN = re.compile(r'<Icon\s+name="([^"]+)"\s+size=\{(\d+)\}\s*/?\s*>')
+
+
+def _fix_icon_sizes(content: str) -> str:
+    """존재하지 않는 Icon name+size 조합을 유효한 size로 교정한다."""
+
+    def _replace(m: re.Match[str]) -> str:
+        name = m.group(1)
+        size = int(m.group(2))
+        available = _ICON_NAMES_BY_SIZE.get(size)
+        if available and name in available:
+            return m.group(0)  # 유효한 조합 — 그대로
+        # 해당 size에 없으면 → size 20(가장 많은 아이콘)으로 변경
+        if name in _ICON_NAMES_BY_SIZE[20]:
+            return f'<Icon name="{name}" size={{20}} />'
+        # size 20에도 없으면 → 다른 size에서 찾기
+        for fallback_size in (16, 24):
+            if name in _ICON_NAMES_BY_SIZE.get(fallback_size, set()):
+                return f'<Icon name="{name}" size={{{fallback_size}}} />'
+        return m.group(0)  # 어디에도 없으면 원본 유지
+
+    return _ICON_TAG_PATTERN.sub(_replace, content)
+
+
+def _postprocess_code(content: str) -> str:
+    """AI 생성 코드의 Icon size 오류를 교정한다."""
+    return _fix_icon_sizes(content)
+
 
 def parse_ai_response(content: str) -> ParsedResponse:
     """
@@ -296,7 +331,7 @@ def parse_ai_response(content: str) -> ParsedResponse:
         files.append(
             FileContent(
                 path=match.group(1),
-                content=match.group(2).strip(),
+                content=_postprocess_code(match.group(2).strip()),
             )
         )
 
@@ -369,7 +404,7 @@ class StreamingParser:
                         {
                             "type": "code",
                             "path": self.current_file_path,
-                            "content": self.current_file_content.strip(),
+                            "content": _postprocess_code(self.current_file_content.strip()),
                         }
                     )
 
