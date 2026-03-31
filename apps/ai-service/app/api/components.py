@@ -189,8 +189,8 @@ def format_component_docs(schema: dict) -> str:
                 header += f" - {description}"
             lines.append(header)
 
-            # props 포맷팅 (children, icon 관련 제외)
-            _HIDDEN_PROPS = {"children", "icon", "leftIcon", "rightIcon", "hasIcon"}
+            # props 포맷팅 (children, 아이콘 보조 prop 제외)
+            _HIDDEN_PROPS = {"children", "leftIcon", "rightIcon", "hasIcon"}
             prop_lines = []
             for prop_name, prop_info in props.items():
                 if prop_name in _HIDDEN_PROPS:
