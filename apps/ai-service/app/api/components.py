@@ -48,20 +48,26 @@ def load_component_schema() -> tuple[dict | None, str | None]:
 AVAILABLE_COMPONENTS_WHITELIST = {
     # Basic
     "Button",
+    "Icon",
     "IconButton",
     "Link",
     # Display
     "Alert",
     "Badge",
     "Chip",
+    "ChipGroup",
     "Dialog",
     "Drawer",
     "Divider",
+    "Heading",
+    "LoadingSpinner",
     "Tag",
+    "TagGroup",
     "Tooltip",
     # Form
     "Checkbox",
     "Field",
+    "FieldGroup",
     "Radio",
     "Select",
     "ToggleSwitch",
@@ -70,14 +76,28 @@ AVAILABLE_COMPONENTS_WHITELIST = {
     # Navigation
     "Tab",
     "Segment",
+    "TreeMenu",
     # Layout / Composite
     "ActionBar",
     "FilterBar",
+    "FormGrid",
+    "FormGridCell",
+    "GridLayout",
     "LabelValue",
     "Popover",
+    "RowPattern",
+    "RowSlot",
+    "SectionColumnProvider",
     "TitleSection",
-    # Data (프리뷰 미지원 - UMD 빌드에서 stub 처리됨)
+    # Data
     "DataGrid",
+    "AgChartComponent",
+    # Provider / Utility
+    "Item",
+    "ModalStackProvider",
+    "SpacingModeProvider",
+    "ToastContainer",
+    "ToastProvider",
 }
 
 
@@ -478,7 +498,7 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("  headerName: '상세',  // 버튼 용도에 따라 '수정', '삭제', '보기' 등으로 변경")
     lines.append("  width: 100,")
     lines.append("  cellRenderer: (params: any) => (")
-    lines.append("    <Button buttonType=\"outline\" size=\"sm\" label=\"상세\" showStartIcon={false} showEndIcon={false} onClick={() => {")
+    lines.append("    <Button buttonType=\"ghost\" size=\"sm\" label=\"상세\" showStartIcon={false} showEndIcon={false} onClick={() => {")
     lines.append("      setSelectedItem(params.data);")
     lines.append("      setIsDetailOpen(true);")
     lines.append("    }} />")
@@ -560,7 +580,7 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("  // Action button — Button 컴포넌트를 cellRenderer로 직접 사용")
     lines.append("  { headerName: '상세', width: 100, pinned: 'right',")
     lines.append("    cellRenderer: (params: any) => (")
-    lines.append("      <Button buttonType=\"outline\" size=\"sm\" label=\"상세\" showStartIcon={false} showEndIcon={false} onClick={() => { setSelectedItem(params.data); setIsDetailOpen(true); }} />")
+    lines.append("      <Button buttonType=\"ghost\" size=\"sm\" label=\"상세\" showStartIcon={false} showEndIcon={false} onClick={() => { setSelectedItem(params.data); setIsDetailOpen(true); }} />")
     lines.append("    ) },")
     lines.append("];")
     lines.append("")
@@ -579,7 +599,7 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("- To visually group headers, use `headerName` prefix: `'[인사] 이름'`, `'[인사] 부서'`")
     lines.append("")
     lines.append("**2. cellRenderer — 화살표 함수 또는 named component 사용:**")
-    lines.append("- ✅ `cellRenderer: (params) => <Button buttonType=\"outline\" size=\"sm\" label=\"상세\" showStartIcon={false} showEndIcon={false} />` — 디자인 시스템 Button 직접 사용")
+    lines.append("- ✅ `cellRenderer: (params) => <Button buttonType=\"ghost\" size=\"sm\" label=\"상세\" showStartIcon={false} showEndIcon={false} />` — 디자인 시스템 Button 직접 사용")
     lines.append("- ✅ `cellRenderer: CheckboxCellRenderer` — Named component from @aplus/ui")
     lines.append("- ✅ `cellRenderer: ImageCellRenderer` — Named component from @aplus/ui")
     lines.append("- ❌ `cellRenderer: ButtonCellRenderer` — 사용 금지 (디자인 시스템 미적용, 파란색 하드코딩)")
@@ -840,7 +860,7 @@ Always respond in Korean.
 - buttonType="primary": 메인 CTA (저장, 생성, 로그인). 페이지당 1-2개
 - buttonType="secondary": 보조 액션 (취소, 뒤로가기)
 - buttonType="tertiary": Excel 다운로드 등 보조 링크형 액션
-- buttonType="outline": 테이블 내 액션, 필터 버튼
+- buttonType="ghost": 테이블 내 액션, 필터 버튼
 - buttonType="destructive": 삭제, 해지 등 위험한 액션
 - buttonType="ghost-inverse": ActionBar 내부 전용 (어두운 배경)
 - ⚠️ label prop 사용: `<Button label="확인" />` (children 아님)
@@ -982,7 +1002,7 @@ Dialog는 Compound 패턴입니다. 반드시 `Dialog.Header`, `Dialog.Body`, `D
   </Dialog.Body>
   <Dialog.Footer>
     <div className="flex gap-component-gap-control-group">
-      <Button buttonType="outline" label="취소" onClick={() => setIsOpen(false)} showStartIcon={false} showEndIcon={false} />
+      <Button buttonType="ghost" label="취소" onClick={() => setIsOpen(false)} showStartIcon={false} showEndIcon={false} />
       <Button buttonType="primary" label="확인" onClick={() => setIsOpen(false)} showStartIcon={false} showEndIcon={false} />
     </div>
   </Dialog.Footer>
@@ -1012,7 +1032,7 @@ Drawer는 Compound 패턴입니다. 반드시 `Drawer.Header`, `Drawer.Body`, `D
     </div>
   </Drawer.Body>
   <Drawer.Footer>
-    <Button buttonType="outline" label="닫기" onClick={() => setIsOpen(false)} showStartIcon={false} showEndIcon={false} />
+    <Button buttonType="ghost" label="닫기" onClick={() => setIsOpen(false)} showStartIcon={false} showEndIcon={false} />
     <Button buttonType="primary" label="저장" onClick={() => setIsOpen(false)} showStartIcon={false} showEndIcon={false} />
   </Drawer.Footer>
 </Drawer>
@@ -1088,9 +1108,10 @@ Drawer는 Compound 패턴입니다. 반드시 `Drawer.Header`, `Drawer.Body`, `D
   - Exception: Page Titles (h1) can be outside
 - **Container**: `w-full max-w-[1920px] mx-auto` (1920x1080 기준)
 - 🚨 **Filter + Table = 하나의 Card**: FilterBar, ActionButtons, Grid는 **반드시 하나의 Section Card** 안에 포함. 절대 별도 카드로 분리 금지!
-- **Grid System**:
-  - 12-column: `grid-cols-12` + `col-span-N` (flexible layouts)
-  - Simple: `grid-cols-2`/`grid-cols-3`/`grid-cols-4` (equal divisions)
+- **Grid System** (레이아웃 컴포넌트 우선 사용):
+  - 🚨 **페이지 레이아웃**: `<GridLayout type="A~H">` 사용 (수동 grid-cols-12 대신)
+  - 🚨 **폼 레이아웃**: `<FormGrid columns={2}>` + `<FormGridCell>` 사용 (수동 grid-cols-2 대신)
+  - Fallback 12-column: `grid-cols-12` + `col-span-N` (GridLayout이 부적합한 경우에만)
   - Form filters: `grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4`
   - Grid children: MUST have `className="w-full min-w-0"` to prevent blowout
   - Alignment: `items-end` to align buttons with inputs
@@ -1145,7 +1166,7 @@ Drawer는 Compound 패턴입니다. 반드시 `Drawer.Header`, `Drawer.Body`, `D
   - `<IconButton iconOnly={<Icon name="search" size={20} />} iconButtonType="ghost" aria-label="검색" />`
   - `<IconButton iconOnly={<Icon name="more-vert" size={20} />} iconButtonType="tertiary" size="md" aria-label="더보기" />`
   - ⚠️ IconButton prop은 Button과 다름: `iconOnly=`, `iconButtonType=`, `aria-label=` 필수
-- **✅ Button 아이콘**: `<Button buttonType="outline" label="다운로드" showStartIcon={{true}} startIcon={{<Icon name="external" size={{16}} />}} showEndIcon={{false}} />`
+- **✅ Button 아이콘**: `<Button buttonType="ghost" label="다운로드" showStartIcon={{true}} startIcon={{<Icon name="external" size={{16}} />}} showEndIcon={{false}} />`
 - **Profile images**: Initial Avatar — colored circle with first character
   - `<div className="w-10 h-10 rounded-full bg-[#0033a0] text-white flex items-center justify-center font-semibold text-sm">{{name.charAt(0)}}</div>`
   - Color by `name.charCodeAt(0) % 6` from design tokens: `['#0033a0','#8b5cf6','#ec4899','#ed6c02','#2e7d32','#0288d1']`
@@ -1233,7 +1254,9 @@ LAYOUT_GUIDE = """
 - 좌우 Margin: **24px** (`px-6`)
 - 헤더 ↔ 메인 섹션 간 Gap: **20px** (`gap-5`)
 - 12 Column Grid: Gutter **24px** (`gap-6`), col-1 = 134px
-- Tailwind: `grid grid-cols-12 gap-6 px-6`
+- 🚨 **`<GridLayout type="A">` 컴포넌트 사용 권장** (수동 `grid grid-cols-12` 대신)
+  - GridLayout은 `type` prop으로 12-column 자동 분할: 각 child가 해당 col-span에 자동 배치됨
+  - 예: `type="C"` → child[0]=col-3, child[1]=col-9
 
 ### 필터/검색 영역 그리드 규칙
 
@@ -1245,7 +1268,7 @@ LAYOUT_GUIDE = """
 ### 액션 버튼 정렬 규칙
 
 - 항상 **우측 정렬** (`flex justify-end gap-2`)
-- 좌→우 순서: 중립 텍스트(Tertiary) → 중립 보조(Outline) → 보조(Secondary) → 주요(Primary)
+- 좌→우 순서: 중립 텍스트(Tertiary) → 중립 보조(Ghost) → 보조(Secondary) → 주요(Primary)
 
 ### Grid Type (가로 분할 구조)
 
@@ -1262,7 +1285,10 @@ LAYOUT_GUIDE = """
 | TYPE-G | col-2 + col-2 + col-8 | `col-span-2` + `col-span-2` + `col-span-8` | RP-6 | 트리+목록+상세 (2단계 탐색) |
 | TYPE-H | col-3 × 4 | `col-span-3` × 4 | — | 동일 위계 정보 4열 배치 |
 
-- 모든 Type은 `grid grid-cols-12 gap-6` 기반
+- 🚨 **`<GridLayout type="X">` 컴포넌트를 사용하세요** (수동 grid-cols-12 대신).
+  - children 순서대로 각 column에 자동 배치됨
+  - 예: `<GridLayout type="C"><NavPanel /><DetailPanel /></GridLayout>` → col-3 + col-9
+  - Type A는 child 1개, Type B는 2개, Type E는 3개, Type H는 4개
 
 ### Row Pattern (세로 흐름 구조)
 
@@ -1276,6 +1302,19 @@ LAYOUT_GUIDE = """
 | RP-6 | 탐색형 | Title → Navigation Area + Detail Area | 좌측 독립 스크롤, 우측 전체 스크롤 | 관리성 화면 (코드 관리, 조직 관리) |
 | RP-7 | 병렬형 | Title → Section A \\| Section B | 좌우 독립 스크롤 | 변경 전/후 비교, A/B 비교 |
 | RP-8 | 상세+탭형 | Title → 상단 기본정보 → Tab → 하단 Grid/Content | 전체 스크롤, 탭 콘텐츠 내부 스크롤 | 상세 + 탭별 관련 데이터 |
+
+- 🚨 **`<RowPattern pattern="RP-X">` + `<RowSlot slot="...">` 컴포넌트를 사용하세요** (수동 간격 대신).
+  - RowSlot 간 간격이 자동 적용됨 (filter→grid: 20px, filter→summary: 12px, actions→grid: 12px 등)
+  - slot 값: `"filter"` | `"actions"` | `"grid"` | `"detail"` | `"form"` | `"summary"` | `"navigation"` | `"section"` | `"info"` | `"tab"`
+
+### FormGrid / FormGridCell (폼 레이아웃)
+
+- `<FormGrid columns={2}>` — 2열 폼 그리드 (1~4열 지원), 자동 gap 적용
+- `<FormGrid columns={2} title="기본 정보">` — 제목 + 그리드
+- `<FormGridCell>` — 기본 1칸 차지
+- `<FormGridCell colSpan={2}>` — 2칸 차지 (전체 너비 등)
+- `<FormGridCell align="end">` — 수직 정렬 (start/center/end)
+- 🚨 **폼 입력 영역은 `<FormGrid>` + `<FormGridCell>` 사용 권장** (수동 `grid-cols-2 gap-x-4 gap-y-5` 대신)
 
 ### Grid Type × Row Pattern 적용 범위
 
@@ -1307,6 +1346,100 @@ LAYOUT_GUIDE = """
 | 탭 ↔ 필터바 | 20px | `mb-5` |
 | 탭 섹션: 타이틀 ↔ 폼 | 12px | `mb-3` |
 
+💡 **RowPattern + RowSlot 사용 시 위 간격이 자동 적용됩니다.** 수동 `mb-*` 불필요.
+
+### 레이아웃 컴포넌트 코드 예제
+
+#### RP-1 조회형 (GridLayout type="A" + RowPattern)
+```tsx
+import { GridLayout, RowPattern, RowSlot, TitleSection, FilterBar, Field, Select, Button, DataGrid } from '@/components';
+
+<div className="min-h-screen bg-[#f4f6f8] p-8">
+  <GridLayout type="A">
+    <div>
+      {/* TitleSection — Section Card 바깥 */}
+      <TitleSection title="계약 관리" menu2="계약" showBreadcrumb={true} showMenu2={true} showMenu3={false} showMenu4={false} mode="base">
+        <Button buttonType="primary" size="sm" label="신규 등록" showStartIcon={false} showEndIcon={false} />
+      </TitleSection>
+
+      {/* Section Card */}
+      <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6 mt-5">
+        <RowPattern pattern="RP-1">
+          <RowSlot slot="filter">
+            <FilterBar mode="compact" onReset={() => {}} onSearch={() => {}}>
+              <div className="col-span-3">
+                <Field type="date" showLabel={true} label="조회기간" showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
+              </div>
+              <div className="col-span-3">
+                <Select showLabel={true} label="상태" placeholder="전체" showHelptext={false} showStartIcon={false} className="w-full" options={[]} />
+              </div>
+            </FilterBar>
+          </RowSlot>
+          <RowSlot slot="grid">
+            <DataGrid rowData={[]} columnDefs={[]} domLayout="autoHeight" />
+          </RowSlot>
+        </RowPattern>
+      </div>
+    </div>
+  </GridLayout>
+</div>
+```
+
+#### RP-6 탐색형 (GridLayout type="C" — col-3 + col-9)
+```tsx
+import { GridLayout, RowPattern, RowSlot, TitleSection, TreeMenu } from '@/components';
+
+<div className="min-h-screen bg-[#f4f6f8] p-8">
+  <TitleSection title="코드 관리" menu2="시스템" showBreadcrumb={true} showMenu2={true} showMenu3={false} showMenu4={false} mode="base" />
+  <div className="mt-5">
+    <GridLayout type="C">
+      {/* col-3: Navigation */}
+      <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-4">
+        <TreeMenu items={treeData} />
+      </div>
+      {/* col-9: Detail */}
+      <RowPattern pattern="RP-6">
+        <RowSlot slot="detail">
+          <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6">
+            {/* 상세 내용 */}
+          </div>
+        </RowSlot>
+      </RowPattern>
+    </GridLayout>
+  </div>
+</div>
+```
+
+#### RP-3 입력/수정형 (FormGrid 사용)
+```tsx
+import { GridLayout, FormGrid, FormGridCell, TitleSection, Field, Select, Button } from '@/components';
+
+<div className="min-h-screen bg-[#f4f6f8] p-8">
+  <GridLayout type="A">
+    <div>
+      <TitleSection title="계약 등록" menu2="계약" showBreadcrumb={true} showMenu2={true} showMenu3={false} showMenu4={false} mode="base" />
+      <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6 mt-5">
+        <FormGrid columns={2} title="기본 정보">
+          <FormGridCell>
+            <Field type="text" showLabel={true} label="계약명" showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
+          </FormGridCell>
+          <FormGridCell>
+            <Select showLabel={true} label="계약유형" showHelptext={false} showStartIcon={false} className="w-full" options={[]} />
+          </FormGridCell>
+          <FormGridCell colSpan={2}>
+            <Field type="text" showLabel={true} label="비고" showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
+          </FormGridCell>
+        </FormGrid>
+        <div className="flex justify-end gap-3 mt-6">
+          <Button buttonType="ghost" label="취소" showStartIcon={false} showEndIcon={false} />
+          <Button buttonType="primary" label="저장" showStartIcon={false} showEndIcon={false} />
+        </div>
+      </div>
+    </div>
+  </GridLayout>
+</div>
+```
+
 ### 🚨 RP-1 Section Card 규칙 (CRITICAL)
 
 **RP-1(조회형) 레이아웃에서 FilterBar, ActionButtons, Grid는 반드시 하나의 Section Card 안에 포함되어야 합니다.**
@@ -1321,7 +1454,7 @@ LAYOUT_GUIDE = """
 <div className="min-h-screen bg-[#f4f6f8] p-8">
   {/* TitleSection — Section Card 바깥 */}
   <TitleSection title="계약 관리" menu2="계약" showBreadcrumb={true} showMenu2={true} showMenu3={false} showMenu4={false} mode="base">
-    <Button buttonType="outline" size="sm" label="엑셀 다운로드" showStartIcon={false} showEndIcon={false} />
+    <Button buttonType="ghost" size="sm" label="엑셀 다운로드" showStartIcon={false} showEndIcon={false} />
     <Button buttonType="primary" size="sm" label="신규 등록" showStartIcon={false} showEndIcon={false} />
   </TitleSection>
 
@@ -1379,6 +1512,7 @@ PRE_GENERATION_CHECKLIST = """
 9. **Drawer vs Dialog 검증**: 코드에 `<Dialog`가 있으면 다시 확인! 상세보기·등록·수정·편집 폼이면 → `<Drawer`로 교체!
 10. **⛔ 외부 아이콘 import 금지**: `lucide-react`, `heroicons`, `react-icons` import가 코드에 있는가? → **즉시 삭제!** 내장 `<Icon name="..." />` 만 사용.
 11. **⛔ 커스텀 컴포넌트 재정의 금지**: `const Divider = ...`, `const Card = ...` 등 Available Components에 이미 존재하는 이름으로 컴포넌트를 직접 정의했는가? → 삭제하고 `@/components`에서 import!
+12. **레이아웃 컴포넌트**: 페이지 레이아웃에 `GridLayout`, 세로 흐름에 `RowPattern`+`RowSlot`, 폼 그리드에 `FormGrid`+`FormGridCell`을 사용했는가? 수동 `grid-cols-12 col-span-N` 대신 `<GridLayout type="C">` 사용 권장.
 
 ---
 
@@ -1435,15 +1569,16 @@ SYSTEM_PROMPT_FOOTER = """## 🎯 DESIGN CONSISTENCY CHECKLIST
 - **DRAWER vs DIALOG**: "드로어" 요청 → `Drawer` 컴포넌트 사용 (Dialog 금지). "다이얼로그/모달/팝업" → `Dialog`.
 - **TITLE BAR**: `<TitleSection>` 컴포넌트 사용 또는 직접 구성. 브레드크럼 + h1 제목 + 액션 버튼은 반드시 **한 줄**에 배치.
 - **⛔ NO EXTERNAL ICONS**: `lucide-react`, `heroicons`, `react-icons` import 절대 금지 — 미설치, 앱 크래시. 내장 `<Icon name="..." size={N} />` 만 사용.
+- **LAYOUT COMPONENTS**: 페이지 레이아웃 → `<GridLayout type="A~H">`, 세로 흐름 → `<RowPattern pattern="RP-1~8">` + `<RowSlot slot="...">`, 폼 → `<FormGrid columns={N}>` + `<FormGridCell>`. 수동 grid-cols-12 대신 사용 권장.
 
 Create a premium, completed result."""
 
 UI_PATTERN_EXAMPLES = """
 ## 📐 UI PATTERN REFERENCE
 
-### Form Page (폼 + 다양한 컴포넌트 조합)
+### Form Page (폼 + 다양한 컴포넌트 조합 — FormGrid 사용)
 ```tsx
-import { Button, Field, Select, Radio, Option, OptionGroup, TitleSection, Icon } from '@/components';
+import { Button, Field, Select, Radio, Option, OptionGroup, TitleSection, GridLayout, FormGrid, FormGridCell, Icon } from '@/components';
 
 const MemberDetail = () => {
   const [name, setName] = React.useState('김민준');
@@ -1453,27 +1588,38 @@ const MemberDetail = () => {
 
   return (
     <div className="min-h-screen bg-[#f4f6f8] p-8">
-      {/* TitleSection — 브레드크럼 + 제목 + 액션 */}
-      <TitleSection title="회원 상세" menu2="회원관리" showBreadcrumb={true} showMenu2={true} showMenu3={false} showMenu4={false} mode="base" />
-      <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6 mt-5">
-        {/* Section: 기본 정보 — 2-column grid */}
-        <h2 className="text-lg font-semibold text-[#212529] mb-4">기본 정보</h2>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-5 mb-8">
-          <Field type="text" showLabel={true} label="이름" value={name} onChange={(e) => setName(e.target.value)} showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
-          <Field type="email" showLabel={true} label="이메일" value={email} onChange={(e) => setEmail(e.target.value)} showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
-          <Select showLabel={true} label="부서" className="w-full" value={dept} onChange={(v) => setDept(v)} showHelptext={false} showStartIcon={false}
-            options={[{label:'개발팀',value:'개발팀'},{label:'디자인팀',value:'디자인팀'},{label:'마케팅팀',value:'마케팅팀'},{label:'경영지원',value:'경영지원'}]} />
-          <OptionGroup label="성별" showLabel={true} orientation="horizontal" size="sm">
-            <Option label="남성"><Radio value={gender==='male' ? 'checked' : 'unchecked'} onChange={() => setGender('male')} /></Option>
-            <Option label="여성"><Radio value={gender==='female' ? 'checked' : 'unchecked'} onChange={() => setGender('female')} /></Option>
-          </OptionGroup>
+      <GridLayout type="A">
+        <div>
+          {/* TitleSection — 브레드크럼 + 제목 + 액션 */}
+          <TitleSection title="회원 상세" menu2="회원관리" showBreadcrumb={true} showMenu2={true} showMenu3={false} showMenu4={false} mode="base" />
+          <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6 mt-5">
+            {/* Section: 기본 정보 — FormGrid 2열 */}
+            <FormGrid columns={2} title="기본 정보">
+              <FormGridCell>
+                <Field type="text" showLabel={true} label="이름" value={name} onChange={(e) => setName(e.target.value)} showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
+              </FormGridCell>
+              <FormGridCell>
+                <Field type="email" showLabel={true} label="이메일" value={email} onChange={(e) => setEmail(e.target.value)} showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
+              </FormGridCell>
+              <FormGridCell>
+                <Select showLabel={true} label="부서" className="w-full" value={dept} onChange={(v) => setDept(v)} showHelptext={false} showStartIcon={false}
+                  options={[{label:'개발팀',value:'개발팀'},{label:'디자인팀',value:'디자인팀'},{label:'마케팅팀',value:'마케팅팀'},{label:'경영지원',value:'경영지원'}]} />
+              </FormGridCell>
+              <FormGridCell>
+                <OptionGroup label="성별" showLabel={true} orientation="horizontal" size="sm">
+                  <Option label="남성"><Radio value={gender==='male' ? 'checked' : 'unchecked'} onChange={() => setGender('male')} /></Option>
+                  <Option label="여성"><Radio value={gender==='female' ? 'checked' : 'unchecked'} onChange={() => setGender('female')} /></Option>
+                </OptionGroup>
+              </FormGridCell>
+            </FormGrid>
+            {/* Action buttons */}
+            <div className="flex justify-end gap-3 mt-6">
+              <Button buttonType="ghost" label="취소" showStartIcon={false} showEndIcon={false} />
+              <Button buttonType="primary" size="lg" label="저장" showStartIcon={false} showEndIcon={false} />
+            </div>
+          </div>
         </div>
-        {/* Action buttons */}
-        <div className="flex justify-end gap-3 mt-6">
-          <Button buttonType="secondary" label="취소" showStartIcon={false} showEndIcon={false} />
-          <Button buttonType="primary" size="lg" label="저장" showStartIcon={false} showEndIcon={false} />
-        </div>
-      </div>
+      </GridLayout>
     </div>
   );
 };
@@ -1515,7 +1661,7 @@ export default MemberDetail;
 {/* TitleSection — 브레드크럼 + 제목 + 액션 버튼 자동 배치 */}
 <TitleSection title="발령등록" menu2="인사관리" showBreadcrumb={true} showMenu2={true} showMenu3={false} showMenu4={false} mode="base">
   <div className="flex items-center gap-2">
-    <Button buttonType="outline" size="md" label="엑셀 다운로드" showStartIcon={true} startIcon={<Icon name="external" size={18} />} showEndIcon={false} />
+    <Button buttonType="ghost" size="md" label="엑셀 다운로드" showStartIcon={true} startIcon={<Icon name="external" size={18} />} showEndIcon={false} />
     <Button buttonType="primary" size="md" label="신규 등록" showStartIcon={true} startIcon={<Icon name="add" size={18} />} showEndIcon={false} />
     <IconButton iconOnly={<Icon name="more-vert" size={20} />} iconButtonType="ghost" size="md" aria-label="더보기" />
   </div>
@@ -1554,7 +1700,7 @@ import { Button, Field, Select, Drawer } from '@/components';
     </div>
   </Drawer.Body>
   <Drawer.Footer>
-    <Button buttonType="outline" label="취소" onClick={() => setIsDrawerOpen(false)} showStartIcon={false} showEndIcon={false} />
+    <Button buttonType="ghost" label="취소" onClick={() => setIsDrawerOpen(false)} showStartIcon={false} showEndIcon={false} />
     <Button buttonType="primary" label="등록" showStartIcon={false} showEndIcon={false} />
   </Drawer.Footer>
 </Drawer>
