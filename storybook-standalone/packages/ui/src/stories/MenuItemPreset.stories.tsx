@@ -10,38 +10,6 @@ import { Badge } from '../components/Badge';
 const applyDisabled = (items: MenuItem[], disabled?: boolean): MenuItem[] =>
   disabled ? items.map((item) => ('id' in item ? { ...item, disabled: true } : item)) : items;
 
-const PresetRow = ({
-  label,
-  mdItems,
-  smItems,
-  mdOnly = false,
-  disabled = false,
-}: {
-  label: string;
-  mdItems: MenuItem[];
-  smItems?: MenuItem[];
-  mdOnly?: boolean;
-  disabled?: boolean;
-}) => (
-  <div className="flex items-start gap-8 py-4 border-b border-border-default">
-    <div className="w-[80px] flex-shrink-0 pt-2 text-caption-xs-bold text-text-accent">
-      {label}
-    </div>
-    <div className="flex-1">
-      <Menu items={applyDisabled(mdItems, disabled)} size="md" className="w-[240px]" />
-    </div>
-    <div className="flex-1">
-      {mdOnly ? (
-        <div className="flex items-center justify-center h-[40px] text-text-tertiary text-caption-xs-regular">
-          md only
-        </div>
-      ) : (
-        <Menu items={applyDisabled(smItems ?? mdItems, disabled)} size="sm" className="w-[240px]" />
-      )}
-    </div>
-  </div>
-);
-
 /**
  * 선택 상태를 토글할 수 있는 인터랙티브 PresetRow (md/sm 독립 상태)
  */
@@ -146,7 +114,7 @@ type Story = StoryObj<PresetStoryArgs>;
 export const TextOnly: Story = {
   name: 'Text Only',
   render: (args) => (
-    <PresetRow
+    <ToggleablePresetRow
       label="Text Only"
       disabled={args.disabled}
       mdItems={[{ type: 'text-only', id: '1', label: '메뉴 이름' }]}
@@ -157,7 +125,7 @@ export const TextOnly: Story = {
 export const IconLabel: Story = {
   name: 'Icon Label',
   render: (args) => (
-    <PresetRow
+    <ToggleablePresetRow
       label="Icon Label"
       disabled={args.disabled}
       mdItems={[{ type: 'icon-label', id: '1', label: '아이콘과 메뉴', leadingIcon: <Icon name="widgets" size={20} /> }]}
@@ -169,7 +137,7 @@ export const IconLabel: Story = {
 export const Shortcut: Story = {
   name: 'Shortcut',
   render: (args) => (
-    <PresetRow
+    <ToggleablePresetRow
       label="Shortcut"
       disabled={args.disabled}
       mdItems={[{ type: 'shortcut', id: '1', label: '복사하기', shortcutText: 'Ctrl+C' }]}
@@ -180,7 +148,7 @@ export const Shortcut: Story = {
 export const Destructive: Story = {
   name: 'Destructive',
   render: (args) => (
-    <PresetRow
+    <ToggleablePresetRow
       label="Destructive"
       disabled={args.disabled}
       mdItems={[{ type: 'destructive', id: '1', label: '탈퇴하기' }]}
@@ -230,7 +198,7 @@ export const Submenu: Story = {
 export const Link: Story = {
   name: 'Link',
   render: (args) => (
-    <PresetRow
+    <ToggleablePresetRow
       label="Link"
       disabled={args.disabled}
       mdItems={[{ type: 'link', id: '1', label: '외부 링크 메뉴' }]}
@@ -291,7 +259,7 @@ export const EmptyState: Story = {
 export const DotBadge: Story = {
   name: 'Dot Badge (공통 prop)',
   render: (args) => (
-    <PresetRow
+    <ToggleablePresetRow
       label="Dot Badge"
       disabled={args.disabled}
       mdItems={[
@@ -311,7 +279,7 @@ export const DotBadge: Story = {
 export const BadgeType: Story = {
   name: 'Badge',
   render: (args) => (
-    <PresetRow
+    <ToggleablePresetRow
       label="Badge"
       disabled={args.disabled}
       mdItems={[{
@@ -328,14 +296,13 @@ export const BadgeType: Story = {
 export const Profile: Story = {
   name: 'Profile',
   render: (args) => (
-    <PresetRow
+    <ToggleablePresetRow
       label="Profile"
       disabled={args.disabled}
       mdItems={[{
         type: 'profile',
         id: '1',
         label: '내 프로필',
-        avatarContent: <Icon name="person" size={24} />,
         description: 'email@mail.com',
       }]}
       mdOnly
@@ -346,7 +313,7 @@ export const Profile: Story = {
 export const Description: Story = {
   name: 'Description',
   render: (args) => (
-    <PresetRow
+    <ToggleablePresetRow
       label="Description"
       disabled={args.disabled}
       mdItems={[{
@@ -365,7 +332,7 @@ export const Description: Story = {
 export const IconLabelBadge: Story = {
   name: 'Icon Label Badge',
   render: (args) => (
-    <PresetRow
+    <ToggleablePresetRow
       label="Icon Label Badge"
       disabled={args.disabled}
       mdItems={[{
@@ -400,7 +367,7 @@ export const CheckboxLabelBadge: Story = {
 export const LabelIconBadge: Story = {
   name: 'Label Icon Badge',
   render: (args) => (
-    <PresetRow
+    <ToggleablePresetRow
       label="Label Icon Badge"
       disabled={args.disabled}
       mdItems={[{
@@ -429,35 +396,35 @@ export const AllPresets: Story = {
       </div>
 
       {/* sm/md 모두 지원 */}
-      <PresetRow
+      <ToggleablePresetRow
         label="Text Only"
         disabled={args.disabled}
         mdItems={[{ type: 'text-only', id: 'to', label: '메뉴 이름' }]}
       />
-      <PresetRow
+      <ToggleablePresetRow
         label="Icon Label"
         disabled={args.disabled}
         mdItems={[{ type: 'icon-label', id: 'il', label: '아이콘과 메뉴', leadingIcon: <Icon name="widgets" size={20} /> }]}
         smItems={[{ type: 'icon-label', id: 'il', label: '아이콘과 메뉴', leadingIcon: <Icon name="widgets" size={20} /> }]}
       />
-      <PresetRow
+      <ToggleablePresetRow
         label="Shortcut"
         disabled={args.disabled}
         mdItems={[{ type: 'shortcut', id: 'sc', label: '복사하기', shortcutText: 'Ctrl+C' }]}
       />
-      <PresetRow
+      <ToggleablePresetRow
         label="Badge"
         disabled={args.disabled}
         mdItems={[{ type: 'badge', id: 'bd', label: '결제함', badgeContent: <Badge type="status" status="info" label="N" /> }]}
         mdOnly
       />
-      <PresetRow
+      <ToggleablePresetRow
         label="Destructive"
         disabled={args.disabled}
         mdItems={[{ type: 'destructive', id: 'ds', label: '탈퇴하기' }]}
         smItems={[{ type: 'destructive', id: 'ds', label: '삭제하기' }]}
       />
-      <PresetRow
+      <ToggleablePresetRow
         label="Submenu"
         disabled={args.disabled}
         mdItems={[{
@@ -465,7 +432,7 @@ export const AllPresets: Story = {
           children: [{ type: 'text-only', id: 'sm-1', label: '하위 항목' }],
         }]}
       />
-      <PresetRow
+      <ToggleablePresetRow
         label="Link"
         disabled={args.disabled}
         mdItems={[{ type: 'link', id: 'lk', label: '외부 링크 메뉴' }]}
@@ -487,7 +454,7 @@ export const AllPresets: Story = {
       />
 
       {/* Dot Badge (공통 prop) */}
-      <PresetRow
+      <ToggleablePresetRow
         label="Dot Badge"
         disabled={args.disabled}
         mdItems={[{ type: 'text-only', id: 'db', label: '메시지', dotBadge: true }]}
@@ -505,17 +472,16 @@ export const AllPresets: Story = {
       </div>
 
       {/* md only */}
-      <PresetRow
+      <ToggleablePresetRow
         label="Profile"
         disabled={args.disabled}
         mdItems={[{
           type: 'profile', id: 'pf', label: '내 프로필',
-          avatarContent: <Icon name="person" size={24} />,
           description: 'email@mail.com',
         }]}
         mdOnly
       />
-      <PresetRow
+      <ToggleablePresetRow
         label="Description"
         disabled={args.disabled}
         mdItems={[{

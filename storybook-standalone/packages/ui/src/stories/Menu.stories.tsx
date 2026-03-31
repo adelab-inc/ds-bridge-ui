@@ -59,6 +59,9 @@ const hierarchicalMenuData: MenuItem[] = [
       { type: 'text-only', id: '3-3', label: '확대' },
     ],
   },
+  { type: 'divider' },
+  { type: 'text-only', id: '4', label: '설정' },
+  { type: 'destructive', id: '5', label: '종료' },
 ];
 
 const meta: Meta<typeof Menu> = {

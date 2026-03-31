@@ -54,7 +54,7 @@ const optionGroupVariants = cva(
 );
 
 const optionsContainerVariants = cva(
-  'flex min-h-[32px] items-center gap-component-gap-selection-group',
+  'flex min-h-[32px] items-start gap-component-gap-selection-group',
   {
     variants: {
       orientation: {
@@ -114,6 +114,8 @@ export interface OptionGroupProps
   children: React.ReactNode;
   size?: 'sm' | 'md' | 'lg';
   orientation?: 'horizontal' | 'vertical';
+  /** FormGrid 내 무라벨 사용 시 라벨 높이만큼 빈 공간 유지 (정렬용) */
+  reserveLabelSpace?: boolean;
 }
 
 const OptionGroup = React.forwardRef<HTMLDivElement, OptionGroupProps>(
@@ -128,6 +130,7 @@ const OptionGroup = React.forwardRef<HTMLDivElement, OptionGroupProps>(
       children,
       size = 'md',
       orientation = 'vertical',
+      reserveLabelSpace = false,
       mode: propMode,
       ...props
     },
@@ -169,7 +172,7 @@ const OptionGroup = React.forwardRef<HTMLDivElement, OptionGroupProps>(
           aria-describedby={helptextId}
           {...props}
         >
-          {showLabel && label && (
+          {showLabel && label ? (
             <div id={labelId} className={cn(labelVariants({ size }))}>
               <span>{label}</span>
               {showAsterisk && (
@@ -184,7 +187,9 @@ const OptionGroup = React.forwardRef<HTMLDivElement, OptionGroupProps>(
                 </span>
               )}
             </div>
-          )}
+          ) : reserveLabelSpace ? (
+            <div className={cn(labelVariants({ size }))} aria-hidden="true">&nbsp;</div>
+          ) : null}
           <div className={cn(optionsContainerVariants({ orientation }))}>
             {children}
           </div>

@@ -19,6 +19,8 @@ yarn.lock
 # ========================================
 dist/*
 !dist/component-schema.json
+!dist/ag-grid-tokens.json
+
 dist-ssr/
 build/
 out/

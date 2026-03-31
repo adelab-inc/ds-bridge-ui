@@ -202,7 +202,7 @@ export const ShowHide: Story = {
       <div className="relative w-[800px] h-[400px] bg-bg-surface border border-border-default rounded-lg flex flex-col items-center justify-center gap-4">
         <p className="text-text-tertiary">항목을 선택해보세요</p>
         <Button
-          buttonType="outline"
+          buttonType="tertiary"
           label="항목 선택"
           onClick={handleSelect}
           showStartIcon={false}

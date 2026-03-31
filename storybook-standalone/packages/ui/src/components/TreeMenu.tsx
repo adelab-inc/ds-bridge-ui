@@ -45,6 +45,12 @@ interface TreeMenuPropsCommon
   onExpandChange?: (expandedIds: Set<string>) => void;
   /** 단일 아이템 토글 콜백 (디버깅/로깅용, 선택적) */
   onExpandToggle?: (id: string, isExpanded: boolean) => void;
+  /** 초기 선택 아이템 ID - Uncontrolled 모드 */
+  defaultSelectedId?: string | null;
+  /** 현재 선택 아이템 ID - Controlled 모드 */
+  selectedId?: string | null;
+  /** 선택 상태 변경 콜백 */
+  onSelectedChange?: (selectedId: string | null) => void;
   /** 드래그 앤 드롭 활성화 */
   draggable?: boolean;
   /** 아이템 이동 콜백 - 드래그 앤 드롭 완료 시 호출 */
@@ -187,6 +193,10 @@ function TreeMenuInner(
     checkboxMode = false,
     checkedIds = new Set<string>(),
     onCheckChange,
+    // 선택 상태 props
+    defaultSelectedId = null,
+    selectedId: controlledSelectedId,
+    onSelectedChange,
     // Drag & Drop props
     draggable = false,
     onItemMove,
@@ -202,6 +212,16 @@ function TreeMenuInner(
     defaultExpandedIds,
     onExpandChange
   );
+
+  // 선택 상태 관리 (Controlled/Uncontrolled)
+  const [selectedId, setSelectedId] = useControllableState(
+    controlledSelectedId,
+    defaultSelectedId,
+    onSelectedChange
+  );
+
+  // 키보드 네비게이션 구분 (마우스 클릭 시 focus ring 숨김)
+  const isKeyboardNavRef = React.useRef(false);
 
   // 포커스 인덱스 관리
   const [focusedId, setFocusedId] = React.useState<string | null>(null);
@@ -425,8 +445,12 @@ function TreeMenuInner(
     onCheckChange(item.id, checked, affectedIds);
   };
 
-  // 아이템 클릭
+  // 아이템 클릭 (선택 상태 업데이트 + 콜백)
   const handleItemClick = (item: TreeMenuItemDataMd) => {
+    // 마우스 클릭이므로 키보드 네비게이션 아님
+    isKeyboardNavRef.current = false;
+    // 선택 상태 업데이트
+    setSelectedId(item.id);
     // onItemClick 호출 (타입 안전성을 위해 any 사용)
     (onItemClick as ((item: TreeMenuItemDataMd) => void) | undefined)?.(item);
   };
@@ -451,6 +475,7 @@ function TreeMenuInner(
 
   // 키보드 네비게이션
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    isKeyboardNavRef.current = true;
     const flatItems = getFlatItems();
     const currentIndex = flatItems.findIndex(f => f.item.id === focusedId);
 
@@ -538,7 +563,9 @@ function TreeMenuInner(
     return menuItems.map(item => {
       const showTree = !!item.showTree;
       const isExpanded = expandedIds.has(item.id);
-      const isFocused = focusedId === item.id;
+      // 키보드 네비게이션일 때만 focus ring 표시
+      const isFocused = focusedId === item.id && isKeyboardNavRef.current;
+      const isSelected = selectedId === item.id;
       const checkState = checkStates.get(item.id) || null;
       // focusedId가 없을 때만 첫 번째 아이템에 Tab 진입 허용
       const isFirstFocusable = focusedId === null && item.id === firstFocusableId;
@@ -557,6 +584,7 @@ function TreeMenuInner(
             depth={Math.min(depth, 4) as 1 | 2 | 3 | 4}
             isExpanded={isExpanded}
             isFocused={isFocused}
+            isSelected={isSelected}
             isFirstFocusable={isFirstFocusable}
             checkboxMode={checkboxMode}
             checkState={checkState}
@@ -592,6 +620,13 @@ function TreeMenuInner(
       aria-label="Tree Menu"
       className={cn(treeMenuVariants({ size }), className)}
       onKeyDown={handleKeyDown}
+      onBlur={(e) => {
+        // 포커스가 트리 메뉴 바깥으로 나갈 때 focus ring 제거
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+          setFocusedId(null);
+          isKeyboardNavRef.current = false;
+        }
+      }}
       {...restProps}
     >
       {renderItems(mdItems)}
