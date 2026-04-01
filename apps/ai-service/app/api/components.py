@@ -1399,7 +1399,7 @@ import { GridLayout, RowPattern, RowSlot, TitleSection, FilterBar, Field, Select
               </div>
             </FilterBar>
           </RowSlot>
-          <RowSlot slot="grid">
+          <RowSlot slot="grid">{/* ⚠️ RowSlot 안에 mt-*/mb-* 금지! 간격은 RowSlot이 자동 관리 */}
             <DataGrid rowData={[]} columnDefs={[]} domLayout="autoHeight" />
           </RowSlot>
         </RowPattern>
@@ -1539,10 +1539,10 @@ PRE_GENERATION_CHECKLIST = """
 12. **레이아웃 컴포넌트**: 페이지 레이아웃에 `GridLayout`, 세로 흐름에 `RowPattern`+`RowSlot`, 폼 그리드에 `FormGrid`+`FormGridCell`을 사용했는가? 수동 `grid-cols-12 col-span-N` 대신 `<GridLayout type="C">` 사용 권장.
 13. **Icon name+size 교차검증**: `<Icon name="..." size={N} />`에서 해당 name이 해당 size 목록에 존재하는가? 목록에 없는 조합 = "Icon not found" 에러.
 14. **색상 토큰 교차검증**: 텍스트에 사용한 hex가 토큰 테이블의 Text Class 컬럼에 있는가? bg- 전용 토큰을 text-에 사용하지 않았는가?
-15. **RowSlot 수동 간격**: RowSlot 자식 요소에 `mt-*`/`mb-*`를 추가하지 않았는가? (RowSlot이 간격 자동 관리)
+15. **🚨 RowSlot 수동 간격**: `<RowSlot>` 안에 `mt-*`/`mb-*`가 있으면 즉시 제거! ❌ `<RowSlot slot="grid"><div className="mt-2">` → ✅ `<RowSlot slot="grid"><div>`
 16. **GridLayout 사용 범위**: GridLayout이 페이지 최상위에서만 사용되었는가? Drawer/Dialog/Popover 내부에서 사용하지 않았는가?
 17. **Checkbox/Radio onChange**: `e.target.checked` DOM 패턴이 아닌 상태 토글 패턴을 사용했는가?
-18. **import 양방향 점검**: JSX에서 사용하지 않는 컴포넌트가 import에 남아 있지 않은가? (교체/제거 후 잔존)
+18. **🚨 import 양방향 점검**: import한 모든 컴포넌트가 JSX에서 `<Name` 또는 `<Name.`으로 사용되는가? 하나라도 미사용 시 CRASH!
 19. **폼 영역 FormGrid**: 폼/필터 입력 영역에 수동 `grid-cols-12` + `col-span-N` 대신 `<FormGrid columns={N}>` + `<FormGridCell>`을 사용했는가?
 
 ---
