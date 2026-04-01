@@ -356,6 +356,13 @@ def format_design_tokens(tokens: dict | None) -> str:
 {color_table}
 
   **⚠️ 위 테이블에 없는 hex 코드를 절대 사용하지 마세요. 연한 회색이 필요하면 neutral-gray-50/100 토큰을 쓰세요.**
+  **🚨 Text Class 컬럼의 hex는 텍스트 전용, BG Class 컬럼의 hex는 배경 전용. 교차 사용 절대 금지!**
+  **흔한 실수: `text-[#2e7d32]` ❌ → `text-[#1e4620]` ✅ | `text-[#d32f2f]` ❌ → `text-[#5f2120]` ✅ | `text-[#ed6c02]` ❌ → `text-[#663c00]` ✅**
+
+  **시맨틱 텍스트 색상 빠른 참조** (초록/빨강/주황 텍스트가 필요할 때):
+  - 성공/양수/정상 텍스트 → `text-[#1e4620]` ✅ (❌ `text-[#2e7d32]` 절대 금지)
+  - 실패/음수/오류 텍스트 → `text-[#5f2120]` ✅ (❌ `text-[#d32f2f]` 절대 금지)
+  - 경고/보류 텍스트 → `text-[#663c00]` ✅ (❌ `text-[#ed6c02]` 절대 금지)
 
   **상태 강조 (진한 배경 + 흰 텍스트)**:
 {strong_semantic}
@@ -795,6 +802,13 @@ DEFAULT_DESIGN_TOKENS_SECTION = """## 🎨 DESIGN STANDARDS (CRITICAL - USE TAIL
   | Gray 900 (가장 진한 텍스트) | `text-[#212529]` | — | neutral-gray-900 |
 
   **⚠️ 위 테이블에 없는 hex 코드를 절대 사용하지 마세요. 연한 회색이 필요하면 `bg-[#f9fafb]` (gray-50) 또는 `bg-[#f4f6f8]` (gray-100/canvas)를 쓰세요.**
+  **🚨 Text Class 컬럼의 hex는 텍스트 전용, BG Class 컬럼의 hex는 배경 전용. 교차 사용 절대 금지!**
+  **흔한 실수: `text-[#2e7d32]` ❌ → `text-[#1e4620]` ✅ | `text-[#d32f2f]` ❌ → `text-[#5f2120]` ✅ | `text-[#ed6c02]` ❌ → `text-[#663c00]` ✅**
+
+  **시맨틱 텍스트 색상 빠른 참조** (초록/빨강/주황 텍스트가 필요할 때):
+  - 성공/양수/정상 텍스트 → `text-[#1e4620]` ✅ (❌ `text-[#2e7d32]` 절대 금지)
+  - 실패/음수/오류 텍스트 → `text-[#5f2120]` ✅ (❌ `text-[#d32f2f]` 절대 금지)
+  - 경고/보류 텍스트 → `text-[#663c00]` ✅ (❌ `text-[#ed6c02]` 절대 금지)
 
   **상태 강조 (진한 배경 + 흰 텍스트)**:
   - Success 강조: `text-white bg-[#2e7d32]`
@@ -1049,6 +1063,9 @@ Drawer는 Compound 패턴입니다. 반드시 `Drawer.Header`, `Drawer.Body`, `D
 - Radio: value="unchecked"|"checked" + onChange
 - interaction="disabled": 비활성
 - ⚠️ NO label prop. Use `<Option label="텍스트"><Checkbox .../></Option>` 패턴
+- ⚠️ onChange는 DOM event(e.target.checked) 아님! 상태 토글 패턴 사용:
+  - ✅ `<Checkbox value={v} onChange={() => setValue(prev => !prev)} />`
+  - ❌ `<Checkbox value={v} onChange={(e) => setValue(e.target.checked)} />` — DS 컴포넌트는 DOM event 아님
 - ✅ `<Option label="동의합니다"><Checkbox value="unchecked" onChange={fn} /></Option>`
 - ❌ `<Checkbox label="동의합니다" />` — label prop 없음
 
@@ -1087,7 +1104,8 @@ Drawer는 Compound 패턴입니다. 반드시 `Drawer.Header`, `Drawer.Body`, `D
 
 ### TitleSection
 - 페이지 상단: Breadcrumb + h1 + 액션 버튼
-- `<TitleSection title="제목" menu2="상위" showBreadcrumb={true}><Button ... /></TitleSection>`
+- ⚠️ `showMenu2`~`showMenu4`의 show* boolean prop을 **모두 명시**할 것 (사용하지 않는 메뉴도 `={false}` 명시)
+- `<TitleSection title="제목" menu2="상위" showBreadcrumb={true} showMenu2={true} showMenu3={false} showMenu4={false} mode="base"><Button ... /></TitleSection>`
 
 ### Tab
 - `<Tab items={[{value:'home',label:'홈'}, ...]} value={value} onChange={setValue} widthMode="content" />`
@@ -1109,7 +1127,7 @@ Drawer는 Compound 패턴입니다. 반드시 `Drawer.Header`, `Drawer.Body`, `D
 - **Container**: `w-full max-w-[1920px] mx-auto` (1920x1080 기준)
 - 🚨 **Filter + Table = 하나의 Card**: FilterBar, ActionButtons, Grid는 **반드시 하나의 Section Card** 안에 포함. 절대 별도 카드로 분리 금지!
 - **Grid System** (레이아웃 컴포넌트 우선 사용):
-  - 🚨 **페이지 레이아웃**: `<GridLayout type="A~H">` 사용 (수동 grid-cols-12 대신)
+  - 🚨 **페이지 레이아웃**: `<GridLayout type="A~H">` 사용 (수동 grid-cols-12 대신). **페이지 전용** — Drawer/Dialog/Popover 내부에서 사용 금지! 오버레이 내부 멀티컬럼은 Tailwind `grid grid-cols-N` 직접 사용. GridLayout의 유일한 prop은 `type`이며 `gap` 등 임의 prop 전달 금지.
   - 🚨 **폼 레이아웃**: `<FormGrid columns={2}>` + `<FormGridCell>` 사용 (수동 grid-cols-2 대신)
   - Fallback 12-column: `grid-cols-12` + `col-span-N` (GridLayout이 부적합한 경우에만)
   - Form filters: `grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4`
@@ -1161,7 +1179,8 @@ Drawer는 Compound 패턴입니다. 반드시 `Drawer.Header`, `Drawer.Body`, `D
   - **size={16} (23개)**: add, announcement, blank, calendar, check, chevron-down, chevron-left, chevron-right, chevron-up, close, delete, dot, edit, external, loading, minus, more-vert, reset, search, star-fill, star-line
   - **size={24} (21개)**: add, all, arrow-drop-down, arrow-drop-up, blank, chevron-down, chevron-left, chevron-right, close, dehaze, delete, edit, filter-list, loading, menu, more-vert, person, post, search, star-fill, star-line, widgets
   - **size={18} (6개만!)**: add, chevron-down, chevron-left, chevron-right, chevron-up, dummy — ⚠️ 거의 사용하지 말 것!
-  - 🔑 **규칙**: 아이콘 사용 시 반드시 해당 size에 존재하는 이름인지 위 목록에서 확인. 확실하지 않으면 **size={20}** 사용
+  - 🔑 **규칙**: `<Icon name="X" size={N} />`을 쓰기 전에 반드시 위 size={N} 목록에 "X"가 있는지 교차검증! 목록에 없으면 "Icon not found" 에러.
+  - 🔑 **확실하지 않으면 size={20}** (58개, 가장 많음). size={16}은 23개뿐이므로 특히 주의.
 - **✅ IconButton**: 아이콘만 있는 버튼 — `iconOnly` prop과 `iconButtonType` prop 사용:
   - `<IconButton iconOnly={<Icon name="search" size={20} />} iconButtonType="ghost" aria-label="검색" />`
   - `<IconButton iconOnly={<Icon name="more-vert" size={20} />} iconButtonType="tertiary" size="md" aria-label="더보기" />`
@@ -1180,7 +1199,8 @@ Drawer는 Compound 패턴입니다. 반드시 `Drawer.Header`, `Drawer.Body`, `D
    - JSX에서 사용하는 컴포넌트는 **반드시 전부** import — 누락 시 ReferenceError CRASH
    - ❌ NEVER import types (HTMLInputElement, ChangeEvent, MouseEvent) — define inline
    - Unused imports = CRASH, Missing imports = CRASH
-   - ✅ 확인 방법: JSX에서 `<ComponentName`으로 사용한 모든 컴포넌트가 import 문에 있는지 최종 점검
+   - 🚨 **import한 컴포넌트는 반드시 JSX에서 사용해야 함!** 코드 완성 후 import 문의 모든 컴포넌트가 `<Name` 또는 `<Name.`으로 사용되는지 1:1 대조 점검. 미사용 import 1개라도 있으면 CRASH! (예: IconButton import 후 JSX에서 미사용 → ❌)
+   - ✅ 확인 방법: JSX에서 `<ComponentName`으로 사용한 모든 컴포넌트가 import 문에 있는지, import 문의 모든 컴포넌트가 JSX에서 사용되는지 양방향 점검
    - ⛔ NEVER define custom components (`const Divider = ...`, `const Card = ...`) when same-name component exists in Available Components — import해서 사용! 직접 정의 시 런타임 충돌(SyntaxError: Identifier already declared)
 2. **REACT**: `React.useState`, `React.useEffect` directly (no import needed)
 3. **STYLING**: Tailwind CSS only (`className="..."`). `style={{{{}}}}` ONLY for dynamic JS variable values. No custom CSS.
@@ -1314,7 +1334,7 @@ LAYOUT_GUIDE = """
 - `<FormGridCell>` — 기본 1칸 차지
 - `<FormGridCell colSpan={2}>` — 2칸 차지 (전체 너비 등)
 - `<FormGridCell align="end">` — 수직 정렬 (start/center/end)
-- 🚨 **폼 입력 영역은 `<FormGrid>` + `<FormGridCell>` 사용 권장** (수동 `grid-cols-2 gap-x-4 gap-y-5` 대신)
+- 🚨 **폼 입력 영역은 `<FormGrid>` + `<FormGridCell>` 필수** (수동 `grid-cols-12` + `col-span-N` 금지). "N단 구조" 요청 → `<FormGrid columns={N}>` 사용
 
 ### Grid Type × Row Pattern 적용 범위
 
@@ -1346,7 +1366,11 @@ LAYOUT_GUIDE = """
 | 탭 ↔ 필터바 | 20px | `mb-5` |
 | 탭 섹션: 타이틀 ↔ 폼 | 12px | `mb-3` |
 
-💡 **RowPattern + RowSlot 사용 시 위 간격이 자동 적용됩니다.** 수동 `mb-*` 불필요.
+💡 **RowPattern + RowSlot 사용 시 위 간격이 자동 적용됩니다.**
+🚨 **RowSlot 내부에 `mt-*`/`mb-*` 절대 사용 금지!**
+  - ❌ `<RowSlot slot="grid"><div className="mt-4">...</div></RowSlot>` ← 이중 간격 발생!
+  - ❌ `<RowSlot slot="filter"><div className="mb-2">...</div></RowSlot>` ← 이중 간격 발생!
+  - ✅ `<RowSlot slot="grid"><div>...</div></RowSlot>` ← RowSlot이 간격 자동 관리
 
 ### 레이아웃 컴포넌트 코드 예제
 
@@ -1513,6 +1537,13 @@ PRE_GENERATION_CHECKLIST = """
 10. **⛔ 외부 아이콘 import 금지**: `lucide-react`, `heroicons`, `react-icons` import가 코드에 있는가? → **즉시 삭제!** 내장 `<Icon name="..." />` 만 사용.
 11. **⛔ 커스텀 컴포넌트 재정의 금지**: `const Divider = ...`, `const Card = ...` 등 Available Components에 이미 존재하는 이름으로 컴포넌트를 직접 정의했는가? → 삭제하고 `@/components`에서 import!
 12. **레이아웃 컴포넌트**: 페이지 레이아웃에 `GridLayout`, 세로 흐름에 `RowPattern`+`RowSlot`, 폼 그리드에 `FormGrid`+`FormGridCell`을 사용했는가? 수동 `grid-cols-12 col-span-N` 대신 `<GridLayout type="C">` 사용 권장.
+13. **Icon name+size 교차검증**: `<Icon name="..." size={N} />`에서 해당 name이 해당 size 목록에 존재하는가? 목록에 없는 조합 = "Icon not found" 에러.
+14. **색상 토큰 교차검증**: 텍스트에 사용한 hex가 토큰 테이블의 Text Class 컬럼에 있는가? bg- 전용 토큰을 text-에 사용하지 않았는가?
+15. **RowSlot 수동 간격**: RowSlot 자식 요소에 `mt-*`/`mb-*`를 추가하지 않았는가? (RowSlot이 간격 자동 관리)
+16. **GridLayout 사용 범위**: GridLayout이 페이지 최상위에서만 사용되었는가? Drawer/Dialog/Popover 내부에서 사용하지 않았는가?
+17. **Checkbox/Radio onChange**: `e.target.checked` DOM 패턴이 아닌 상태 토글 패턴을 사용했는가?
+18. **import 양방향 점검**: JSX에서 사용하지 않는 컴포넌트가 import에 남아 있지 않은가? (교체/제거 후 잔존)
+19. **폼 영역 FormGrid**: 폼/필터 입력 영역에 수동 `grid-cols-12` + `col-span-N` 대신 `<FormGrid columns={N}>` + `<FormGridCell>`을 사용했는가?
 
 ---
 
