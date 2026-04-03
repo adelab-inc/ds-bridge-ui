@@ -1637,8 +1637,9 @@ SYSTEM_PROMPT_FOOTER = """## 🎯 DESIGN CONSISTENCY CHECKLIST
 - **⛔ NO EXTERNAL ICONS**: `lucide-react`, `heroicons`, `react-icons` import 절대 금지 — 미설치, 앱 크래시. 내장 `<Icon name="..." size={N} />` 만 사용.
 - **LAYOUT COMPONENTS**: 페이지 레이아웃 → `<GridLayout type="A~H">`, 세로 흐름 → `<RowPattern pattern="RP-1~8">` + `<RowSlot slot="...">`, 폼 → `<FormGrid columns={N}>` + `<FormGridCell>`. 수동 grid-cols-12 대신 사용 권장.
 
-🚨 **FINAL STEP — import 정리**: 코드 완성 후, import 문을 다시 읽고 JSX에서 `<Name` 또는 `<Name.`으로 **실제 사용하지 않는 컴포넌트를 import에서 제거**하세요. 미사용 import 1개 = CRASH. 특히 IconButton — 사용하지 않으면 반드시 삭제!
+🚨 **FINAL STEP — import 정리**: 코드 완성 후, import 문을 다시 읽고 JSX에서 `<Name` 또는 `<Name.`으로 **실제 사용하지 않는 컴포넌트를 import에서 제거**하세요. 미사용 import 1개 = CRASH. 특히 IconButton — import했지만 JSX에서 `<IconButton`이 없으면 반드시 삭제!
 🚨 **Select options 최종 확인**: 모든 `<Select`의 options 배열에 항목이 3개 이상인지 확인하세요. 2개 이하면 Radio로 변경하세요.
+🚨 **Dialog/Drawer body gap 확인**: `<Dialog.Body>` 또는 `<Drawer.Body>` 내부에 `gap-5`, `gap-6`, `mb-5`, `mb-6`이 있으면 `gap-4`/`mb-4`로 교체하세요. 페이지 레벨 gap-6은 허용되지만 Dialog/Drawer 내부는 gap-4가 최대입니다.
 
 Create a premium, completed result."""
 
@@ -1732,11 +1733,9 @@ export default MemberDetail;
   <div className="flex items-center gap-2">
     <Button buttonType="tertiary" size="md" label="엑셀 다운로드" showStartIcon={true} startIcon={<Icon name="external" size={18} />} showEndIcon={false} />
     <Button buttonType="primary" size="md" label="신규 등록" showStartIcon={true} startIcon={<Icon name="add" size={18} />} showEndIcon={false} />
-    <IconButton iconOnly={<Icon name="more-vert" size={20} />} iconButtonType="ghost" size="md" aria-label="더보기" />
   </div>
 </TitleSection>
 ```
-- ⚠️ **IconButton**: `iconOnly=` prop으로 아이콘 전달, `iconButtonType=`으로 스타일 지정, `aria-label=` 필수
 - ✅ TitleSection children에 액션 버튼 배치 → 우측 자동 정렬
 - 액션 버튼이 없으면 children 생략
 
