@@ -15,7 +15,7 @@ settings = get_settings()
 
 class AIProvider(ABC):
     @abstractmethod
-    async def chat(self, messages: list[Message]) -> tuple[Message, dict | None]:
+    async def chat(self, messages: list[Message], **kwargs: Any) -> tuple[Message, dict | None]:
         pass
 
     @abstractmethod
@@ -37,10 +37,11 @@ class OpenAIProvider(AIProvider):
         self.client = AsyncOpenAI(api_key=settings.openai_api_key)
         self.model = settings.openai_model
 
-    async def chat(self, messages: list[Message]) -> tuple[Message, dict | None]:
+    async def chat(self, messages: list[Message], **kwargs: Any) -> tuple[Message, dict | None]:
         response = await self.client.chat.completions.create(
             model=self.model,
             messages=[{"role": m.role, "content": m.content} for m in messages],
+            temperature=0.5,
         )
         # choices가 비어있을 경우 안전 처리
         content = ""
@@ -61,6 +62,7 @@ class OpenAIProvider(AIProvider):
             model=self.model,
             messages=[{"role": m.role, "content": m.content} for m in messages],
             stream=True,
+            temperature=0.5,
         )
         async for chunk in stream:
             # choices가 비어있을 경우 안전 처리
@@ -107,6 +109,7 @@ class OpenAIProvider(AIProvider):
             messages=chat_messages,
             max_tokens=8192,
             stream=True,
+            temperature=0.5,
         )
 
         async for chunk in stream:
@@ -119,7 +122,7 @@ class AnthropicProvider(AIProvider):
         self.client = AsyncAnthropic(api_key=settings.anthropic_api_key)
         self.model = settings.anthropic_model
 
-    async def chat(self, messages: list[Message]) -> tuple[Message, dict | None]:
+    async def chat(self, messages: list[Message], **kwargs: Any) -> tuple[Message, dict | None]:
         system_message = ""
         chat_messages: list[dict[str, Any]] = []
 
@@ -134,6 +137,7 @@ class AnthropicProvider(AIProvider):
             max_tokens=4096,
             system=system_message if system_message else None,
             messages=chat_messages,
+            temperature=0.5,
         )
         content = response.content[0].text if response.content else ""
         usage = {
@@ -157,6 +161,7 @@ class AnthropicProvider(AIProvider):
             max_tokens=4096,
             system=system_message if system_message else None,
             messages=chat_messages,
+            temperature=0.5,
         ) as stream:
             async for text in stream.text_stream:
                 yield text
@@ -211,6 +216,7 @@ class AnthropicProvider(AIProvider):
             max_tokens=8192,  # 코드 생성을 위해 증가
             system=system_message if system_message else None,
             messages=chat_messages,
+            temperature=0.5,
         ) as stream:
             async for text in stream.text_stream:
                 yield text
@@ -234,7 +240,7 @@ class GeminiProvider(AIProvider):
         level = _THINKING_LEVEL_MAP.get(settings.gemini_thinking_level.lower())
         self._thinking_config = types.ThinkingConfig(thinking_level=level) if level else None
 
-    async def chat(self, messages: list[Message]) -> tuple[Message, dict | None]:
+    async def chat(self, messages: list[Message], **kwargs: Any) -> tuple[Message, dict | None]:
         system_instruction = None
         contents: list[types.Content] = []
 
@@ -245,9 +251,16 @@ class GeminiProvider(AIProvider):
                 role = "user" if m.role == "user" else "model"
                 contents.append(types.Content(role=role, parts=[types.Part(text=m.content)]))
 
+        # thinking_level override 지원 (예: description 생성 시 "off")
+        thinking_config = self._thinking_config
+        if "thinking_level" in kwargs:
+            level = _THINKING_LEVEL_MAP.get(kwargs["thinking_level"])
+            thinking_config = types.ThinkingConfig(thinking_level=level) if level else None
+
         config = types.GenerateContentConfig(
             system_instruction=system_instruction,
-            thinking_config=self._thinking_config,
+            thinking_config=thinking_config,
+            temperature=0.5,
         )
 
         response = await self.client.aio.models.generate_content(
@@ -286,6 +299,7 @@ class GeminiProvider(AIProvider):
         config = types.GenerateContentConfig(
             system_instruction=system_instruction,
             thinking_config=self._thinking_config,
+            temperature=0.5,
         )
 
         stream = await self.client.aio.models.generate_content_stream(
@@ -336,6 +350,7 @@ class GeminiProvider(AIProvider):
         config = types.GenerateContentConfig(
             system_instruction=system_instruction,
             thinking_config=self._thinking_config,
+            temperature=0.5,
         )
 
         stream = await self.client.aio.models.generate_content_stream(

@@ -278,6 +278,20 @@ async def build_conversation_history(
 
 FILE_TAG_PATTERN = re.compile(r'<file\s+path="([^"]+)">([\s\S]*?)</file>')
 
+# Fallback: 마크다운 코드블록 (```tsx ... ``` 또는 ```typescript ... ```)
+_MARKDOWN_CODE_PATTERN = re.compile(r'```(?:tsx|typescript|jsx)\s*\n([\s\S]*?)```')
+
+# 코드 첫 줄 경로 주석 패턴: // src/pages/Xxx.tsx
+_PATH_COMMENT_PATTERN = re.compile(r'^//\s*(src/\S+\.tsx)\s*$', re.MULTILINE)
+
+
+def _extract_path_hint(code: str) -> str:
+    """코드에서 파일 경로 힌트를 추출한다. 없으면 기본값 반환."""
+    match = _PATH_COMMENT_PATTERN.search(code)
+    if match:
+        return match.group(1)
+    return "src/pages/GeneratedComponent.tsx"
+
 # Icon size별 사용 가능한 이름 (존재하지 않는 조합 보정용)
 _ICON_NAMES_BY_SIZE: dict[int, set[str]] = {
     16: {"add", "announcement", "blank", "calendar", "check", "chevron-down", "chevron-left", "chevron-right", "chevron-up", "close", "delete", "dot", "edit", "external", "loading", "minus", "more-vert", "reset", "search", "star-fill", "star-line"},
@@ -318,6 +332,10 @@ def parse_ai_response(content: str) -> ParsedResponse:
     """
     AI 응답에서 대화 내용과 파일을 분리
 
+    1차: <file path="...">...</file> 태그 추출
+    2차 (fallback): 마크다운 코드블록 ```tsx ... ``` 추출
+         — Gemini vision 등이 <file> 태그 대신 코드블록으로 응답하는 경우 대응
+
     Args:
         content: AI 응답 전체 텍스트
 
@@ -326,7 +344,7 @@ def parse_ai_response(content: str) -> ParsedResponse:
     """
     files: list[FileContent] = []
 
-    # <file path="...">...</file> 태그 추출
+    # 1차: <file path="...">...</file> 태그 추출
     for match in FILE_TAG_PATTERN.finditer(content):
         files.append(
             FileContent(
@@ -335,8 +353,33 @@ def parse_ai_response(content: str) -> ParsedResponse:
             )
         )
 
-    # 태그 제거한 나머지 = 대화 내용
-    conversation = FILE_TAG_PATTERN.sub("", content).strip()
+    if files:
+        # 태그 제거한 나머지 = 대화 내용
+        conversation = FILE_TAG_PATTERN.sub("", content).strip()
+        return ParsedResponse(
+            conversation=conversation,
+            files=files,
+            raw=content,
+        )
+
+    # 2차 fallback: 마크다운 코드블록에서 추출
+    for match in _MARKDOWN_CODE_PATTERN.finditer(content):
+        code = match.group(1).strip()
+        if not code:
+            continue
+        # 코드 내에서 경로 힌트 추출 시도 (첫 줄 // src/pages/Xxx.tsx 주석)
+        path = _extract_path_hint(code)
+        files.append(
+            FileContent(
+                path=path,
+                content=_postprocess_code(code),
+            )
+        )
+
+    if files:
+        conversation = _MARKDOWN_CODE_PATTERN.sub("", content).strip()
+    else:
+        conversation = content.strip()
 
     return ParsedResponse(
         conversation=conversation,
