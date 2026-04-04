@@ -4,18 +4,30 @@ import * as React from 'react';
 
 import { cn } from './utils';
 import { useSpacingMode } from './SpacingModeProvider';
+import { useOptionGroupContext } from './OptionGroup';
 
 const optionVariants = cva(
-  'cursor-pointer inline-flex items-center',
+  'inline-flex items-start',
   ({
     variants: {
+      "disabled": {
+        "false": "cursor-pointer",
+        "true": "cursor-not-allowed",
+      },
       "mode": {
         "base": "",
         "compact": "",
       },
+      "size": {
+        "lg": "",
+        "md": "",
+        "sm": "",
+      },
     },
     defaultVariants: {
+      "disabled": false,
       "mode": "base",
+      "size": "md",
     },
     compoundVariants: [
       {
@@ -31,45 +43,59 @@ const optionVariants = cva(
 );
 
 const labelVariants = cva(
-  'text-text-primary',
+  'break-all',
   {
     variants: {
-      inputSize: {
-        '16': 'text-body-sm-regular',
-        '18': 'text-body-sm-regular',
-        '20': 'text-body-sm-regular',
-        '24': 'text-body-md-regular',
-        '28': 'text-body-lg-regular',
+      size: {
+        sm: 'text-body-sm-regular',
+        md: 'text-body-md-regular',
+        lg: 'text-body-lg-regular',
+      },
+      disabled: {
+        true: 'text-text-disabled',
+        false: 'text-text-primary',
       },
     },
     defaultVariants: {
-      inputSize: '18',
+      size: 'md',
+      disabled: false,
     },
   }
 );
+
+const sizeToInputSize = { sm: '20', md: '24', lg: '28' } as const;
 
 export interface OptionProps
   extends Omit<React.LabelHTMLAttributes<HTMLLabelElement>, 'children'>,
     VariantProps<typeof optionVariants> {
   children: React.ReactNode;
   label: string;
-  inputSize?: '16' | '18' | '20' | '24' | '28';
+  size?: 'sm' | 'md' | 'lg';
+  disabled?: boolean;
 }
 
 const Option = React.forwardRef<HTMLLabelElement, OptionProps>(
-  ({ className, children, label, inputSize = '18', mode: propMode, ...props }, ref) => {
+  ({ className, children, label, size: propSize, disabled = false, mode: propMode, ...props }, ref) => {
     const contextMode = useSpacingMode();
     const mode = propMode ?? contextMode;
+
+    // Size 우선순위: 1. prop (명시적) → 2. Context (OptionGroup) → 3. 기본값
+    const optionGroupContext = useOptionGroupContext();
+    const size = propSize ?? optionGroupContext?.size ?? 'md';
 
     // 고유 ID 생성 (접근성)
     const inputId = React.useId();
 
-    // children에 renderContainer="div", size, id 전달
+    // size → Checkbox/Radio 픽셀 높이 변환
+    const inputSize = sizeToInputSize[size];
+
+    // children에 renderContainer="div", size, id, disabled 전달
     const childWithProps = React.isValidElement(children)
-      ? React.cloneElement(children as React.ReactElement<any>, {
+      ? React.cloneElement(children as React.ReactElement<Record<string, unknown>>, {
           renderContainer: 'div',
           id: inputId,
-          ...(inputSize && { size: inputSize }),
+          size: inputSize,
+          ...(disabled && { disabled: true }),
         })
       : children;
 
@@ -77,11 +103,11 @@ const Option = React.forwardRef<HTMLLabelElement, OptionProps>(
       <label
         ref={ref}
         htmlFor={inputId}
-        className={cn(optionVariants({ mode, className }))}
+        className={cn(optionVariants({ size, mode, disabled, className }))}
         {...props}
       >
         {childWithProps}
-        <span className={cn(labelVariants({ inputSize }))}>
+        <span className={cn(labelVariants({ size, disabled }))}>
           {label}
         </span>
       </label>

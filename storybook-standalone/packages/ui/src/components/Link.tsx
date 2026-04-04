@@ -1,33 +1,41 @@
-import { Link as RouterLink, type LinkProps as RouterLinkProps } from '@tanstack/react-router';
+import { Link as RouterLink } from '@tanstack/react-router';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 
 import { cn } from './utils';
 
-const linkVariants = cva("'inline-flex justify-center items-center'", ({
+const linkVariants = cva('inline-flex justify-center items-center', ({
     variants: {
+      "interaction": {
+        "default": "",
+        "hover": "",
+      },
       "size": {
         "lg": "text-body-lg-regular",
         "md": "text-body-md-regular",
         "sm": "text-body-sm-regular",
       },
-      "variant": {
-        "always-inherit": "text-text-primary underline underline-offset-auto",
-        "always-link": "text-text-semantic-info underline underline-offset-auto",
-        "none-inherit": "text-text-primary",
-        "none-link": "text-text-semantic-info",
-        "on-hover-inherit": "text-text-primary hover:underline hover:underline-offset-auto",
-        "on-hover-link": "text-text-semantic-info hover:underline hover:underline-offset-auto",
+      "tone": {
+        "inherit": "text-text-primary",
+        "link": "text-text-semantic-info",
+      },
+      "underline": {
+        "always": "underline underline-offset-auto",
+        "none": "",
+        "on-hover": "hover:underline hover:underline-offset-auto",
       },
     },
     defaultVariants: {
+      "interaction": "default",
       "size": "md",
-      "variant": "on-hover-link",
+      "tone": "link",
+      "underline": "on-hover",
     },
   }));
 
 // 내부 라우팅을 위한 LinkProps 정의
-interface InternalLinkProps extends RouterLinkProps {
+// Note: RouterLinkProps를 직접 extends하지 않음 — @aplus/ui는 앱별 라우트 타입을 알 수 없기 때문
+interface InternalLinkProps {
   to: string;
   href?: never;
 }
@@ -49,13 +57,15 @@ type CommonProps = {
 export type LinkProps = CommonProps & (InternalLinkProps | ExternalLinkProps);
 
 const Link = React.forwardRef<HTMLAnchorElement, LinkProps>(
-  ({ className, variant, size, children, ...props }, ref) => {
-    const classes = cn(linkVariants({ variant, size, className }));
+  ({ className, underline, tone, size, interaction, children, ...props }, ref) => {
+    const classes = cn(linkVariants({ underline, tone, size, interaction, className }));
 
     if ('to' in props) {
       // 내부 라우팅 (TanStack Router Link)
+      const { to, ...routerRest } = props as InternalLinkProps;
       return (
-        <RouterLink ref={ref} className={classes} {...props}>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        <RouterLink ref={ref as any} className={classes} to={to} {...routerRest}>
           {children}
         </RouterLink>
       );

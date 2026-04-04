@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { AgChartComponent, AgChartUtils, ChartOptionsHelper, CHART_THEMES } from '../components/Chart';
+import { AgChartComponent, ChartOptionsHelper, CHART_THEMES } from '../components/Chart';
 
 const meta: Meta<typeof AgChartComponent> = {
     title: 'Components/Chart',

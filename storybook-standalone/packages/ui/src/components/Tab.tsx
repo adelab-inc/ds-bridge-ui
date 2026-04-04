@@ -3,10 +3,11 @@ import * as React from 'react';
 import { cn } from './utils';
 import { useSpacingMode } from './SpacingModeProvider';
 import { Icon } from './Icon';
+import { IconButton } from './IconButton';
 
 const tabVariants = cva('flex max-w-[1200px] items-center', ({
     variants: {
-      "isDisabled": {
+      "disabled": {
         "false": "",
         "true": "cursor-not-allowed",
       },
@@ -20,7 +21,7 @@ const tabVariants = cva('flex max-w-[1200px] items-center', ({
       },
     },
     defaultVariants: {
-      "isDisabled": false,
+      "disabled": false,
       "mode": "base",
       "widthMode": "content",
     },
@@ -39,8 +40,12 @@ const tabVariants = cva('flex max-w-[1200px] items-center', ({
 export interface TabItem {
   /** 아이템의 고유 값 */
   value: string;
-  /** 아이템에 표시될 라벨 */
+  /** 아이템에 표시될 라벨 (Figma: text) */
   label: string;
+  /** 아이콘 표시 여부 (Figma: showIcon) */
+  showIcon?: boolean;
+  /** 아이콘 (Figma: icon-blank-20) */
+  icon?: React.ReactNode;
   /** 탭 선택 시 표시될 컨텐츠 */
   content?: React.ReactNode;
   /** 개별 아이템 비활성화 여부 */
@@ -50,19 +55,28 @@ export interface TabItem {
 export interface TabProps
   extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'>,
     VariantProps<typeof tabVariants> {
-  /** 탭 아이템 목록 (최대 5개 권장) */
+  /** 탭 아이템 목록 */
   items: TabItem[];
   /** 현재 선택된 값 */
   value?: string;
   /** 값 변경 시 호출되는 콜백 */
   onChange?: (value: string) => void;
-  /** 아이템 너비 모드: equal(균등 분배), content(컨텐츠에 맞춤, 기본값) */
+  /** 아이템 너비 모드: equal(균등 분배), content(컨텐츠에 맞춤, 기본값) (Figma: width mode) */
   widthMode?: 'equal' | 'content';
   /** 전체 탭 비활성화 */
   disabled?: boolean;
   /** 탭 리스트와 패널 사이 간격 (Tailwind 클래스, 예: 'gap-4', 'gap-layout-stack-md') */
   gap?: string;
 }
+
+const renderIcon = (icon: React.ReactNode) => {
+  if (React.isValidElement(icon)) {
+    return React.cloneElement(icon as React.ReactElement<{ className?: string }>, {
+      className: cn('w-5 h-5', (icon as React.ReactElement<{ className?: string }>).props.className),
+    });
+  }
+  return icon;
+};
 
 const Tab = React.forwardRef<HTMLDivElement, TabProps>(
   (
@@ -115,7 +129,8 @@ const Tab = React.forwardRef<HTMLDivElement, TabProps>(
       const container = scrollContainerRef.current;
       if (!container) return;
 
-      const scrollAmount = 200;
+      // 컨테이너 가용너비의 80%씩 이동 (보고 있던 지점의 끝을 놓치지 않고 최대한 많이 이동)
+      const scrollAmount = container.clientWidth * 0.8;
       container.scrollBy({
         left: direction === 'left' ? -scrollAmount : scrollAmount,
         behavior: 'smooth',
@@ -143,16 +158,16 @@ const Tab = React.forwardRef<HTMLDivElement, TabProps>(
           break;
         case 'ArrowLeft':
           e.preventDefault();
-          focusItem(index - 1);
+          focusItem(index - 1, -1);
           break;
         case 'ArrowRight':
           e.preventDefault();
-          focusItem(index + 1);
+          focusItem(index + 1, 1);
           break;
       }
     };
 
-    const focusItem = (index: number) => {
+    const focusItem = (index: number, direction: -1 | 1) => {
       const enabledItems = items.filter((item) => !item.disabled && !disabled);
       if (enabledItems.length === 0) return;
 
@@ -162,12 +177,14 @@ const Tab = React.forwardRef<HTMLDivElement, TabProps>(
 
       // 비활성화된 아이템은 건너뛰기
       while (items[targetIndex]?.disabled || disabled) {
-        targetIndex = index < 0 ? targetIndex - 1 : targetIndex + 1;
+        targetIndex += direction;
         if (targetIndex < 0) targetIndex = items.length - 1;
         if (targetIndex >= items.length) targetIndex = 0;
       }
 
-      const itemElements = document.querySelectorAll('[data-tab-item]');
+      const container = scrollContainerRef.current;
+      if (!container) return;
+      const itemElements = container.querySelectorAll('[data-tab-item]');
       (itemElements[targetIndex] as HTMLElement)?.focus();
     };
 
@@ -180,19 +197,19 @@ const Tab = React.forwardRef<HTMLDivElement, TabProps>(
         <div
           ref={ref}
           role="tablist"
-          className={cn(tabVariants({ mode, widthMode, isDisabled: disabled, className }))}
+          className={cn(tabVariants({ mode, widthMode, disabled, className }))}
           {...props}
         >
           {/* 탭 아이템 컨테이너 */}
           <div
             ref={scrollContainerRef}
             className={cn(
-              'flex flex-1 min-w-0 overflow-x-auto scrollbar-hide [scrollbar-width:none] [-ms-overflow-style:none]',
+              'flex flex-1 min-w-0 overflow-x-auto scrollbar-hide [scrollbar-width:none] [-ms-overflow-style:none] p-0.5 -m-0.5',
               mode === 'base' ? 'gap-component-gap-tab-group' : 'gap-component-gap-tab-group-compact'
             )}
           >
             {items.map((item, index) => {
-              const isSelected = value === item.value;
+              const isActive = value === item.value;
               const isItemDisabled = disabled || item.disabled;
 
               return (
@@ -200,52 +217,45 @@ const Tab = React.forwardRef<HTMLDivElement, TabProps>(
                   key={item.value}
                   mode={mode}
                   widthMode={widthMode}
-                  isSelected={isSelected}
-                  isDisabled={isItemDisabled}
+                  active={isActive}
+                  disabled={isItemDisabled}
                   onClick={() => handleItemClick(item.value, item.disabled)}
                   onKeyDown={(e) => handleKeyDown(e, item.value, index, item.disabled)}
-                  tabIndex={isItemDisabled ? -1 : isSelected ? 0 : -1}
+                  tabIndex={isItemDisabled ? -1 : isActive ? 0 : -1}
                   data-tab-item
-                  aria-selected={isSelected}
+                  aria-selected={isActive}
                   aria-disabled={isItemDisabled}
                 >
+                  {item.showIcon && item.icon && (
+                    <span className="shrink-0">{renderIcon(item.icon)}</span>
+                  )}
                   {item.label}
                 </TabItemComponent>
               );
             })}
           </div>
 
-          {/* 스크롤 화살표 (우측에 함께 배치) */}
+          {/* 스크롤 화살표 (우측에 함께 배치, Figma: IconButton) */}
           {showArrows && (
             <div className="flex flex-shrink-0 items-center gap-component-gap-control-group">
-              <button
-                type="button"
+              <IconButton
+                iconButtonType="ghost"
+                size="lg"
+                interaction={canScrollLeft ? 'default' : 'disabled'}
+                iconOnly={<Icon name="chevron-left" size={24} />}
                 onClick={() => scroll('left')}
-                disabled={!canScrollLeft}
-                className={cn(
-                  'w-10 h-10 flex items-center justify-center rounded transition-colors',
-                  canScrollLeft
-                    ? 'text-icon-interactive-default hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed'
-                    : 'text-icon-interactive-disabled cursor-not-allowed'
-                )}
                 aria-label="이전 탭으로 스크롤"
-              >
-                <Icon name="chevron-left" size={24} />
-              </button>
-              <button
-                type="button"
+                tooltip="이전 탭으로 스크롤"
+              />
+              <IconButton
+                iconButtonType="ghost"
+                size="lg"
+                interaction={canScrollRight ? 'default' : 'disabled'}
+                iconOnly={<Icon name="chevron-right" size={24} />}
                 onClick={() => scroll('right')}
-                disabled={!canScrollRight}
-                className={cn(
-                  'w-10 h-10 flex items-center justify-center rounded transition-colors',
-                  canScrollRight
-                    ? 'text-icon-interactive-default hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed'
-                    : 'text-icon-interactive-disabled cursor-not-allowed'
-                )}
                 aria-label="다음 탭으로 스크롤"
-              >
-                <Icon name="chevron-right" size={24} />
-              </button>
+                tooltip="다음 탭으로 스크롤"
+              />
             </div>
           )}
         </div>
@@ -264,79 +274,76 @@ Tab.displayName = 'Tab';
 
 // TabItemComponent 내부 컴포넌트
 const tabItemVariants = cva(
-  'flex justify-center items-center whitespace-nowrap rounded text-button-lg-medium text-text-secondary text-center transition-colors',
+  'relative flex justify-center items-center whitespace-nowrap rounded text-button-lg-medium text-center transition-colors',
   {
     variants: {
       mode: {
-        base: '',
-        compact: '',
+        base: 'py-component-inset-tab-y px-component-inset-tab-x gap-component-gap-icon-label-md',
+        compact: 'py-component-inset-tab-y-compact px-component-inset-tab-x-compact gap-component-gap-icon-label-md-compact',
       },
       widthMode: {
         equal: 'flex-1 min-w-[96px] max-w-[216px]',
         content: '',
       },
-      isSelected: {
-        true: '',
+      active: {
+        true: "after:content-[''] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[3px]",
         false: '',
       },
-      isDisabled: {
+      disabled: {
         true: 'cursor-not-allowed',
         false: 'cursor-pointer',
       },
     },
     compoundVariants: [
-      // base 모드 padding
+      // 비선택 + 활성화 — Figma: text/secondary + hover/pressed overlay
       {
-        mode: 'base',
-        class: 'py-component-inset-tab-y px-component-inset-tab-x gap-component-gap-icon-label-md',
-      },
-      // compact 모드 padding
-      {
-        mode: 'compact',
-        class: 'py-component-inset-tab-y-compact px-component-inset-tab-x-compact gap-component-gap-icon-label-md-compact',
-      },
-      // 기본 상태 (선택 안됨, 활성화)
-      {
-        isSelected: false,
-        isDisabled: false,
+        active: false,
+        disabled: false,
         class:
-          'hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed focus-visible:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]',
+          'text-text-secondary hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed focus-visible:outline-none focus-visible:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]',
       },
-      // 선택된 상태 (hover/pressed 없음, 하단 border-radius 제거)
+      // 선택 + 활성화 — Figma: text/accent + border/selection 인디케이터
       {
-        isSelected: true,
-        isDisabled: false,
+        active: true,
+        disabled: false,
         class:
-          'rounded-b-none border-b-[3px] border-border-selection text-text-accent focus-visible:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]',
+          'after:bg-border-selection text-text-accent focus-visible:outline-none focus-visible:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]',
       },
-      // 비활성화 상태
+      // 비선택 + 비활성화 — Figma: text/disabled만 적용
       {
-        isDisabled: true,
-        class: 'bg-bg-disabled-on-filled text-text-disabled',
+        active: false,
+        disabled: true,
+        class: 'text-text-disabled',
+      },
+      // 선택 + 비활성화 — Figma: text/disabled + 인디케이터 bg/disabled 색상
+      {
+        active: true,
+        disabled: true,
+        class: 'after:bg-bg-disabled-on-filled text-text-disabled',
       },
     ],
     defaultVariants: {
       mode: 'base',
       widthMode: 'content',
-      isSelected: false,
-      isDisabled: false,
+      active: false,
+      disabled: false,
     },
   },
 );
 
 interface TabItemComponentProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'disabled'>,
     VariantProps<typeof tabItemVariants> {}
 
 const TabItemComponent = React.forwardRef<HTMLButtonElement, TabItemComponentProps>(
-  ({ className, mode, widthMode, isSelected, isDisabled, children, ...props }, ref) => {
+  ({ className, mode, widthMode, active, disabled, children, ...props }, ref) => {
     return (
       <button
         ref={ref}
         type="button"
         role="tab"
-        className={cn(tabItemVariants({ mode, widthMode, isSelected, isDisabled, className }))}
-        disabled={isDisabled ?? false}
+        className={cn(tabItemVariants({ mode, widthMode, active, disabled, className }))}
+        disabled={disabled ?? false}
         {...props}
       >
         {children}

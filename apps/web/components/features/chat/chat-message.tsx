@@ -65,11 +65,18 @@ function ChatMessage({
 
   const isClickable = hasContent && onClick;
 
+  const handleClick = () => {
+    // 텍스트 선택 중이면 클릭 이벤트 무시 (코드블록 드래그 선택 보호)
+    const selection = window.getSelection();
+    if (selection && selection.toString().length > 0) return;
+    onClick?.();
+  };
+
   return (
     <div
       data-slot="chat-message"
       className={cn('flex w-full', className)}
-      onClick={isClickable ? onClick : undefined}
+      onClick={isClickable ? handleClick : undefined}
       role={isClickable ? 'button' : undefined}
       tabIndex={isClickable ? 0 : undefined}
       onKeyDown={

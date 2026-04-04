@@ -4,9 +4,21 @@ import * as React from 'react';
 
 import { cn } from './utils';
 import { useSpacingMode } from './SpacingModeProvider';
+import { Radio } from './Radio';
+
+// OptionGroup Context - Option에 size 전달
+interface OptionGroupContextValue {
+  size: 'sm' | 'md' | 'lg';
+}
+
+const OptionGroupContext = React.createContext<OptionGroupContextValue | undefined>(undefined);
+
+export const useOptionGroupContext = () => {
+  return React.useContext(OptionGroupContext);
+};
 
 const optionGroupVariants = cva(
-  'inline-flex flex-col items-start',
+  'inline-flex flex-col items-start w-full',
   ({
     variants: {
       "mode": {
@@ -42,11 +54,11 @@ const optionGroupVariants = cva(
 );
 
 const optionsContainerVariants = cva(
-  'flex min-h-[32px] gap-component-gap-selection-group',
+  'flex min-h-[32px] items-start gap-component-gap-selection-group',
   {
     variants: {
       orientation: {
-        horizontal: 'flex-row',
+        horizontal: 'flex-row flex-wrap',
         vertical: 'flex-col',
       },
     },
@@ -56,7 +68,7 @@ const optionsContainerVariants = cva(
   }
 );
 
-const titleVariants = cva(
+const labelVariants = cva(
   'flex items-center text-text-primary gap-layout-inline-xs',
   {
     variants: {
@@ -72,7 +84,7 @@ const titleVariants = cva(
   }
 );
 
-const helperTextVariants = cva(
+const helptextVariants = cva(
   'text-field-text-help',
   {
     variants: {
@@ -91,88 +103,103 @@ const helperTextVariants = cva(
 export interface OptionGroupProps
   extends Omit<React.HTMLAttributes<HTMLDivElement>, 'title'>,
     VariantProps<typeof optionGroupVariants> {
-  title?: string;
-  /** 필수 입력 표시 (asterisk *) */
-  required?: boolean;
-  helperText?: string;
+  label?: string;
+  /** Label 표시 여부 (Figma: Show Label) */
+  showLabel?: boolean;
+  /** 필수 입력 표시 (asterisk *) (Figma: Show Asterisk) */
+  showAsterisk?: boolean;
+  helptext?: string;
+  /** Helptext 표시 여부 (Figma: Show Helptext) */
+  showHelptext?: boolean;
   children: React.ReactNode;
   size?: 'sm' | 'md' | 'lg';
   orientation?: 'horizontal' | 'vertical';
-  containerWidth?: string | number;
-  groupType?: 'radio' | 'checkbox';
+  /** FormGrid 내 무라벨 사용 시 라벨 높이만큼 빈 공간 유지 (정렬용) */
+  reserveLabelSpace?: boolean;
 }
 
 const OptionGroup = React.forwardRef<HTMLDivElement, OptionGroupProps>(
-  ({ className, title, required = false, helperText, children, size = 'md', orientation = 'vertical', containerWidth = 279, groupType, mode: propMode, ...props }, ref) => {
+  (
+    {
+      className,
+      label,
+      showLabel = true,
+      showAsterisk = false,
+      helptext,
+      showHelptext = true,
+      children,
+      size = 'md',
+      orientation = 'vertical',
+      reserveLabelSpace = false,
+      mode: propMode,
+      ...props
+    },
+    ref
+  ) => {
     const contextMode = useSpacingMode();
     const mode = propMode ?? contextMode;
 
     // 고유 ID 생성 (접근성)
     const uniqueId = React.useId();
-    const titleId = title ? `${uniqueId}-title` : undefined;
-    const helperTextId = helperText ? `${uniqueId}-helper` : undefined;
+    const labelId = showLabel && label ? `${uniqueId}-label` : undefined;
+    const helptextId = showHelptext && helptext ? `${uniqueId}-helptext` : undefined;
 
-    // Size에 따른 Checkbox/Radio height 매핑
-    const inputSize = {
-      sm: '20',
-      md: '24',
-      lg: '28',
-    }[size] as '20' | '24' | '28';
+    // groupType 자동 감지 (children의 첫 번째 Option 내부의 Radio/Checkbox로 판단)
+    const firstChild = React.Children.toArray(children)[0];
+    let groupType: 'radio' | 'checkbox' = 'checkbox';
 
-    // children에 size prop 전달
-    const childrenWithSize = React.Children.map(children, (child) => {
-      if (React.isValidElement(child)) {
-        return React.cloneElement(child as React.ReactElement<any>, {
-          inputSize,
-        });
+    if (React.isValidElement(firstChild)) {
+      const optionChildren = firstChild.props.children;
+      if (React.isValidElement(optionChildren)) {
+        // Radio 컴포넌트와 직접 비교 (가장 확실한 방법)
+        groupType = optionChildren.type === Radio ? 'radio' : 'checkbox';
       }
-      return child;
-    });
-
-    // width 스타일 처리
-    const widthValue = typeof containerWidth === 'number' ? `${containerWidth}px` : containerWidth;
-    const combinedStyle = { ...props.style, width: widthValue };
+    }
 
     // 접근성 속성
     const role = groupType === 'radio' ? 'radiogroup' : 'group';
-    const ariaLabelledBy = titleId;
-    const ariaDescribedBy = helperTextId;
+
+    // Context value 생성 (Go 템플릿 충돌 회피)
+    const contextValue = React.useMemo(() => ({ size }), [size]);
 
     return (
-      <div
-        ref={ref}
-        className={cn(optionGroupVariants({ size, orientation, mode, className }))}
-        style={combinedStyle}
-        role={role}
-        aria-labelledby={ariaLabelledBy}
-        aria-describedby={ariaDescribedBy}
-        {...props}
-      >
-        {title && (
-          <div id={titleId} className={cn(titleVariants({ size }))}>
-            <span>{title}</span>
-            {required && (
-              <span
-                className={cn(
-                  'text-text-accent',
-                  size === 'sm' ? 'text-form-label-sm-medium' : 'text-form-label-md-medium'
-                )}
-                aria-hidden="true"
-              >
-                *
-              </span>
-            )}
+      <OptionGroupContext.Provider value={contextValue}>
+        <div
+          ref={ref}
+          className={cn(optionGroupVariants({ size, orientation, mode, className }))}
+          role={role}
+          aria-labelledby={labelId}
+          aria-describedby={helptextId}
+          {...props}
+        >
+          {showLabel && label ? (
+            <div id={labelId} className={cn(labelVariants({ size }))}>
+              <span>{label}</span>
+              {showAsterisk && (
+                <span
+                  className={cn(
+                    'text-text-accent',
+                    size === 'sm' ? 'text-form-label-sm-medium' : 'text-form-label-md-medium'
+                  )}
+                  aria-hidden="true"
+                >
+                  *
+                </span>
+              )}
+            </div>
+          ) : reserveLabelSpace ? (
+            <div className={cn(labelVariants({ size }))} aria-hidden="true">&nbsp;</div>
+          ) : null}
+          <div className={cn(optionsContainerVariants({ orientation }))}>
+            {children}
           </div>
-        )}
-        <div className={cn(optionsContainerVariants({ orientation }))}>
-          {childrenWithSize}
+          {showHelptext && helptext && (
+            <div id={helptextId} className={cn(helptextVariants({ size }))}>
+              {helptext}
+            </div>
+          )}
         </div>
-        {helperText && (
-          <div id={helperTextId} className={cn(helperTextVariants({ size }))}>
-            {helperText}
-          </div>
-        )}
-      </div>
+      </OptionGroupContext.Provider>
     );
   }
 );

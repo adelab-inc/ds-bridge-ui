@@ -3,6 +3,7 @@ import * as React from 'react';
 import { cn } from './utils';
 import {
   Item as TreeMenuItem,
+  itemVariants as treeMenuItemVariants,
   TreeMenuItemData,
   TreeMenuItemDataSm,
   TreeMenuItemDataMd,
@@ -11,7 +12,7 @@ import {
 } from './TreeMenu/Item';
 import { useControllableState } from '../hooks/useControllableState';
 
-const treeMenuVariants = cva('flex flex-col max-h-[640px] overflow-y-auto', ({
+const treeMenuVariants = cva('flex flex-col max-h-[640px] overflow-y-auto p-[2px]', ({
     variants: {
       "size": {
         "md": "",
@@ -44,6 +45,12 @@ interface TreeMenuPropsCommon
   onExpandChange?: (expandedIds: Set<string>) => void;
   /** 단일 아이템 토글 콜백 (디버깅/로깅용, 선택적) */
   onExpandToggle?: (id: string, isExpanded: boolean) => void;
+  /** 초기 선택 아이템 ID - Uncontrolled 모드 */
+  defaultSelectedId?: string | null;
+  /** 현재 선택 아이템 ID - Controlled 모드 */
+  selectedId?: string | null;
+  /** 선택 상태 변경 콜백 */
+  onSelectedChange?: (selectedId: string | null) => void;
   /** 드래그 앤 드롭 활성화 */
   draggable?: boolean;
   /** 아이템 이동 콜백 - 드래그 앤 드롭 완료 시 호출 */
@@ -186,6 +193,10 @@ function TreeMenuInner(
     checkboxMode = false,
     checkedIds = new Set<string>(),
     onCheckChange,
+    // 선택 상태 props
+    defaultSelectedId = null,
+    selectedId: controlledSelectedId,
+    onSelectedChange,
     // Drag & Drop props
     draggable = false,
     onItemMove,
@@ -201,6 +212,16 @@ function TreeMenuInner(
     defaultExpandedIds,
     onExpandChange
   );
+
+  // 선택 상태 관리 (Controlled/Uncontrolled)
+  const [selectedId, setSelectedId] = useControllableState(
+    controlledSelectedId,
+    defaultSelectedId,
+    onSelectedChange
+  );
+
+  // 키보드 네비게이션 구분 (마우스 클릭 시 focus ring 숨김)
+  const isKeyboardNavRef = React.useRef(false);
 
   // 포커스 인덱스 관리
   const [focusedId, setFocusedId] = React.useState<string | null>(null);
@@ -424,8 +445,12 @@ function TreeMenuInner(
     onCheckChange(item.id, checked, affectedIds);
   };
 
-  // 아이템 클릭
+  // 아이템 클릭 (선택 상태 업데이트 + 콜백)
   const handleItemClick = (item: TreeMenuItemDataMd) => {
+    // 마우스 클릭이므로 키보드 네비게이션 아님
+    isKeyboardNavRef.current = false;
+    // 선택 상태 업데이트
+    setSelectedId(item.id);
     // onItemClick 호출 (타입 안전성을 위해 any 사용)
     (onItemClick as ((item: TreeMenuItemDataMd) => void) | undefined)?.(item);
   };
@@ -450,6 +475,7 @@ function TreeMenuInner(
 
   // 키보드 네비게이션
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    isKeyboardNavRef.current = true;
     const flatItems = getFlatItems();
     const currentIndex = flatItems.findIndex(f => f.item.id === focusedId);
 
@@ -535,9 +561,11 @@ function TreeMenuInner(
   // Item에서 isMdSize 체크로 렌더링 여부 결정 (badge와 동일한 방식으로 일관성 확보)
   const renderItems = (menuItems: TreeMenuItemDataMd[], depth: number = 1): React.ReactNode => {
     return menuItems.map(item => {
-      const hasChildren = !!(item.children && item.children.length > 0);
+      const showTree = !!item.showTree;
       const isExpanded = expandedIds.has(item.id);
-      const isFocused = focusedId === item.id;
+      // 키보드 네비게이션일 때만 focus ring 표시
+      const isFocused = focusedId === item.id && isKeyboardNavRef.current;
+      const isSelected = selectedId === item.id;
       const checkState = checkStates.get(item.id) || null;
       // focusedId가 없을 때만 첫 번째 아이템에 Tab 진입 허용
       const isFirstFocusable = focusedId === null && item.id === firstFocusableId;
@@ -554,9 +582,9 @@ function TreeMenuInner(
             item={item}
             size={size}
             depth={Math.min(depth, 4) as 1 | 2 | 3 | 4}
-            hasChildren={hasChildren}
             isExpanded={isExpanded}
             isFocused={isFocused}
+            isSelected={isSelected}
             isFirstFocusable={isFirstFocusable}
             checkboxMode={checkboxMode}
             checkState={checkState}
@@ -575,7 +603,7 @@ function TreeMenuInner(
             onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, item.id)}
           />
-          {hasChildren && isExpanded && (
+          {showTree && isExpanded && (
             <div role="group">
               {renderItems(item.children!, depth + 1)}
             </div>
@@ -592,6 +620,13 @@ function TreeMenuInner(
       aria-label="Tree Menu"
       className={cn(treeMenuVariants({ size }), className)}
       onKeyDown={handleKeyDown}
+      onBlur={(e) => {
+        // 포커스가 트리 메뉴 바깥으로 나갈 때 focus ring 제거
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+          setFocusedId(null);
+          isKeyboardNavRef.current = false;
+        }
+      }}
       {...restProps}
     >
       {renderItems(mdItems)}
@@ -602,8 +637,8 @@ function TreeMenuInner(
 /**
  * TreeMenu 컴포넌트 (판별 유니온 패턴)
  * size prop에 따라 타입이 자동으로 결정됩니다.
- * - size="md" (기본값): 체크박스 관련 props 사용 가능, items에 badge 사용 가능
- * - size="sm": 체크박스/뱃지 관련 props 사용 불가 (타입 에러)
+ * - size="md" (기본값): 체크박스 관련 props 사용 가능, items에 closeTrailing 사용 가능
+ * - size="sm": 체크박스/closeTrailing 관련 props 사용 불가 (타입 에러)
  */
 const TreeMenu = React.forwardRef(TreeMenuInner) as React.ForwardRefExoticComponent<
   TreeMenuProps & React.RefAttributes<HTMLDivElement>
@@ -611,4 +646,4 @@ const TreeMenu = React.forwardRef(TreeMenuInner) as React.ForwardRefExoticCompon
 
 TreeMenu.displayName = 'TreeMenu';
 
-export { TreeMenu, treeMenuVariants };
+export { TreeMenu, treeMenuVariants, treeMenuItemVariants };

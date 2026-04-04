@@ -44,31 +44,60 @@ def load_component_schema() -> tuple[dict | None, str | None]:
 # ============================================================================
 
 # WHITELIST: Intersection of AI schema (component-schema.json) and UMD bundle exports
-# Only these 18 components are both in schema AND available at runtime
-# NOTE: Option/OptionGroup removed - Select uses `options` prop internally (no separate import needed)
+# Components that are both in schema AND available at runtime
 AVAILABLE_COMPONENTS_WHITELIST = {
     # Basic
     "Button",
+    "Icon",
+    "IconButton",
     "Link",
     # Display
     "Alert",
     "Badge",
     "Chip",
+    "ChipGroup",
     "Dialog",
     "Drawer",
     "Divider",
+    "Heading",
+    "LoadingSpinner",
     "Tag",
+    "TagGroup",
     "Tooltip",
     # Form
     "Checkbox",
     "Field",
+    "FieldGroup",
     "Radio",
-    "Select",  # Use options prop: options={[{label, value}]} - do NOT import Option/OptionGroup
+    "Select",
     "ToggleSwitch",
+    "Option",
+    "OptionGroup",
     # Navigation
-    "Pagination",  # 테이블 하단 페이지네이션
-    # Data (프리뷰 미지원 - UMD 빌드에서 stub 처리됨)
+    "Tab",
+    "Segment",
+    "TreeMenu",
+    # Layout / Composite
+    "ActionBar",
+    "FilterBar",
+    "FormGrid",
+    "FormGridCell",
+    "GridLayout",
+    "LabelValue",
+    "Popover",
+    "RowPattern",
+    "RowSlot",
+    "SectionColumnProvider",
+    "TitleSection",
+    # Data
     "DataGrid",
+    "AgChartComponent",
+    # Provider / Utility
+    "Item",
+    "ModalStackProvider",
+    "SpacingModeProvider",
+    "ToastContainer",
+    "ToastProvider",
 }
 
 
@@ -84,7 +113,7 @@ def format_prop_type(prop_type: list | str) -> str:
 
 # Schema에 누락된 HTML 기반 props 보충 데이터
 # 실제 소스: storybook-standalone/packages/ui/src/components/*.tsx
-# 모든 컴포넌트가 ...rest spread로 HTML attrs를 전달하므로 이 props는 동작함
+# NOTE: disabled/readOnly HTML 속성은 interaction prop으로 통합됨 (interaction="disabled" / "readonly")
 _SCHEMA_SUPPLEMENTS: dict[str, dict[str, dict]] = {
     "Field": {
         "type": {"type": ["text", "email", "password", "number", "date", "tel", "url", "search"], "required": False, "defaultValue": "text"},
@@ -93,12 +122,9 @@ _SCHEMA_SUPPLEMENTS: dict[str, dict[str, dict]] = {
         "onChange": {"type": "(e: ChangeEvent) => void", "required": False},
         "required": {"type": "boolean", "required": False},
         "name": {"type": "string", "required": False},
-        "disabled": {"type": "boolean", "required": False},
-        "readOnly": {"type": "boolean", "required": False},
     },
     "Button": {
         "type": {"type": ["button", "submit", "reset"], "required": False, "defaultValue": "button"},
-        "disabled": {"type": "boolean", "required": False},
     },
     "Radio": {
         "name": {"type": "string", "required": False},
@@ -118,8 +144,8 @@ def _supplement_schema(schema: dict) -> dict:
     """Schema에 누락된 HTML 기반 props를 보충 (스키마에 있는 컴포넌트만)"""
     components = schema.get("components", {})
 
-    # isDisabled → disabled, isReadOnly → readOnly 교정
-    # (Schema가 CVA 내부 variant 이름을 사용하는 경우 실제 외부 prop 이름으로 변환)
+    # DEPRECATED: isDisabled/isReadOnly → interaction prop으로 통합됨 (d537869)
+    # 스키마 JSON이 아직 구버전이면 disabled/readOnly로 교정 유지
     _PROP_RENAMES = {"isDisabled": "disabled", "isReadOnly": "readOnly"}
     for comp_data in components.values():
         props = comp_data.get("props", {})
@@ -183,8 +209,8 @@ def format_component_docs(schema: dict) -> str:
                 header += f" - {description}"
             lines.append(header)
 
-            # props 포맷팅 (children, icon 관련 제외)
-            _HIDDEN_PROPS = {"children", "icon", "leftIcon", "rightIcon", "hasIcon"}
+            # props 포맷팅 (children, 아이콘 보조 prop 제외)
+            _HIDDEN_PROPS = {"children", "leftIcon", "rightIcon", "hasIcon"}
             prop_lines = []
             for prop_name, prop_info in props.items():
                 if prop_name in _HIDDEN_PROPS:
@@ -330,6 +356,13 @@ def format_design_tokens(tokens: dict | None) -> str:
 {color_table}
 
   **⚠️ 위 테이블에 없는 hex 코드를 절대 사용하지 마세요. 연한 회색이 필요하면 neutral-gray-50/100 토큰을 쓰세요.**
+  **🚨 Text Class 컬럼의 hex는 텍스트 전용, BG Class 컬럼의 hex는 배경 전용. 교차 사용 절대 금지!**
+  **흔한 실수: `text-[#2e7d32]` ❌ → `text-[#1e4620]` ✅ | `text-[#d32f2f]` ❌ → `text-[#5f2120]` ✅ | `text-[#ed6c02]` ❌ → `text-[#663c00]` ✅**
+
+  **시맨틱 텍스트 색상 빠른 참조** (초록/빨강/주황 텍스트가 필요할 때):
+  - 성공/양수/정상 텍스트 → `text-[#1e4620]` ✅ (❌ `text-[#2e7d32]` 절대 금지)
+  - 실패/음수/오류 텍스트 → `text-[#5f2120]` ✅ (❌ `text-[#d32f2f]` 절대 금지)
+  - 경고/보류 텍스트 → `text-[#663c00]` ✅ (❌ `text-[#ed6c02]` 절대 금지)
 
   **상태 강조 (진한 배경 + 흰 텍스트)**:
 {strong_semantic}
@@ -411,7 +444,7 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     for prop_name, prop_info in props.items():
         prop_type = prop_info.get("type", "any")
         required = prop_info.get("required", False)
-        default = prop_info.get("default")
+        default = prop_info.get("defaultValue", prop_info.get("default"))
         prop_desc = prop_info.get("description", "")
 
         type_str = format_prop_type(prop_type)
@@ -472,12 +505,10 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("  headerName: '상세',  // 버튼 용도에 따라 '수정', '삭제', '보기' 등으로 변경")
     lines.append("  width: 100,")
     lines.append("  cellRenderer: (params: any) => (")
-    lines.append("    <Button variant=\"outline\" size=\"sm\" onClick={() => {")
+    lines.append("    <Button buttonType=\"ghost\" size=\"sm\" label=\"상세\" showStartIcon={false} showEndIcon={false} onClick={() => {")
     lines.append("      setSelectedItem(params.data);")
     lines.append("      setIsDetailOpen(true);")
-    lines.append("    }}>")
-    lines.append("      상세")
-    lines.append("    </Button>")
+    lines.append("    }} />")
     lines.append("  )")
     lines.append("}")
     lines.append("")
@@ -556,7 +587,7 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("  // Action button — Button 컴포넌트를 cellRenderer로 직접 사용")
     lines.append("  { headerName: '상세', width: 100, pinned: 'right',")
     lines.append("    cellRenderer: (params: any) => (")
-    lines.append("      <Button variant=\"outline\" size=\"sm\" onClick={() => { setSelectedItem(params.data); setIsDetailOpen(true); }}>상세</Button>")
+    lines.append("      <Button buttonType=\"ghost\" size=\"sm\" label=\"상세\" showStartIcon={false} showEndIcon={false} onClick={() => { setSelectedItem(params.data); setIsDetailOpen(true); }} />")
     lines.append("    ) },")
     lines.append("];")
     lines.append("")
@@ -575,7 +606,7 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("- To visually group headers, use `headerName` prefix: `'[인사] 이름'`, `'[인사] 부서'`")
     lines.append("")
     lines.append("**2. cellRenderer — 화살표 함수 또는 named component 사용:**")
-    lines.append("- ✅ `cellRenderer: (params) => <Button variant=\"outline\" size=\"sm\">상세</Button>` — 디자인 시스템 Button 직접 사용")
+    lines.append("- ✅ `cellRenderer: (params) => <Button buttonType=\"ghost\" size=\"sm\" label=\"상세\" showStartIcon={false} showEndIcon={false} />` — 디자인 시스템 Button 직접 사용")
     lines.append("- ✅ `cellRenderer: CheckboxCellRenderer` — Named component from @aplus/ui")
     lines.append("- ✅ `cellRenderer: ImageCellRenderer` — Named component from @aplus/ui")
     lines.append("- ❌ `cellRenderer: ButtonCellRenderer` — 사용 금지 (디자인 시스템 미적용, 파란색 하드코딩)")
@@ -771,6 +802,13 @@ DEFAULT_DESIGN_TOKENS_SECTION = """## 🎨 DESIGN STANDARDS (CRITICAL - USE TAIL
   | Gray 900 (가장 진한 텍스트) | `text-[#212529]` | — | neutral-gray-900 |
 
   **⚠️ 위 테이블에 없는 hex 코드를 절대 사용하지 마세요. 연한 회색이 필요하면 `bg-[#f9fafb]` (gray-50) 또는 `bg-[#f4f6f8]` (gray-100/canvas)를 쓰세요.**
+  **🚨 Text Class 컬럼의 hex는 텍스트 전용, BG Class 컬럼의 hex는 배경 전용. 교차 사용 절대 금지!**
+  **흔한 실수: `text-[#2e7d32]` ❌ → `text-[#1e4620]` ✅ | `text-[#d32f2f]` ❌ → `text-[#5f2120]` ✅ | `text-[#ed6c02]` ❌ → `text-[#663c00]` ✅**
+
+  **시맨틱 텍스트 색상 빠른 참조** (초록/빨강/주황 텍스트가 필요할 때):
+  - 성공/양수/정상 텍스트 → `text-[#1e4620]` ✅ (❌ `text-[#2e7d32]` 절대 금지)
+  - 실패/음수/오류 텍스트 → `text-[#5f2120]` ✅ (❌ `text-[#d32f2f]` 절대 금지)
+  - 경고/보류 텍스트 → `text-[#663c00]` ✅ (❌ `text-[#ed6c02]` 절대 금지)
 
   **상태 강조 (진한 배경 + 흰 텍스트)**:
   - Success 강조: `text-white bg-[#2e7d32]`
@@ -833,46 +871,56 @@ Always respond in Korean.
 ## 📋 COMPONENT USAGE GUIDE
 
 ### Button
-- variant="primary": 메인 CTA (저장, 생성, 로그인). 페이지당 1-2개
-- variant="secondary": 보조 액션 (취소, 뒤로가기)
-- variant="outline": 테이블 내 액션, 필터 버튼
-- variant="destructive": 삭제, 해지 등 위험한 액션
+- buttonType="primary": 메인 CTA (저장, 생성, 로그인). 페이지당 1-2개
+- buttonType="secondary": 보조 액션 (취소, 뒤로가기)
+- buttonType="tertiary": Excel 다운로드 등 보조 링크형 액션
+- buttonType="ghost": 테이블 내 액션, 필터 버튼
+- buttonType="destructive": 삭제, 해지 등 위험한 액션
+- buttonType="ghost-inverse": ActionBar 내부 전용 (어두운 배경)
+- ⚠️ label prop 사용: `<Button label="확인" />` (children 아님)
+- ⚠️ 아이콘: `showStartIcon={true} startIcon={<Icon name="..." size={N} />}`
 - ⚠️ **size는 배치 위치에 따라 자동 결정** (SM 일괄 적용 절대 금지):
-  - `size="lg"`: 페이지 메인 CTA (로그인, 저장 등 단독 폼 제출 버튼)
-  - `size="md"`: 페이지 헤더 액션, Dialog 푸터, 필터 조회/초기화 버튼
-  - `size="sm"`: DataGrid 행 내부, 툴바, 컴팩트 UI만 해당
-  - ❌ 모든 버튼에 같은 size를 반복하지 말 것
+  - `size="lg"`: 단독 폼 제출 버튼
+  - `size="md"`: 페이지 헤더, Dialog 푸터, 필터 버튼
+  - `size="sm"`: DataGrid 행 내부, 툴바, 컴팩트 UI
+- `showStartIcon={false} showEndIcon={false}` — 아이콘 불필요 시 명시
+- ❌ `variant=` — 사용 금지! `buttonType=`으로 대체됨
+- ❌ `<Button>텍스트</Button>` — children 금지! `label=` prop 사용
 
 ### Field (⚠️ MUST be self-closing)
-- type="text": 일반 텍스트 (이름, 제목)
-- type="email": 이메일 (자동 validation)
-- type="number": 숫자 (금액, 수량)
-- type="date": 날짜 선택 (DatePicker 대신 사용)
-- type="password": 비밀번호
-- multiline rowsVariant="flexible": 긴 텍스트 (설명, 비고)
-- ✅ `<Field type="text" label="이름" />` — ALWAYS self-closing
+- Discriminated Union: `showLabel={true} label="이름"` (showLabel 없이 label만 전달 금지)
+- `showHelptext={true} helptext="설명"` (showHelptext 없이 helptext만 전달 금지)
+- type="text"/"email"/"number"/"date"/"password"/"tel"/"url"/"search"
+- showStartIcon/showEndIcon: 아이콘 표시 제어
+- isDisplay={true}: 읽기 전용 표시 모드 (LabelValue 대신 간단한 표시용)
+- ✅ `<Field showLabel={true} label="이름" showHelptext={false} showStartIcon={false} showEndIcon={false} />`
 - ❌ `<Field>children</Field>` — CRASHES (React Error #137)
+- ❌ `multiline` — 제거됨, 사용 금지
+- ❌ `rowsVariant` — 제거됨, 사용 금지 (multiline과 함께 삭제된 prop)
 
-### 🚨 Disabled / ReadOnly Props (CRITICAL — 잘못된 prop명 사용 시 스타일 미적용)
-모든 컴포넌트의 비활성/읽기전용 prop은 **HTML 표준 이름**을 사용합니다:
-- ✅ `disabled` — Button, Field, Select, Checkbox, Radio, ToggleSwitch 모두 동일
-- ✅ `readOnly` — Field 전용 (다른 컴포넌트에는 없음)
-- ❌ `isDisabled` — **사용 금지!** 내부 CVA variant 이름이며, prop으로 전달해도 스타일 미적용
-- ❌ `isReadOnly` — **사용 금지!** 내부 CVA variant 이름이며, prop으로 전달해도 스타일 미적용
+### 🚨 interaction Prop (상태 제어 — 통합 enum)
+Button, Field, Select, IconButton, Checkbox, Radio 등 대부분의 컴포넌트는 `interaction` prop으로 상태를 제어합니다:
+- interaction="default": 기본 (생략 가능)
+- interaction="disabled": 비활성
+- interaction="loading": 로딩 (Button, IconButton)
+- interaction="readonly": 읽기전용 (Field)
+- interaction="error": 에러 (Select)
+- ❌ `isDisabled` — 사용 금지!
+- ❌ `isLoading` — 사용 금지!
+- ❌ `isReadOnly` — 사용 금지!
+- ❌ `disabled` (HTML attr) — `interaction="disabled"` 사용
+- ❌ `error={true}` (Select) — `interaction="error"` 사용
 
 ```tsx
-// ✅ 올바른 disabled/readOnly 사용법
-<Button variant="destructive" disabled>삭제</Button>
-<Field label="이름" value={name} readOnly />
-<Field label="이메일" value={email} disabled />
-<Select label="부서" value={dept} disabled options={options} />
-<Checkbox checked={agreed} disabled />
-<Radio checked={selected} disabled />
+// ✅ 올바른 interaction 사용법
+<Button buttonType="primary" interaction="disabled" label="비활성" showStartIcon={false} showEndIcon={false} />
+<Field showLabel={true} label="이름" interaction="readonly" showHelptext={false} showStartIcon={false} showEndIcon={false} />
+<Select interaction="error" showLabel={true} label="보험사" showHelptext={true} helptext="필수 항목" options={options} showStartIcon={false} />
 
-// ❌ 잘못된 사용법 (스타일 적용 안 됨!)
-<Button isDisabled>삭제</Button>
-<Field label="이름" isReadOnly />
-<Field label="이메일" isDisabled />
+// ❌ 잘못된 사용법
+<Button disabled>비활성</Button>
+<Field isDisabled label="이름" />
+<Select error={true} label="보험사" />
 ```
 
 #### 🚨 조건부 disabled 초기 상태값 (CRITICAL — 위반 시 UI 확인 불가)
@@ -883,20 +931,26 @@ Always respond in Korean.
 - ❌ `const [isApproved] = React.useState(true);` → **금지! 편집 필드가 전부 disabled됨**
 - ❌ `const [status] = React.useState('approved');` → **금지! 편집 필드가 전부 disabled됨**
 
-#### ⚠️ readOnly/disabled 필드에 불필요한 helperText 금지
-- ❌ `helperText="사번은 수정할 수 없습니다."` — readOnly 상태면 시각적으로 이미 구분됨, 중복 설명 금지
-- ❌ `helperText="이름은 변경할 수 없습니다."` — 불필요
-- readOnly/disabled 필드에는 helperText를 넣지 마세요. helperText는 **편집 가능한 필드의 입력 가이드**에만 사용합니다.
+#### ⚠️ readonly/disabled 필드에 불필요한 helptext 금지
+- ❌ `helptext="사번은 수정할 수 없습니다."` — readonly 상태면 시각적으로 이미 구분됨, 중복 설명 금지
+- readonly/disabled 필드에는 helptext를 넣지 마세요. helptext는 **편집 가능한 필드의 입력 가이드**에만 사용합니다.
 
 ### Select
+- showLabel={true} label="보험사" (Discriminated Union — showLabel 없이 label만 전달 금지)
+- showHelptext/showStartIcon 제어
+- interaction="error" + showHelptext={true} helptext="필수" (에러 표시)
 - 필터용: placeholder="전체" + options에 "전체" 포함
 - 폼 입력용: placeholder="선택하세요" + className="w-full"
-- options는 최소 4-6개의 현실적 항목
+- options는 최소 3개 이상 (필터용은 4-6개 권장). ❌ 2개 이하 options 금지 — 2개면 Radio 사용
 - ⚠️ className="w-full" 필수 (기본 240px 고정폭 → 오버플로우 방지)
 - defaultValue는 option의 value 사용 (label 아님): ✅ `defaultValue="all"` ❌ `defaultValue="전체"`
 - ⚠️ onChange 시그니처: `onChange={(value) => setValue(value)}` — value를 직접 받음 (event 아님)
   - ✅ `<Select onChange={(v) => setStatus(v)} />`
   - ❌ `<Select onChange={(e) => setStatus(e.target.value)} />` — e.target.value 없음
+
+### Alert
+- type="error"/"info"/"success"/"warning" (❌ `variant` 아님!)
+- `<Alert type="error" title="오류" body="설명" />`
 
 ### Badge
 - type="status" + statusVariant: 상태 표시 전용
@@ -905,6 +959,19 @@ Always respond in Korean.
   - "warning": 대기, 심사중, 주의
   - "info": 진행중, 접수
 - ❌ NEVER invent hex colors — only use exact values from the COLOR TOKEN TABLE above
+
+### ⚠️ DS 컴포넌트 className 규칙
+- DS 컴포넌트(Button, Field, Select, Badge 등)에 `className`으로 배경색/텍스트색을 오버라이드하지 마세요
+- ❌ `<Button className="bg-[#0033a0]" .../>` — DS 컴포넌트의 색상은 buttonType/variant로 제어
+- ❌ `<Badge className="bg-red-500 text-white" .../>` — DS 컴포넌트의 색상은 statusVariant로 제어
+- ✅ className은 **레이아웃 제어에만** 사용: `className="w-full"`, `className="mt-4"`, `className="col-span-3"`
+- ✅ DS 컴포넌트의 색상/스타일은 해당 컴포넌트의 전용 prop(buttonType, statusVariant 등)으로 제어
+
+### Tag
+- label prop 사용: `<Tag label="카테고리" />` (❌ children 아님!)
+- tagType="swatch" color="red": 색상 스와치
+- tagType="closable" onClose={fn}: 닫기 가능
+- ❌ `<Tag>텍스트</Tag>` — label prop 사용
 
 ### 🚨🚨 Drawer vs Dialog 구분 (절대 혼동 금지)
 
@@ -927,8 +994,8 @@ Always respond in Korean.
 #### 🚨 기본값 규칙 (키워드 없어도 적용):
 - **행 클릭 → 상세보기** = `Drawer` (Dialog 아님!)
 - **등록/수정/편집 폼** = `Drawer` (Dialog 아님!)
-- **필드가 3개 이상인 폼** = `Drawer`
-- **Dialog는 오직**: 삭제 확인, 단순 알림, 필드 1~2개 간단 입력에만 사용
+- **필드가 3개 이상인 폼** = `Drawer` (Dialog 사용 시 size="xl"로 키우지 말고 Drawer로 변경!)
+- **Dialog는 오직**: 삭제 확인, 단순 알림, 필드 1~2개 간단 입력에만 사용 (등록/수정 폼은 반드시 Drawer)
 - 확신이 없으면 **Drawer를 기본값으로 선택**
 
 - 사용자가 "드로어"라는 단어를 사용했으면 **무조건 `Drawer`**. 예외 없음.
@@ -939,27 +1006,29 @@ Dialog는 Compound 패턴입니다. 반드시 `Dialog.Header`, `Dialog.Body`, `D
 - size="sm": 확인/취소 간단 알림
 - size="md": 폼 입력 (기본)
 - size="lg": 복잡한 폼, 상세 정보
+- ❌ size="xl" — Dialog에서 사용 금지! Dialog는 sm/md/lg만 허용. 대형 콘텐츠는 Drawer 사용
 - ⚠️ **Dialog 자체에 padding이 내장되어 있음. 절대로 Dialog 내부에 추가 padding/margin wrapper div를 넣지 마세요!**
 - ❌ `<Dialog><div className="p-5">...</div></Dialog>` — 이중 패딩 발생, 금지
 - ❌ `<Dialog><div className="p-6">...</div></Dialog>` — 이중 패딩 발생, 금지
+- ❌ `<Dialog.Body><div className="p-4">...</div></Dialog.Body>` — raw div wrapper 금지, Dialog.Body 직속 자식으로 레이아웃 요소 사용
 - ✅ `<Dialog><Dialog.Header title="제목" /><Dialog.Body>내용</Dialog.Body><Dialog.Footer>...</Dialog.Footer></Dialog>`
-- Dialog body 내 폼 필드 간격: `gap-4` 또는 `mb-4` (mb-5 이상 금지)
+- Dialog/Drawer body 내 폼 필드 간격: `gap-4` 또는 `mb-4` 만 사용. ❌ gap-5, gap-6, mb-5, mb-6 이상 금지 (Dialog와 Drawer 모두 동일)
 
 ```tsx
 // ✅ 올바른 Dialog 사용법
 <Dialog open={isOpen} onClose={() => setIsOpen(false)} size="md">
-  <Dialog.Header title="계약 상세" showCloseButton />
+  <Dialog.Header title="계약 상세" />
   <Dialog.Body>
     <div className="flex flex-col gap-4">
-      <Field label="계약번호" value="CNT-001" readOnly />
-      <Field label="고객명" value="김민준" readOnly />
+      <Field showLabel={true} label="계약번호" value="CNT-001" interaction="readonly" showHelptext={false} showStartIcon={false} showEndIcon={false} />
+      <Field showLabel={true} label="고객명" value="김민준" interaction="readonly" showHelptext={false} showStartIcon={false} showEndIcon={false} />
     </div>
   </Dialog.Body>
   <Dialog.Footer>
-    <Dialog.FooterRight>
-      <Button variant="outline" onClick={() => setIsOpen(false)}>취소</Button>
-      <Button variant="primary">확인</Button>
-    </Dialog.FooterRight>
+    <div className="flex gap-component-gap-control-group">
+      <Button buttonType="ghost" size="md" label="취소" onClick={() => setIsOpen(false)} showStartIcon={false} showEndIcon={false} />
+      <Button buttonType="primary" size="md" label="확인" onClick={() => setIsOpen(false)} showStartIcon={false} showEndIcon={false} />
+    </div>
   </Dialog.Footer>
 </Dialog>
 ```
@@ -974,42 +1043,97 @@ Drawer는 Compound 패턴입니다. 반드시 `Drawer.Header`, `Drawer.Body`, `D
 - ⚠️ **Drawer 자체에 padding이 내장되어 있음. 절대로 Drawer 내부에 추가 padding/margin wrapper div를 넣지 마세요!**
 - ❌ `<Drawer><div className="p-5">...</div></Drawer>` — 이중 패딩 발생, 금지
 - ❌ `<Drawer><div className="p-6">...</div></Drawer>` — 이중 패딩 발생, 금지
+- ❌ `<Drawer.Body><div className="p-4">...</div></Drawer.Body>` — raw div wrapper 금지, Drawer.Body 직속 자식으로 레이아웃 요소 사용
 - ✅ `<Drawer><Drawer.Header title="제목" /><Drawer.Body>내용</Drawer.Body><Drawer.Footer>...</Drawer.Footer></Drawer>`
+- Drawer body 내 폼 필드 간격: `gap-4` 또는 `mb-4` 만 사용. ❌ gap-5, gap-6, mb-5, mb-6 이상 금지
 
 ```tsx
-// ✅ 올바른 Drawer 사용법
+// ✅ 올바른 Drawer 사용법 (⚠️ gap-4 필수, gap-5/gap-6 금지)
 <Drawer open={isOpen} onClose={() => setIsOpen(false)} size="md">
-  <Drawer.Header title="계약 상세" />
+  <Drawer.Header title="계약 상세" showSubtitle={false} />
   <Drawer.Body>
-    <div className="flex flex-col gap-4">
-      <Field label="계약번호" value="CNT-001" readOnly />
-      <Field label="고객명" value="김민준" readOnly />
+    <div className="flex flex-col gap-4"> {/* ⚠️ gap-4만 사용! gap-5 금지 */}
+      <Field showLabel={true} label="계약번호" value="CNT-001" interaction="readonly" showHelptext={false} showStartIcon={false} showEndIcon={false} />
+      <Field showLabel={true} label="고객명" value="김민준" interaction="readonly" showHelptext={false} showStartIcon={false} showEndIcon={false} />
     </div>
   </Drawer.Body>
   <Drawer.Footer>
-    <Button variant="outline" onClick={() => setIsOpen(false)}>취소</Button>
-    <Button variant="primary">저장</Button>
+    <Button buttonType="ghost" size="md" label="닫기" onClick={() => setIsOpen(false)} showStartIcon={false} showEndIcon={false} />
+    <Button buttonType="primary" size="md" label="저장" onClick={() => setIsOpen(false)} showStartIcon={false} showEndIcon={false} />
   </Drawer.Footer>
 </Drawer>
 ```
 
 ### Tooltip (롤오버 메시지)
 - 아이콘이나 텍스트에 마우스 오버 시 설명 표시용
-- ✅ `<Tooltip label="설명 텍스트"><span>호버 대상</span></Tooltip>`
+- ✅ `<Tooltip content="설명 텍스트" side="top"><span>호버 대상</span></Tooltip>`
 - ⚠️ 토스트/알림을 요청받으면 Tooltip과 혼동하지 말 것
 - ⚠️ Tooltip만 요청 시 별도 박스/카드 UI를 추가로 생성하지 말 것. Tooltip 컴포넌트만 적용
 
 ### Checkbox / Radio / ToggleSwitch
-- MUST use `checked` + `onChange` handler for controlled state
-- ⚠️ NO `label` prop exists. Use `<label>` wrapper with text:
-  - ✅ `<label className="flex items-center gap-2 cursor-pointer"><Radio checked={{v}} onChange={{fn}} /><span className="text-sm">예</span></label>`
-  - ❌ `<Radio label="예" />` — `label` prop DOES NOT EXIST
-- ✅ `<label className="flex items-center gap-2 cursor-pointer"><Checkbox checked={{isChecked}} onChange={{(e) => setIsChecked(e.target.checked)}} /><span className="text-sm">동의합니다</span></label>`
+- Checkbox: value="unchecked"|"checked" + onChange
+- Radio: value="unchecked"|"checked" + onChange
+- interaction="disabled": 비활성
+- ⚠️ NO label prop. **Checkbox와 Radio 모두** `<Option label="텍스트"><Checkbox .../></Option>` 패턴 필수
+- ⚠️ onChange는 DOM event(e.target.checked) 아님! 상태 토글 패턴 사용:
+  - ✅ `<Checkbox value={v} onChange={() => setValue(prev => !prev)} />`
+  - ❌ `<Checkbox value={v} onChange={(e) => setValue(e.target.checked)} />` — DS 컴포넌트는 DOM event 아님
+- ✅ `<Option label="동의합니다"><Checkbox value="unchecked" onChange={fn} /></Option>`
+- ✅ `<Option label="남성"><Radio value="unchecked" onChange={fn} /></Option>` — Radio도 반드시 Option으로 감싸기
+- ❌ `<Checkbox label="동의합니다" />` — label prop 없음
+- ❌ `<Radio label="남성" />` — label prop 없음
+- ❌ `<label><Radio /><span>남성</span></label>` — 수동 label 래핑 금지, Option 패턴 사용
+- ❌ Radio에 onChange 누락 금지 — 반드시 onChange 핸들러 연결
 
-### Pagination
-- 테이블 하단 페이지네이션: `<Pagination currentPage={{page}} totalCount={{100}} pageSize={{10}} onPageChange={{setPage}} />`
-- variant="standard" (기본): 첫/이전/숫자/다음/끝 전체 표시
-- variant="simple": 이전/현재페이지/다음만 표시
+### IconButton (⚠️ Button과 prop이 다름!)
+- **iconOnly={<Icon name="..." size={20} />}** ← 필수! 아이콘 전달 prop
+- **iconButtonType="ghost"|"ghost-destructive"|"secondary"|"tertiary"**
+- size="lg"|"md"|"sm"
+- interaction="disabled"|"loading"
+- aria-label="설명" ← 필수! 접근성 라벨
+- tooltip="툴팁 텍스트" ← 선택
+- ✅ `<IconButton iconOnly={<Icon name="search" size={20} />} iconButtonType="ghost" size="md" aria-label="검색" />`
+- ✅ `<IconButton iconOnly={<Icon name="more-vert" size={20} />} iconButtonType="tertiary" size="md" aria-label="더보기" />`
+
+### ActionBar
+- DataGrid/리스트 선택 시 플로팅 액션바
+- `<ActionBar count={3} visible={true} onClose={fn}>`
+    `<Button buttonType="ghost-inverse" label="삭제" showStartIcon={false} showEndIcon={false} />`
+  `</ActionBar>`
+
+### FilterBar
+- 12컬럼 CSS Grid 필터 패널, 초기화/조회 버튼 내장
+- `<FilterBar mode="compact" onReset={fn} onSearch={fn}>`
+    `<div className="col-span-2"><Select .../></div>`
+    `<div className="col-span-2"><Field .../></div>`
+  `</FilterBar>`
+- actionSpan: 버튼 영역 컬럼 수 (기본 2)
+
+### LabelValue (읽기 전용 표시)
+- Field의 display 대응, 수평 레이아웃 (라벨 좌, 값 우)
+- showLabel={true} label="이름" text="홍길동"
+- labelWidth="compact"|"default"|"wide"
+- ✅ `<LabelValue showLabel={true} label="이름" text="홍길동" showHelptext={false} showPrefix={false} showStartIcon={false} showEndIcon={false} />`
+
+### Popover (Compound Pattern)
+- `<Popover><Popover.Trigger>...</Popover.Trigger><Popover.Content>...</Popover.Content></Popover>`
+
+### TitleSection
+- 페이지 상단: Breadcrumb + h1 + 액션 버튼
+- ⚠️ `showMenu2`~`showMenu4`의 show* boolean prop을 **모두 명시**할 것 (사용하지 않는 메뉴도 `={false}` 명시)
+- `<TitleSection title="제목" menu2="상위" showBreadcrumb={true} showMenu2={true} showMenu3={false} showMenu4={false} mode="base"><Button ... /></TitleSection>`
+- ❌ Dialog/Drawer 내부에서 수동 Breadcrumb(홈 > 메뉴 > ...) 생성 금지 — Breadcrumb은 페이지 TitleSection 전용, Dialog/Drawer 내부는 Header title만 사용
+
+### Tab
+- `<Tab items={[{value:'home',label:'홈'}, ...]} value={value} onChange={setValue} widthMode="content" />`
+
+### Segment
+- `<Segment items={[{value:'day',label:'일간'}, ...]} value={value} onChange={setValue} size="md" widthMode="equal" />`
+
+### OptionGroup
+- `<OptionGroup label="그룹" showLabel={true} orientation="horizontal" size="sm">`
+    `<Option label="항목"><Checkbox value="unchecked" onChange={fn} /></Option>`
+  `</OptionGroup>`
 
 {design_tokens_section}## 💎 VISUAL DESIGN STANDARDS
 
@@ -1019,9 +1143,10 @@ Drawer는 Compound 패턴입니다. 반드시 `Drawer.Header`, `Drawer.Body`, `D
   - Exception: Page Titles (h1) can be outside
 - **Container**: `w-full max-w-[1920px] mx-auto` (1920x1080 기준)
 - 🚨 **Filter + Table = 하나의 Card**: FilterBar, ActionButtons, Grid는 **반드시 하나의 Section Card** 안에 포함. 절대 별도 카드로 분리 금지!
-- **Grid System**:
-  - 12-column: `grid-cols-12` + `col-span-N` (flexible layouts)
-  - Simple: `grid-cols-2`/`grid-cols-3`/`grid-cols-4` (equal divisions)
+- **Grid System** (레이아웃 컴포넌트 우선 사용):
+  - 🚨 **페이지 레이아웃**: `<GridLayout type="A~H">` 사용 (수동 grid-cols-12 대신). **페이지 전용** — Drawer/Dialog/Popover 내부에서 사용 금지! 오버레이 내부 멀티컬럼은 Tailwind `grid grid-cols-N` 직접 사용. GridLayout의 유일한 prop은 `type`이며 `gap` 등 임의 prop 전달 금지.
+  - 🚨 **폼 레이아웃**: `<FormGrid columns={2}>` + `<FormGridCell>` 사용 (수동 grid-cols-2 대신)
+  - Fallback 12-column: `grid-cols-12` + `col-span-N` (GridLayout이 부적합한 경우에만)
   - Form filters: `grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4`
   - Grid children: MUST have `className="w-full min-w-0"` to prevent blowout
   - Alignment: `items-end` to align buttons with inputs
@@ -1060,20 +1185,34 @@ Drawer는 Compound 패턴입니다. 반드시 `Drawer.Header`, `Drawer.Body`, `D
 - **Filter-Table Consistency**: Filter options MUST match table data
 - **NO EMPTY STATES**: NEVER generate empty tables, lists, or selects
 
+### 날짜 형식 통일
+- `type="date"` Field의 value/defaultValue는 반드시 `YYYY-MM-DD` 형식 사용
+  - ✅ `value="2024-03-15"` / `defaultValue="2024-01-01"`
+  - ❌ `value="2024/03/15"` / `value="20240315"` / `value="03-15-2024"`
+
+### show* Prop 완전성 (Dialog/Drawer 포함)
+- Dialog/Drawer 내부 Field, Select 등에서도 show* prop(showLabel, showHelptext, showStartIcon, showEndIcon)을 **모두 명시**
+- ❌ Dialog/Drawer 내부라고 show* prop 생략 금지 — 메인 화면과 동일한 규칙 적용
+- ✅ `<Field showLabel={true} label="이름" showHelptext={false} showStartIcon={false} showEndIcon={false} />`
+
 ### Images & Icons
 - **⛔ ABSOLUTELY NO icon library imports** — lucide-react, material-icons, heroicons, react-icons 등 모두 설치되어 있지 않음. import 시 앱이 크래시남
 - **⛔ NEVER `import {{ ... }} from 'lucide-react'`** — THIS WILL CRASH THE APP
 - **⛔ NEVER use emoji as icons** (🔍, ⭐, 📁, 👤) — unprofessional
-- **⛔ NEVER use IconButton** or icon props (leftIcon, rightIcon, icon on Button/Alert/Chip)
 - **⛔ NEVER use inline SVG** (`<svg>`) — 코드가 불필요하게 길어짐
-- **⛔ NO ICONS AT ALL** — 이 프로젝트에는 아이콘이 없음. 아이콘 자리에는 반드시 텍스트로 대체
-- **✅ 텍스트로만 표현**:
-  - 버튼: `<Button>검색</Button>`, `<Button>추가</Button>`, `<Button>삭제</Button>`
-  - 브레드크럼 구분자: 텍스트 `>` 또는 `/` 사용
-  - 즐겨찾기: 텍스트 버튼 `<button>즐겨찾기</button>`
-  - 닫기: 텍스트 `<button>닫기</button>` 또는 `<button>×</button>`
-  - 외부링크: 텍스트만 `<Button>이미지시스템</Button>`
-  - 이미지 참조 UI에 아이콘이 보이더라도 텍스트로 대체할 것
+- **✅ Icon 컴포넌트 사용**: `<Icon name="search" size={20} />` — `@aplus/ui`의 내장 아이콘만 사용
+  - ⚠️ **size별 사용 가능한 아이콘이 다름!** 존재하지 않는 조합은 "Icon not found" 에러 발생
+  - **size={20} (기본, 58개)**: add, all, arrow-drop-down, arrow-drop-up, arrow-right, blank, calendar, check, chevron-down, chevron-left, chevron-right, chevron-up, close, delete, dot, edit, error, external, filter-list, folder, folder-fill, format-align-center, format-align-left, format-align-right, format-bold, format-color-text, format-color-text-bg, format-italic, format-list-bulleted, format-list-numbered, format-underlined, help, image, info, keyboard-arrow-left, keyboard-arrow-right, keyboard-double-arrow-left, keyboard-double-arrow-right, link, loading, menu, minus, more-vert, person, post, redo, reset, search, star-fill, star-line, success, table, undo, video, warning, widgets
+  - **size={16} (23개)**: add, announcement, blank, calendar, check, chevron-down, chevron-left, chevron-right, chevron-up, close, delete, dot, edit, external, loading, minus, more-vert, reset, search, star-fill, star-line
+  - **size={24} (21개)**: add, all, arrow-drop-down, arrow-drop-up, blank, chevron-down, chevron-left, chevron-right, close, dehaze, delete, edit, filter-list, loading, menu, more-vert, person, post, search, star-fill, star-line, widgets
+  - **size={18} (6개만!)**: add, chevron-down, chevron-left, chevron-right, chevron-up, dummy — ⚠️ 거의 사용하지 말 것!
+  - 🔑 **규칙**: `<Icon name="X" size={N} />`을 쓰기 전에 반드시 위 size={N} 목록에 "X"가 있는지 교차검증! 목록에 없으면 "Icon not found" 에러.
+  - 🔑 **확실하지 않으면 size={20}** (58개, 가장 많음). size={16}은 23개뿐이므로 특히 주의.
+- **✅ IconButton**: 아이콘만 있는 버튼 — `iconOnly` prop과 `iconButtonType` prop 사용:
+  - `<IconButton iconOnly={<Icon name="search" size={20} />} iconButtonType="ghost" aria-label="검색" />`
+  - `<IconButton iconOnly={<Icon name="more-vert" size={20} />} iconButtonType="tertiary" size="md" aria-label="더보기" />`
+  - ⚠️ IconButton prop은 Button과 다름: `iconOnly=`, `iconButtonType=`, `aria-label=` 필수
+- **✅ Button 아이콘**: `<Button buttonType="ghost" label="다운로드" showStartIcon={{true}} startIcon={{<Icon name="external" size={{16}} />}} showEndIcon={{false}} />`
 - **Profile images**: Initial Avatar — colored circle with first character
   - `<div className="w-10 h-10 rounded-full bg-[#0033a0] text-white flex items-center justify-center font-semibold text-sm">{{name.charAt(0)}}</div>`
   - Color by `name.charCodeAt(0) % 6` from design tokens: `['#0033a0','#8b5cf6','#ec4899','#ed6c02','#2e7d32','#0288d1']`
@@ -1083,17 +1222,21 @@ Drawer는 Compound 패턴입니다. 반드시 `Drawer.Header`, `Drawer.Body`, `D
 
 ## 🔨 IMPLEMENTATION RULES
 
-1. **IMPORT**: `import {{ Button, Field, Select }} from '@/components'`
+1. **IMPORT**: `import {{ Button, Field, Select, Icon }} from '@/components'`
    - JSX에서 사용하는 컴포넌트는 **반드시 전부** import — 누락 시 ReferenceError CRASH
    - ❌ NEVER import types (HTMLInputElement, ChangeEvent, MouseEvent) — define inline
-   - ❌ NEVER import Option/OptionGroup (Select uses `options` prop internally)
+   - ✅ `import { ColDef } from 'ag-grid-community'` — DataGrid 컬럼 정의 타입만 허용
+   - ❌ 외부 패키지에서 필수 타입(ColDef) 외 import 금지
    - Unused imports = CRASH, Missing imports = CRASH
-   - ✅ 확인 방법: JSX에서 `<ComponentName`으로 사용한 모든 컴포넌트가 import 문에 있는지 최종 점검
+   - 🚨 **import한 컴포넌트는 반드시 JSX에서 사용해야 함!** 코드 완성 후 import 문의 모든 컴포넌트가 `<Name` 또는 `<Name.`으로 사용되는지 1:1 대조 점검. 미사용 import 1개라도 있으면 CRASH! (예: IconButton import 후 JSX에서 미사용 → ❌)
+   - ✅ 확인 방법: JSX에서 `<ComponentName`으로 사용한 모든 컴포넌트가 import 문에 있는지, import 문의 모든 컴포넌트가 JSX에서 사용되는지 양방향 점검
+   - ⛔ NEVER define custom components (`const Divider = ...`, `const Card = ...`) when same-name component exists in Available Components — import해서 사용! 직접 정의 시 런타임 충돌(SyntaxError: Identifier already declared)
 2. **REACT**: `React.useState`, `React.useEffect` directly (no import needed)
 3. **STYLING**: Tailwind CSS only (`className="..."`). `style={{{{}}}}` ONLY for dynamic JS variable values. No custom CSS.
 4. **NO EXTERNAL LIBS**: ⛔ NEVER import lucide-react, heroicons, material-icons, react-icons, framer-motion — NOT INSTALLED, WILL CRASH. No icons — use text only.
 5. **ENUM PROPS**: Match context — NEVER use the same size/variant for every component on a page
    - 페이지 헤더 버튼: `size="md"`, 필터 조회 버튼: `size="md"`, DataGrid 내부: `size="sm"`, 폼 제출: `size="lg"`
+   - Button: `buttonType` prop 사용 (❌ `variant` 금지). IconButton: `iconButtonType` prop 사용 (❌ `buttonType` 금지), `iconOnly` prop 사용, `aria-label` 필수. Button은 `label` prop (❌ `children` 금지)
    - Badge 상태: 성공="success", 실패="error", 대기="warning"
    - ❌ 모든 Button에 동일한 size 적용 금지 — 위치마다 다르게 설정
 7. **ZERO OMISSION**: If user asks for 5 fields, implement ALL 5. Missing features = FAILURE.
@@ -1102,8 +1245,8 @@ Drawer는 Compound 패턴입니다. 반드시 `Drawer.Header`, `Drawer.Body`, `D
 8. **FILE COMPLETENESS**: NEVER truncate code (no `// ...` or `// rest of code`). All buttons need `onClick`, all inputs need `value` + `onChange`.
 
 ### Data Tables (⚠️ MUST use DataGrid)
-- **테이블/목록 데이터 → 항상 `<DataGrid>` 사용. HTML `<table>` 절대 금지.**
-- ❌ `<table>`, `<thead>`, `<tbody>`, `<tr>`, `<td>` — 사용 금지
+- **테이블/목록 데이터 → 항상 `<DataGrid>` 사용. HTML `<table>` 절대 금지. 행 수 무관 — 1행이라도 DataGrid 사용.**
+- ❌ `<table>`, `<thead>`, `<tbody>`, `<tr>`, `<td>`, `<th>` — 사용 금지
 - ✅ `<DataGrid rowData={{data}} columnDefs={{cols}} height={{400}} />` — 유일한 테이블 구현 방법
 - Use `Badge` for status columns, always 10+ rows of mock data
 
@@ -1136,7 +1279,7 @@ When user asks to modify specific elements (e.g., "버튼 색상 바꿔줘"):
 ONLY use components from the Available Components list below. DO NOT create or import custom ones.
 - ❌ `<Card />`, `<Input />`, `<DatePicker />`, `<Member />`, `<User />`, `<Heading />` — don't exist
 - ✅ If needed, use native HTML + Tailwind CSS: `<div>`, `<h1>`, `<span>`
-- Substitutions: DatePicker → `<Field type="date" />`, Input → `<Field type="text" />`, TextArea → `<Field multiline />`
+- Substitutions: DatePicker → `<Field type="date" />`, Input → `<Field type="text" />`
 
 ### HTML Void Elements
 `<input>`, `<br>`, `<hr>`, `<img>` MUST end with `/>` and NEVER have children.
@@ -1160,7 +1303,9 @@ LAYOUT_GUIDE = """
 - 좌우 Margin: **24px** (`px-6`)
 - 헤더 ↔ 메인 섹션 간 Gap: **20px** (`gap-5`)
 - 12 Column Grid: Gutter **24px** (`gap-6`), col-1 = 134px
-- Tailwind: `grid grid-cols-12 gap-6 px-6`
+- 🚨 **`<GridLayout type="A">` 컴포넌트 사용 권장** (수동 `grid grid-cols-12` 대신)
+  - GridLayout은 `type` prop으로 12-column 자동 분할: 각 child가 해당 col-span에 자동 배치됨
+  - 예: `type="C"` → child[0]=col-3, child[1]=col-9
 
 ### 필터/검색 영역 그리드 규칙
 
@@ -1172,7 +1317,7 @@ LAYOUT_GUIDE = """
 ### 액션 버튼 정렬 규칙
 
 - 항상 **우측 정렬** (`flex justify-end gap-2`)
-- 좌→우 순서: 중립 텍스트(Tertiary) → 중립 보조(Outline) → 보조(Secondary) → 주요(Primary)
+- 좌→우 순서: 중립 텍스트(Tertiary) → 중립 보조(Ghost) → 보조(Secondary) → 주요(Primary)
 
 ### Grid Type (가로 분할 구조)
 
@@ -1189,7 +1334,10 @@ LAYOUT_GUIDE = """
 | TYPE-G | col-2 + col-2 + col-8 | `col-span-2` + `col-span-2` + `col-span-8` | RP-6 | 트리+목록+상세 (2단계 탐색) |
 | TYPE-H | col-3 × 4 | `col-span-3` × 4 | — | 동일 위계 정보 4열 배치 |
 
-- 모든 Type은 `grid grid-cols-12 gap-6` 기반
+- 🚨 **`<GridLayout type="X">` 컴포넌트를 사용하세요** (수동 grid-cols-12 대신).
+  - children 순서대로 각 column에 자동 배치됨
+  - 예: `<GridLayout type="C"><NavPanel /><DetailPanel /></GridLayout>` → col-3 + col-9
+  - Type A는 child 1개, Type B는 2개, Type E는 3개, Type H는 4개
 
 ### Row Pattern (세로 흐름 구조)
 
@@ -1203,6 +1351,19 @@ LAYOUT_GUIDE = """
 | RP-6 | 탐색형 | Title → Navigation Area + Detail Area | 좌측 독립 스크롤, 우측 전체 스크롤 | 관리성 화면 (코드 관리, 조직 관리) |
 | RP-7 | 병렬형 | Title → Section A \\| Section B | 좌우 독립 스크롤 | 변경 전/후 비교, A/B 비교 |
 | RP-8 | 상세+탭형 | Title → 상단 기본정보 → Tab → 하단 Grid/Content | 전체 스크롤, 탭 콘텐츠 내부 스크롤 | 상세 + 탭별 관련 데이터 |
+
+- 🚨 **`<RowPattern pattern="RP-X">` + `<RowSlot slot="...">` 컴포넌트를 사용하세요** (수동 간격 대신).
+  - RowSlot 간 간격이 자동 적용됨 (filter→grid: 20px, filter→summary: 12px, actions→grid: 12px 등)
+  - slot 값: `"filter"` | `"actions"` | `"grid"` | `"detail"` | `"form"` | `"summary"` | `"navigation"` | `"section"` | `"info"` | `"tab"`
+
+### FormGrid / FormGridCell (폼 레이아웃)
+
+- `<FormGrid columns={2}>` — 2열 폼 그리드 (1~4열 지원), 자동 gap 적용
+- `<FormGrid columns={2} title="기본 정보">` — 제목 + 그리드
+- `<FormGridCell>` — 기본 1칸 차지
+- `<FormGridCell colSpan={2}>` — 2칸 차지 (전체 너비 등)
+- `<FormGridCell align="end">` — 수직 정렬 (start/center/end)
+- 🚨 **폼 입력 영역은 `<FormGrid>` + `<FormGridCell>` 필수** (수동 `grid-cols-12` + `col-span-N` 금지). "N단 구조" 요청 → `<FormGrid columns={N}>` 사용
 
 ### Grid Type × Row Pattern 적용 범위
 
@@ -1234,11 +1395,109 @@ LAYOUT_GUIDE = """
 | 탭 ↔ 필터바 | 20px | `mb-5` |
 | 탭 섹션: 타이틀 ↔ 폼 | 12px | `mb-3` |
 
+💡 **RowPattern + RowSlot 사용 시 위 간격이 자동 적용됩니다.**
+🚨 **RowSlot 내부에 `mt-*`/`mb-*` 절대 사용 금지!**
+  - ❌ `<RowSlot slot="grid"><div className="mt-4">...</div></RowSlot>` ← 이중 간격 발생!
+  - ❌ `<RowSlot slot="filter"><div className="mb-2">...</div></RowSlot>` ← 이중 간격 발생!
+  - ✅ `<RowSlot slot="grid"><div>...</div></RowSlot>` ← RowSlot이 간격 자동 관리
+
+### 레이아웃 컴포넌트 코드 예제
+
+#### RP-1 조회형 (GridLayout type="A" + RowPattern)
+```tsx
+import { GridLayout, RowPattern, RowSlot, TitleSection, FilterBar, Field, Select, Button, DataGrid } from '@/components';
+
+<div className="min-h-screen bg-[#f4f6f8] p-8">
+  <GridLayout type="A">
+    <div>
+      {/* TitleSection — Section Card 바깥 */}
+      <TitleSection title="계약 관리" menu2="계약" showBreadcrumb={true} showMenu2={true} showMenu3={false} showMenu4={false} mode="base">
+        <Button buttonType="primary" size="sm" label="신규 등록" showStartIcon={false} showEndIcon={false} />
+      </TitleSection>
+
+      {/* Section Card */}
+      <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6 mt-5">
+        <RowPattern pattern="RP-1">
+          <RowSlot slot="filter">
+            <FilterBar mode="compact" onReset={() => {}} onSearch={() => {}}>
+              <div className="col-span-3">
+                <Field type="date" showLabel={true} label="조회기간" showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
+              </div>
+              <div className="col-span-3">
+                <Select showLabel={true} label="상태" placeholder="전체" showHelptext={false} showStartIcon={false} className="w-full" options={[]} />
+              </div>
+            </FilterBar>
+          </RowSlot>
+          <RowSlot slot="grid">{/* ⚠️ RowSlot 안에 mt-*/mb-* 금지! 간격은 RowSlot이 자동 관리 */}
+            <DataGrid rowData={[]} columnDefs={[]} domLayout="autoHeight" />
+          </RowSlot>
+        </RowPattern>
+      </div>
+    </div>
+  </GridLayout>
+</div>
+```
+
+#### RP-6 탐색형 (GridLayout type="C" — col-3 + col-9)
+```tsx
+import { GridLayout, RowPattern, RowSlot, TitleSection, TreeMenu } from '@/components';
+
+<div className="min-h-screen bg-[#f4f6f8] p-8">
+  <TitleSection title="코드 관리" menu2="시스템" showBreadcrumb={true} showMenu2={true} showMenu3={false} showMenu4={false} mode="base" />
+  <div className="mt-5">
+    <GridLayout type="C">
+      {/* col-3: Navigation */}
+      <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-4">
+        <TreeMenu items={treeData} />
+      </div>
+      {/* col-9: Detail */}
+      <RowPattern pattern="RP-6">
+        <RowSlot slot="detail">
+          <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6">
+            {/* 상세 내용 */}
+          </div>
+        </RowSlot>
+      </RowPattern>
+    </GridLayout>
+  </div>
+</div>
+```
+
+#### RP-3 입력/수정형 (FormGrid 사용)
+```tsx
+import { GridLayout, FormGrid, FormGridCell, TitleSection, Field, Select, Button } from '@/components';
+
+<div className="min-h-screen bg-[#f4f6f8] p-8">
+  <GridLayout type="A">
+    <div>
+      <TitleSection title="계약 등록" menu2="계약" showBreadcrumb={true} showMenu2={true} showMenu3={false} showMenu4={false} mode="base" />
+      <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6 mt-5">
+        <FormGrid columns={2} title="기본 정보">
+          <FormGridCell>
+            <Field type="text" showLabel={true} label="계약명" showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
+          </FormGridCell>
+          <FormGridCell>
+            <Select showLabel={true} label="계약유형" showHelptext={false} showStartIcon={false} className="w-full" options={[]} />
+          </FormGridCell>
+          <FormGridCell colSpan={2}>
+            <Field type="text" showLabel={true} label="비고" showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
+          </FormGridCell>
+        </FormGrid>
+        <div className="flex justify-end gap-3 mt-6">
+          <Button buttonType="ghost" label="취소" showStartIcon={false} showEndIcon={false} />
+          <Button buttonType="primary" label="저장" showStartIcon={false} showEndIcon={false} />
+        </div>
+      </div>
+    </div>
+  </GridLayout>
+</div>
+```
+
 ### 🚨 RP-1 Section Card 규칙 (CRITICAL)
 
 **RP-1(조회형) 레이아웃에서 FilterBar, ActionButtons, Grid는 반드시 하나의 Section Card 안에 포함되어야 합니다.**
 
-- Title(h1)만 Section Card **바깥**에 위치
+- Title Bar(브레드크럼 + 버튼)는 Section Card **바깥** 상단에 위치
 - FilterBar, ActionButtons, DataGrid/Table은 모두 **같은 하나의 `bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6`** 안에 배치
 - ❌ FilterBar와 Grid를 **별도 카드**로 분리 금지
 - ❌ FilterBar, ActionButtons, Grid를 카드 없이 **직접 나열** 금지
@@ -1246,26 +1505,30 @@ LAYOUT_GUIDE = """
 #### RP-1 올바른 구조:
 ```tsx
 <div className="min-h-screen bg-[#f4f6f8] p-8">
-  {/* Title — Section Card 바깥 */}
-  <h1 className="text-2xl font-bold text-[#212529] mb-5">계약 관리</h1>
+  {/* TitleSection — Section Card 바깥 */}
+  <TitleSection title="계약 관리" menu2="계약" showBreadcrumb={true} showMenu2={true} showMenu3={false} showMenu4={false} mode="base">
+    <Button buttonType="tertiary" size="sm" label="엑셀 다운로드" showStartIcon={false} showEndIcon={false} />
+    <Button buttonType="primary" size="sm" label="신규 등록" showStartIcon={false} showEndIcon={false} />
+  </TitleSection>
 
-  {/* 🚨 하나의 Section Card 안에 FilterBar + ActionButtons + Grid 모두 포함 */}
-  <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6">
-    {/* FilterBar */}
-    <div className="grid grid-cols-4 gap-4 items-end">
-      <Field type="date" label="조회기간(시작)" ... className="w-full" />
-      <Field type="date" label="조회기간(종료)" ... className="w-full" />
-      <Select label="상태" ... className="w-full" />
-      <Field type="text" label="검색어" ... className="w-full" />
-    </div>
-    {/* ActionButtons — 필터 아래 우측 정렬 */}
-    <div className="flex justify-end gap-2 mt-4 mb-5">
-      <Button variant="secondary" size="md">초기화</Button>
-      <Button variant="primary" size="md">조회</Button>
-    </div>
+  {/* 🚨 하나의 Section Card 안에 FilterBar + Grid 모두 포함 */}
+  <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6 mt-5">
+    {/* FilterBar 컴포넌트 — 초기화/조회 버튼 내장 */}
+    <FilterBar mode="compact" onReset={() => handleReset()} onSearch={() => handleSearch()}>
+      <div className="col-span-3">
+        <Field type="date" showLabel={true} label="조회기간(시작)" showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
+      </div>
+      <div className="col-span-3">
+        <Field type="date" showLabel={true} label="조회기간(종료)" showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
+      </div>
+      <div className="col-span-3">
+        <Select showLabel={true} label="상태" placeholder="전체" showHelptext={false} showStartIcon={false} className="w-full" options={statusOptions} />
+      </div>
+    </FilterBar>
     {/* Grid — 같은 카드 안 */}
-    <DataGrid rowData={rowData} columnDefs={columnDefs} domLayout="autoHeight" />
-    <Pagination currentPage={page} totalCount={100} pageSize={10} onPageChange={setPage} className="mt-4" />
+    <div className="mt-5">
+      <DataGrid rowData={rowData} columnDefs={columnDefs} domLayout="autoHeight" />
+    </div>
   </div>
 </div>
 ```
@@ -1273,7 +1536,8 @@ LAYOUT_GUIDE = """
 #### ❌ 잘못된 구조 (FilterBar와 Grid가 분리됨):
 ```tsx
 {/* ❌ 이렇게 하면 안 됨 */}
-<h1>계약 관리</h1>
+<nav>홈 / 계약 / 계약 관리</nav>
+<h1>계약 관리</h1>  {/* ❌ 브레드크럼과 별도 행 금지! TitleSection 사용 */}
 <div className="bg-white ...">FilterBar + Buttons</div>  {/* 카드 1 */}
 <div className="bg-white ...">Grid</div>                  {/* 카드 2 — 분리됨! */}
 ```
@@ -1292,11 +1556,29 @@ PRE_GENERATION_CHECKLIST = """
 
 1. **Field**: 모든 `<Field`는 `/>` 로 끝나는가? `</Field>` 가 0개인가?
 2. **Whitelist**: 사용한 컴포넌트가 모두 Available Components에 있는가?
-3. **Import 완전성**: JSX에서 `<ComponentName`으로 사용한 모든 컴포넌트가 import에 포함되어 있는가? 누락된 import = ReferenceError CRASH. 타입 import는 없는가?
+3. **Import 완전성**: JSX에서 `<ComponentName`으로 사용한 모든 컴포넌트가 import에 포함되어 있는가? (Icon 포함) 누락된 import = ReferenceError CRASH.
 4. **Complete output**: `...` 이나 `// 나머지 동일` 같은 생략이 없는가?
-5. **ENUM variety**: 같은 variant/size를 모든 컴포넌트에 반복하지 않았는가?
-6. **Section Card**: 조회형(RP-1) 화면에서 FilterBar + ActionButtons + Grid가 **하나의 Section Card** 안에 있는가? 별도 카드로 분리되지 않았는가?
-7. **Drawer vs Dialog 검증**: 코드에 `<Dialog`가 있으면 다시 확인! 상세보기·등록·수정·편집 폼이면 → `<Drawer`로 교체! Dialog는 삭제 확인/단순 알림에만 허용. 필드 3개 이상 폼에 Dialog 사용 = 무조건 Drawer로 변경.
+5. **Button/IconButton prop 확인**: Button에 `variant=` 사용 → `buttonType=`으로 교체. IconButton은 `iconButtonType=`과 `iconOnly=`와 `aria-label=`이 올바른 prop. `<Button>children</Button>` → `<Button label="..." />`로 교체.
+6. **interaction 확인**: `disabled`, `isDisabled`, `isLoading`, `isReadOnly` prop을 사용하지 않았는가? → `interaction="disabled"` / `"loading"` / `"readonly"` 로 교체.
+7. **Discriminated Union**: `showLabel` 없이 `label`만 전달하거나, `showHelptext` 없이 `helptext`만 전달하지 않았는가?
+8. **Section Card**: 조회형(RP-1) 화면에서 FilterBar + Grid가 **하나의 Section Card** 안에 있는가?
+9. **Drawer vs Dialog 검증**: 코드에 `<Dialog`가 있으면 다시 확인! 상세보기·등록·수정·편집 폼이면 → `<Drawer`로 교체!
+10. **⛔ 외부 아이콘 import 금지**: `lucide-react`, `heroicons`, `react-icons` import가 코드에 있는가? → **즉시 삭제!** 내장 `<Icon name="..." />` 만 사용.
+11. **⛔ 커스텀 컴포넌트 재정의 금지**: `const Divider = ...`, `const Card = ...` 등 Available Components에 이미 존재하는 이름으로 컴포넌트를 직접 정의했는가? → 삭제하고 `@/components`에서 import!
+12. **레이아웃 컴포넌트**: 페이지 레이아웃에 `GridLayout`, 세로 흐름에 `RowPattern`+`RowSlot`, 폼 그리드에 `FormGrid`+`FormGridCell`을 사용했는가? 수동 `grid-cols-12 col-span-N` 대신 `<GridLayout type="C">` 사용 권장.
+13. **Icon name+size 교차검증**: `<Icon name="..." size={N} />`에서 해당 name이 해당 size 목록에 존재하는가? 목록에 없는 조합 = "Icon not found" 에러.
+14. **색상 토큰 교차검증**: 텍스트에 사용한 hex가 토큰 테이블의 Text Class 컬럼에 있는가? bg- 전용 토큰을 text-에 사용하지 않았는가?
+15. **🚨 RowSlot 수동 간격**: `<RowSlot>` 안에 `mt-*`/`mb-*`가 있으면 즉시 제거! ❌ `<RowSlot slot="grid"><div className="mt-2">` → ✅ `<RowSlot slot="grid"><div>`
+16. **GridLayout 사용 범위**: GridLayout이 페이지 최상위에서만 사용되었는가? Drawer/Dialog/Popover 내부에서 사용하지 않았는가?
+17. **Checkbox/Radio onChange**: `e.target.checked` DOM 패턴이 아닌 상태 토글 패턴을 사용했는가?
+18. **🚨 import 양방향 점검**: import한 모든 컴포넌트가 JSX에서 `<Name` 또는 `<Name.`으로 사용되는가? 하나라도 미사용 시 CRASH! 특히 IconButton — import했으면 반드시 JSX에서 사용, 사용하지 않으면 import에서 제거!
+19. **폼 영역 FormGrid**: 폼/필터 입력 영역에 수동 `grid-cols-12` + `col-span-N` 대신 `<FormGrid columns={N}>` + `<FormGridCell>`을 사용했는가?
+20. **Dialog size="xl" 금지**: `<Dialog` 태그에 `size="xl"`이 있는가? → Dialog는 sm/md/lg만 허용. 대형 콘텐츠는 Drawer로 변경!
+21. **HTML table 태그 검증**: `<table>`, `<thead>`, `<tbody>`, `<tr>`, `<td>`, `<th>` 태그가 코드에 있는가? → DataGrid로 교체!
+22. **엑셀 버튼 tertiary 확인**: "엑셀 다운로드" 버튼의 buttonType이 `"tertiary"`인가? → ghost/secondary 사용 시 tertiary로 교체!
+23. **Radio Option 패턴 확인**: `<Radio`가 `<Option label="...">` 안에 감싸져 있는가? `<label><Radio/><span>` 수동 패턴은 없는가? onChange가 누락되지 않았는가?
+24. **DS 컴포넌트 bg 오버라이드 확인**: Button, Badge 등 DS 컴포넌트에 `className="bg-[#...]"` 배경색 오버라이드가 있는가? → 제거하고 전용 prop 사용!
+25. **날짜 형식 통일 확인**: `type="date"` Field의 value가 `YYYY-MM-DD` 형식인가? 다른 형식(YYYY/MM/DD 등) 사용 시 교체!
 
 ---
 
@@ -1322,14 +1604,13 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-[#f4f6f8] p-6">
       <div className="w-full max-w-[420px] bg-white rounded-xl border border-[#dee2e6] shadow-sm p-8">
         <h1 className="text-2xl font-bold text-[#212529] mb-6">로그인</h1>
-        {/* ⛔ CRITICAL: Field는 self-closing만 가능. <Field>children</Field> 금지 */}
         <div className="mb-5">
-          <Field type="email" label="이메일" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full" />
+          <Field type="email" showLabel={true} label="이메일" value={email} onChange={(e) => setEmail(e.target.value)} showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
         </div>
         <div className="mb-6">
-          <Field type="password" label="비밀번호" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full" />
+          <Field type="password" showLabel={true} label="비밀번호" value={password} onChange={(e) => setPassword(e.target.value)} showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
         </div>
-        <Button variant="primary" className="w-full">로그인</Button>
+        <Button buttonType="primary" label="로그인" showStartIcon={false} showEndIcon={false} className="w-full" />
       </div>
     </div>
   );
@@ -1348,53 +1629,67 @@ SYSTEM_PROMPT_FOOTER = """## 🎯 DESIGN CONSISTENCY CHECKLIST
 - **Colors**: Use ONLY hex values from the color token table. NEVER invent hex codes.
 - **Shadows**: `shadow-sm` only. Never `shadow`, `shadow-md`, `shadow-lg`.
 - **Borders**: `border border-[#dee2e6]` only. Never other gray shades.
-- **PROPS VALIDATION**: Use exact enum values (`variant="primary"` NOT `variant="blue"`). Don't hallucinate props.
+- **PROPS VALIDATION**: Button은 `buttonType=` 사용 (NOT `variant=`). IconButton은 `iconButtonType=` + `iconOnly=` + `aria-label=` 사용. Don't hallucinate props.
+- **interaction PROP**: disabled/readOnly/loading → `interaction` prop 사용. ❌ `isDisabled`, `disabled`, `isReadOnly` 금지.
+- **DISCRIMINATED UNION**: showLabel + label, showHelptext + helptext는 반드시 짝으로 사용.
 - **DRAWER vs DIALOG**: "드로어" 요청 → `Drawer` 컴포넌트 사용 (Dialog 금지). "다이얼로그/모달/팝업" → `Dialog`.
+- **TITLE BAR**: `<TitleSection>` 컴포넌트 사용 또는 직접 구성. 브레드크럼 + h1 제목 + 액션 버튼은 반드시 **한 줄**에 배치.
+- **⛔ NO EXTERNAL ICONS**: `lucide-react`, `heroicons`, `react-icons` import 절대 금지 — 미설치, 앱 크래시. 내장 `<Icon name="..." size={N} />` 만 사용.
+- **LAYOUT COMPONENTS**: 페이지 레이아웃 → `<GridLayout type="A~H">`, 세로 흐름 → `<RowPattern pattern="RP-1~8">` + `<RowSlot slot="...">`, 폼 → `<FormGrid columns={N}>` + `<FormGridCell>`. 수동 grid-cols-12 대신 사용 권장.
+
+🚨 **FINAL STEP — import 정리**: 코드 완성 후, import 문을 다시 읽고 JSX에서 `<Name` 또는 `<Name.`으로 **실제 사용하지 않는 컴포넌트를 import에서 제거**하세요. 미사용 import 1개 = CRASH. 특히 IconButton — import했지만 JSX에서 `<IconButton`이 없으면 반드시 삭제!
+🚨 **Select options 최종 확인**: 모든 `<Select`의 options 배열에 항목이 3개 이상인지 확인하세요. 2개 이하면 Radio로 변경하세요.
+🚨 **Dialog/Drawer body gap 확인**: `<Dialog.Body>` 또는 `<Drawer.Body>` 내부에 `gap-5`, `gap-6`, `mb-5`, `mb-6`이 있으면 `gap-4`/`mb-4`로 교체하세요. 페이지 레벨 gap-6은 허용되지만 Dialog/Drawer 내부는 gap-4가 최대입니다.
 
 Create a premium, completed result."""
 
 UI_PATTERN_EXAMPLES = """
 ## 📐 UI PATTERN REFERENCE
 
-### Form Page (폼 + 다양한 컴포넌트 조합)
+### Form Page (폼 + 다양한 컴포넌트 조합 — FormGrid 사용)
 ```tsx
-import { Button, Field, Select, Radio } from '@/components';
+import { Button, Field, Select, Radio, Option, OptionGroup, TitleSection, GridLayout, FormGrid, FormGridCell, Icon } from '@/components';
 
 const MemberDetail = () => {
   const [name, setName] = React.useState('김민준');
   const [email, setEmail] = React.useState('minjun@example.com');
   const [dept, setDept] = React.useState('개발팀');
   const [gender, setGender] = React.useState('male');
-  const [note, setNote] = React.useState('');
 
   return (
     <div className="min-h-screen bg-[#f4f6f8] p-8">
-      <h1 className="text-2xl font-bold text-[#212529] mb-6">회원 상세</h1>
-      <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6">
-        {/* Section: 기본 정보 — 2-column grid */}
-        <h2 className="text-lg font-semibold text-[#212529] mb-4">기본 정보</h2>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-5 mb-8">
-          <Field type="text" label="이름" value={name} onChange={(e) => setName(e.target.value)} className="w-full" />
-          <Field type="email" label="이메일" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full" />
-          <Select label="부서" className="w-full" value={dept} onChange={(v) => setDept(v)}
-            options={[{label:'개발팀',value:'개발팀'},{label:'디자인팀',value:'디자인팀'},{label:'마케팅팀',value:'마케팅팀'},{label:'경영지원',value:'경영지원'}]} />
-          <div>
-            <label className="text-sm font-medium text-[#212529] mb-2 block">성별</label>
-            <div className="flex gap-4">
-              <label className="flex items-center gap-2 cursor-pointer"><Radio checked={gender==='male'} onChange={() => setGender('male')} /><span className="text-sm">남성</span></label>
-              <label className="flex items-center gap-2 cursor-pointer"><Radio checked={gender==='female'} onChange={() => setGender('female')} /><span className="text-sm">여성</span></label>
+      <GridLayout type="A">
+        <div>
+          {/* TitleSection — 브레드크럼 + 제목 + 액션 */}
+          <TitleSection title="회원 상세" menu2="회원관리" showBreadcrumb={true} showMenu2={true} showMenu3={false} showMenu4={false} mode="base" />
+          <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6 mt-5">
+            {/* Section: 기본 정보 — FormGrid 2열 */}
+            <FormGrid columns={2} title="기본 정보">
+              <FormGridCell>
+                <Field type="text" showLabel={true} label="이름" value={name} onChange={(e) => setName(e.target.value)} showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
+              </FormGridCell>
+              <FormGridCell>
+                <Field type="email" showLabel={true} label="이메일" value={email} onChange={(e) => setEmail(e.target.value)} showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
+              </FormGridCell>
+              <FormGridCell>
+                <Select showLabel={true} label="부서" className="w-full" value={dept} onChange={(v) => setDept(v)} showHelptext={false} showStartIcon={false}
+                  options={[{label:'개발팀',value:'개발팀'},{label:'디자인팀',value:'디자인팀'},{label:'마케팅팀',value:'마케팅팀'},{label:'경영지원',value:'경영지원'}]} />
+              </FormGridCell>
+              <FormGridCell>
+                <OptionGroup label="성별" showLabel={true} orientation="horizontal" size="sm">
+                  <Option label="남성"><Radio value={gender==='male' ? 'checked' : 'unchecked'} onChange={() => setGender('male')} /></Option>
+                  <Option label="여성"><Radio value={gender==='female' ? 'checked' : 'unchecked'} onChange={() => setGender('female')} /></Option>
+                </OptionGroup>
+              </FormGridCell>
+            </FormGrid>
+            {/* Action buttons */}
+            <div className="flex justify-end gap-3 mt-6">
+              <Button buttonType="ghost" label="취소" showStartIcon={false} showEndIcon={false} />
+              <Button buttonType="primary" size="lg" label="저장" showStartIcon={false} showEndIcon={false} />
             </div>
           </div>
         </div>
-        {/* Section: 추가 정보 */}
-        <h2 className="text-lg font-semibold text-[#212529] mb-4">추가 정보</h2>
-        <Field multiline rowsVariant="flexible" label="비고" value={note} onChange={(e) => setNote(e.target.value)} className="w-full" />
-        {/* Action buttons — primary CTA lg, secondary md */}
-        <div className="flex justify-end gap-3 mt-6">
-          <Button variant="secondary">취소</Button>
-          <Button variant="primary" size="lg">저장</Button>
-        </div>
-      </div>
+      </GridLayout>
     </div>
   );
 };
@@ -1402,75 +1697,58 @@ export default MemberDetail;
 ```
 
 ### Filter + Button + Grid Layout (조회 영역 = 하나의 Section Card)
-🚨 **FilterBar, ActionButtons, Grid는 반드시 하나의 Section Card 안에 포함!**
+🚨 **FilterBar 컴포넌트 또는 수동 Grid 레이아웃으로 필터 + Grid를 하나의 Section Card에 포함!**
 ```tsx
-{/* ✅ 올바른 조회 레이아웃: FilterBar + Buttons + Grid = 하나의 Section Card */}
+{/* ✅ FilterBar 컴포넌트 사용 */}
 <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6">
-  {/* FilterBar */}
-  <div className="grid grid-cols-12 gap-4 items-end">
+  <FilterBar mode="compact" onReset={() => handleReset()} onSearch={() => handleSearch()}>
     <div className="col-span-3">
-      <Field type="date" label="조회기간(시작)" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full" />
+      <Field type="date" showLabel={true} label="조회기간(시작)" value={startDate} onChange={(e) => setStartDate(e.target.value)} showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
     </div>
     <div className="col-span-3">
-      <Field type="date" label="조회기간(종료)" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full" />
+      <Field type="date" showLabel={true} label="조회기간(종료)" value={endDate} onChange={(e) => setEndDate(e.target.value)} showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
     </div>
     <div className="col-span-3">
-      <Select label="상태" placeholder="전체" value={status} onChange={(v) => setStatus(v)}
+      <Select showLabel={true} label="상태" placeholder="전체" value={status} onChange={(v) => setStatus(v)} showHelptext={false} showStartIcon={false}
         options={[{label:'전체',value:'all'},{label:'정상',value:'active'},{label:'해지',value:'inactive'}]} className="w-full" />
     </div>
     <div className="col-span-3">
-      <Field type="text" label="검색어" placeholder="이름 또는 코드" value={keyword} onChange={(e) => setKeyword(e.target.value)} className="w-full" />
+      <Field type="text" showLabel={true} label="검색어" placeholder="이름 또는 코드" value={keyword} onChange={(e) => setKeyword(e.target.value)} showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
     </div>
-  </div>
-  {/* ActionButtons — 별도 행에 우측 정렬 */}
-  <div className="flex justify-end gap-2 mt-4 mb-5">
-    <Button variant="secondary" size="md">초기화</Button>
-    <Button variant="primary" size="md">조회</Button>
-  </div>
+  </FilterBar>
   {/* Grid — 같은 Section Card 안! 절대 별도 카드로 분리 금지 */}
-  <DataGrid rowData={rowData} columnDefs={columnDefs} domLayout="autoHeight" />
-  <Pagination currentPage={page} totalCount={100} pageSize={10} onPageChange={setPage} className="mt-4" />
+  <div className="mt-5">
+    <DataGrid rowData={rowData} columnDefs={columnDefs} domLayout="autoHeight" />
+  </div>
 </div>
 ```
-- ⚠️ 버튼을 필드와 같은 grid row에 col-span으로 넣지 말 것 (찌그러짐 원인)
-- 버튼은 `flex justify-end gap-2 mt-4`로 별도 행에 배치
-- 필터 버튼: 반드시 `size="md"` (sm 금지)
+- ⚠️ FilterBar 내부 필드는 `<div className="col-span-N">` 으로 감싸서 12컬럼 그리드 배치
+- FilterBar의 onReset/onSearch로 초기화/조회 버튼 자동 생성
 - 🚨 **Grid는 FilterBar와 같은 Section Card 안에 배치. 별도 카드 금지!**
 
-### Breadcrumb (경로 표시)
-경로 표시가 필요할 때 페이지 상단에 Breadcrumb 스타일로 배치:
+### Title Bar (TitleSection 컴포넌트 사용)
 ```tsx
-{/* Breadcrumb — 페이지 타이틀 위에 배치 */}
-<nav className="flex items-center gap-1.5 text-sm text-[#868e96] mb-3">
-  <span className="hover:text-[#495057] cursor-pointer">홈</span>
-  <span>/</span>
-  <span className="hover:text-[#495057] cursor-pointer">인사관리</span>
-  <span>/</span>
-  <span className="text-[#212529] font-medium">발령등록</span>
-</nav>
-<h1 className="text-2xl font-bold text-[#212529] mb-6">발령등록</h1>
-```
-- 마지막 항목만 `text-[#212529] font-medium` (현재 페이지)
-- 구분자: `/` 또는 `>`
-- 위치: 항상 페이지 타이틀(h1) 바로 위
-
-### DataGrid 선택 액션 바
-그리드에서 체크박스 선택 시 상단에 액션 바를 표시:
-```tsx
-{/* 선택 액션 바 — 체크된 항목이 있을 때만 표시 */}
-{selectedRows.length > 0 && (
-  <div className="flex items-center gap-3 bg-[#e7f5ff] border border-[#339af0] rounded-lg px-4 py-2.5 mb-4">
-    <span className="text-sm font-medium text-[#1971c2]">{selectedRows.length}건 선택</span>
-    <div className="flex gap-2 ml-auto">
-      <Button variant="outline" size="sm">일괄 승인</Button>
-      <Button variant="destructive" size="sm">일괄 삭제</Button>
-    </div>
+{/* TitleSection — 브레드크럼 + 제목 + 액션 버튼 자동 배치 */}
+<TitleSection title="발령등록" menu2="인사관리" showBreadcrumb={true} showMenu2={true} showMenu3={false} showMenu4={false} mode="base">
+  <div className="flex items-center gap-2">
+    <Button buttonType="tertiary" size="md" label="엑셀 다운로드" showStartIcon={true} startIcon={<Icon name="external" size={18} />} showEndIcon={false} />
+    <Button buttonType="primary" size="md" label="신규 등록" showStartIcon={true} startIcon={<Icon name="add" size={18} />} showEndIcon={false} />
   </div>
-)}
+</TitleSection>
 ```
-- 배경: `bg-[#e7f5ff]` + `border-[#339af0]` (파란 계열 강조)
-- 위치: DataGrid 바로 위
-- 선택 건수 표시 + 우측에 액션 버튼
+- ✅ TitleSection children에 액션 버튼 배치 → 우측 자동 정렬
+- 액션 버튼이 없으면 children 생략
+
+### DataGrid 선택 액션 바 (ActionBar 컴포넌트)
+```tsx
+{/* ActionBar — 체크된 항목이 있을 때 표시 */}
+<ActionBar count={selectedRows.length} visible={selectedRows.length > 0} onClose={() => clearSelection()}>
+  <Button buttonType="ghost-inverse" size="md" label="일괄 승인" showStartIcon={false} showEndIcon={false} />
+  <Button buttonType="ghost-inverse" size="md" label="일괄 삭제" showStartIcon={false} showEndIcon={false} />
+</ActionBar>
+```
+- ActionBar는 플로팅 바 (fixed position 기본)
+- buttonType="ghost-inverse" 사용 (어두운 배경)
 
 ### 드로어(Drawer) 패턴 — "드로어" 요청 시 반드시 이 패턴 사용
 🚨 **사용자가 "드로어"라고 하면 Dialog가 아닌 반드시 Drawer를 사용!**
@@ -1479,19 +1757,19 @@ import { Button, Field, Select, Drawer } from '@/components';
 
 {/* ✅ 드로어 = Drawer 컴포넌트. ❌ Dialog 절대 사용 금지 */}
 <Drawer open={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} size="md">
-  <Drawer.Header title="조직원 등록" />
+  <Drawer.Header title="조직원 등록" showSubtitle={false} />
   <Drawer.Body>
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-2 gap-4">
-        <Field label="성명" placeholder="이름 입력" required className="w-full" />
-        <Field label="사번" placeholder="자동 부여" disabled className="w-full" />
+        <Field showLabel={true} label="성명" placeholder="이름 입력" showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
+        <Field showLabel={true} label="사번" placeholder="자동 부여" interaction="disabled" showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
       </div>
-      <Select label="소속 부서" placeholder="부서 선택" options={[{label:'개발팀',value:'dev'},{label:'디자인팀',value:'design'}]} className="w-full" />
+      <Select showLabel={true} label="소속 부서" placeholder="부서 선택" showHelptext={false} showStartIcon={false} options={[{label:'개발팀',value:'dev'},{label:'디자인팀',value:'design'}]} className="w-full" />
     </div>
   </Drawer.Body>
   <Drawer.Footer>
-    <Button variant="outline" onClick={() => setIsDrawerOpen(false)}>취소</Button>
-    <Button variant="primary">등록</Button>
+    <Button buttonType="ghost" label="취소" onClick={() => setIsDrawerOpen(false)} showStartIcon={false} showEndIcon={false} />
+    <Button buttonType="primary" label="등록" showStartIcon={false} showEndIcon={false} />
   </Drawer.Footer>
 </Drawer>
 ```
@@ -1772,32 +2050,59 @@ async def get_vision_system_prompt(
 # ============================================================================
 
 DESCRIPTION_SYSTEM_PROMPT = """\
-당신은 React UI 코드를 분석하여 화면 기술서(디스크립션)를 작성하는 전문가입니다.
+당신은 React UI 코드를 분석하여 화면 기능명세서를 작성하는 전문가입니다.
 
-주어진 코드를 정밀하게 분석하고, 아래 구조와 예시를 참고하여 화면 기술서를 작성하세요.
+주어진 코드를 정밀하게 분석하고, 아래 구조와 예시를 참고하여 화면 기능명세서를 작성하세요.
 코드에 존재하지 않는 내용은 절대 작성하지 마세요.
+
+[중요] 최대한 상세하게 작성하세요. 요약하거나 축약하지 마세요. 분량이 길어지는 것을 두려워하지 마세요.
+
+### 반드시 지켜야 할 상세 기준:
+1. 드롭다운/코드 목록: 필터바, 폼, 다이얼로그의 모든 드롭다운/라디오 각각에 대해 코드 목록 테이블을 작성하세요. 드롭다운이 N개면 코드 목록도 N개여야 합니다. 예: 필터바에 기간구분, 전표상태, 전표종류, 결재상태, 결제구분, 한도 6개의 드롭다운이 있으면 6개의 코드 목록 테이블을 모두 작성해야 합니다
+2. 목록 동작: 모든 그리드마다 "목록 동작" 테이블을 반드시 포함하세요 (페이징, 정렬, 행 클릭 동작, 빈 목록 처리)
+3. API 응답 필드: 해당 그리드의 모든 컬럼에 1:1 대응하는 필드를 빠짐없이 나열하세요. 그리드가 23컬럼이면 응답 필드도 23개 이상이어야 합니다
+4. API 상세 스펙: 엔드포인트 목록의 모든 API(GET, POST, PUT, DELETE)에 대해 각각 요청/응답 상세를 작성하세요. DELETE API도 요청 본문과 서버 처리 규칙을 작성하세요
+5. API 요청 파라미터: 필터 항목과 1:1 매핑하세요. 필터가 10개면 요청 파라미터도 10개 이상이어야 합니다
+6. 드로어/다이얼로그: 내부의 버튼, 입력 항목, 테이블을 메인 화면과 동일한 수준으로 상세히 기술하세요
+7. Part 2 섹션: 체크박스 선택 후 일괄 처리(삭제, 상신 등)가 있으면 배치/벌크 처리 규칙 섹션을 반드시 작성하세요. 저장/삭제/승인 후 후속 동작(재조회, 초기화 등)이 있으면 이벤트/사이드이펙트 섹션도 반드시 작성하세요
+8. 엔티티 관계: 화면에서 다루는 데이터가 2개 이상의 테이블/엔티티에 걸치면 엔티티 관계 섹션을 작성하세요. 메인 그리드와 상세 그리드가 있으면 반드시 작성 대상입니다
+
+### 절대 하지 말아야 할 것:
+- 그리드 컬럼을 범위로 묶어서 "9~15번 컬럼", "세무/공급가 등"처럼 축약하는 것. 반드시 1행 = 1컬럼으로 개별 나열하세요
+- 드롭다운 코드 목록을 일부만 쓰고 나머지를 생략하는 것
+- API 응답 필드를 "주요 항목"이라며 일부만 나열하는 것
+- API 엔드포인트를 목록만 쓰고 상세 스펙을 생략하는 것
+
+### 도메인 일관성 규칙:
+- 화면명, 메뉴 위치, 브레드크럼, 다이얼로그/드로어 제목에 사용하는 도메인명은 **반드시 통일**하세요
+- 예: 화면명이 "회원 관리"이면 브레드크럼도 "회원 관리", 드로어 제목도 "회원 등록"/"회원 상세" 등으로 동일 도메인 사용
+- ❌ 화면명은 "회원 관리"인데 드로어 제목이 "사용자 등록" — 도메인명 불일치
 
 ---
 
 ## 출력 형식 규칙
 
-1. 마크다운 제목 계층: ## > ### ■ > - (불릿)
+1. 마크다운 제목 계층: # (파트) > ## (섹션) > ### ■ (소섹션) > - (불릿)
 2. 대단원(## 섹션) 사이에는 반드시 구분선(---)을 넣으세요.
 3. 불릿 항목에 볼드(**text**)를 절대 사용하지 마세요. plain text만 사용하세요.
-   - 올바른 예: - 코드 : 텍스트 입력
-   - 잘못된 예: - **코드** : 텍스트 입력
-4. 코드 수준의 상세(함수명, 변수명, CSS 클래스, 색상코드, 디자인 토큰명, 픽셀값 등)를 절대 포함하지 마세요.
-   - 잘못된 예: handleSearch 함수를 통해..., suppressMovable: true, 배경색(#f4f6f8), bg/disabled, 8px 라운드, color/primary
-   - 올바른 예: 조회 버튼 클릭 시 조건 기반 재조회, 컬럼 이동 불가, 배경색 회색 계열, 비활성 배경색, 라운드 처리
-5. 코드에 해당 요소가 없으면 해당 섹션은 생략하세요.
+4. 코드 수준의 상세(함수명, 변수명, CSS 클래스, 색상코드, 디자인 토큰명, 픽셀값, 영문 필드명 등)를 절대 포함하지 마세요.
+   - 잘못된 예: handleSearch 함수를 통해..., suppressMovable: true, 배경색(#f4f6f8), bg/disabled, 8px 라운드, orgName, hqName
+   - 올바른 예: 조회 버튼 클릭 시 조건 기반 재조회, 컬럼 이동 불가, 배경색 회색 계열
+   - 그리드 컬럼 테이블의 "컬럼명" 열에도 영문 camelCase 필드명을 사용하지 마세요. 한글 표시명만 사용하세요.
+   - **Part 4 API 상세의 요청 파라미터/응답 필드 테이블에서도 영문 camelCase 필드명(budgetMonth, deptName 등) 대신 한국어 설명명(예산년월, 부서명 등)을 사용하세요.**
+5. 코드에 해당 요소가 없으면 해당 섹션은 통째로 생략하세요.
+6. 테이블(표)은 마크다운 테이블 문법을 사용하세요.
 
 ---
 
 ## 출력 구조
 
-아래 순서대로 작성하세요.
+아래 4개 파트 순서대로 작성하세요.
+코드에서 확인되지 않는 파트/섹션은 생략합니다.
 
-### 1. 화면 개요
+# Part 1. 화면 정의
+
+---
 
 ## 화면 개요
 
@@ -1809,17 +2114,13 @@ DESCRIPTION_SYSTEM_PROMPT = """\
 - 코드에서 추론 불가하면 이 항목 생략
 
 ### ■ 화면 목적
-- 이 화면이 제공하는 핵심 기능을 불릿으로 나열
-
-### ■ 관리 부서
-- 코드에서 추론 가능한 경우에만 작성
-- 추론 불가하면 이 항목 생략
+- 이 화면이 존재하는 이유, 사용자가 달성하려는 목표를 1~2문장으로 기술
 
 ### ■ 접근 권한
 - 조건부 렌더링, 권한 분기가 있으면 역할별 접근 범위 기술
 - 없으면 이 항목 생략
 
-### 2. 전체 레이아웃 구조
+---
 
 ## 전체 레이아웃 구조
 
@@ -1828,113 +2129,368 @@ DESCRIPTION_SYSTEM_PROMPT = """\
 2. (영역명)
    - (하위 영역)
 
-### ■ 화면 유형 및 구조
-- 리스트 / 상세 / 폼 / 대시보드 등
-- 드로어(Drawer) / 다이얼로그(Dialog) 사용 여부
+### ■ 화면 유형
+- 목록 / 등록 폼 / 수정 폼 / 상세 조회 / 팝업 / 탭 구조 / 마스터-디테일 등
 
 ### ■ UI 구조 특징
-- 레이아웃 패턴 (단일 컬럼, 마스터-디테일, 그리드 등)
-- 상세보기 방식 (드로어, 페이지 전환 등)
+- 레이아웃 패턴, 드로어/다이얼로그 사용 여부 등
 
-### 3. 타이틀 영역
+---
 
 ## 타이틀 영역
 
 ### ■ 타이틀
-- 화면에 표시되는 메뉴명
-
-### ■ 즐겨찾기
-- 즐겨찾기 아이콘이 있으면 기술
-- 없으면 이 항목 생략
+- 화면에 표시되는 제목
 
 ### ■ 브레드크럼
-- 경로 표시 (예: 행사신청 > 신청/취합 > 신청하기)
+- 경로 표시 (예: 관리회계 > 예산관리 > 예산등록)
 - 없으면 이 항목 생략
 
-### 4. 각 영역별 상세
+---
 
-각 영역은 반드시 ## (영역명) 으로 독립 섹션을 만드세요.
-절대 ### 1. ### 2. 같은 번호 매김을 하지 마세요.
+## 버튼 그룹
 
-예:
-## 상단 버튼 그룹
-## 필터바 구성
-## 기능 버튼 영역
-## 메인 테이블 구성
+### ■ 상단 버튼
 
-영역 내 요소 유형별 작성법:
+| 버튼명 | 동작 설명 | 조건 |
+|--------|----------|------|
+| (버튼명) | (클릭 시 동작) | (활성화/비활성화 조건) |
 
-일반 구성 요소 → 불릿 리스트
-- (요소명) : 설명
+### ■ 하단 버튼
 
-필터/입력 항목 → 불릿 리스트, 항목별 타입과 옵션 명시
-- 항목명 : 타입(컴포넌트명, 포맷), 필수 여부, 제약조건
+| 버튼명 | 동작 설명 | 조건 |
+|--------|----------|------|
+| (버튼명) | (클릭 시 동작) | (활성화/비활성화 조건) |
 
-테이블 컬럼 → 불릿 리스트, 컬럼별 정렬/포맷 명시
-- 컬럼명 : 데이터 타입, 포맷, 정렬 방향
+---
 
-버튼/액션 → ### ■ 또는 불릿, 클릭 시 동작 기술
-- 권한 조건이 있으면 ※ 표기로 명시
+## 입력/조회 항목 정의
 
-### 5. 테이블 UX 정의 (테이블이 있는 경우)
+> 섹션이 여러 개인 경우, 섹션별로 아래 표를 반복 작성합니다.
 
-## 테이블 UX 정의
+### ■ (섹션명) 섹션
 
-### ■ 행 클릭/더블클릭
-- 동작 → 결과 형식으로 기술
+| No | 항목명 | 입력 유형 | 필수 | 최대길이 | 기본값 | 입력 규칙 |
+|----|--------|----------|------|---------|-------|----------|
+| 1 | (항목명) | (유형) | Y/N | (n자) | (있으면 기술) | (허용 문자, 형식, 범위 등) |
 
-### ■ Pagination
-- 위치, 동작 방식
+> 입력 유형: 텍스트 입력 / 텍스트 입력(Tel) / 텍스트 입력(Email) / 텍스트 입력(읽기 전용) / 멀티라인 텍스트(n줄) / 날짜(Date) / 기간(DateRange) / 드롭다운 / 라디오 버튼 / 체크박스 / 파일첨부 / 숫자 입력 / 금액 입력
 
-### 6. 드로어(Drawer) 상세
+---
 
-코드에 드로어가 있으면 별도 ## 섹션으로 작성:
+## 드롭다운/코드 목록 정의
 
-## (드로어 이름) Drawer
+> 드롭다운, 라디오 등 선택형 항목의 코드 목록을 정의합니다.
+> 선택형 항목이 없으면 이 섹션을 생략합니다.
 
-### ■ 화면 구성
+### ■ (항목명) 코드 목록
+
+| 표시 텍스트 | 정렬순서 | 비고 |
+|-----------|---------|------|
+| (사용자에게 보이는 한국어 텍스트) | (숫자) | (기본 선택값 등) |
+
+> ⚠️ 코드의 영문 enum 값(Admin, Active, Pending 등)은 한국어로 변환하여 작성하세요.
+> 예: Admin → 관리자, Active → 활성, Pending → 대기
+
+---
+
+## 목록(그리드) 정의
+
+> 화면에 목록/테이블이 있는 경우 작성합니다.
+> 그리드가 여러 개면 각각 컬럼 정의와 목록 동작을 반복 작성합니다.
+
+### ■ 목록 컬럼 정의
+
+| No | 표시명 | 정렬 | 너비 | 비고 |
+|----|-------|------|------|------|
+| 1 | (헤더 텍스트) | 좌/중/우 | (넓음/보통/좁음) | (클릭 동작, 포맷 등) |
+
+> ⚠️ 너비는 픽셀값(120px, 200px)이나 코드 값(width: 150) 대신 자연어(넓음/보통/좁음)로 표현하세요.
+
+### ■ 목록 동작
+
+| 항목 | 내용 |
+|------|------|
+| 페이징 | (사용 여부, 페이지당 건수) |
+| 정렬 | (기본 정렬 기준, 사용자 정렬 가능 여부) |
+| 행 클릭 동작 | (상세 화면 이동 / 선택 체크 / 없음 등) |
+| 빈 목록 시 | (표시할 메시지) |
+
+---
+
+## 팝업/다이얼로그 정의
+
+> 화면에서 사용하는 팝업이나 다이얼로그가 있는 경우 작성합니다.
+> 여러 개면 반복 작성합니다.
+
+### ■ (다이얼로그명)
+
+| 항목 | 내용 |
+|------|------|
+| 목적 | (이 팝업이 하는 일) |
+| 호출 조건 | (어떤 버튼/동작으로 열리는지) |
+| 닫히는 조건 | (선택 완료, 닫기 버튼, ESC 등) |
+
+#### 입력 항목
+
+| No | 항목명 | 입력 유형 | 필수 | 설명 |
+|----|--------|----------|------|------|
+| 1 | (항목명) | (유형) | Y/N | (설명) |
+
+#### 선택 시 동작 (검색형 팝업인 경우)
+
+| 항목 | 내용 |
+|------|------|
+| 선택 방식 | (행 클릭 / 체크박스 + 확인 버튼 등) |
+| 메인 화면 반영 항목 | (어떤 값이 어떤 필드에 들어가는지) |
+
+---
+
+## 드로어(Drawer) 정의
+
+> 코드에 드로어가 있으면 각각 별도 섹션으로 작성합니다.
+
+### ■ (드로어명)
+
+| 항목 | 내용 |
+|------|------|
+| 목적 | (이 드로어가 하는 일) |
+| 호출 조건 | (어떤 동작으로 열리는지) |
+
+#### 화면 구성
 1. (영역)
 2. (영역)
 
-### ■ (영역명)
-- 항목 나열, 조회 전용인지 수정 가능인지 명시
-- 수정 가능 영역은 상태별 활성/비활성 조건 기술
+#### 입력/조회 항목
 
-### ■ 버튼 그룹
-- 버튼명 : 클릭 시 동작
+| No | 항목명 | 입력 유형 | 필수 | 입력 규칙 |
+|----|--------|----------|------|----------|
+| 1 | (항목명) | (유형) | Y/N | (규칙) |
 
-### ■ 유효성 검증 항목
-- 검증 규칙
-- 성공 시 동작 (AlertToast 메시지 포함)
-- 실패 시 동작
+#### 버튼
 
-### 7. 다이얼로그(Dialog) 상세
+| 버튼명 | 동작 설명 | 조건 |
+|--------|----------|------|
+| (버튼명) | (클릭 시 동작) | (조건) |
 
-코드에 다이얼로그가 있으면 각각 별도 ## 섹션으로 작성:
+---
 
-## (다이얼로그 이름) 다이얼로그
+## 액션바 정의
 
-### ■ 목적
-- 한 줄 설명
-
-### ■ 화면 구성
-- 구성 요소 나열
-
-### ■ 입력 항목
-- 항목명 : 타입(컴포넌트명, 포맷), 제약조건
-
-### 8. 액션바 (체크박스 선택 시 노출되는 경우)
-
-## 액션바
+> 체크박스 선택 시 노출되는 액션바가 있는 경우 작성합니다.
 
 ### ■ 표시 조건
 - 노출 조건
 
 ### ■ 구성 요소
-- 요소 나열, 권한 조건 ※ 표기
 
-### ■ 유효성 검증 항목
-- 동작별 검증 규칙과 결과
+| 버튼명 | 동작 설명 | 조건 |
+|--------|----------|------|
+| (버튼명) | (클릭 시 동작) | (권한 조건 등) |
+
+---
+
+# Part 2. 데이터 처리 규칙
+
+> 이 파트는 화면에서 발생하는 데이터 처리(저장, 수정, 삭제 등)를 정의합니다.
+> 코드에서 저장/수정/삭제 동작이 확인되지 않으면 이 파트를 생략합니다.
+
+---
+
+## 저장 항목 정의
+
+> 화면의 입력 항목이 실제 시스템에 어떤 필드로 저장되는지 매핑합니다.
+> 코드에서 API 호출이나 데이터 구조가 확인되는 경우에만 작성합니다.
+
+| No | 항목명 | 저장 필드명 | 데이터 타입 | 필수 | 비고 |
+|----|--------|-----------|-----------|------|------|
+| 1 | (화면 항목명) | (필드명) | (문자열/날짜/숫자 등) | Y/N/자동 | (기본값, 자동 채번 등) |
+
+---
+
+## 자동 생성 필드
+
+> 사용자가 입력하지 않지만 시스템이 자동으로 생성/관리하는 필드를 정의합니다.
+> 코드에서 확인되지 않으면 생략합니다.
+
+| 필드명 | 논리명 | 생성 규칙 | 설명 |
+|--------|--------|---------|------|
+| (필드명) | (논리명) | (채번 규칙 또는 자동 생성 방식) | (상세 설명) |
+
+---
+
+## 중복/유효성 체크 규칙
+
+> 저장 전에 수행해야 하는 중복 체크 또는 업무 유효성 검증을 정의합니다.
+
+### ■ 업무 유효성 체크
+
+| No | 체크 항목 | 규칙 | 실패 시 처리 |
+|----|----------|------|------------|
+| 1 | (체크 대상) | (규칙 설명) | (메시지 내용, 저장 차단 여부) |
+
+---
+
+## 저장 처리 순서
+
+> 저장/등록/수정/삭제 버튼 클릭 시 시스템이 수행하는 단계를 순서대로 기술합니다.
+> 코드에서 처리 흐름이 확인되는 경우에만 작성합니다.
+
+1. 필수값 확인
+2. 입력값 형식 확인
+3. 업무 규칙 확인
+4. 데이터 저장
+5. 부가 처리 (이력 저장, 알림 발송 등)
+6. 완료 처리 (성공 메시지, 화면 이동 등)
+
+---
+
+## 상태 전이 규칙
+
+> 화면에서 데이터의 상태가 변경되는 흐름이 있는 경우 작성합니다.
+> 코드에서 상태값 분기(Badge, 조건부 버튼 활성화 등)가 확인되는 경우에만 작성합니다.
+
+### ■ 상태 흐름
+
+| 현재 상태 | 이벤트(동작) | 다음 상태 | 조건/권한 |
+|----------|------------|----------|----------|
+| (현재) | (버튼 클릭 등) | (변경 후) | (권한, 업무 조건) |
+
+---
+
+## 배치/벌크 처리 규칙
+
+> 다건 선택 후 일괄 처리(승인, 삭제, 상태 변경 등)가 있는 경우 작성합니다.
+
+| 처리명 | 대상 | 처리 단위 | 실패 시 정책 | 비고 |
+|--------|------|----------|------------|------|
+| (처리명) | (선택 건) | 건별/일괄 | 전체 롤백/부분 성공 | (권한, 조건) |
+
+---
+
+## 이벤트/사이드이펙트
+
+> 저장/승인/삭제 등의 처리 후 부가적으로 발생하는 동작을 정의합니다.
+> 코드에서 확인되는 경우에만 작성합니다.
+
+| 트리거 | 사이드이펙트 | 비고 |
+|--------|-----------|------|
+| (어떤 동작 후) | (알림 발송, 이력 저장, 이월 처리 등) | (조건) |
+
+---
+
+## 오류/예외 처리 시나리오
+
+### ■ 입력 오류
+
+| 상황 | 오류 메시지 | 표시 방식 |
+|------|-----------|----------|
+| (어떤 상황) | (사용자에게 보여줄 메시지) | (인라인 / 팝업 / 토스트 등) |
+
+### ■ 업무 오류
+
+| 상황 | 오류 메시지 | 표시 방식 |
+|------|-----------|----------|
+| (어떤 상황) | (사용자에게 보여줄 메시지) | (인라인 / 팝업 / 토스트 등) |
+
+---
+
+# Part 3. 연동 및 부가 정보
+
+> 코드에서 화면 간 이동, 외부 연동 등이 확인되는 경우에만 작성합니다.
+
+---
+
+## 화면 간 연동
+
+### ■ 이 화면의 진입 경로
+
+| 진입 화면 | 진입 조건 | 전달받는 데이터 |
+|----------|----------|-------------|
+| (화면명) | (어떤 동작으로 이 화면에 오는지) | (전달받는 값) |
+
+### ■ 이 화면에서 이동 가능한 화면
+
+| 이동 대상 | 이동 조건 | 전달 데이터 |
+|----------|----------|-----------|
+| (화면명) | (어떤 동작으로 이동하는지) | (전달하는 값) |
+
+---
+
+# Part 4. API 설계
+
+> 코드에서 API 호출, 데이터 흐름, 조회/저장 동작이 확인되는 경우 API 명세를 작성합니다.
+> 코드에서 추론 가능한 범위 내에서만 작성하고, 확인되지 않는 내용은 생략합니다.
+
+---
+
+## API 엔드포인트 목록
+
+> 화면에서 필요한 API를 목록화합니다. 코드의 이벤트 핸들러, 버튼 동작, 조회/저장 흐름에서 추론합니다.
+
+| No | Method | 엔드포인트(예시) | 설명 | 호출 시점 |
+|----|--------|---------------|------|----------|
+| 1 | (GET/POST/PUT/DELETE) | (리소스 경로) | (이 API가 하는 일) | (어떤 버튼/동작에서 호출) |
+
+---
+
+## 조회 API 상세
+
+> 목록 조회, 상세 조회 등 GET 요청의 파라미터와 응답 구조를 정의합니다.
+
+### ■ (조회 API명)
+
+#### 요청 파라미터
+
+| 파라미터 | 타입 | 필수 | 설명 | 비고 |
+|---------|------|------|------|------|
+| (파라미터명) | (문자열/숫자/날짜) | Y/N | (설명) | (기본값, 허용 범위 등) |
+
+#### 응답 필드
+
+| 필드 | 타입 | 설명 | 비고 |
+|------|------|------|------|
+| (필드명) | (문자열/숫자/날짜/배열) | (설명) | (포맷, 코드값 등) |
+
+#### 페이징/정렬
+
+| 항목 | 내용 |
+|------|------|
+| 페이징 방식 | (오프셋/커서 기반) |
+| 페이지당 건수 | (기본값) |
+| 기본 정렬 | (정렬 기준 필드, 오름차순/내림차순) |
+| 사용자 정렬 | (허용 여부, 정렬 가능 필드) |
+
+---
+
+## 저장/수정 API 상세
+
+> POST/PUT 요청의 요청 본문과 처리 규칙을 정의합니다.
+
+### ■ (저장 API명)
+
+#### 요청 본문
+
+| 필드 | 타입 | 필수 | 설명 | 유효성 규칙 |
+|------|------|------|------|-----------|
+| (필드명) | (타입) | Y/N | (설명) | (최대길이, 허용값 등) |
+
+#### 서버 처리 규칙
+
+1. (유효성 검증 → 실패 시 응답 코드/메시지)
+2. (비즈니스 로직)
+3. (저장 및 응답)
+
+---
+
+## 엔티티 관계 (추론)
+
+> 화면에서 다루는 데이터 간의 관계를 코드 구조에서 추론합니다.
+> 코드에서 명확히 확인되지 않으면 생략합니다.
+
+| 엔티티(테이블) | 관계 | 연관 엔티티 | 설명 |
+|-------------|------|-----------|------|
+| (메인 엔티티) | 1:N / N:1 / N:M | (연관 엔티티) | (관계 설명) |
 
 ---
 
@@ -1945,19 +2501,29 @@ DESCRIPTION_SYSTEM_PROMPT = """\
 3. 컴포넌트 props, state, 이벤트 핸들러, JSX 구조를 근거로 작성하되, 코드 함수명/변수명/CSS 클래스명은 출력에 포함하지 마세요
 4. 조건부 렌더링(권한, 상태 등)이 있으면 조건과 함께 명시
 5. 테이블 컬럼은 코드에서 정의된 것만 나열하고 정렬/포맷 정보 포함
-6. 입력 항목은 타입(컴포넌트명), 포맷, 필수 여부, 제약조건을 명시
+6. 입력 항목은 타입, 포맷, 필수 여부, 제약조건을 명시
 7. 버튼은 클릭 시 동작을 구체적으로 기술 (페이지 전환, 다이얼로그 오픈 등)
 8. 유효성 검증은 성공/실패 시 동작을 구분하여 기술하고, 토스트 메시지가 있으면 원문 포함
 9. 권한별 차이가 있는 UI는 ※ 표기로 조건 명시
-10. 단순한 컴포넌트는 간결하게, 복잡한 페이지는 영역별로 상세하게 작성
-11. 불릿 항목에 볼드(**text**)를 절대 사용하지 마세요
-12. 색상은 "남색 계열", "회색 계열", "빨간색" 등 자연어로만 표현하고, 헥스코드(#0033A0), 디자인 토큰(bg/disabled, color/primary), 픽셀값(8px, 16px)은 절대 사용 금지
+10. 불릿 항목에 볼드(**text**)를 절대 사용하지 마세요
+11. 색상은 자연어로만 표현 (헥스코드, 디자인 토큰, 픽셀값 절대 사용 금지)
+12. Part 2, Part 3, Part 4는 코드에서 해당 내용이 확인되는 경우에만 작성하고, 추측으로 채우지 마세요. 유효성 체크, 오류 메시지, 접근 권한 등은 코드에 실제 구현(조건문, try-catch, 권한 분기 등)이 있을 때만 기술하세요. 코드에 없는 업무 규칙을 추론하여 작성하지 마세요. 코드에 에러 처리 로직이 없으면 오류/예외 처리 섹션 자체를 생략하세요
+13. 필터바에 초기화/조회 버튼이 있으면 버튼 그룹에 반드시 포함하세요. 드로어/다이얼로그 내부의 버튼(초기화, 조회, 선택, 취소, 닫기 등)도 빠짐없이 기술하세요. 타이틀 영역의 보조 버튼(즐겨찾기, 새로고침 등)도 포함하세요
+14. [중요] 모든 그리드(메인, 드로어, 다이얼로그 포함)의 컬럼은 반드시 마크다운 테이블로 작성하고, 1컬럼 = 1행으로 개별 나열하세요. 불릿(-)이나 서술형으로 컬럼을 설명하지 마세요. 여러 컬럼을 묶거나 압축하는 것을 절대 금지합니다. 드로어 내부 그리드도 메인 그리드와 동일한 테이블 형식으로 모든 컬럼을 나열하세요
+15. 팝업/다이얼로그 내부에 결과 테이블이 있는 경우, 해당 테이블의 컬럼도 별도 정의 테이블로 작성하세요
+16. Part 4(API 설계): 화면의 버튼 동작, 조회/저장 흐름, 필터 파라미터, 그리드 컬럼에서 필요한 API를 추론하세요. 엔드포인트 경로는 RESTful 컨벤션을 따르되, 실제 구현과 다를 수 있음을 전제합니다. 요청/응답 필드명은 코드의 state, columnDefs, API 호출 파라미터에서 추론하세요
+17. 출력 마지막에 "작성 규칙 준수 확인" 같은 자체 검증 문구를 추가하지 마세요. 명세서 본문만 작성하세요
+18. [완성도 검증] 작성 완료 후 상단 "반드시 지켜야 할 상세 기준" 1~8번 항목을 내부적으로 검증하고, 누락된 항목이 있으면 보완하세요 (체크리스트 자체는 출력하지 마세요)
 
 ---
 
 ## 참고 예시 (예산등록 화면)
 
 아래는 반드시 따라야 할 출력 형식 예시입니다. 이 형식을 정확히 따르세요.
+
+# Part 1. 화면 정의
+
+---
 
 ## 화면 개요
 
@@ -1968,12 +2534,7 @@ DESCRIPTION_SYSTEM_PROMPT = """\
 - 관리회계 > 예산관리 > 예산등록
 
 ### ■ 화면 목적
-- 본사 파트의 예산 신청 및 등록 현황 조회
-- 재무파트 승인 및 한도 관리
-- 예산년월 기준 마감 통제 관리
-
-### ■ 관리 부서
-- 재무파트
+- 본사 파트의 예산 신청 및 등록 현황을 조회하고, 재무파트가 승인 및 한도를 관리하며, 예산년월 기준으로 마감을 통제하는 화면
 
 ### ■ 접근 권한
 - 재무파트는 접근 및 전체 데이터 조회 가능
@@ -1986,15 +2547,13 @@ DESCRIPTION_SYSTEM_PROMPT = """\
 
 ### ■ 화면 구성
 1. 타이틀 영역
-2. 상단 버튼 그룹 (*재무파트 전용)
-3. 단일 섹션
-   - 필터바
-   - 기능 버튼 영역
-   - 메인 테이블
+2. 상단 버튼 그룹 (※ 재무파트 전용)
+3. 필터바
+4. 기능 버튼 영역
+5. 메인 테이블
 
-### ■ 화면 유형 및 구조
-- 리스트, 드로어(Drawer), 다이얼로그(Dialog)
-- 단일 화면 내 조회+등록
+### ■ 화면 유형
+- 목록, 드로어(Drawer), 다이얼로그(Dialog)
 
 ### ■ UI 구조 특징
 - 단일 화면 내 조회 + 등록 + 관리 구조
@@ -2008,221 +2567,311 @@ DESCRIPTION_SYSTEM_PROMPT = """\
 ### ■ 타이틀
 - 예산등록
 
-### ■ 즐겨찾기
-- 별(☆) 아이콘 버튼
-- 클릭 시 즐겨찾기 등록 및 아이콘 변경(★)
-
 ### ■ 브레드크럼
 - 관리회계 > 예산관리 > 예산등록
 
 ---
 
-## 상단 버튼 그룹
+## 버튼 그룹
 
-※ 재무 파트 사용자 전용 버튼으로 일반 파트 사용자에게 버튼 미노출
+### ■ 상단 버튼
 
-### 1. 개인마감 버튼
-- 개인/부서 항목 선 마감 처리
-- 클릭 시 개인마감 다이얼로그 오픈
+※ 재무 파트 사용자 전용 버튼으로 일반 파트 사용자에게 미노출
 
-### 2. 예산일자관리 버튼
-- 예산년월별 마감일자 지정
-- 클릭 시 예산일자관리 다이얼로그 오픈
+| 버튼명 | 동작 설명 | 조건 |
+|--------|----------|------|
+| 개인마감 | 개인마감 다이얼로그 오픈 | 재무파트 전용 |
+| 예산일자관리 | 예산일자관리 다이얼로그 오픈 | 재무파트 전용 |
 
----
+### ■ 기능 버튼
 
-## 필터바 구성
-
-### ■ 필터 항목
-- 예산년월 : 날짜(Datepicker, YYYY-MM)
-- 한도 : 드롭다운(전체 / 회사 / 부서 / 개인)
-- 더존부서 : 텍스트 입력
-- 등록자 : 텍스트 입력
-- 신청/승인 : 드롭다운(전체 / 신청 / 승인)
-- 버튼 : 초기화, 조회하기
-
-### ■ 버튼 기능
-- 조회하기 클릭 → 조건 기반 재조회
-- 초기화 클릭 → 모든 필터 기본값 복원
+| 버튼명 | 동작 설명 | 조건 |
+|--------|----------|------|
+| 엑셀다운로드 | 조회 결과 엑셀 다운로드 | - |
+| 예산신청 | 예산신청 페이지로 전환 | - |
+| 한도추가 | 부서 예산 수동 등록 페이지로 전환 | ※ 재무파트 전용 |
+| 개인한도등록 | 개인 법인카드 예산 수동 등록 페이지로 전환 | ※ 재무파트 전용 |
 
 ---
 
-## 기능 버튼 영역
+## 입력/조회 항목 정의
 
-### ■ 엑셀다운로드
-- 조회 결과 엑셀 다운로드
+### ■ 필터바 섹션
 
-### ■ 예산신청
-- 예산신청 페이지로 전환
-- 일반 파트 → 재무팀 승인 구조
-
-### ■ 한도추가
-
-※ 재무 파트 사용자 전용 버튼으로 일반 파트 사용자에게 버튼 미노출
-
-- 부서 예산 수동 등록 페이지로 전환
-
-### ■ 개인한도등록
-
-※ 재무 파트 사용자 전용 버튼으로 일반 파트 사용자에게 버튼 미노출
-
-- 개인 법인카드 예산 수동 등록 페이지로 전환
+| No | 항목명 | 입력 유형 | 필수 | 최대길이 | 기본값 | 입력 규칙 |
+|----|--------|----------|------|---------|-------|----------|
+| 1 | 예산년월 | 날짜(Date) | N | - | 당월 | YYYY-MM 형식 |
+| 2 | 한도 | 드롭다운 | N | - | 전체 | - |
+| 3 | 더존부서 | 텍스트 입력 | N | - | - | - |
+| 4 | 등록자 | 텍스트 입력 | N | - | - | - |
+| 5 | 신청/승인 | 드롭다운 | N | - | 전체 | - |
 
 ---
 
-## 메인 테이블 구성
+## 드롭다운/코드 목록 정의
 
-### ■ 컬럼 구조
-- 체크박스
-- 번호 : 자동 순번, 중앙정렬
-- 상태 : 배지 (신청/승인), 중앙정렬
-- 구분 : 개인 / 회사
-- 더존코드 : 네 자리 숫자 형식, 중앙정렬
-- 부서/개인
-- 예산년월 : 날짜(YYYY-MM), 중앙정렬
-- 적요
-- 금액 : 숫자, 천(1000) 단위 쉼표 표기, 우측정렬
-- 등록일 : 날짜(YYYY-MM-DD), 중앙정렬
-- 등록자
-- 승인자
-- 승인일시 : 날짜 및 시간(YYYY-MM-DD HH:MM:SS), 중앙정렬
+### ■ 한도 코드 목록
 
-### ■ 데이터 구조 특이사항
-- 구분~부서/개인은 더존코드관리 기반 묶음 관리
-- 부서/개인 데이터 중복 가능
-- 승인 시 해당 월 예산 한도 증가
+| 표시 텍스트 | 정렬순서 | 비고 |
+|-----------|---------|------|
+| 전체 | 1 | 기본 선택값 |
+| 회사 | 2 | - |
+| 부서 | 3 | - |
+| 개인 | 4 | - |
+
+### ■ 신청/승인 코드 목록
+
+| 표시 텍스트 | 정렬순서 | 비고 |
+|-----------|---------|------|
+| 전체 | 1 | 기본 선택값 |
+| 신청 | 2 | - |
+| 승인 | 3 | - |
 
 ---
 
-## 테이블 UX 정의
+## 목록(그리드) 정의
 
-### ■ 행 더블 클릭
-- 우측 드로어 오픈(Non-modal)
+### ■ 메인 테이블 컬럼 정의
 
-### ■ Pagination
-- 테이블 하단 위치
-- 페이지 이동 시 재조회
+| No | 표시명 | 정렬 | 너비 | 비고 |
+|----|-------|------|------|------|
+| 1 | - | 중 | - | 행 선택 체크박스 |
+| 2 | 번호 | 중 | - | 자동 순번 |
+| 3 | 상태 | 중 | - | 배지 (신청/승인) |
+| 4 | 구분 | 좌 | - | 개인/회사 |
+| 5 | 더존코드 | 중 | - | 네 자리 숫자 형식 |
+| 6 | 부서/개인 | 좌 | - | - |
+| 7 | 예산년월 | 중 | - | YYYY-MM |
+| 8 | 적요 | 좌 | - | - |
+| 9 | 금액 | 우 | - | 천 단위 쉼표 |
+| 10 | 등록일 | 중 | - | YYYY-MM-DD |
+| 11 | 등록자 | 좌 | - | - |
+| 12 | 승인자 | 좌 | - | - |
+| 13 | 승인일시 | 중 | - | YYYY-MM-DD HH:MM:SS |
+
+### ■ 목록 동작
+
+| 항목 | 내용 |
+|------|------|
+| 페이징 | 테이블 하단, 페이지 이동 시 재조회 |
+| 정렬 | - |
+| 행 더블클릭 동작 | 우측 드로어 오픈(Non-modal) |
+| 빈 목록 시 | - |
 
 ---
 
-## 예산신청 상세/수정 Drawer
+## 드로어(Drawer) 정의
 
-### ■ 화면 구성
+### ■ 예산신청 상세/수정 Drawer
+
+| 항목 | 내용 |
+|------|------|
+| 목적 | 선택된 예산 신청 건의 상세 조회 및 수정 |
+| 호출 조건 | 메인 테이블 행 더블 클릭 |
+
+#### 화면 구성
 1. 타이틀 영역
-2. 기본 정보 영역
+2. 기본 정보 영역 (읽기 전용)
 3. 수정 가능 영역
 4. 버튼 그룹
 
-### ■ 타이틀 영역
-- 예산신청 상세/수정
-- [닫기] 버튼, 클릭 시 드로어 닫힘
+#### 입력/조회 항목
 
-### ■ 기본정보 영역
+| No | 항목명 | 입력 유형 | 필수 | 입력 규칙 |
+|----|--------|----------|------|----------|
+| 1 | 상태 | 텍스트 입력(읽기 전용) | - | - |
+| 2 | 예산월 | 텍스트 입력(읽기 전용) | - | - |
+| 3 | 승인일 | 텍스트 입력(읽기 전용) | - | - |
+| 4 | 더존코드 | 텍스트 입력(읽기 전용) | - | - |
+| 5 | 부서/개인 | 텍스트 입력(읽기 전용) | - | - |
+| 6 | 등록자 | 텍스트 입력(읽기 전용) | - | - |
+| 7 | 예산년월 | 날짜(Date) | Y | YYYY-MM, 신청 상태일 때만 수정 가능 |
+| 8 | 신청금액 | 숫자 입력 | Y | 0 저장 불가, 신청 상태일 때만 수정 가능 |
+| 9 | 비고 | 텍스트 입력 | Y | 공백 저장 불가, 신청 상태일 때만 수정 가능 |
 
-선택된 행의 데이터 조회 영역
+#### 버튼
 
-- 상태
-- 예산월
-- 승인일
-- 더존코드
-- 부서/개인
-- 등록자
-
----
-
-### ■ 수정 가능 영역
-
-상태에 따라 수정 기능 활성/비활성화 되며, 신청 상태일 때만 수정 가능
-
-- 예산년월 : 필수 항목, 날짜(Datepicker, YYYY-MM)
-- 신청금액 : 필수 항목, 숫자, 0 저장 불가
-- 비고 : 필수 항목, 텍스트 입력, 공백 저장 불가
+| 버튼명 | 동작 설명 | 조건 |
+|--------|----------|------|
+| 닫기 | 드로어 닫힘 | - |
+| 저장 | 유효성 검증 후 저장 | 신청 상태일 때만 활성 |
 
 ---
 
-### ■ 버튼 그룹
-1. 명칭 : 닫기, 저장
-2. 기능 : 닫기 클릭 → 드로어 닫힘, 저장 클릭 → 유효성 검증
+## 팝업/다이얼로그 정의
 
-### ■ 유효성 검증 항목
-- 금액 0 입력 불가
-- 비고 공백 입력 불가
-- 성공 시 AlertToast + 전체 새로고침
-  "수정이 완료되었습니다"
-- 실패 시 공통 Error 규칙 적용
+### ■ 예산일자관리 다이얼로그
+
+| 항목 | 내용 |
+|------|------|
+| 목적 | 예산년월과 각 마감일자 예정일을 등록 |
+| 호출 조건 | 상단 예산일자관리 버튼 클릭 |
+| 닫히는 조건 | 저장 완료, 닫기 버튼 |
+
+#### 입력 항목
+
+| No | 항목명 | 입력 유형 | 필수 | 설명 |
+|----|--------|----------|------|------|
+| 1 | 예산년월 | 날짜(Date) | Y | YYYY-MM 형식 |
+| 2 | 예산편성마감일자 | 날짜(Date) | N | 체크박스 선택 시 비활성 |
+| 3 | 예산신청마감일자 | 날짜(Date) | N | 체크박스 선택 시 비활성 |
+| 4 | 운영비지출등록마감일자 | 날짜(Date) | N | 체크박스 선택 시 비활성, 마감일 경과 시 저장 불가 |
+
+### ■ 개인마감 다이얼로그
+
+| 항목 | 내용 |
+|------|------|
+| 목적 | 개인/부서 항목을 마감일자와 관계없이 먼저 마감하고 다음 달 예산으로 이월 |
+| 호출 조건 | 상단 개인마감 버튼 클릭 |
+| 닫히는 조건 | 닫기 버튼 |
+
+(입력 항목 2건, 내부 테이블 9컬럼, 버튼 2건 — 예산일자관리와 동일한 형식으로 기술)
 
 ---
 
-## 액션바
+## 액션바 정의
 
 ### ■ 표시 조건
-- 메인 테이블의 체크박스 1개 이상 선택 시 액션바 노출
+- 메인 테이블의 체크박스 1개 이상 선택 시 노출
 
 ### ■ 구성 요소
-- n개 선택됨 표시
-- 선택해제 버튼
-- 삭제 버튼
-- 승인 버튼(*재무팀 전용)
+
+| 버튼명 | 동작 설명 | 조건 |
+|--------|----------|------|
+| n개 선택됨 | 선택 건수 표시 | - |
+| 선택해제 | 전체 선택 해제 | - |
+| 삭제 | 삭제 확인 다이얼로그 오픈 | 승인 상태 포함 시 삭제 불가 |
+| 승인 | 선택 건 승인 처리 | ※ 재무팀 전용 |
 
 ---
 
-### ■ 유효성 검증 항목
-- 삭제 클릭 → 삭제 여부 확인 다이얼로그
-- 승인 상태 포함 시 삭제 불가
-- 삭제 성공 시 AlertToast + 데이터 재조회
-  "선택된 항목의 삭제가 완료되었습니다"
+# Part 2. 데이터 처리 규칙
 
 ---
 
-## 예산일자관리 다이얼로그
+## 중복/유효성 체크 규칙
 
-### ■ 목적
-- 예산년월과 각 마감일자 예정일을 등록하는 화면
+### ■ 업무 유효성 체크
 
-### ■ 화면 구성
-- 타이틀 : 예산일자관리
-- 입력 항목
-
-### ■ 입력 항목
-- 예산년월 : 날짜(Datepicker, YYYY-MM)
-- 예산편성마감일자 : 날짜(Datepicker, YYYY-MM-DD), 체크박스
-- 예산신청마감일자 : 날짜(Datepicker, YYYY-MM-DD), 체크박스
-- 운영비지출등록마감일자 : 날짜(Datepicker, YYYY-MM-DD), 체크박스
-
-### ■ 입력 항목 내 체크박스 정책
-- 체크박스 선택 시 Datepicker Disabled
-- 마감일 경과 시 해당 기능 저장 불가
+| No | 체크 항목 | 규칙 | 실패 시 처리 |
+|----|----------|------|------------|
+| 1 | 신청금액 | 0 입력 불가 | 저장 차단 |
+| 2 | 비고 | 공백 입력 불가 | 저장 차단 |
+| 3 | 승인 상태 삭제 | 승인 상태 포함 시 삭제 불가 | 삭제 차단 |
 
 ---
 
-## 개인마감 다이얼로그
+## 상태 전이 규칙
 
-### ■ 목적
-- 개인·부서 항목을 마감일자와 관계없이 먼저 마감하고 다음 달 예산으로 이월하기 위한 화면
+### ■ 상태 흐름
 
-### ■ 화면 구성
-- 타이틀 : 개인마감 관리
-- 필터바
-- 버튼 그룹
-- 개인마감 테이블
+| 현재 상태 | 이벤트(동작) | 다음 상태 | 조건/권한 |
+|----------|------------|----------|----------|
+| 신청 | 승인 버튼 (액션바) | 승인 | 재무파트 전용 |
+| 신청 | 삭제 버튼 (액션바) | 삭제 | - |
+| 승인 | 삭제 시도 | 삭제 불가 | 승인 상태는 삭제 차단 |
 
-### ■ 필터바
-- 예산년월 : 필수 항목, 날짜(Datepicker, YYYY-MM)
-- 예산편성마감일자 : 날짜(Datepicker, YYYY-MM-DD), 체크박스(지정안함)
+---
 
-### ■ 버튼 그룹
-- 마감, 마감취소
+## 배치/벌크 처리 규칙
 
-### ■ 개인마감 테이블 구성
-- 번호 : 자동 순번, 중앙정렬
-- 구분 : 개인/부서
-- 상태 : -/마감(예산마감일)
-- 더존코드 : 네 자리 숫자 형식, 중앙정렬
-- 부서/개인 : 해당 예산년월·더존코드와 매칭되는 이름
-- 총한도 : 숫자, 천(1,000) 단위 쉼표, 우측 정렬
-- 사용한도 : 숫자, 천(1,000) 단위 쉼표, 우측 정렬
-- 잔여한도 : 숫자, 천(1,000) 단위 쉼표, 자동 계산(총한도-사용한도), 우측 정렬
-- 적요
+| 처리명 | 대상 | 처리 단위 | 실패 시 정책 | 비고 |
+|--------|------|----------|------------|------|
+| 일괄 승인 | 체크박스 선택 건 | 건별 | 부분 성공 허용 | 재무파트 전용 |
+| 일괄 삭제 | 체크박스 선택 건 | 건별 | 승인 상태 포함 시 전체 차단 | 삭제 확인 다이얼로그 |
+| 개인마감 | 다이얼로그 내 선택 건 | 건별 | - | 마감 시 이월 처리 동반 |
+
+---
+
+## 이벤트/사이드이펙트
+
+| 트리거 | 사이드이펙트 | 비고 |
+|--------|-----------|------|
+| 개인마감 처리 | 다음 달 예산으로 잔여한도 이월 | 재무파트 전용 |
+| 드로어 저장 완료 | 메인 테이블 재조회 | - |
+| 일괄 삭제 완료 | 메인 테이블 재조회, 체크박스 초기화 | - |
+| 일괄 승인 완료 | 메인 테이블 재조회, 체크박스 초기화 | - |
+
+---
+
+## 오류/예외 처리 시나리오
+
+### ■ 업무 오류
+
+| 상황 | 오류 메시지 | 표시 방식 |
+|------|-----------|----------|
+| 드로어 저장 성공 | "수정이 완료되었습니다" | 토스트 |
+| 액션바 삭제 성공 | "선택된 항목의 삭제가 완료되었습니다" | 토스트 |
+| 삭제 클릭 | 삭제 여부 확인 | 다이얼로그 |
+
+---
+
+# Part 4. API 설계
+
+---
+
+## API 엔드포인트 목록
+
+| No | Method | 엔드포인트(예시) | 설명 | 호출 시점 |
+|----|--------|---------------|------|----------|
+| 1 | GET | /budgets | 예산 목록 조회 | 페이지 진입, 필터 조회 버튼 |
+| 2 | PUT | /budgets/{id} | 예산 신청 건 수정 | 드로어 저장 버튼 |
+| 3 | DELETE | /budgets | 예산 건 일괄 삭제 | 액션바 삭제 버튼 |
+| 4 | PUT | /budgets/approve | 예산 건 일괄 승인 | 액션바 승인 버튼 |
+| 5 | POST | /budgets/closing | 개인마감 처리 | 개인마감 다이얼로그 마감 버튼 |
+
+---
+
+## 조회 API 상세
+
+### ■ 예산 목록 조회 (GET /budgets)
+
+#### 요청 파라미터
+
+| 파라미터 | 타입 | 필수 | 설명 | 비고 |
+|---------|------|------|------|------|
+| 예산년월 | 날짜 | N | 예산년월 | YYYY-MM, 기본값 당월 |
+| 한도구분 | 문자열 | N | 한도 구분 | 전체/회사/부서/개인 |
+| 부서명 | 문자열 | N | 더존부서명 | 부분 일치 검색 |
+| 등록자명 | 문자열 | N | 등록자명 | 부분 일치 검색 |
+| 상태 | 문자열 | N | 신청/승인 상태 | 전체/신청/승인 |
+
+#### 응답 필드
+
+| 필드 | 타입 | 설명 | 비고 |
+|------|------|------|------|
+| 고유ID | 문자열 | 예산 건 고유 ID | - |
+| 상태 | 문자열 | 상태 | 신청/승인 |
+| 구분 | 문자열 | 한도 구분 | 개인/회사/부서 |
+| 더존코드 | 문자열 | 더존코드 | 네 자리 숫자 |
+| 부서/개인명 | 문자열 | 부서/개인명 | - |
+| 예산년월 | 문자열 | 예산년월 | YYYY-MM |
+| 적요 | 문자열 | 적요 | - |
+| 금액 | 숫자 | 금액 | - |
+| 등록일 | 날짜 | 등록일 | YYYY-MM-DD |
+| 등록자 | 문자열 | 등록자 | - |
+| 승인자 | 문자열 | 승인자 | - |
+| 승인일시 | 날짜 | 승인일시 | YYYY-MM-DD HH:MM:SS |
+
+#### 페이징/정렬
+
+| 항목 | 내용 |
+|------|------|
+| 페이징 방식 | 오프셋 기반 |
+| 페이지당 건수 | 테이블 하단 페이지네이션 |
+| 기본 정렬 | 등록일 내림차순 |
+| 사용자 정렬 | - |
+
+---
+
+## 엔티티 관계 (추론)
+
+| 엔티티(테이블) | 관계 | 연관 엔티티 | 설명 |
+|-------------|------|-----------|------|
+| 예산(budgets) | N:1 | 부서(departments) | 더존코드로 부서 참조 |
+| 예산(budgets) | N:1 | 사용자(users) | 등록자, 승인자 |
+| 예산일정(budget_schedules) | 1:1 | 예산년월 | 월별 마감일자 관리 |
+| 예산마감(budget_closings) | N:1 | 예산(budgets) | 개인/부서별 마감 이력 |
 """
 
 

@@ -26,7 +26,21 @@ src/design-tokens/
 
 ### 2. components/ (전체 폴더)
 - 모든 React 컴포넌트 (.tsx)
-- 하위 폴더 포함 (Chart/, DataGrid/, Menu/, Pagination/, Toast/)
+- 하위 폴더 포함 (Chart/, DataGrid/, Menu/, Toast/)
+
+### 2-1. layout/ (전체 폴더)
+```
+src/layout/
+├── FormGrid.tsx             # 폼 그리드 레이아웃
+├── GridLayout.tsx           # 그리드 레이아웃
+├── RowPattern.tsx           # 행 패턴
+├── SectionColumnProvider.tsx # 섹션 컬럼 컨텍스트
+├── constants.ts             # 레이아웃 상수
+├── index.ts                 # barrel export
+└── types.ts                 # 타입 정의
+```
+- `components/index.ts`에서 `export * from '../layout'`로 참조
+- **참조하는 스토리**: FormGrid.stories.tsx
 
 ### 3. stories/ (전체 폴더)
 - 모든 Storybook 스토리 파일 (.stories.tsx)
@@ -84,32 +98,37 @@ rm -rf /Users/finelab-mini/Desktop/workspace/ds-bridge-ui/storybook-standalone/p
 cp -r /Users/finelab-mini/Desktop/workspace/aplus-world-ui/packages/ui/src/components/* \
       /Users/finelab-mini/Desktop/workspace/ds-bridge-ui/storybook-standalone/packages/ui/src/components/
 
-# 3. stories 복사
+# 3. layout 복사
+rm -rf /Users/finelab-mini/Desktop/workspace/ds-bridge-ui/storybook-standalone/packages/ui/src/layout/*
+cp -r /Users/finelab-mini/Desktop/workspace/aplus-world-ui/packages/ui/src/layout/* \
+      /Users/finelab-mini/Desktop/workspace/ds-bridge-ui/storybook-standalone/packages/ui/src/layout/
+
+# 4. stories 복사
 rm -rf /Users/finelab-mini/Desktop/workspace/ds-bridge-ui/storybook-standalone/packages/ui/src/stories/*
 cp -r /Users/finelab-mini/Desktop/workspace/aplus-world-ui/packages/ui/src/stories/* \
       /Users/finelab-mini/Desktop/workspace/ds-bridge-ui/storybook-standalone/packages/ui/src/stories/
 
-# 4. hooks 복사
+# 5. hooks 복사
 rm -rf /Users/finelab-mini/Desktop/workspace/ds-bridge-ui/storybook-standalone/packages/ui/src/hooks/*
 cp -r /Users/finelab-mini/Desktop/workspace/aplus-world-ui/packages/ui/src/hooks/* \
       /Users/finelab-mini/Desktop/workspace/ds-bridge-ui/storybook-standalone/packages/ui/src/hooks/
 
-# 5. utils 복사
+# 6. utils 복사
 rm -rf /Users/finelab-mini/Desktop/workspace/ds-bridge-ui/storybook-standalone/packages/ui/src/utils/*
 cp -r /Users/finelab-mini/Desktop/workspace/aplus-world-ui/packages/ui/src/utils/* \
       /Users/finelab-mini/Desktop/workspace/ds-bridge-ui/storybook-standalone/packages/ui/src/utils/
 
-# 6. tokens 복사
+# 7. tokens 복사
 cp /Users/finelab-mini/Desktop/workspace/aplus-world-ui/packages/ui/src/tokens/design-tokens.ts \
    /Users/finelab-mini/Desktop/workspace/ds-bridge-ui/storybook-standalone/packages/ui/src/tokens/
 cp /Users/finelab-mini/Desktop/workspace/aplus-world-ui/packages/ui/src/tokens/types.ts \
    /Users/finelab-mini/Desktop/workspace/ds-bridge-ui/storybook-standalone/packages/ui/src/tokens/
 
-# 7. tailwind.preset.js 복사
+# 8. tailwind.preset.js 복사
 cp /Users/finelab-mini/Desktop/workspace/aplus-world-ui/packages/ui/tailwind.preset.js \
    /Users/finelab-mini/Desktop/workspace/ds-bridge-ui/storybook-standalone/packages/ui/
 
-# 8. styles/globals.css 복사
+# 9. styles/globals.css 복사
 cp /Users/finelab-mini/Desktop/workspace/aplus-world-ui/packages/ui/src/styles/globals.css \
    /Users/finelab-mini/Desktop/workspace/ds-bridge-ui/storybook-standalone/packages/ui/src/styles/
 ```
@@ -191,3 +210,6 @@ git checkout -- dist/component-schema.json
 | 2026-01-27 | 최초 작성 |
 | 2026-02-09 | hooks/, utils/ 동기화 대상 추가 (Dialog, Drawer, TreeMenu, Select, Menu/Item 참조) |
 | 2026-02-09 | Compound Component fallback 로직 추가 (Dialog, Drawer props 추출) |
+| 2026-03-23 | 동기화 실행: ActionBar, FilterBar, LabelValue, Popover, TitleSection 신규 추가 / Pagination 컴포넌트·스토리·hook 제거 (소스에서 삭제됨) |
+| 2026-03-27 | 동기화 실행: layout/ 디렉토리 신규 추가 (FormGrid, GridLayout, RowPattern 등) / Button variant 개편 (outline→ghost, outline-destructive→secondary-destructive) / Dialog·Drawer 버그 수정 / 디자인 토큰 업데이트 (semantic-error-500, gap 토큰) / FilterBar actionSpan 개선 / Chromatic Build 34 피드백 22건 반영 / Link RouterLinkProps 제거 |
+| 2026-03-27 | 추가 동기화: DataGrid 컴포넌트 수정 반영 / tokens/design-tokens.ts 동기화 / tailwind.preset.js 동기화 (semantic-error 컬러 #c62828, gap 토큰 xxl·xxxl 추가) |

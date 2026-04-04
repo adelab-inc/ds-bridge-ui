@@ -1,11 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import * as React from 'react';
+import { Alert } from '../components/Alert';
 import { ToastProvider, useToast } from '../components/Toast';
 import type { ToastPosition } from '../components/Toast/types';
 
-const meta = {
+const meta: Meta<typeof Alert> = {
   title: 'UI/Alert/Toast',
-  component: ToastProvider,
+  component: Alert,
   parameters: {
     layout: 'centered',
     docs: {
@@ -14,17 +15,104 @@ const meta = {
       },
     },
   },
+  argTypes: {
+    type: {
+      control: 'select',
+      options: ['default', 'info', 'success', 'warning', 'error'],
+      description: 'Figma: `Type` / `State`. 알림 유형',
+    },
+    mode: {
+      control: 'select',
+      options: ['base', 'compact'],
+      description: 'Spacing density mode',
+    },
+    isToast: {
+      control: 'boolean',
+      description: 'Figma: AlertToast. 고정 너비 480px + 그림자 + 2줄 제한',
+    },
+    body: {
+      control: 'text',
+      description: 'Figma: `body`. 알림 본문',
+    },
+    showIcon: {
+      control: 'boolean',
+      description: 'Figma: `showIcon`. 아이콘 표시 여부',
+    },
+    showTitle: {
+      control: 'boolean',
+      description: 'Figma: `showTitle`. true이면 stacked 레이아웃 자동 적용',
+    },
+    title: {
+      control: 'text',
+      description: 'showTitle=true일 때 제목 텍스트',
+      if: { arg: 'showTitle', truthy: true },
+    },
+    showClose: {
+      table: { disable: true },
+      description: 'Toast에서는 항상 닫기 버튼 표시',
+    },
+    showActionGroup: {
+      control: 'boolean',
+      description: 'Figma: `showActionGroup`. 액션 버튼 영역 활성화',
+    },
+    showAction1: {
+      control: 'boolean',
+      description: 'Figma: `showAction1`. 첫 번째 액션 버튼',
+      if: { arg: 'showActionGroup', truthy: true },
+    },
+    action1Label: {
+      control: 'text',
+      description: 'showAction1=true일 때 버튼 라벨',
+      if: { arg: 'showAction1', truthy: true },
+    },
+    showAction2: {
+      control: 'boolean',
+      description: 'Figma: `showAction2`. 두 번째 액션 버튼',
+      if: { arg: 'showActionGroup', truthy: true },
+    },
+    action2Label: {
+      control: 'text',
+      description: 'showAction2=true일 때 버튼 라벨',
+      if: { arg: 'showAction2', truthy: true },
+    },
+    onClose: { table: { disable: true } },
+    action1OnClick: { table: { disable: true } },
+    action2OnClick: { table: { disable: true } },
+    icon: { table: { disable: true } },
+  } as Record<string, unknown>,
   decorators: [
     (Story) => (
       <ToastProvider>
-        <Story />
+        <div className="w-[480px]">
+          <Story />
+        </div>
       </ToastProvider>
     ),
   ],
-} satisfies Meta<typeof ToastProvider>;
+};
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<Record<string, unknown>>;
+
+export const Default: Story = {
+  args: {
+    isToast: true,
+    type: 'info',
+    mode: 'base',
+    showIcon: true,
+    showTitle: false,
+    title: '알림 제목',
+    body: '이것은 매우 긴 메시지입니다. Toast에서는 2줄까지만 표시되고 나머지는 잘립니다. 이 텍스트는 2줄을 초과하는 긴 내용을 테스트하기 위한 것입니다. 충분히 길어야 2줄 제한이 적용되는 것을 확인할 수 있습니다.',
+    onClose: () => console.log('close'),
+    showActionGroup: false,
+    showAction1: true,
+    action1Label: '확인',
+    action1OnClick: () => console.log('Action 1'),
+    showAction2: false,
+    action2Label: '취소',
+    action2OnClick: () => console.log('Action 2'),
+  } as Record<string, unknown> as Story['args'],
+};
 
 // Demo component for interactive testing
 const ToastDemo: React.FC = () => {
@@ -99,10 +187,8 @@ const ToastDemo: React.FC = () => {
             onClick={() =>
               toast.success('파일이 업로드되었습니다.', {
                 title: '업로드 완료',
-                actions: [
-                  { label: '보기', onClick: () => console.log('View clicked') },
-                  { label: '공유', onClick: () => console.log('Share clicked') },
-                ],
+                action1: { label: '보기', onClick: () => console.log('View clicked') },
+                action2: { label: '공유', onClick: () => console.log('Share clicked') },
               })
             }
             className="px-4 py-2 bg-semantic-success text-white rounded"
@@ -113,7 +199,7 @@ const ToastDemo: React.FC = () => {
           <button
             onClick={() =>
               toast.info(
-                '이것은 매우 긴 메시지입니다. Toast에서는 2줄까지만 표시되고 나머지는 말줄임표로 처리됩니다. hover하면 전체 내용을 Tooltip으로 볼 수 있습니다.',
+                '이것은 매우 긴 메시지입니다. Toast에서는 2줄까지만 표시되고 나머지는 잘립니다. 이 텍스트는 2줄을 초과하는 긴 내용을 테스트하기 위한 것입니다.',
                 { title: '긴 메시지 테스트' }
               )
             }
@@ -205,128 +291,4 @@ const ToastDemo: React.FC = () => {
 
 export const Interactive: Story = {
   render: () => <ToastDemo />,
-};
-
-// Basic Examples
-export const Success: Story = {
-  render: () => {
-    const toast = useToast();
-    React.useEffect(() => {
-      toast.success('작업이 성공적으로 완료되었습니다.');
-    }, []);
-    return <div className="w-[600px] h-[400px]" />;
-  },
-};
-
-export const Error: Story = {
-  render: () => {
-    const toast = useToast();
-    React.useEffect(() => {
-      toast.error('오류가 발생했습니다. 다시 시도해주세요.');
-    }, []);
-    return <div className="w-[600px] h-[400px]" />;
-  },
-};
-
-export const Warning: Story = {
-  render: () => {
-    const toast = useToast();
-    React.useEffect(() => {
-      toast.warning('이 작업은 취소할 수 없습니다.');
-    }, []);
-    return <div className="w-[600px] h-[400px]" />;
-  },
-};
-
-export const Info: Story = {
-  render: () => {
-    const toast = useToast();
-    React.useEffect(() => {
-      toast.info('새로운 업데이트가 있습니다.');
-    }, []);
-    return <div className="w-[600px] h-[400px]" />;
-  },
-};
-
-export const WithTitle: Story = {
-  render: () => {
-    const toast = useToast();
-    React.useEffect(() => {
-      toast.success('파일이 성공적으로 업로드되었습니다.', {
-        title: '업로드 완료',
-      });
-    }, []);
-    return <div className="w-[600px] h-[400px]" />;
-  },
-};
-
-export const WithActions: Story = {
-  render: () => {
-    const toast = useToast();
-    React.useEffect(() => {
-      toast.info('새로운 메시지가 도착했습니다.', {
-        title: '알림',
-        actions: [
-          { label: '확인', onClick: () => console.log('확인 clicked') },
-          { label: '무시', onClick: () => console.log('무시 clicked') },
-        ],
-      });
-    }, []);
-    return <div className="w-[600px] h-[400px]" />;
-  },
-};
-
-export const LongMessage: Story = {
-  render: () => {
-    const toast = useToast();
-    React.useEffect(() => {
-      toast.info(
-        '이것은 매우 긴 메시지입니다. Toast는 기본적으로 2줄까지만 표시되며, 그 이상의 내용은 말줄임표(...)로 처리됩니다. 마우스를 올리면 Tooltip을 통해 전체 내용을 확인할 수 있습니다.',
-        { title: '긴 메시지 예시' }
-      );
-    }, []);
-    return <div className="w-[600px] h-[400px]" />;
-  },
-};
-
-export const NoAutoClose: Story = {
-  render: () => {
-    const toast = useToast();
-    React.useEffect(() => {
-      toast.warning('수동으로 닫아야 하는 중요한 알림입니다.', {
-        title: '중요',
-        duration: 0,
-      });
-    }, []);
-    return <div className="w-[600px] h-[400px]" />;
-  },
-};
-
-export const MultipleToasts: Story = {
-  render: () => {
-    const toast = useToast();
-    React.useEffect(() => {
-      toast.success('첫 번째 알림', { position: 'top-right' });
-      setTimeout(() => toast.info('두 번째 알림', { position: 'top-right' }), 500);
-      setTimeout(() => toast.warning('세 번째 알림', { position: 'top-right' }), 1000);
-    }, []);
-    return <div className="w-[600px] h-[400px]" />;
-  },
-};
-
-export const DifferentPositions: Story = {
-  render: () => {
-    const toast = useToast();
-    React.useEffect(() => {
-      toast.success('Top Left', { position: 'top-left' });
-      toast.info('Top Center', { position: 'top-center' });
-      toast.warning('Top Right', { position: 'top-right' });
-      setTimeout(() => {
-        toast.error('Bottom Left', { position: 'bottom-left' });
-        toast.default('Bottom Center', { position: 'bottom-center' });
-        toast.success('Bottom Right', { position: 'bottom-right' });
-      }, 500);
-    }, []);
-    return <div className="w-[600px] h-[400px]" />;
-  },
 };

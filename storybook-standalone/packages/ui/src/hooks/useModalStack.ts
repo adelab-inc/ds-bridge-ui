@@ -16,6 +16,8 @@ export interface UseModalStackReturn {
   dialogZIndex: number;
   /** 현재 모달이 스택의 최상위인지 여부 */
   isTopModal: boolean;
+  /** ModalStackProvider가 존재하는지 여부 */
+  hasProvider: boolean;
 }
 
 /**
@@ -105,5 +107,6 @@ export const useModalStack = (options: UseModalStackOptions): UseModalStackRetur
     backdropZIndex: zIndex,
     dialogZIndex: zIndex + 1,
     isTopModal: isTop,
+    hasProvider: contextRef.current !== null,
   };
 };

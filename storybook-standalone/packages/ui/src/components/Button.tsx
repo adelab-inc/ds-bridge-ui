@@ -3,16 +3,26 @@ import * as React from 'react';
 import { LoadingSpinner } from './LoadingSpinner';
 import { cn } from './utils';
 import { useSpacingMode } from './SpacingModeProvider';
+import { designTokens } from '../tokens/design-tokens';
 
 const buttonVariants = cva('inline-flex justify-center items-center', ({
     variants: {
-      "isDisabled": {
-        "false": "",
-        "true": "",
+      "buttonType": {
+        "destructive": "",
+        "ghost": "",
+        "ghost-inverse": "",
+        "primary": "bg-bg-accent",
+        "secondary": "bg-bg-accent-secondary",
+        "secondary-destructive": "bg-bg-semantic-error-subtle",
+        "tertiary": "bg-bg-container-high",
       },
-      "isLoading": {
-        "false": "",
-        "true": "cursor-wait",
+      "interaction": {
+        "default": "",
+        "disabled": "cursor-not-allowed",
+        "focused": "",
+        "hover": "",
+        "loading": "cursor-wait",
+        "pressed": "",
       },
       "mode": {
         "base": "",
@@ -23,21 +33,12 @@ const buttonVariants = cva('inline-flex justify-center items-center', ({
         "md": "min-w-[52px] text-button-md-medium rounded-lg",
         "sm": "min-w-[49px] text-button-sm-medium rounded-md",
       },
-      "variant": {
-        "destructive": "",
-        "outline": "outline outline-1 outline-border-accent",
-        "outline-destructive": "outline outline-1",
-        "primary": "bg-bg-accent",
-        "secondary": "bg-bg-accent-secondary",
-        "tertiary": "bg-bg-container-medium",
-      },
     },
     defaultVariants: {
-      "isDisabled": false,
-      "isLoading": false,
+      "buttonType": "primary",
+      "interaction": "default",
       "mode": "base",
       "size": "md",
-      "variant": "primary",
     },
     compoundVariants: [
       {
@@ -71,157 +72,178 @@ const buttonVariants = cva('inline-flex justify-center items-center', ({
         "size": "sm",
       },
       {
+        "buttonType": ["primary", "secondary", "destructive"],
         "class": "bg-bg-disabled-on-filled text-text-disabled",
-        "isDisabled": true,
-        "isLoading": false,
-        "variant": ["primary", "secondary", "destructive"],
+        "interaction": "disabled",
       },
       {
-        "class": "bg-bg-disabled-on-light outline outline-1 outline-border-disabled text-text-disabled",
-        "isDisabled": true,
-        "isLoading": false,
-        "variant": ["outline", "outline-destructive"],
+        "buttonType": "ghost",
+        "class": "text-text-disabled",
+        "interaction": "disabled",
       },
       {
+        "buttonType": "secondary-destructive",
         "class": "bg-bg-disabled-on-light text-text-disabled",
-        "isDisabled": true,
-        "isLoading": false,
-        "variant": "tertiary",
+        "interaction": "disabled",
       },
       {
-        "class": "hover:bg-brand-primary-hover active:bg-brand-primary-pressed focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus",
-        "isDisabled": false,
-        "isLoading": false,
-        "variant": "primary",
+        "buttonType": "tertiary",
+        "class": "bg-bg-disabled-on-light text-text-disabled",
+        "interaction": "disabled",
       },
       {
-        "class": "hover:bg-brand-secondary-hover active:bg-brand-secondary-pressed focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus",
-        "isDisabled": false,
-        "isLoading": false,
-        "variant": "secondary",
+        "buttonType": "ghost-inverse",
+        "class": "text-text-disabled",
+        "interaction": "disabled",
       },
       {
-        "class": "hover:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-hover),theme(colors.state-overlay-on-neutral-hover))] active:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-pressed),theme(colors.state-overlay-on-neutral-pressed))] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus",
-        "isDisabled": false,
-        "isLoading": false,
-        "variant": "outline",
+        "buttonType": "primary",
+        "class": "hover:bg-brand-primary-hover active:bg-brand-primary-pressed focus-visible:outline-none focus-visible:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]",
+        "interaction": "default",
       },
       {
-        "class": "hover:bg-[linear-gradient(0deg,#0000000f,#0000000f)] active:bg-[linear-gradient(0deg,#00000019,#00000019)] focus-visible:bg-bg-subtle focus-visible:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]",
-        "isDisabled": false,
-        "isLoading": false,
-        "variant": "tertiary",
+        "buttonType": "secondary",
+        "class": "hover:bg-brand-secondary-hover active:bg-brand-secondary-pressed focus-visible:outline-none focus-visible:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]",
+        "interaction": "default",
       },
       {
-        "class": "hover:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-colored-hover),theme(colors.state-overlay-on-colored-hover))] active:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-colored-pressed),theme(colors.state-overlay-on-colored-pressed))] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus",
-        "isDisabled": false,
-        "isLoading": false,
-        "variant": "destructive",
+        "buttonType": "ghost",
+        "class": "hover:bg-state-overlay-on-neutral-hover active:bg-state-overlay-on-neutral-pressed focus-visible:outline-none focus-visible:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]",
+        "interaction": "default",
       },
       {
-        "class": "hover:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-hover),theme(colors.state-overlay-on-neutral-hover))] active:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-pressed),theme(colors.state-overlay-on-neutral-pressed))] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-border-contrast focus-visible:ring-2 focus-visible:ring-focus",
-        "isDisabled": false,
-        "isLoading": false,
-        "variant": "outline-destructive",
+        "buttonType": "tertiary",
+        "class": "hover:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-hover),theme(colors.state-overlay-on-neutral-hover))] active:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-neutral-pressed),theme(colors.state-overlay-on-neutral-pressed))] focus-visible:outline-none focus-visible:bg-bg-subtle focus-visible:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]",
+        "interaction": "default",
       },
       {
+        "buttonType": "destructive",
+        "class": "hover:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-colored-hover),theme(colors.state-overlay-on-colored-hover))] active:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-colored-pressed),theme(colors.state-overlay-on-colored-pressed))] focus-visible:outline-none focus-visible:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]",
+        "interaction": "default",
+      },
+      {
+        "buttonType": "secondary-destructive",
+        "class": "hover:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-colored-hover),theme(colors.state-overlay-on-colored-hover))] active:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-colored-pressed),theme(colors.state-overlay-on-colored-pressed))] focus-visible:outline-none focus-visible:shadow-[0_0_0_1px_theme(colors.border-semantic-error)_inset,0_0_0_2px_theme(colors.focus)]",
+        "interaction": "default",
+      },
+      {
+        "buttonType": "ghost-inverse",
+        "class": "hover:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-inverse-hover),theme(colors.state-overlay-on-inverse-hover))] active:bg-[linear-gradient(0deg,theme(colors.state-overlay-on-inverse-pressed),theme(colors.state-overlay-on-inverse-pressed))] focus-visible:outline-none focus-visible:bg-[rgba(255,255,255,0.01)] focus-visible:shadow-[0_0_0_1px_theme(colors.border-contrast)_inset,0_0_0_2px_theme(colors.focus)]",
+        "interaction": "default",
+      },
+      {
+        "buttonType": "primary",
         "class": "text-text-inverse",
-        "isDisabled": false,
-        "variant": "primary",
+        "interaction": ["default", "hover", "pressed", "focused", "loading"],
       },
       {
+        "buttonType": "secondary",
         "class": "text-text-primary",
-        "isDisabled": false,
-        "variant": "secondary",
+        "interaction": ["default", "hover", "pressed", "focused", "loading"],
       },
       {
+        "buttonType": "ghost",
         "class": "text-text-accent",
-        "isDisabled": false,
-        "variant": "outline",
+        "interaction": ["default", "hover", "pressed", "focused", "loading"],
       },
       {
+        "buttonType": "tertiary",
         "class": "text-text-primary",
-        "isDisabled": false,
-        "variant": "tertiary",
+        "interaction": ["default", "hover", "pressed", "focused", "loading"],
       },
       {
+        "buttonType": "destructive",
         "class": "text-text-inverse",
-        "isDisabled": false,
-        "variant": "destructive",
+        "interaction": ["default", "hover", "pressed", "focused", "loading"],
       },
       {
+        "buttonType": "secondary-destructive",
         "class": "text-text-semantic-error",
-        "isDisabled": false,
-        "variant": "outline-destructive",
+        "interaction": ["default", "hover", "pressed", "focused", "loading"],
       },
       {
+        "buttonType": "ghost-inverse",
+        "class": "text-text-inverse",
+        "interaction": ["default", "hover", "pressed", "focused", "loading"],
+      },
+      {
+        "buttonType": "destructive",
         "class": "bg-bg-semantic-error",
-        "isDisabled": false,
-        "variant": "destructive",
-      },
-      {
-        "class": "bg-bg-surface",
-        "isDisabled": false,
-        "variant": "outline-destructive",
-      },
-      {
-        "class": "bg-bg-surface",
-        "isDisabled": false,
-        "variant": "outline",
+        "interaction": ["default", "hover", "pressed", "focused", "loading"],
       },
     ],
   }));
 
-export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
-  isLoading?: boolean;
-  leftIcon?: React.ReactNode;
-  rightIcon?: React.ReactNode;
-  onClick?: React.MouseEventHandler<HTMLButtonElement>;
-  onMouseEnter?: React.MouseEventHandler<HTMLButtonElement>;
-}
+type StartIconProps =
+  | { showStartIcon: true; startIcon: React.ReactNode }
+  | { showStartIcon: false; startIcon?: never };
+
+type EndIconProps =
+  | { showEndIcon: true; endIcon: React.ReactNode }
+  | { showEndIcon: false; endIcon?: never };
+
+export type ButtonProps =
+  Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'type' | 'disabled'> &
+  VariantProps<typeof buttonVariants> &
+  StartIconProps &
+  EndIconProps & {
+    label: React.ReactNode;
+    onClick?: React.MouseEventHandler<HTMLButtonElement>;
+    onMouseEnter?: React.MouseEventHandler<HTMLButtonElement>;
+  };
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   (
     {
       className,
-      variant,
+      buttonType,
       size,
       mode: propMode,
-      children,
-      isLoading,
-      leftIcon,
-      rightIcon,
-      disabled,
+      interaction,
+      label,
+      showStartIcon,
+      showEndIcon,
+      startIcon,
+      endIcon,
       ...props
     },
     ref,
   ) => {
     const contextMode = useSpacingMode();
-    const mode = propMode ?? contextMode; // prop이 우선, 없으면 context 사용
+    const mode = propMode ?? contextMode;
 
-    const isFunctionallyDisabled = disabled;
+    const isDisabled = interaction === 'disabled';
+    const isLoading = interaction === 'loading';
+
     const iconSize = {
-      lg: 24,
-      md: 20,
+      lg: 20,
+      md: 16,
       sm: 16,
     }[size || 'md'];
 
-    const iconColorClass = isFunctionallyDisabled
+    const spinnerLineHeight = {
+      lg: (designTokens.fontSize['typography-button-lg-medium'][1] as { lineHeight: string }).lineHeight,
+      md: (designTokens.fontSize['typography-button-md-medium'][1] as { lineHeight: string }).lineHeight,
+      sm: (designTokens.fontSize['typography-button-sm-medium'][1] as { lineHeight: string }).lineHeight,
+    }[size || 'md'];
+
+    const spinnerContainerStyle = { height: spinnerLineHeight };
+
+    const iconColorClass = isDisabled
       ? 'text-icon-interactive-disabled'
       : {
           primary: 'text-icon-interactive-inverse',
           secondary: 'text-icon-interactive-on-secondary',
-          outline: 'text-icon-interactive-on-selection',
+          ghost: 'text-icon-interactive-on-selection',
           tertiary: 'text-icon-interactive-default',
           destructive: 'text-icon-interactive-inverse',
-          'outline-destructive': 'text-icon-semantic-error',
-        }[variant || 'primary'];
+          'secondary-destructive': 'text-icon-semantic-error',
+          'ghost-inverse': 'text-icon-interactive-inverse',
+        }[buttonType || 'primary'];
 
     const renderIcon = (icon: React.ReactNode) => {
       if (React.isValidElement(icon)) {
-        return React.cloneElement(icon as React.ReactElement<any>, {
+        return React.cloneElement(icon as React.ReactElement<{ size?: number }>, {
           size: iconSize,
         });
       }
@@ -230,26 +252,28 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     return (
       <button
-        className={cn(buttonVariants({ variant, size, mode, isLoading: isLoading && !isFunctionallyDisabled, isDisabled: isFunctionallyDisabled, className }))}
+        className={cn(buttonVariants({ buttonType, size, mode, interaction, className }))}
         ref={ref}
-        disabled={isFunctionallyDisabled || isLoading}
+        disabled={isDisabled || isLoading}
         {...props}
       >
-        {isLoading && !isFunctionallyDisabled ? (
-          (leftIcon || rightIcon) ? (
+        {isLoading ? (
+          (showStartIcon || showEndIcon) ? (
             <>
-              {leftIcon && <LoadingSpinner variant={variant || 'primary'} size={iconSize} />}
-              {children}
-              {rightIcon && <LoadingSpinner variant={variant || 'primary'} size={iconSize} />}
+              {showStartIcon && <LoadingSpinner variant={buttonType || 'primary'} size={iconSize} />}
+              {label}
+              {showEndIcon && <LoadingSpinner variant={buttonType || 'primary'} size={iconSize} />}
             </>
           ) : (
-            <LoadingSpinner variant={variant || 'primary'} size={iconSize} />
+            <span className="inline-flex items-center justify-center" style={spinnerContainerStyle}>
+              <LoadingSpinner variant={buttonType || 'primary'} size={iconSize} />
+            </span>
           )
         ) : (
           <>
-            {leftIcon && <span className={iconColorClass}>{renderIcon(leftIcon)}</span>}
-            {children}
-            {rightIcon && <span className={iconColorClass}>{renderIcon(rightIcon)}</span>}
+            {showStartIcon && startIcon && <span className={iconColorClass}>{renderIcon(startIcon)}</span>}
+            {label}
+            {showEndIcon && endIcon && <span className={iconColorClass}>{renderIcon(endIcon)}</span>}
           </>
         )}
       </button>

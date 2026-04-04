@@ -5,30 +5,37 @@ import greySpinner from '../assets/lottie/Grey.json';
 import redSpinner from '../assets/lottie/Red.json';
 import whiteSpinner from '../assets/lottie/White.json';
 
-type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'tertiary' | 'destructive' | 'outline-destructive';
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'tertiary' | 'destructive' | 'secondary-destructive' | 'ghost-inverse';
 type IconButtonVariant = 'ghost' | 'secondary' | 'tertiary' | 'ghost-destructive';
 
 interface LoadingSpinnerProps {
   variant: ButtonVariant | IconButtonVariant;
   size?: number;
+  componentType?: 'button' | 'iconButton';
 }
 
-const spinnerMap: Record<ButtonVariant | IconButtonVariant, any> = {
-  // Button variants
+const buttonSpinnerMap: Record<ButtonVariant, any> = {
   primary: whiteSpinner,
   secondary: greySpinner,
-  outline: blueSpinner,
+  ghost: blueSpinner,
   tertiary: greySpinner,
   destructive: whiteSpinner,
-  'outline-destructive': redSpinner,
-  // IconButton variants
+  'secondary-destructive': redSpinner,
+  'ghost-inverse': whiteSpinner,
+};
+
+const iconButtonSpinnerMap: Record<IconButtonVariant, any> = {
   ghost: greySpinner,
+  secondary: greySpinner,
+  tertiary: greySpinner,
   'ghost-destructive': redSpinner,
 };
 
 export const LoadingSpinner = React.forwardRef<HTMLDivElement, LoadingSpinnerProps>(
-  ({ variant, size = 20 }, ref) => {
-    const animationData = spinnerMap[variant];
+  ({ variant, size = 20, componentType = 'button' }, ref) => {
+    const animationData = componentType === 'iconButton'
+      ? iconButtonSpinnerMap[variant as IconButtonVariant]
+      : buttonSpinnerMap[variant as ButtonVariant];
 
     return (
       <div ref={ref} style={{ width: size, height: size, display: 'inline-flex' }}>

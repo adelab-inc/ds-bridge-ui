@@ -1,50 +1,112 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 import { Drawer, DrawerProps } from '../components/Drawer';
-import { ModalStackProvider } from '../components/ModalStackProvider';
 import { Button } from '../components/Button';
 
 // Storybook 컨트롤용 확장 Props (Compound 컴포넌트의 props를 포함)
 interface StoryArgs extends DrawerProps {
   title?: string;
+  showSubtitle?: boolean;
+  subtitle?: string;
   primaryLabel?: string;
   secondaryLabel?: string;
 }
+
+/** Default 스토리와 동일한 기본 args (모든 스토리에서 재사용) */
+const defaultArgs: Partial<StoryArgs> = {
+  size: 'md',
+  mode: 'base',
+  dim: true,
+  title: 'Drawer Title',
+  showSubtitle: false,
+  subtitle: '부제목이 필요한 경우 여기에 적습니다.',
+  primaryLabel: '엑셀다운로드',
+  secondaryLabel: '닫기',
+};
 
 const meta: Meta<StoryArgs> = {
   title: 'UI/Drawer',
   component: Drawer,
   parameters: {
     layout: 'fullscreen',
+    docs: {
+      description: {
+        component: [
+          '사이드 드로워 (Compound 패턴, 우측 슬라이드)',
+          '',
+          '## Figma ↔ Code 인터페이스 매핑',
+          '',
+          '### Drawer Root',
+          '| Figma 속성 | Code prop | 비고 |',
+          '|---|---|---|',
+          '| Size | `size` | sm, md, lg, xl |',
+          '| Mode | `mode` | base, compact |',
+          '| Show Scrollbar | — | 브라우저 자동 처리 (overflow-y-auto) |',
+          '',
+          '### Drawer/Header',
+          '| Figma 속성 | Code prop | 비고 |',
+          '|---|---|---|',
+          '| Title | `title` | 필수 |',
+          '| Show Subtitle | `showSubtitle` | required boolean (기본 false) |',
+          '| Subtitle | `subtitle` | showSubtitle={true}일 때 required string |',
+          '',
+          '### Drawer/Footer',
+          '| Figma 속성 | Code prop | 비고 |',
+          '|---|---|---|',
+          '| Show Footer | `<Drawer.Footer>` 유무 | Compound children 패턴으로 제어. 미사용 시 Body가 남은 공간 확장 |',
+          '| Show 2Action | `children` | React children 패턴 |',
+          '| Show 3Action | `children` | React children 패턴 |',
+          '| Show Control Group | `children` | React children 패턴 |',
+          '',
+          'Footer는 기본 `justify-end` 정렬. 좌우 분리 시 `className="justify-between"` 오버라이드.',
+          '',
+          '## V1 → V2 변경 사항',
+          '| 항목 | V1 | V2 | 변경 |',
+          '|---|---|---|---|',
+          '| Header subtitle | 미지원 | showSubtitle + subtitle | 신규 추가 (discriminated union) |',
+          '| CVA variants | size, mode | size, mode | 변경 없음 |',
+          '| Footer 패턴 | children | children | 변경 없음 |',
+        ].join('\n'),
+      },
+    },
   },
   tags: ['autodocs'],
   argTypes: {
     size: {
       control: 'select',
       options: ['sm', 'md', 'lg', 'xl'],
-      description: 'Drawer의 크기(너비)를 선택합니다.',
+      description: 'Figma: Size — 드로워 너비',
     },
     mode: {
       control: 'select',
       options: ['base', 'compact'],
-      description: 'Spacing density mode',
+      description: 'Figma: Mode — 간격 밀도',
     },
     dim: {
       control: 'boolean',
-      description: 'Dim(배경 어둡게) 처리 여부',
+      description: '배경 딤 처리 여부',
     },
     title: {
       control: 'text',
-      description: 'Drawer.Header의 제목입니다.',
+      description: 'Figma: Title — Drawer.Header 제목',
+    },
+    showSubtitle: {
+      control: 'boolean',
+      description: 'Figma: Show Subtitle — 부제목 표시 여부',
+    },
+    subtitle: {
+      control: 'text',
+      description: 'Figma: Subtitle — Drawer.Header 부제목',
+      if: { arg: 'showSubtitle', truthy: true },
     },
     primaryLabel: {
       control: 'text',
-      description: 'Primary 버튼의 라벨입니다.',
+      description: 'Primary 버튼의 라벨',
     },
     secondaryLabel: {
       control: 'text',
-      description: 'Secondary 버튼의 라벨입니다.',
+      description: 'Secondary 버튼의 라벨',
     },
     onClose: { table: { disable: true } },
     open: { table: { disable: true } },
@@ -59,9 +121,13 @@ export const Default: Story = {
   render: (args) => {
     const [isOpen, setIsOpen] = useState(false);
 
+    const headerProps = args.showSubtitle
+      ? { title: args.title || 'Drawer Title', showSubtitle: true as const, subtitle: args.subtitle || '부제목이 필요한 경우 여기에 적습니다.' }
+      : { title: args.title || 'Drawer Title', showSubtitle: false as const };
+
     return (
       <div>
-        <Button onClick={() => setIsOpen(true)}>Open Drawer</Button>
+        <Button label="Open Drawer" onClick={() => setIsOpen(true)} showStartIcon={false} showEndIcon={false} />
         <Drawer
           size={args.size}
           mode={args.mode}
@@ -69,37 +135,64 @@ export const Default: Story = {
           open={isOpen}
           onClose={() => setIsOpen(false)}
         >
-          <Drawer.Header title={args.title || 'Drawer Title'} />
+          <Drawer.Header {...headerProps} />
           <Drawer.Body>
             {args.children || 'Drawer content goes here. This is the body of the drawer.'}
           </Drawer.Body>
           <Drawer.Footer>
             <Button
-              variant="outline"
+              buttonType="tertiary"
+              label={args.secondaryLabel || '닫기'}
               onClick={() => setIsOpen(false)}
-            >
-              {args.secondaryLabel || '취소'}
-            </Button>
+              showStartIcon={false}
+              showEndIcon={false}
+            />
             <Button
-              variant="primary"
+              buttonType="primary"
+              label={args.primaryLabel || '엑셀다운로드'}
               onClick={() => setIsOpen(false)}
-            >
-              {args.primaryLabel || '확인'}
-            </Button>
+              showStartIcon={false}
+              showEndIcon={false}
+            />
           </Drawer.Footer>
         </Drawer>
       </div>
     );
   },
-  args: {
-    size: 'md',
-    mode: 'base',
-    dim: true,
-    title: 'Drawer Title',
-    children: 'Drawer content goes here. This is the body of the drawer.',
-    primaryLabel: '확인',
-    secondaryLabel: '취소',
+  args: { ...defaultArgs },
+};
+
+/**
+ * Footer 없이 드로워를 열면 Body가 남은 공간을 전부 채웁니다.
+ * Figma: Show Footer = false → `<Drawer.Footer>` 미사용
+ */
+export const WithoutFooter: Story = {
+  render: (args) => {
+    const [isOpen, setIsOpen] = useState(false);
+
+    const headerProps = args.showSubtitle
+      ? { title: args.title || 'Drawer Title', showSubtitle: true as const, subtitle: args.subtitle || '부제목이 필요한 경우 여기에 적습니다.' }
+      : { title: args.title || 'Drawer Title', showSubtitle: false as const };
+
+    return (
+      <div>
+        <Button label="Open Drawer (No Footer)" onClick={() => setIsOpen(true)} showStartIcon={false} showEndIcon={false} />
+        <Drawer
+          size={args.size}
+          mode={args.mode}
+          dim={args.dim}
+          open={isOpen}
+          onClose={() => setIsOpen(false)}
+        >
+          <Drawer.Header {...headerProps} />
+          <Drawer.Body>
+            {args.children || 'Footer 없이 Body가 남은 공간을 전부 채웁니다.'}
+          </Drawer.Body>
+        </Drawer>
+      </div>
+    );
   },
+  args: { ...defaultArgs },
 };
 
 /**
@@ -112,7 +205,7 @@ export const WithoutDim: Story = {
     return (
       <div className="p-8">
         <div className="flex flex-col gap-4">
-          <Button onClick={() => setIsOpen(true)}>Open Drawer (No Dim)</Button>
+          <Button label="Open Drawer (No Dim)" onClick={() => setIsOpen(true)} showStartIcon={false} showEndIcon={false} />
           <p className="text-text-primary">
             Dim이 없으므로 이 영역을 자유롭게 클릭할 수 있습니다.
           </p>
@@ -124,61 +217,18 @@ export const WithoutDim: Story = {
           open={isOpen}
           onClose={() => setIsOpen(false)}
         >
-          <Drawer.Header title="Dim 없는 드로워" />
+          <Drawer.Header title="Dim 없는 드로워" showSubtitle={false} />
           <Drawer.Body>
             뒤쪽 화면을 자유롭게 조작할 수 있습니다.
           </Drawer.Body>
           <Drawer.Footer>
-            <Button variant="primary" onClick={() => setIsOpen(false)}>
-              닫기
-            </Button>
+            <Button buttonType="primary" label="닫기" onClick={() => setIsOpen(false)} showStartIcon={false} showEndIcon={false} />
           </Drawer.Footer>
         </Drawer>
       </div>
     );
   },
-  args: {
-    size: 'md',
-    mode: 'base',
-  },
-};
-
-/**
- * 모든 사이즈 비교
- */
-export const AllSizes: Story = {
-  render: () => {
-    const [openSize, setOpenSize] = useState<'sm' | 'md' | 'lg' | 'xl' | null>(null);
-
-    return (
-      <div className="p-8 flex gap-4">
-        {(['sm', 'md', 'lg', 'xl'] as const).map((size) => (
-          <Button key={size} onClick={() => setOpenSize(size)}>
-            {size.toUpperCase()} (
-            {size === 'sm' ? '352px' : size === 'md' ? '552px' : size === 'lg' ? '752px' : '1152px'}
-            )
-          </Button>
-        ))}
-        {openSize && (
-          <Drawer
-            size={openSize}
-            open={true}
-            onClose={() => setOpenSize(null)}
-          >
-            <Drawer.Header title={`Size: ${openSize.toUpperCase()}`} />
-            <Drawer.Body>
-              {`이 드로워의 너비는 ${openSize === 'sm' ? '352px' : openSize === 'md' ? '552px' : openSize === 'lg' ? '752px' : '1152px'} 입니다.`}
-            </Drawer.Body>
-            <Drawer.Footer>
-              <Button variant="primary" onClick={() => setOpenSize(null)}>
-                닫기
-              </Button>
-            </Drawer.Footer>
-          </Drawer>
-        )}
-      </div>
-    );
-  },
+  args: { ...defaultArgs, dim: false },
 };
 
 /**
@@ -188,16 +238,21 @@ export const WithScrollableContent: Story = {
   render: (args) => {
     const [isOpen, setIsOpen] = useState(false);
 
+    const headerProps = args.showSubtitle
+      ? { title: args.title || '스크롤 가능한 드로워', showSubtitle: true as const, subtitle: args.subtitle || '본문에 긴 컨텐츠가 있을 때 자동으로 스크롤이 생깁니다.' }
+      : { title: args.title || '스크롤 가능한 드로워', showSubtitle: false as const };
+
     return (
       <div>
-        <Button onClick={() => setIsOpen(true)}>Open Scrollable Drawer</Button>
+        <Button label="Open Scrollable Drawer" onClick={() => setIsOpen(true)} showStartIcon={false} showEndIcon={false} />
         <Drawer
           size={args.size}
           mode={args.mode}
+          dim={args.dim}
           open={isOpen}
           onClose={() => setIsOpen(false)}
         >
-          <Drawer.Header title="스크롤 가능한 드로워" />
+          <Drawer.Header {...headerProps} />
           <Drawer.Body>
             <div className="flex flex-col gap-4 w-full">
               {Array.from({ length: 50 }, (_, i) => (
@@ -211,19 +266,24 @@ export const WithScrollableContent: Story = {
             </div>
           </Drawer.Body>
           <Drawer.Footer>
-            <Button variant="outline" onClick={() => setIsOpen(false)}>
-              취소
-            </Button>
-            <Button variant="primary" onClick={() => setIsOpen(false)}>
-              확인
-            </Button>
+            <Button
+              buttonType="tertiary"
+              label={args.secondaryLabel || '취소'}
+              onClick={() => setIsOpen(false)}
+              showStartIcon={false}
+              showEndIcon={false}
+            />
+            <Button
+              buttonType="primary"
+              label={args.primaryLabel || '확인'}
+              onClick={() => setIsOpen(false)}
+              showStartIcon={false}
+              showEndIcon={false}
+            />
           </Drawer.Footer>
         </Drawer>
       </div>
     );
   },
-  args: {
-    size: 'md',
-    mode: 'base',
-  },
+  args: { ...defaultArgs, primaryLabel: '확인', secondaryLabel: '취소' },
 };

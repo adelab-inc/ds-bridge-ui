@@ -1,5 +1,6 @@
 'use client';
 
+import { TypedMarkdown } from '@/components/ui/typed-markdown';
 import { useDescriptionStore } from '@/stores/useDescriptionStore';
 
 /**
@@ -9,13 +10,8 @@ function DescriptionViewer() {
   const currentContent = useDescriptionStore((s) => s.currentContent);
 
   return (
-    <div className="flex-1 overflow-hidden p-4">
-      <textarea
-        readOnly
-        value={currentContent ?? ''}
-        className="bg-transparent text-foreground h-full min-h-[180px] w-full resize-none border-none text-sm leading-relaxed outline-none"
-        rows={10}
-      />
+    <div className="flex-1 overflow-auto p-4">
+      <TypedMarkdown>{currentContent ?? ''}</TypedMarkdown>
     </div>
   );
 }

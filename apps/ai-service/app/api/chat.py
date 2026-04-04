@@ -278,10 +278,63 @@ async def build_conversation_history(
 
 FILE_TAG_PATTERN = re.compile(r'<file\s+path="([^"]+)">([\s\S]*?)</file>')
 
+# Fallback: 마크다운 코드블록 (```tsx ... ``` 또는 ```typescript ... ```)
+_MARKDOWN_CODE_PATTERN = re.compile(r'```(?:tsx|typescript|jsx)\s*\n([\s\S]*?)```')
+
+# 코드 첫 줄 경로 주석 패턴: // src/pages/Xxx.tsx
+_PATH_COMMENT_PATTERN = re.compile(r'^//\s*(src/\S+\.tsx)\s*$', re.MULTILINE)
+
+
+def _extract_path_hint(code: str) -> str:
+    """코드에서 파일 경로 힌트를 추출한다. 없으면 기본값 반환."""
+    match = _PATH_COMMENT_PATTERN.search(code)
+    if match:
+        return match.group(1)
+    return "src/pages/GeneratedComponent.tsx"
+
+# Icon size별 사용 가능한 이름 (존재하지 않는 조합 보정용)
+_ICON_NAMES_BY_SIZE: dict[int, set[str]] = {
+    16: {"add", "announcement", "blank", "calendar", "check", "chevron-down", "chevron-left", "chevron-right", "chevron-up", "close", "delete", "dot", "edit", "external", "loading", "minus", "more-vert", "reset", "search", "star-fill", "star-line"},
+    18: {"add", "chevron-down", "chevron-left", "chevron-right", "chevron-up", "dummy"},
+    20: {"add", "all", "arrow-drop-down", "arrow-drop-up", "arrow-right", "blank", "calendar", "check", "chevron-down", "chevron-left", "chevron-right", "chevron-up", "close", "delete", "dot", "edit", "error", "external", "filter-list", "folder", "folder-fill", "format-align-center", "format-align-left", "format-align-right", "format-bold", "format-color-text", "format-color-text-bg", "format-italic", "format-list-bulleted", "format-list-numbered", "format-underlined", "help", "image", "info", "keyboard-arrow-left", "keyboard-arrow-right", "keyboard-double-arrow-left", "keyboard-double-arrow-right", "link", "loading", "menu", "minus", "more-vert", "person", "post", "redo", "reset", "search", "star-fill", "star-line", "success", "table", "undo", "video", "warning", "widgets"},
+    24: {"add", "all", "arrow-drop-down", "arrow-drop-up", "blank", "chevron-down", "chevron-left", "chevron-right", "close", "dehaze", "delete", "edit", "filter-list", "loading", "menu", "more-vert", "person", "post", "search", "star-fill", "star-line", "widgets"},
+}
+_ICON_TAG_PATTERN = re.compile(r'<Icon\s+name="([^"]+)"\s+size=\{(\d+)\}\s*/?\s*>')
+
+
+def _fix_icon_sizes(content: str) -> str:
+    """존재하지 않는 Icon name+size 조합을 유효한 size로 교정한다."""
+
+    def _replace(m: re.Match[str]) -> str:
+        name = m.group(1)
+        size = int(m.group(2))
+        available = _ICON_NAMES_BY_SIZE.get(size)
+        if available and name in available:
+            return m.group(0)  # 유효한 조합 — 그대로
+        # 해당 size에 없으면 → size 20(가장 많은 아이콘)으로 변경
+        if name in _ICON_NAMES_BY_SIZE[20]:
+            return f'<Icon name="{name}" size={{20}} />'
+        # size 20에도 없으면 → 다른 size에서 찾기
+        for fallback_size in (16, 24):
+            if name in _ICON_NAMES_BY_SIZE.get(fallback_size, set()):
+                return f'<Icon name="{name}" size={{{fallback_size}}} />'
+        return m.group(0)  # 어디에도 없으면 원본 유지
+
+    return _ICON_TAG_PATTERN.sub(_replace, content)
+
+
+def _postprocess_code(content: str) -> str:
+    """AI 생성 코드의 Icon size 오류를 교정한다."""
+    return _fix_icon_sizes(content)
+
 
 def parse_ai_response(content: str) -> ParsedResponse:
     """
     AI 응답에서 대화 내용과 파일을 분리
+
+    1차: <file path="...">...</file> 태그 추출
+    2차 (fallback): 마크다운 코드블록 ```tsx ... ``` 추출
+         — Gemini vision 등이 <file> 태그 대신 코드블록으로 응답하는 경우 대응
 
     Args:
         content: AI 응답 전체 텍스트
@@ -291,17 +344,42 @@ def parse_ai_response(content: str) -> ParsedResponse:
     """
     files: list[FileContent] = []
 
-    # <file path="...">...</file> 태그 추출
+    # 1차: <file path="...">...</file> 태그 추출
     for match in FILE_TAG_PATTERN.finditer(content):
         files.append(
             FileContent(
                 path=match.group(1),
-                content=match.group(2).strip(),
+                content=_postprocess_code(match.group(2).strip()),
             )
         )
 
-    # 태그 제거한 나머지 = 대화 내용
-    conversation = FILE_TAG_PATTERN.sub("", content).strip()
+    if files:
+        # 태그 제거한 나머지 = 대화 내용
+        conversation = FILE_TAG_PATTERN.sub("", content).strip()
+        return ParsedResponse(
+            conversation=conversation,
+            files=files,
+            raw=content,
+        )
+
+    # 2차 fallback: 마크다운 코드블록에서 추출
+    for match in _MARKDOWN_CODE_PATTERN.finditer(content):
+        code = match.group(1).strip()
+        if not code:
+            continue
+        # 코드 내에서 경로 힌트 추출 시도 (첫 줄 // src/pages/Xxx.tsx 주석)
+        path = _extract_path_hint(code)
+        files.append(
+            FileContent(
+                path=path,
+                content=_postprocess_code(code),
+            )
+        )
+
+    if files:
+        conversation = _MARKDOWN_CODE_PATTERN.sub("", content).strip()
+    else:
+        conversation = content.strip()
 
     return ParsedResponse(
         conversation=conversation,
@@ -369,7 +447,7 @@ class StreamingParser:
                         {
                             "type": "code",
                             "path": self.current_file_path,
-                            "content": self.current_file_content.strip(),
+                            "content": _postprocess_code(self.current_file_content.strip()),
                         }
                     )
 

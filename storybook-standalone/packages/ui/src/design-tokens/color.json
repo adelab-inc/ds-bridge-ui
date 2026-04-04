@@ -111,14 +111,14 @@
     "VariableID:4:150",
     "VariableID:4:79",
     "VariableID:4:151",
-    "VariableID:336:5729",
     "VariableID:336:5728",
-    "VariableID:336:5724",
-    "VariableID:336:5727",
-    "VariableID:336:5735",
-    "VariableID:336:5733",
-    "VariableID:336:5732",
     "VariableID:336:5730",
+    "VariableID:336:5735",
+    "VariableID:336:5732",
+    "VariableID:336:5733",
+    "VariableID:336:5727",
+    "VariableID:336:5729",
+    "VariableID:336:5724",
     "VariableID:4:98",
     "VariableID:4:99",
     "VariableID:4:100",
@@ -143,26 +143,28 @@
     "VariableID:206:4166",
     "VariableID:206:4167",
     "VariableID:206:4168",
-    "VariableID:2291:26545",
-    "VariableID:2291:26541",
     "VariableID:206:4169",
     "VariableID:2291:26543",
-    "VariableID:2291:26547",
+    "VariableID:2291:26545",
+    "VariableID:2291:26541",
     "VariableID:2291:26542",
+    "VariableID:2291:26547",
     "VariableID:2291:26546",
     "VariableID:2291:26538",
     "VariableID:336:5696",
+    "VariableID:4761:90016",
     "VariableID:336:5697",
     "VariableID:2291:26540",
     "VariableID:336:5705",
     "VariableID:336:5706",
-    "VariableID:336:5714",
     "VariableID:336:5712",
-    "VariableID:336:5707",
     "VariableID:336:5709",
-    "VariableID:336:5716",
     "VariableID:336:5718",
+    "VariableID:336:5707",
+    "VariableID:336:5714",
+    "VariableID:336:5716",
     "VariableID:336:5719",
+    "VariableID:4761:90015",
     "VariableID:336:5717",
     "VariableID:336:5715",
     "VariableID:336:5713",
@@ -238,7 +240,9 @@
     "VariableID:4104:56099",
     "VariableID:4104:56132",
     "VariableID:4427:594329",
-    "VariableID:4427:594330"
+    "VariableID:4427:594330",
+    "VariableID:4757:164268",
+    "VariableID:4757:164269"
   ],
   "variables": [
     {
@@ -398,7 +402,7 @@
       "type": "COLOR",
       "valuesByMode": { "4:0": { "r": 1, "g": 1, "b": 1, "a": 1 } },
       "resolvedValuesByMode": { "4:0": { "resolvedValue": { "r": 1, "g": 1, "b": 1, "a": 1 }, "alias": null } },
-      "scopes": [],
+      "scopes": ["ALL_FILLS"],
       "hiddenFromPublishing": false,
       "codeSyntax": {}
     },
@@ -446,7 +450,7 @@
           "alias": null
         }
       },
-      "scopes": [],
+      "scopes": ["ALL_FILLS"],
       "hiddenFromPublishing": false,
       "codeSyntax": {}
     },
@@ -462,7 +466,7 @@
           "alias": null
         }
       },
-      "scopes": [],
+      "scopes": ["ALL_FILLS"],
       "hiddenFromPublishing": false,
       "codeSyntax": {}
     },
@@ -478,7 +482,7 @@
           "alias": null
         }
       },
-      "scopes": [],
+      "scopes": ["ALL_FILLS"],
       "hiddenFromPublishing": false,
       "codeSyntax": {}
     },
@@ -494,7 +498,7 @@
           "alias": null
         }
       },
-      "scopes": [],
+      "scopes": ["ALL_FILLS"],
       "hiddenFromPublishing": false,
       "codeSyntax": {}
     },
@@ -510,7 +514,7 @@
           "alias": null
         }
       },
-      "scopes": [],
+      "scopes": ["ALL_FILLS"],
       "hiddenFromPublishing": false,
       "codeSyntax": {}
     },
@@ -526,7 +530,7 @@
           "alias": null
         }
       },
-      "scopes": [],
+      "scopes": ["ALL_FILLS"],
       "hiddenFromPublishing": false,
       "codeSyntax": {}
     },
@@ -542,7 +546,7 @@
           "alias": null
         }
       },
-      "scopes": [],
+      "scopes": ["ALL_FILLS"],
       "hiddenFromPublishing": false,
       "codeSyntax": {}
     },
@@ -560,7 +564,7 @@
           "alias": null
         }
       },
-      "scopes": [],
+      "scopes": ["ALL_FILLS"],
       "hiddenFromPublishing": false,
       "codeSyntax": {}
     },
@@ -605,12 +609,10 @@
       "name": "color/palette/semantic/error/500",
       "description": "",
       "type": "COLOR",
-      "valuesByMode": {
-        "4:0": { "r": 0.8274509906768799, "g": 0.18431372940540314, "b": 0.18431372940540314, "a": 1 }
-      },
+      "valuesByMode": { "4:0": { "r": 0.7764706015586853, "g": 0.1568627506494522, "b": 0.1568627506494522, "a": 1 } },
       "resolvedValuesByMode": {
         "4:0": {
-          "resolvedValue": { "r": 0.8274509906768799, "g": 0.18431372940540314, "b": 0.18431372940540314, "a": 1 },
+          "resolvedValue": { "r": 0.7764706015586853, "g": 0.1568627506494522, "b": 0.1568627506494522, "a": 1 },
           "alias": null
         }
       },
@@ -882,7 +884,7 @@
       "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:79" } },
       "resolvedValuesByMode": {
         "4:0": {
-          "resolvedValue": { "r": 0.8274509906768799, "g": 0.18431372940540314, "b": 0.18431372940540314, "a": 1 },
+          "resolvedValue": { "r": 0.7764706015586853, "g": 0.1568627506494522, "b": 0.1568627506494522, "a": 1 },
           "alias": "VariableID:4:79",
           "aliasName": "color/palette/semantic/error/500"
         }
@@ -1269,7 +1271,7 @@
       "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:95" } },
       "resolvedValuesByMode": {
         "4:0": {
-          "resolvedValue": { "r": 0.8274509906768799, "g": 0.18431372940540314, "b": 0.18431372940540314, "a": 1 },
+          "resolvedValue": { "r": 0.7764706015586853, "g": 0.1568627506494522, "b": 0.1568627506494522, "a": 1 },
           "alias": "VariableID:4:95",
           "aliasName": "color/role/semantic/error"
         }
@@ -1341,7 +1343,7 @@
           "alias": null
         }
       },
-      "scopes": [],
+      "scopes": ["ALL_FILLS"],
       "hiddenFromPublishing": false,
       "codeSyntax": {}
     },
@@ -2016,7 +2018,7 @@
       "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:494:9453" } },
       "resolvedValuesByMode": {
         "4:0": {
-          "resolvedValue": { "r": 0.8274509906768799, "g": 0.18431372940540314, "b": 0.18431372940540314, "a": 1 },
+          "resolvedValue": { "r": 0.7764706015586853, "g": 0.1568627506494522, "b": 0.1568627506494522, "a": 1 },
           "alias": "VariableID:494:9453",
           "aliasName": "color/role/border/semantic-error"
         }
@@ -2542,7 +2544,7 @@
       "type": "COLOR",
       "valuesByMode": { "4:0": { "r": 0, "g": 0, "b": 0, "a": 1 } },
       "resolvedValuesByMode": { "4:0": { "resolvedValue": { "r": 0, "g": 0, "b": 0, "a": 1 }, "alias": null } },
-      "scopes": [],
+      "scopes": ["ALL_FILLS"],
       "hiddenFromPublishing": false,
       "codeSyntax": {}
     },
@@ -2575,7 +2577,7 @@
           "alias": null
         }
       },
-      "scopes": [],
+      "scopes": ["ALL_FILLS"],
       "hiddenFromPublishing": false,
       "codeSyntax": {}
     },
@@ -3107,7 +3109,7 @@
       "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:95" } },
       "resolvedValuesByMode": {
         "4:0": {
-          "resolvedValue": { "r": 0.8274509906768799, "g": 0.18431372940540314, "b": 0.18431372940540314, "a": 1 },
+          "resolvedValue": { "r": 0.7764706015586853, "g": 0.1568627506494522, "b": 0.1568627506494522, "a": 1 },
           "alias": "VariableID:4:95",
           "aliasName": "color/role/semantic/error"
         }
@@ -3641,7 +3643,7 @@
       "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:95" } },
       "resolvedValuesByMode": {
         "4:0": {
-          "resolvedValue": { "r": 0.8274509906768799, "g": 0.18431372940540314, "b": 0.18431372940540314, "a": 1 },
+          "resolvedValue": { "r": 0.7764706015586853, "g": 0.1568627506494522, "b": 0.1568627506494522, "a": 1 },
           "alias": "VariableID:4:95",
           "aliasName": "color/role/semantic/error"
         }
@@ -3743,7 +3745,7 @@
       "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:95" } },
       "resolvedValuesByMode": {
         "4:0": {
-          "resolvedValue": { "r": 0.8274509906768799, "g": 0.18431372940540314, "b": 0.18431372940540314, "a": 1 },
+          "resolvedValue": { "r": 0.7764706015586853, "g": 0.1568627506494522, "b": 0.1568627506494522, "a": 1 },
           "alias": "VariableID:4:95",
           "aliasName": "color/role/semantic/error"
         }
@@ -4132,6 +4134,74 @@
           "resolvedValue": { "r": 0.2862745225429535, "g": 0.3137255012989044, "b": 0.34117648005485535, "a": 1 },
           "alias": "VariableID:4:86",
           "aliasName": "color/role/text/secondary"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4757:164268",
+      "name": "color/role/text/semantic/success",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:93" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.18039216101169586, "g": 0.4901960790157318, "b": 0.19607843458652496, "a": 1 },
+          "alias": "VariableID:4:93",
+          "aliasName": "color/role/semantic/success"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4757:164269",
+      "name": "color/role/text/semantic/warning",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "type": "VARIABLE_ALIAS", "id": "VariableID:4:94" } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.929411768913269, "g": 0.42352941632270813, "b": 0.007843137718737125, "a": 1 },
+          "alias": "VariableID:4:94",
+          "aliasName": "color/role/semantic/warning"
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4761:90015",
+      "name": "color/palette/hue/cyan/700",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": { "4:0": { "r": 0.062745101749897, "g": 0.48235294222831726, "b": 0.5843137502670288, "a": 1 } },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.062745101749897, "g": 0.48235294222831726, "b": 0.5843137502670288, "a": 1 },
+          "alias": null
+        }
+      },
+      "scopes": ["ALL_SCOPES"],
+      "hiddenFromPublishing": false,
+      "codeSyntax": {}
+    },
+    {
+      "id": "VariableID:4761:90016",
+      "name": "color/palette/hue/red/700",
+      "description": "",
+      "type": "COLOR",
+      "valuesByMode": {
+        "4:0": { "r": 0.7098039388656616, "g": 0.16078431904315948, "b": 0.16078431904315948, "a": 1 }
+      },
+      "resolvedValuesByMode": {
+        "4:0": {
+          "resolvedValue": { "r": 0.7098039388656616, "g": 0.16078431904315948, "b": 0.16078431904315948, "a": 1 },
+          "alias": null
         }
       },
       "scopes": ["ALL_SCOPES"],

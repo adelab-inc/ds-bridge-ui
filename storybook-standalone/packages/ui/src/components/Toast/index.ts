@@ -9,6 +9,6 @@ export type {
   Toast,
   ToastOptions,
   ToastPosition,
-  ToastVariant,
+  ToastType,
   ToastContextValue,
 } from './types';

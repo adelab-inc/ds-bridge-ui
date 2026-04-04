@@ -9,27 +9,17 @@ const fieldVariants = cva('flex flex-col w-full', ({
         "false": "",
         "true": "",
       },
-      "isDisabled": {
-        "false": "",
-        "true": "",
-      },
-      "isReadOnly": {
-        "false": "",
-        "true": "",
+      "interaction": {
+        "default": "",
+        "disabled": "",
+        "display": "",
+        "editing": "",
+        "readonly": "",
+        "value": "",
       },
       "mode": {
         "base": "",
         "compact": "",
-      },
-      "multiline": {
-        "false": "",
-        "true": "",
-      },
-      "rowsVariant": {
-        "flexible": "",
-        "rows4": "",
-        "rows6": "",
-        "rows8": "",
       },
       "size": {
         "md": "",
@@ -38,11 +28,8 @@ const fieldVariants = cva('flex flex-col w-full', ({
     },
     defaultVariants: {
       "hasError": false,
-      "isDisabled": false,
-      "isReadOnly": false,
+      "interaction": "default",
       "mode": "base",
-      "multiline": false,
-      "rowsVariant": "flexible",
       "size": "md",
     },
     compoundVariants: [
@@ -75,12 +62,12 @@ const fieldLabelVariants = cva('flex items-center self-stretch min-w-0 overflow-
 });
 
 const fieldInputWrapperVariants = cva(
-  'flex items-center rounded-lg border transition-colors',
+  'flex items-center border transition-colors',
   {
     variants: {
       size: {
-        md: '',
-        sm: '',
+        md: 'rounded-lg gap-component-gap-icon-label-sm',
+        sm: 'rounded-md gap-component-gap-icon-label-xs',
       },
       mode: {
         base: '',
@@ -98,6 +85,10 @@ const fieldInputWrapperVariants = cva(
         true: 'bg-field-bg-readonly',
         false: '',
       },
+      isDisplay: {
+        true: 'bg-field-bg-filled border-transparent cursor-default',
+        false: '',
+      },
       isEditing: {
         true: 'border-field-border-focus',
         false: '',
@@ -110,27 +101,16 @@ const fieldInputWrapperVariants = cva(
     compoundVariants: [
       {
         mode: 'base',
-        size: 'md',
-        class: 'py-component-inset-input-y px-component-inset-input-x gap-layout-stack-xs',
-      },
-      {
-        mode: 'base',
-        size: 'sm',
-        class: 'py-component-inset-input-y px-component-inset-input-x gap-layout-stack-xs',
+        class: 'px-component-inset-input-x',
       },
       {
         mode: 'compact',
-        size: 'md',
-        class: 'py-component-inset-input-y-compact px-component-inset-input-x-compact gap-layout-stack-xs-compact',
-      },
-      {
-        mode: 'compact',
-        size: 'sm',
-        class: 'py-component-inset-input-y-compact px-component-inset-input-x-compact gap-layout-stack-xs-compact',
+        class: 'px-component-inset-input-x-compact',
       },
       {
         isDisabled: false,
         isReadOnly: false,
+        isDisplay: false,
         class: 'bg-field-bg-surface',
       },
       {
@@ -150,6 +130,7 @@ const fieldInputWrapperVariants = cva(
       hasError: false,
       isDisabled: false,
       isReadOnly: false,
+      isDisplay: false,
       isEditing: false,
       isFocusVisible: false,
     },
@@ -177,7 +158,7 @@ const fieldInputVariants = cva(
         sm: 'text-body-sm-regular',
       },
       isDisabled: {
-        true: 'text-text-disabled cursor-not-allowed',
+        true: 'text-text-disabled placeholder:text-text-disabled cursor-not-allowed',
         false: 'text-text-primary',
       },
     },
@@ -205,11 +186,11 @@ const fieldPrefixVariants = cva('shrink-0', {
   },
 });
 
-const fieldIconVariants = cva('shrink-0 flex items-center justify-center', {
+const fieldIconVariants = cva('shrink-0 flex items-center justify-center text-icon-interactive-default', {
   variants: {
     size: {
-      md: 'w-[14px] h-[14px]',
-      sm: 'w-[12px] h-[12px]',
+      md: 'w-[20px] h-[20px]',
+      sm: 'w-[16px] h-[16px]',
     },
     isDisabled: {
       true: 'text-icon-interactive-disabled',
@@ -244,69 +225,75 @@ const fieldHelperTextVariants = cva('', {
   },
 });
 
-/** 공통 Props (single-line과 multiline 모두 사용) */
+// ─── show* Discriminated Union 타입 ───
+
+type LabelProps =
+  | { showLabel: true; label: string; labelProps?: React.LabelHTMLAttributes<HTMLLabelElement> }
+  | { showLabel: false; label?: never; labelProps?: never };
+
+type HelptextProps =
+  | { showHelptext: true; helptext: string; helperTextProps?: React.HTMLAttributes<HTMLSpanElement> }
+  | { showHelptext: false; helptext?: never; helperTextProps?: never };
+
+type PrefixProps =
+  | { showPrefix: true; prefix: React.ReactNode }
+  | { showPrefix: false; prefix?: never };
+
+type StartIconProps =
+  | { showStartIcon: true; startIcon: React.ReactNode; onStartIconClick?: (e: React.MouseEvent<HTMLButtonElement>) => void; startIconProps?: React.HTMLAttributes<HTMLElement> }
+  | { showStartIcon: false; startIcon?: never; onStartIconClick?: never; startIconProps?: never };
+
+type EndIconProps =
+  | { showEndIcon: true; endIcon: React.ReactNode; onEndIconClick?: (e: React.MouseEvent<HTMLButtonElement>) => void; endIconProps?: React.HTMLAttributes<HTMLElement> }
+  | { showEndIcon: false; endIcon?: never; onEndIconClick?: never; endIconProps?: never };
+
+// ─── 기반 Props ───
+
 interface FieldBaseProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement>, 'size' | 'prefix'>,
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement>, 'size' | 'prefix' | 'disabled' | 'readOnly'>,
     VariantProps<typeof fieldVariants> {
-  label?: string;
   required?: boolean;
-  helperText?: string;
-  error?: boolean;
+  hasError?: boolean;
   size?: 'md' | 'sm';
   /** 내부 input/textarea 요소에 전달할 추가 props */
   inputProps?: React.HTMLAttributes<HTMLInputElement | HTMLTextAreaElement>;
-  /** 내부 label 요소에 전달할 추가 props */
-  labelProps?: React.LabelHTMLAttributes<HTMLLabelElement>;
-  /** 내부 helperText 요소에 전달할 추가 props */
-  helperTextProps?: React.HTMLAttributes<HTMLSpanElement>;
 }
 
-/** Single-line 전용 Props */
+// ─── Single-line vs Multiline Discriminated Union ───
+
+/** Single-line: prefix, startIcon, endIcon 사용 가능 */
 interface SingleLineFieldProps extends FieldBaseProps {
-  /** Single-line input 모드 (기본값) */
   multiline?: false;
-  /** 입력 앞 텍스트 (예: $, ₩) - single-line 전용 */
-  prefix?: React.ReactNode;
-  /** 좌측 아이콘 - single-line 전용 */
-  startIcon?: React.ReactNode;
-  /** 우측 아이콘 - single-line 전용 */
-  endIcon?: React.ReactNode;
-  /** 좌측 아이콘 클릭 핸들러 - single-line 전용 */
-  onStartIconClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
-  /** 우측 아이콘 클릭 핸들러 - single-line 전용 */
-  onEndIconClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
-  /** 내부 startIcon wrapper 요소에 전달할 추가 props - single-line 전용 */
-  startIconProps?: React.HTMLAttributes<HTMLElement>;
-  /** 내부 endIcon wrapper 요소에 전달할 추가 props - single-line 전용 */
-  endIconProps?: React.HTMLAttributes<HTMLElement>;
-  /** rowsVariant는 multiline 전용 */
   rowsVariant?: never;
 }
 
-/** Multiline (textarea) 전용 Props */
+/** Multiline: prefix, startIcon, endIcon 사용 불가 */
 interface MultilineFieldProps extends FieldBaseProps {
-  /** Multiline textarea 모드 */
   multiline: true;
-  /** Textarea 행 수 변형 - multiline 전용 */
   rowsVariant?: 'flexible' | 'rows4' | 'rows6' | 'rows8';
-  /** prefix는 single-line 전용 */
-  prefix?: never;
-  /** startIcon은 single-line 전용 */
-  startIcon?: never;
-  /** endIcon은 single-line 전용 */
-  endIcon?: never;
-  /** onStartIconClick은 single-line 전용 */
-  onStartIconClick?: never;
-  /** onEndIconClick은 single-line 전용 */
-  onEndIconClick?: never;
-  /** startIconProps는 single-line 전용 */
-  startIconProps?: never;
-  /** endIconProps는 single-line 전용 */
-  endIconProps?: never;
 }
 
-/** Field 컴포넌트 Props - multiline 여부에 따라 사용 가능한 Props가 달라집니다 */
-export type FieldProps = SingleLineFieldProps | MultilineFieldProps;
+// ─── 최종 FieldProps ───
+
+/** Single-line: 모든 show* discriminated union 적용 */
+type SingleLineProps = SingleLineFieldProps
+  & LabelProps
+  & HelptextProps
+  & PrefixProps
+  & StartIconProps
+  & EndIconProps;
+
+/** Multiline: label, helptext만 허용. prefix, icon 계열 차단 */
+type MultilineProps = MultilineFieldProps
+  & LabelProps
+  & HelptextProps
+  & {
+    showPrefix?: never; prefix?: never;
+    showStartIcon?: never; startIcon?: never; onStartIconClick?: never; startIconProps?: never;
+    showEndIcon?: never; endIcon?: never; onEndIconClick?: never; endIconProps?: never;
+  };
+
+export type FieldProps = SingleLineProps | MultilineProps;
 
 const rowsMap = {
   flexible: 1,
@@ -319,27 +306,32 @@ const Field = React.forwardRef<HTMLInputElement | HTMLTextAreaElement, FieldProp
   (
     {
       className,
-      label,
+      interaction,
+      hasError = false,
       required = false,
-      helperText,
-      error = false,
+      showLabel,
+      label,
+      labelProps,
+      showHelptext,
+      helptext,
+      helperTextProps,
+      showPrefix,
       prefix,
+      showStartIcon,
       startIcon,
-      endIcon,
       onStartIconClick,
+      startIconProps,
+      showEndIcon,
+      endIcon,
       onEndIconClick,
+      endIconProps,
       multiline = false,
       rowsVariant = 'flexible',
       size = 'md',
       mode: propMode,
-      disabled = false,
-      readOnly = false,
       id,
       inputProps,
-      labelProps,
-      helperTextProps,
-      startIconProps,
-      endIconProps,
+      name,
       ...props
     },
     ref,
@@ -347,13 +339,23 @@ const Field = React.forwardRef<HTMLInputElement | HTMLTextAreaElement, FieldProp
     const contextMode = useSpacingMode();
     const mode = propMode ?? contextMode;
 
+    // interaction에서 파생
+    const interactionValue = interaction as string | undefined;
+    const isDisabled = interactionValue === 'disabled';
+    const isReadOnly = interactionValue === 'readonly';
+    const isDisplay = interactionValue === 'display';
+
+    // display 모드: 탭 포커스 제외 + 폼 제출 제외
+    const displayTabIndex = isDisplay ? -1 : undefined;
+    const displayName = isDisplay ? undefined : name;
+
     const [isEditing, setIsEditing] = React.useState(false);
     const [isFocusVisible, setIsFocusVisible] = React.useState(false);
     const hadMouseDownRef = React.useRef(false);
     const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
     const inputId = id || `field-${React.useId()}`;
-    const helperTextId = helperText ? `${inputId}-helper` : undefined;
+    const helperTextId = (showHelptext && helptext) ? `${inputId}-helper` : undefined;
 
     // Auto-grow for flexible multiline (no max height limit)
     const adjustTextareaHeight = React.useCallback(() => {
@@ -391,6 +393,7 @@ const Field = React.forwardRef<HTMLInputElement | HTMLTextAreaElement, FieldProp
     };
 
     const handleFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      setIsEditing(true);
       if (!hadMouseDownRef.current) {
         setIsFocusVisible(true);
       }
@@ -401,7 +404,8 @@ const Field = React.forwardRef<HTMLInputElement | HTMLTextAreaElement, FieldProp
     const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setIsEditing(false);
       setIsFocusVisible(false);
-      hadMouseDownRef.current = false;
+      // blur 완료 후 비동기로 리셋하여 blur→재focus 시 mousedown 이벤트가 먼저 처리되도록 함
+      requestAnimationFrame(() => { hadMouseDownRef.current = false; });
       props.onBlur?.(e);
     };
 
@@ -425,7 +429,7 @@ const Field = React.forwardRef<HTMLInputElement | HTMLTextAreaElement, FieldProp
     );
 
     const containerClassName = cn(
-      fieldVariants({ size, mode, multiline, rowsVariant, hasError: error, isDisabled: disabled, isReadOnly: readOnly }),
+      fieldVariants({ size, mode, hasError, interaction }),
       'overflow-hidden',
       className
     );
@@ -434,13 +438,16 @@ const Field = React.forwardRef<HTMLInputElement | HTMLTextAreaElement, FieldProp
       fieldInputWrapperVariants({
         size,
         mode,
-        hasError: error,
-        isDisabled: disabled,
-        isReadOnly: readOnly,
+        hasError,
+        isDisabled,
+        isReadOnly,
+        isDisplay,
         isEditing,
         isFocusVisible,
       }),
-      multiline && 'items-start',
+      multiline
+        ? `items-start ${mode === 'compact' ? 'py-component-inset-input-multiline-y-compact' : 'py-component-inset-input-multiline-y'}`
+        : mode === 'compact' ? 'py-component-inset-input-y-compact' : 'py-component-inset-input-y',
     );
 
     const inputAreaClassName = cn(
@@ -450,16 +457,16 @@ const Field = React.forwardRef<HTMLInputElement | HTMLTextAreaElement, FieldProp
 
     const inputClassName = fieldInputVariants({
       size,
-      isDisabled: disabled,
+      isDisabled,
     });
 
     return (
-      <div className={containerClassName}>
-        {label && (
+      <div className={containerClassName} onMouseDown={handleMouseDown}>
+        {showLabel && (
           <label
             htmlFor={inputId}
             {...labelProps}
-            className={cn(fieldLabelVariants({ size, isDisabled: disabled }), labelProps?.className)}
+            className={cn(fieldLabelVariants({ size, isDisabled }), labelProps?.className)}
           >
             <span className="truncate">{label}</span>
             {required && (
@@ -478,31 +485,30 @@ const Field = React.forwardRef<HTMLInputElement | HTMLTextAreaElement, FieldProp
 
         <div
           className={inputWrapperClassName}
-          onMouseDown={handleMouseDown}
         >
-          {!multiline && prefix && (
-            <span className={fieldPrefixVariants({ size, isDisabled: disabled })}>
+          {!multiline && showPrefix && (
+            <span className={fieldPrefixVariants({ size, isDisabled })}>
               {prefix}
             </span>
           )}
 
           <div className={inputAreaClassName}>
-            {!multiline && startIcon && (
+            {!multiline && showStartIcon && (
               onStartIconClick ? (
                 <button
                   type="button"
                   onClick={onStartIconClick}
-                  disabled={disabled}
+                  disabled={isDisabled}
                   tabIndex={-1}
                   {...(startIconProps as React.ButtonHTMLAttributes<HTMLButtonElement>)}
-                  className={cn(fieldIconVariants({ size, isDisabled: disabled }), startIconProps?.className)}
+                  className={cn(fieldIconVariants({ size, isDisabled }), startIconProps?.className)}
                 >
                   {startIcon}
                 </button>
               ) : (
                 <span
                   {...startIconProps}
-                  className={cn(fieldIconVariants({ size, isDisabled: disabled }), startIconProps?.className)}
+                  className={cn(fieldIconVariants({ size, isDisabled }), startIconProps?.className)}
                 >
                   {startIcon}
                 </span>
@@ -513,10 +519,10 @@ const Field = React.forwardRef<HTMLInputElement | HTMLTextAreaElement, FieldProp
               <textarea
                 ref={setTextareaRef}
                 id={inputId}
-                disabled={disabled}
-                readOnly={readOnly}
+                disabled={isDisabled}
+                readOnly={isReadOnly || isDisplay}
                 required={required}
-                aria-invalid={error}
+                aria-invalid={hasError}
                 aria-describedby={helperTextId}
                 aria-required={required}
                 onFocus={handleFocus}
@@ -525,16 +531,18 @@ const Field = React.forwardRef<HTMLInputElement | HTMLTextAreaElement, FieldProp
                 rows={rowsVariant === 'flexible' ? 1 : rowsMap[rowsVariant]}
                 {...(props as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
                 {...(inputProps as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
+                name={displayName}
+                tabIndex={displayTabIndex}
                 className={cn(inputClassName, inputProps?.className)}
               />
             ) : (
               <input
                 ref={ref as React.Ref<HTMLInputElement>}
                 id={inputId}
-                disabled={disabled}
-                readOnly={readOnly}
+                disabled={isDisabled}
+                readOnly={isReadOnly || isDisplay}
                 required={required}
-                aria-invalid={error}
+                aria-invalid={hasError}
                 aria-describedby={helperTextId}
                 aria-required={required}
                 onFocus={handleFocus}
@@ -542,26 +550,28 @@ const Field = React.forwardRef<HTMLInputElement | HTMLTextAreaElement, FieldProp
                 onChange={handleChange}
                 {...(props as React.InputHTMLAttributes<HTMLInputElement>)}
                 {...(inputProps as React.InputHTMLAttributes<HTMLInputElement>)}
+                name={displayName}
+                tabIndex={displayTabIndex}
                 className={cn(inputClassName, inputProps?.className)}
               />
             )}
 
-            {!multiline && endIcon && (
+            {!multiline && showEndIcon && (
               onEndIconClick ? (
                 <button
                   type="button"
                   onClick={onEndIconClick}
-                  disabled={disabled}
+                  disabled={isDisabled}
                   tabIndex={-1}
                   {...(endIconProps as React.ButtonHTMLAttributes<HTMLButtonElement>)}
-                  className={cn(fieldIconVariants({ size, isDisabled: disabled }), endIconProps?.className)}
+                  className={cn(fieldIconVariants({ size, isDisabled }), endIconProps?.className)}
                 >
                   {endIcon}
                 </button>
               ) : (
                 <span
                   {...endIconProps}
-                  className={cn(fieldIconVariants({ size, isDisabled: disabled }), endIconProps?.className)}
+                  className={cn(fieldIconVariants({ size, isDisabled }), endIconProps?.className)}
                 >
                   {endIcon}
                 </span>
@@ -570,13 +580,13 @@ const Field = React.forwardRef<HTMLInputElement | HTMLTextAreaElement, FieldProp
           </div>
         </div>
 
-        {helperText && (
+        {showHelptext && (
           <span
             id={helperTextId}
             {...helperTextProps}
-            className={cn(fieldHelperTextVariants({ size, hasError: error, isDisabled: disabled }), helperTextProps?.className)}
+            className={cn(fieldHelperTextVariants({ size, hasError, isDisabled }), helperTextProps?.className)}
           >
-            {helperText}
+            {helptext}
           </span>
         )}
       </div>

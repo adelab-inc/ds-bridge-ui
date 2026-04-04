@@ -2,7 +2,6 @@ import * as React from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 import {
   TreeMenu,
-  TreeMenuItemData,
   TreeMenuItemDataSm,
   TreeMenuItemDataMd,
   DropPosition,
@@ -11,6 +10,14 @@ import { Item as TreeMenuItem } from '../components/TreeMenu/Item';
 import { Icon } from '../components/Icon';
 import { Badge } from '../components/Badge';
 import { Field } from '../components/Field';
+
+/** stories에서 show* discriminated union 없이 Field를 간단히 사용하기 위한 래퍼 */
+const SimpleField = Field as unknown as React.ComponentType<{
+  placeholder?: string;
+  className?: string;
+  size?: 'md' | 'sm';
+  endIcon?: React.ReactNode;
+}>;
 import { Button } from '../components/Button';
 
 /**
@@ -23,6 +30,66 @@ const meta: Meta<typeof TreeMenu> = {
   title: 'UI/TreeMenu',
   component: TreeMenu,
   tags: ['autodocs'],
+  parameters: {
+    docs: {
+      description: {
+        component: [
+          '## Figma ↔ Code 인터페이스 매핑',
+          '',
+          '> TreeMenu.Item은 Figma `Menu/MenuItem` (Type=Tree 프리셋)과 동일한 컴포넌트입니다.',
+          '> CVA variant 축은 Menu.Item V2와 정렬되어 있습니다.',
+          '',
+          '### TreeMenu.Item CVA Variants',
+          '',
+          '| Figma 속성 | Code prop | 비고 |',
+          '|---|---|---|',
+          '| `Interaction` | `interaction` | 6개 값: default, hover, pressed, selected, selected-hover, selected-pressed |',
+          '| `Disabled` | `disabled` | boolean |',
+          '| `Focus` | `focus` | boolean (focus ring) |',
+          '| `Danger` | `danger` | boolean |',
+          '| `Empty` | `empty` | boolean |',
+          '| `Size` | `size` | md, sm |',
+          '| `Indent-Unit1/2/3` | `depth` | TreeMenu 전용 (1-4 depth 들여쓰기) |',
+          '',
+          '### MenuItem 슬롯 속성 (Tree 프리셋 결정사항)',
+          '',
+          '| Figma 속성 | Code 대응 | 결정 |',
+          '|---|---|---|',
+          '| `Show Leading` | — (코드 없음) | **항상 ON** — Indent-Unit(들여쓰기)이 Leading 안에 있어 OFF 시 depth 레이아웃 깨짐 |',
+          '| `Show Trailing` | `item.trailing` | hover 시 액션 아이콘 표시. ReactNode 유무로 show 결정 |',
+          '| `Show Close Trailing` | `item.closeTrailing` | Badge 등 (MD only). ReactNode 유무로 show 결정 |',
+          '| `Show Description` | — (코드 없음) | **미사용** — TreeMenu는 description 미지원 |',
+          '| `Menu` (텍스트) | `label` | React 표준 이름 유지 |',
+          '',
+          '### Tree 전용 Leading 속성',
+          '',
+          '| Figma 속성 | Code prop | 비고 |',
+          '|---|---|---|',
+          '| `Show tree` | `item.showTree` | 소비자 직접 제어. lazy loading 지원. 기본 false |',
+          '| `Show Checkbox` | `showCheckbox` | 이미 Figma와 일치 |',
+          '| `Indent-Unit1/2/3` 조합 | `depth` (1-4) | 코드 추상화 우월 |',
+          '',
+          '### Trailing 속성',
+          '',
+          '| Figma Trailing Type | Code 대응 | 비고 |',
+          '|---|---|---|',
+          '| `Badge` | `item.closeTrailing` / `item.closeTrailingDot` | MD only. Close Trailing 슬롯 |',
+          '| `icon` | `item.trailing` | hover 시 표시. Trailing 슬롯 |',
+          '',
+          '### V1 → V2 변경 사항',
+          '',
+          '| V1 | V2 | 변경 내용 |',
+          '|---|---|---|',
+          '| `state` (3개 값) | `interaction` + `disabled` + `focus` + `danger` + `empty` | Menu.Item V2 축 모델 정렬 |',
+          '| `hasChildren` (자동 계산) | `item.showTree` (소비자 제어) | Figma `Show tree` 대응. lazy loading 지원 |',
+          '| `hoverActionIcon` | `trailing` | Menu API 정합성 (`Show Trailing` 슬롯) |',
+          '| `badge` | `closeTrailing` | Menu API 정합성 (`Show Close Trailing` 슬롯) |',
+          '',
+          '> **소비자 영향 없음**: items 데이터 구조, TreeMenu/TreeMenu.Item 컴포넌트 Props 변경 없음',
+        ].join('\n'),
+      },
+    },
+  },
   decorators: [
     (Story, context) => {
       // noWrapper 파라미터가 true면 wrapper 없이 렌더링
@@ -43,22 +110,31 @@ const meta: Meta<typeof TreeMenu> = {
       description: 'TreeMenu size variant',
     },
     items: { table: { disable: true } },
+    defaultExpandedIds: { table: { disable: true } },
+    expandedIds: { table: { disable: true } },
+    onExpandChange: { table: { disable: true } },
+    onExpandToggle: { table: { disable: true } },
     checkboxMode: { table: { disable: true } },
     checkedIds: { table: { disable: true } },
     onCheckChange: { table: { disable: true } },
     onItemClick: { table: { disable: true } },
-    defaultExpandedIds: { table: { disable: true } },
+    draggable: { table: { disable: true } },
+    onItemMove: { table: { disable: true } },
+    defaultSelectedId: { table: { disable: true } },
+    selectedId: { table: { disable: true } },
+    onSelectedChange: { table: { disable: true } },
   },
 };
 
 export default meta;
 type Story = StoryObj<typeof TreeMenu>;
 
-// SM/MD 공용 기본 아이템 (badge 없음)
+// SM/MD 공용 기본 아이템 (closeTrailing 없음)
 const basicItems: TreeMenuItemDataMd[] = [
   {
     id: 'folder-1',
     label: '프로젝트',
+    showTree: true,
     children: [
       { id: 'file-1', label: '문서.txt' },
       { id: 'file-2', label: '이미지.png' },
@@ -67,6 +143,7 @@ const basicItems: TreeMenuItemDataMd[] = [
   {
     id: 'folder-2',
     label: '설정',
+    showTree: true,
     children: [
       { id: 'file-3', label: '환경설정.json' },
     ],
@@ -79,6 +156,7 @@ const basicSmItems: TreeMenuItemDataSm[] = [
   {
     id: 'folder-1',
     label: '프로젝트',
+    showTree: true,
     children: [
       { id: 'file-1', label: '문서.txt' },
       { id: 'file-2', label: '이미지.png' },
@@ -87,6 +165,7 @@ const basicSmItems: TreeMenuItemDataSm[] = [
   {
     id: 'folder-2',
     label: '설정',
+    showTree: true,
     children: [
       { id: 'file-3', label: '환경설정.json' },
     ],
@@ -99,22 +178,23 @@ const itemsWithBadge: TreeMenuItemDataMd[] = [
   {
     id: 'inbox',
     label: '받은 편지함',
-    badge: <Badge type="count">12</Badge>,
+    showTree: true,
+    closeTrailing: <Badge type="level" level="primary" appearance="subtle" label="12" />,
     children: [
-      { id: 'unread', label: '읽지 않음', badge: <Badge type="dot" position="top-right" />, badgeDot: true },
-      { id: 'starred', label: '중요', badge: <Badge type="count">3</Badge> },
+      { id: 'unread', label: '읽지 않음', closeTrailing: <Badge type="dot" position="top-right" />, closeTrailingDot: true },
+      { id: 'starred', label: '중요', closeTrailing: <Badge type="level" level="primary" appearance="subtle" label="3" /> },
     ],
   },
   {
     id: 'sent',
     label: '보낸 편지함',
-    badge: <Badge type="dot" position="top-right" />,
-    badgeDot: true,
+    closeTrailing: <Badge type="dot" position="top-right" />,
+    closeTrailingDot: true,
   },
   {
     id: 'drafts',
     label: '임시 보관함',
-    badge: <Badge type="count">3</Badge>,
+    closeTrailing: <Badge type="level" level="primary" appearance="subtle" label="3" />,
   },
 ];
 
@@ -122,20 +202,21 @@ const itemsWithHoverAction: TreeMenuItemDataMd[] = [
   {
     id: 'workspace',
     label: '워크스페이스',
-    hoverActionIcon: <Icon name="plus" size={16} />,
-    onHoverActionClick: () => console.log('🎯 [HoverAction] "워크스페이스" hover 아이콘 클릭'),
+    showTree: true,
+    trailing: <Icon name="add" size={16} />,
+    onTrailingClick: () => console.log('🎯 [HoverAction] "워크스페이스" hover 아이콘 클릭'),
     children: [
       {
         id: 'project-1',
         label: '프로젝트 A',
-        hoverActionIcon: <Icon name="plus" size={16} />,
-        onHoverActionClick: () => console.log('🎯 [HoverAction] "프로젝트 A" hover 아이콘 클릭'),
+        trailing: <Icon name="add" size={16} />,
+        onTrailingClick: () => console.log('🎯 [HoverAction] "프로젝트 A" hover 아이콘 클릭'),
       },
       {
         id: 'project-2',
         label: '프로젝트 B',
-        hoverActionIcon: <Icon name="plus" size={16} />,
-        onHoverActionClick: () => console.log('🎯 [HoverAction] "프로젝트 B" hover 아이콘 클릭'),
+        trailing: <Icon name="add" size={16} />,
+        onTrailingClick: () => console.log('🎯 [HoverAction] "프로젝트 B" hover 아이콘 클릭'),
       },
     ],
   },
@@ -145,10 +226,12 @@ const deepNestedItems: TreeMenuItemDataMd[] = [
   {
     id: 'level-1',
     label: '1단계',
+    showTree: true,
     children: [
       {
         id: 'level-2',
         label: '2단계',
+        showTree: true,
         children: [
           {
             id: 'level-3',
@@ -170,6 +253,7 @@ const disabledItems: TreeMenuItemDataMd[] = [
   {
     id: 'folder',
     label: '폴더',
+    showTree: true,
     children: [
       { id: 'child-active', label: '활성 자식' },
       { id: 'child-disabled', label: '비활성 자식', disabled: true },
@@ -212,15 +296,15 @@ function SingleTreeMenuItemWrapper(props: SingleTreeMenuItemWrapperProps) {
     setIsExpanded(props.isExpanded);
   }, [props.isExpanded]);
 
-  // MD 사이즈일 때만 badge, checkbox 적용
+  // MD 사이즈일 때만 closeTrailing, checkbox 적용
   const isMdSize = props.size === 'md';
 
-  // 뱃지 생성 (MD only)
-  let badge: React.ReactNode = undefined;
+  // Close Trailing 생성 (MD only)
+  let closeTrailing: React.ReactNode = undefined;
   if (isMdSize && props.badgeType === 'count') {
-    badge = <Badge type="count">{props.badgeCount}</Badge>;
+    closeTrailing = <Badge type="level" level="primary" appearance="subtle" label={props.badgeCount} />;
   } else if (isMdSize && props.badgeType === 'dot') {
-    badge = <Badge type="dot" position="top-right" />;
+    closeTrailing = <Badge type="dot" position="top-right" />;
   }
 
   // SM 사이즈일 때
@@ -228,8 +312,9 @@ function SingleTreeMenuItemWrapper(props: SingleTreeMenuItemWrapperProps) {
     const smItem: TreeMenuItemDataSm = {
       id: 'single-item',
       label: props.label,
-      hoverActionIcon: props.showHoverAction ? <Icon name="plus" size={16} /> : undefined,
-      onHoverActionClick: props.showHoverAction ? handleHoverAction : undefined,
+      showTree: props.hasExpandIcon,
+      trailing: props.showHoverAction ? <Icon name="add" size={16} /> : undefined,
+      onTrailingClick: props.showHoverAction ? handleHoverAction : undefined,
       disabled: props.disabled,
       children: props.hasExpandIcon ? [{ id: 'child', label: '자식 아이템' }] : undefined,
     };
@@ -239,7 +324,6 @@ function SingleTreeMenuItemWrapper(props: SingleTreeMenuItemWrapperProps) {
         item={smItem}
         size="sm"
         depth={1}
-        hasChildren={props.hasExpandIcon}
         isExpanded={isExpanded}
         onExpandToggle={() => {
           handleExpandToggle(props.label, isExpanded);
@@ -254,10 +338,11 @@ function SingleTreeMenuItemWrapper(props: SingleTreeMenuItemWrapperProps) {
   const mdItem: TreeMenuItemDataMd = {
     id: 'single-item',
     label: props.label,
-    badge,
-    badgeDot: props.badgeType === 'dot',
-    hoverActionIcon: props.showHoverAction ? <Icon name="plus" size={16} /> : undefined,
-    onHoverActionClick: props.showHoverAction ? handleHoverAction : undefined,
+    showTree: props.hasExpandIcon,
+    closeTrailing,
+    closeTrailingDot: props.badgeType === 'dot',
+    trailing: props.showHoverAction ? <Icon name="add" size={16} /> : undefined,
+    onTrailingClick: props.showHoverAction ? handleHoverAction : undefined,
     disabled: props.disabled,
     children: props.hasExpandIcon ? [{ id: 'child', label: '자식 아이템' }] : undefined,
   };
@@ -267,7 +352,6 @@ function SingleTreeMenuItemWrapper(props: SingleTreeMenuItemWrapperProps) {
       item={mdItem}
       size="md"
       depth={1}
-      hasChildren={props.hasExpandIcon}
       isExpanded={isExpanded}
       checkboxMode={props.showCheckbox}
       checkState={checkState === 'unchecked' ? null : checkState}
@@ -532,7 +616,7 @@ export const SingleTreeMenuItem: StoryObj<{
     size: {
       control: { type: 'select' },
       options: ['sm', 'md'],
-      description: '사이즈 (SM에서는 checkbox/badge 무시됨)',
+      description: '사이즈 (SM에서는 checkbox/closeTrailing 무시됨)',
     },
     label: {
       control: { type: 'text' },
@@ -636,12 +720,8 @@ export const ControlledExpandState: Story = {
       <div className="flex flex-col gap-4">
         {/* 외부 제어 버튼 */}
         <div className="flex gap-2">
-          <Button size="sm" variant="primary" onClick={handleExpandAll}>
-            모두 펼치기
-          </Button>
-          <Button size="sm" variant="outline" onClick={handleCollapseAll}>
-            모두 접기
-          </Button>
+          <Button size="sm" buttonType="primary" label="모두 펼치기" onClick={handleExpandAll} showStartIcon={false} showEndIcon={false} />
+          <Button size="sm" buttonType="tertiary" label="모두 접기" onClick={handleCollapseAll} showStartIcon={false} showEndIcon={false} />
         </div>
 
         {/* 현재 상태 표시 */}
@@ -673,47 +753,52 @@ const organizationItems: TreeMenuItemDataMd[] = [
   {
     id: 'company',
     label: '전사',
-    badge: <Badge type="count">128</Badge>,
+    showTree: true,
+    closeTrailing: <Badge type="level" level="primary" appearance="subtle" label="128" />,
     children: [
       {
         id: 'sales',
         label: '영업부문',
-        badge: <Badge type="count">45</Badge>,
-        hoverActionIcon: <Icon name="plus" size={16} />,
-        onHoverActionClick: () => console.log('🎯 [HoverAction] "영업부문" 하위 조직 추가'),
+        showTree: true,
+        closeTrailing: <Badge type="level" level="primary" appearance="subtle" label="45" />,
+        trailing: <Icon name="add" size={16} />,
+        onTrailingClick: () => console.log('🎯 [HoverAction] "영업부문" 하위 조직 추가'),
         children: [
           {
             id: 'seoul-hq',
             label: '수도권사업본부',
-            badge: <Badge type="dot" position="top-right" />,
-            badgeDot: true,
-            hoverActionIcon: <Icon name="plus" size={16} />,
-            onHoverActionClick: () => console.log('🎯 [HoverAction] "수도권사업본부" 하위 지점 추가'),
+            showTree: true,
+            closeTrailing: <Badge type="dot" position="top-right" />,
+            closeTrailingDot: true,
+            trailing: <Icon name="add" size={16} />,
+            onTrailingClick: () => console.log('🎯 [HoverAction] "수도권사업본부" 하위 지점 추가'),
             children: [
-              { id: 'gangnam', label: '강남지점', badge: <Badge type="count">8</Badge> },
-              { id: 'seocho', label: '서초지점', hoverActionIcon: <Icon name="more-vert" size={16} />, onHoverActionClick: () => console.log('🎯 [HoverAction] "서초지점" 편집') },
-              { id: 'songpa', label: '송파지점', badge: <Badge type="dot" position="top-right" />, badgeDot: true },
+              { id: 'gangnam', label: '강남지점', closeTrailing: <Badge type="level" level="primary" appearance="subtle" label="8" /> },
+              { id: 'seocho', label: '서초지점', trailing: <Icon name="more-vert" size={16} />, onTrailingClick: () => console.log('🎯 [HoverAction] "서초지점" 편집') },
+              { id: 'songpa', label: '송파지점', closeTrailing: <Badge type="dot" position="top-right" />, closeTrailingDot: true },
               { id: 'gangdong', label: '강동지점' },
             ],
           },
           {
             id: 'gangnam-hq',
             label: '강남사업본부',
+            showTree: true,
             children: [
-              { id: 'yeoksam', label: '역삼지점', badge: <Badge type="count">5</Badge> },
+              { id: 'yeoksam', label: '역삼지점', closeTrailing: <Badge type="level" level="primary" appearance="subtle" label="5" /> },
               { id: 'samseong', label: '삼성지점' },
-              { id: 'daechi', label: '대치지점', hoverActionIcon: <Icon name="more-vert" size={16} />, onHoverActionClick: () => console.log('🎯 [HoverAction] "대치지점" 편집') },
+              { id: 'daechi', label: '대치지점', trailing: <Icon name="more-vert" size={16} />, onTrailingClick: () => console.log('🎯 [HoverAction] "대치지점" 편집') },
             ],
           },
           {
             id: 'gyeonggi-hq',
             label: '경기사업본부',
-            badge: <Badge type="count">12</Badge>,
+            showTree: true,
+            closeTrailing: <Badge type="level" level="primary" appearance="subtle" label="12" />,
             children: [
               { id: 'bundang', label: '분당지점' },
-              { id: 'suji', label: '수지지점', badge: <Badge type="dot" position="top-right" />, badgeDot: true },
+              { id: 'suji', label: '수지지점', closeTrailing: <Badge type="dot" position="top-right" />, closeTrailingDot: true },
               { id: 'yongin', label: '용인지점' },
-              { id: 'suwon', label: '수원지점', badge: <Badge type="count">3</Badge> },
+              { id: 'suwon', label: '수원지점', closeTrailing: <Badge type="level" level="primary" appearance="subtle" label="3" /> },
             ],
           },
         ],
@@ -721,32 +806,35 @@ const organizationItems: TreeMenuItemDataMd[] = [
       {
         id: 'tech',
         label: '기술부문',
-        badge: <Badge type="count">52</Badge>,
-        hoverActionIcon: <Icon name="plus" size={16} />,
-        onHoverActionClick: () => console.log('🎯 [HoverAction] "기술부문" 하위 센터 추가'),
+        showTree: true,
+        closeTrailing: <Badge type="level" level="primary" appearance="subtle" label="52" />,
+        trailing: <Icon name="add" size={16} />,
+        onTrailingClick: () => console.log('🎯 [HoverAction] "기술부문" 하위 센터 추가'),
         children: [
           {
             id: 'dev-center',
             label: '개발센터',
-            badge: <Badge type="dot" position="top-right" />,
-            badgeDot: true,
-            hoverActionIcon: <Icon name="plus" size={16} />,
-            onHoverActionClick: () => console.log('🎯 [HoverAction] "개발센터" 하위 팀 추가'),
+            showTree: true,
+            closeTrailing: <Badge type="dot" position="top-right" />,
+            closeTrailingDot: true,
+            trailing: <Icon name="add" size={16} />,
+            onTrailingClick: () => console.log('🎯 [HoverAction] "개발센터" 하위 팀 추가'),
             children: [
-              { id: 'frontend', label: '프론트엔드팀', badge: <Badge type="count">12</Badge>, hoverActionIcon: <Icon name="more-vert" size={16} />, onHoverActionClick: () => console.log('🎯 [HoverAction] "프론트엔드팀" 편집') },
-              { id: 'backend', label: '백엔드팀', badge: <Badge type="count">15</Badge> },
-              { id: 'mobile', label: '모바일팀', hoverActionIcon: <Icon name="more-vert" size={16} />, onHoverActionClick: () => console.log('🎯 [HoverAction] "모바일팀" 편집') },
-              { id: 'devops', label: 'DevOps팀', badge: <Badge type="dot" position="top-right" />, badgeDot: true },
+              { id: 'frontend', label: '프론트엔드팀', closeTrailing: <Badge type="level" level="primary" appearance="subtle" label="12" />, trailing: <Icon name="more-vert" size={16} />, onTrailingClick: () => console.log('🎯 [HoverAction] "프론트엔드팀" 편집') },
+              { id: 'backend', label: '백엔드팀', closeTrailing: <Badge type="level" level="primary" appearance="subtle" label="15" /> },
+              { id: 'mobile', label: '모바일팀', trailing: <Icon name="more-vert" size={16} />, onTrailingClick: () => console.log('🎯 [HoverAction] "모바일팀" 편집') },
+              { id: 'devops', label: 'DevOps팀', closeTrailing: <Badge type="dot" position="top-right" />, closeTrailingDot: true },
             ],
           },
           {
             id: 'infra-center',
             label: '인프라센터',
-            hoverActionIcon: <Icon name="plus" size={16} />,
-            onHoverActionClick: () => console.log('🎯 [HoverAction] "인프라센터" 하위 팀 추가'),
+            showTree: true,
+            trailing: <Icon name="add" size={16} />,
+            onTrailingClick: () => console.log('🎯 [HoverAction] "인프라센터" 하위 팀 추가'),
             children: [
               { id: 'network', label: '네트워크팀' },
-              { id: 'security', label: '보안팀', badge: <Badge type="count">7</Badge> },
+              { id: 'security', label: '보안팀', closeTrailing: <Badge type="level" level="primary" appearance="subtle" label="7" /> },
               { id: 'cloud', label: '클라우드팀' },
             ],
           },
@@ -755,15 +843,17 @@ const organizationItems: TreeMenuItemDataMd[] = [
       {
         id: 'management',
         label: '경영지원부문',
-        badge: <Badge type="count">31</Badge>,
+        showTree: true,
+        closeTrailing: <Badge type="level" level="primary" appearance="subtle" label="31" />,
         children: [
           {
             id: 'hr',
             label: '인사팀',
-            badge: <Badge type="dot" position="top-right" />,
-            badgeDot: true,
+            showTree: true,
+            closeTrailing: <Badge type="dot" position="top-right" />,
+            closeTrailingDot: true,
             children: [
-              { id: 'recruit', label: '채용파트', badge: <Badge type="count">4</Badge> },
+              { id: 'recruit', label: '채용파트', closeTrailing: <Badge type="level" level="primary" appearance="subtle" label="4" /> },
               { id: 'training', label: '교육파트' },
               { id: 'welfare', label: '복지파트' },
             ],
@@ -771,15 +861,17 @@ const organizationItems: TreeMenuItemDataMd[] = [
           {
             id: 'finance',
             label: '재무팀',
+            showTree: true,
             children: [
-              { id: 'accounting', label: '회계파트', badge: <Badge type="dot" position="top-right" />, badgeDot: true },
+              { id: 'accounting', label: '회계파트', closeTrailing: <Badge type="dot" position="top-right" />, closeTrailingDot: true },
               { id: 'tax', label: '세무파트' },
             ],
           },
           {
             id: 'general',
             label: '총무팀',
-            badge: <Badge type="count">6</Badge>,
+            showTree: true,
+            closeTrailing: <Badge type="level" level="primary" appearance="subtle" label="6" />,
             children: [
               { id: 'facility', label: '시설관리파트' },
               { id: 'procurement', label: '구매파트' },
@@ -839,7 +931,7 @@ export const InSection: Story = {
 
     return (
       <section
-        className="flex flex-col items-start w-[338px] py-component-inset-panel-y px-component-inset-panel-x gap-component-gap-field-group-y bg-bg-surface border border-border-default rounded-lg"
+        className="flex flex-col items-start w-[338px] p-5 gap-4 bg-bg-surface border border-border-default rounded-lg"
       >
         {/* Heading */}
         <h2 className="text-text-primary text-heading-md-semibold">
@@ -847,7 +939,7 @@ export const InSection: Story = {
         </h2>
 
         {/* Search Field */}
-        <Field
+        <SimpleField
           placeholder="조직명 입력"
           size="md"
           endIcon={<Icon name="search" size={20} />}
@@ -954,6 +1046,7 @@ export const Draggable: Story = {
       {
         id: 'sales',
         label: '영업부문',
+        showTree: true,
         children: [
           { id: 'seoul-hq', label: '수도권사업본부' },
           { id: 'gangnam-hq', label: '강남사업본부' },
@@ -963,6 +1056,7 @@ export const Draggable: Story = {
       {
         id: 'tech',
         label: '기술부문',
+        showTree: true,
         children: [
           { id: 'dev-center', label: '개발센터' },
           { id: 'infra-center', label: '인프라센터' },
@@ -971,6 +1065,7 @@ export const Draggable: Story = {
       {
         id: 'management',
         label: '경영지원부문',
+        showTree: true,
         children: [
           { id: 'hr', label: '인사팀' },
           { id: 'finance', label: '재무팀' },
@@ -996,9 +1091,7 @@ export const Draggable: Story = {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={handleReset}>
-            초기화
-          </Button>
+          <Button size="sm" buttonType="tertiary" label="초기화" onClick={handleReset} showStartIcon={false} showEndIcon={false} />
         </div>
         <p className="text-sm text-text-secondary">
           아이템을 드래그하여 순서를 변경하거나 다른 아이템 안으로 이동할 수 있습니다.
@@ -1050,12 +1143,14 @@ export const DraggableLongList: Story = {
           teams.push({
             id: `dept-${deptIdx}-team-${t}`,
             label: `${dept}${t}팀`,
+            showTree: true,
             children: members,
           });
         }
         result.push({
           id: `dept-${deptIdx}`,
           label: `${dept}부문`,
+          showTree: true,
           children: teams,
         });
       });
@@ -1101,15 +1196,9 @@ export const DraggableLongList: Story = {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex gap-2 flex-wrap">
-          <Button size="sm" variant="primary" onClick={handleExpandAll}>
-            모두 펼치기
-          </Button>
-          <Button size="sm" variant="outline" onClick={handleCollapseAll}>
-            모두 접기
-          </Button>
-          <Button size="sm" variant="outline" onClick={handleReset}>
-            초기화
-          </Button>
+          <Button size="sm" buttonType="primary" label="모두 펼치기" onClick={handleExpandAll} showStartIcon={false} showEndIcon={false} />
+          <Button size="sm" buttonType="tertiary" label="모두 접기" onClick={handleCollapseAll} showStartIcon={false} showEndIcon={false} />
+          <Button size="sm" buttonType="tertiary" label="초기화" onClick={handleReset} showStartIcon={false} showEndIcon={false} />
         </div>
         <p className="text-sm text-text-secondary">
           <strong>자동 스크롤 테스트:</strong> 아이템을 드래그해서 컨테이너 상/하단 가장자리로 이동해 보세요.

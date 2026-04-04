@@ -199,7 +199,7 @@ async def extract_description(
 
         # 6. LLM 호출
         provider = get_ai_provider()
-        response_message, usage = await provider.chat(messages)
+        response_message, usage = await provider.chat(messages, thinking_level="off")
         description_text = response_message.content
 
         if not description_text or not description_text.strip():
