@@ -5,6 +5,7 @@ on:
     branches: [main, develop]
     paths:
       - "apps/ai-service/**"
+      - ".github/workflows/deploy-ai-service.yml"
 
 env:
   PROJECT_ID: ds-runtime-hub
