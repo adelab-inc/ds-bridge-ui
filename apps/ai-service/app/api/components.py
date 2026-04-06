@@ -30,10 +30,11 @@ _reload_lock = asyncio.Lock()
 
 
 def load_component_schema() -> tuple[dict | None, str | None]:
-    """컴포넌트 스키마 JSON 로드"""
+    """컴포넌트 스키마 JSON 로드 (로컬 파일 fallback)"""
     schema_path = Path(__file__).parent.parent.parent / "component-schema.json"
     if not schema_path.exists():
-        return None, "No component schema found."
+        logger.warning("Local component-schema.json not found, will use Supabase Storage at runtime")
+        return None, None
 
     with open(schema_path, encoding="utf-8") as f:
         return json.load(f), None
