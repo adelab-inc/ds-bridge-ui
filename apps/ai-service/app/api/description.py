@@ -22,7 +22,7 @@ from app.services.supabase_db import (
     get_description_versions,
     get_latest_code_message,
     get_latest_description,
-    get_messages_by_room,
+    get_message_questions_by_room,
     update_edited_content,
 )
 
@@ -159,8 +159,8 @@ async def extract_description(
         if room is None:
             raise HTTPException(status_code=404, detail="채팅방을 찾을 수 없습니다.")
 
-        # 2. 대화 히스토리 조회
-        conversation_history = await get_messages_by_room(request.room_id)
+        # 2. 대화 히스토리 조회 (question 필드만 경량 조회)
+        conversation_history = await get_message_questions_by_room(request.room_id)
         if not conversation_history:
             raise HTTPException(
                 status_code=422, detail="대화 히스토리가 없습니다. 먼저 대화를 진행해 주세요."

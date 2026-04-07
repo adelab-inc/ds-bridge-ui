@@ -370,6 +370,33 @@ async def get_messages_by_room(room_id: str, limit: int = 100) -> list[MessageDa
     return result.data  # type: ignore[return-value]
 
 
+@handle_db_error("메시지 질문 조회 실패")
+async def get_message_questions_by_room(room_id: str, limit: int = 100) -> list[dict]:
+    """
+    채팅방의 사용자 질문만 경량 조회 (디스크립션 추출용).
+
+    content/text 등 대용량 컬럼을 제외하고 question 필드만 가져옵니다.
+
+    Args:
+        room_id: 채팅방 ID
+        limit: 최대 조회 개수
+
+    Returns:
+        질문 목록 [{"question": "..."}, ...]
+    """
+    client = await get_supabase_client()
+    result = await (
+        client.table("chat_messages")
+        .select("question")
+        .eq("room_id", room_id)
+        .neq("question", "")
+        .order("answer_created_at")
+        .limit(limit)
+        .execute()
+    )
+    return result.data
+
+
 @handle_db_error("메시지 조회 실패")
 async def get_message_by_id(message_id: str) -> MessageData | None:
     """
