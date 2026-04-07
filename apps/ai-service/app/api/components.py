@@ -576,8 +576,8 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("")
     lines.append("// For grouped headers, use headerName prefix instead of column groups")
     lines.append("const columnDefs: ColDef[] = [")
-    lines.append("  { field: 'empNo', headerName: '사번', width: 100, pinned: 'left' },")
-    lines.append("  { field: 'name', headerName: '성명', width: 120, pinned: 'left' },")
+    lines.append("  { field: 'empNo', headerName: '사번', width: 100 },")
+    lines.append("  { field: 'name', headerName: '성명', width: 120 },")
     lines.append("  { field: 'dept', headerName: '[인사] 부서', flex: 1 },")
     lines.append("  { field: 'position', headerName: '[인사] 직급', width: 100 },")
     lines.append("  { field: 'joinDate', headerName: '[인사] 입사일', ...COLUMN_TYPES.dateColumn },")
@@ -586,7 +586,7 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("  { field: 'status', headerName: '상태', width: 100,")
     lines.append("    valueFormatter: (params) => params.value === 'active' ? '재직' : '퇴직' },")
     lines.append("  // Action button — Button 컴포넌트를 cellRenderer로 직접 사용")
-    lines.append("  { headerName: '상세', width: 100, pinned: 'right',")
+    lines.append("  { headerName: '상세', width: 100,")
     lines.append("    cellRenderer: (params: any) => (")
     lines.append("      <Button buttonType=\"ghost\" size=\"sm\" label=\"상세\" showStartIcon={false} showEndIcon={false} onClick={() => { setSelectedItem(params.data); setIsDetailOpen(true); }} />")
     lines.append("    ) },")
@@ -613,9 +613,8 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("- ❌ `cellRenderer: ButtonCellRenderer` — 사용 금지 (디자인 시스템 미적용, 파란색 하드코딩)")
     lines.append("- For simple text formatting, use `valueFormatter`: `valueFormatter: (params) => params.value ? '활성' : '비활성'`")
     lines.append("")
-    lines.append("**3. pinned — ONLY on top-level columns:**")
-    lines.append("- ✅ `{ field: 'name', pinned: 'left' }` — Works on flat column")
-    lines.append("- ❌ Pinned inside column group children — GRID DIES")
+    lines.append("**3. pinned 사용 금지:**")
+    lines.append("- ❌ `pinned: 'left'`, `pinned: 'right'` — 틀 고정 사용하지 마세요")
     lines.append("")
     lines.append("**4. rowData — 반드시 useState 또는 useMemo로 관리:**")
     lines.append("- ❌ `const rowData = [...]` — 리렌더 시 새 배열 생성 → 체크박스 선택 해제, 스크롤 초기화 등 발생")
@@ -630,7 +629,6 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("- `rowSelection=\"multiple\"` — 문자열 형태는 v34에서 **삭제됨**, 런타임 에러 발생")
     lines.append("- `rowSelection=\"single\"` — 문자열 형태는 v34에서 **삭제됨**, 런타임 에러 발생")
     lines.append("- `suppressRowClickSelection` — v34에서 **삭제됨**, prop 자체가 존재하지 않음")
-    lines.append("- `checkboxSelection: true` in columnDefs — v34에서 **삭제됨**, rowSelection.checkboxes로 대체")
     lines.append("- `headerCheckboxSelection: true` in columnDefs — v34에서 **삭제됨**, rowSelection.headerCheckbox로 대체")
     lines.append("")
     lines.append("#### ✅ 유일한 올바른 방법:")
@@ -638,9 +636,10 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("// ⚠️ rowData는 반드시 useState로")
     lines.append("const [rowData] = useState([...initialData]);")
     lines.append("")
-    lines.append("// ✅ columnDefs에 checkboxSelection 컬럼을 넣지 않는다!")
+    lines.append("// ✅ 체크박스를 원하는 컬럼 위치에 배치 가능 (checkboxSelection: true)")
     lines.append("const columnDefs: ColDef[] = [")
     lines.append("  { field: 'name', headerName: '이름' },")
+    lines.append("  { field: 'dept', headerName: '부서', checkboxSelection: true },  // 체크박스가 부서 컬럼에 표시")
     lines.append("  { field: 'age', headerName: '나이' },")
     lines.append("];")
     lines.append("")
@@ -667,7 +666,7 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("/>")
     lines.append("```")
     lines.append("")
-    lines.append("**요약: rowSelection은 반드시 객체 `{{ }}` 형태로 작성. 문자열 금지. suppressRowClickSelection 금지. columnDefs에 checkboxSelection 금지.**")
+    lines.append("**요약: rowSelection은 반드시 객체 `{{ }}` 형태로 작성. 문자열 금지. suppressRowClickSelection 금지. 체크박스 위치는 columnDefs에서 checkboxSelection: true로 원하는 컬럼에 배치 가능. pinned 사용 금지.**")
     lines.append("")
 
     # 이벤트 핸들러
@@ -2059,7 +2058,7 @@ DESCRIPTION_SYSTEM_PROMPT = """\
 [중요] 최대한 상세하게 작성하세요. 요약하거나 축약하지 마세요. 분량이 길어지는 것을 두려워하지 마세요.
 
 ### 반드시 지켜야 할 상세 기준:
-1. 드롭다운/코드 목록: 필터바, 폼, 다이얼로그의 모든 드롭다운/라디오 각각에 대해 코드 목록 테이블을 작성하세요. 드롭다운이 N개면 코드 목록도 N개여야 합니다. 예: 필터바에 기간구분, 전표상태, 전표종류, 결재상태, 결제구분, 한도 6개의 드롭다운이 있으면 6개의 코드 목록 테이블을 모두 작성해야 합니다
+1. 드롭다운/코드 목록: 필터바, 폼, 다이얼로그의 모든 드롭다운/라디오 각각에 대해 코드 목록 테이블을 작성하세요. 드롭다운이 N개면 코드 목록도 N개여야 합니다. 코드의 options 배열에 항목이 38개면 테이블 행도 반드시 38개를 개별 나열하세요. 예: 필터바에 기간구분, 전표상태, 전표종류, 결재상태, 결제구분, 한도 6개의 드롭다운이 있으면 6개의 코드 목록 테이블을 모두 작성해야 합니다
 2. 목록 동작: 모든 그리드마다 "목록 동작" 테이블을 반드시 포함하세요 (페이징, 정렬, 행 클릭 동작, 빈 목록 처리)
 3. API 응답 필드: 해당 그리드의 모든 컬럼에 1:1 대응하는 필드를 빠짐없이 나열하세요. 그리드가 23컬럼이면 응답 필드도 23개 이상이어야 합니다
 4. API 상세 스펙: 엔드포인트 목록의 모든 API(GET, POST, PUT, DELETE)에 대해 각각 요청/응답 상세를 작성하세요. DELETE API도 요청 본문과 서버 처리 규칙을 작성하세요
@@ -2068,11 +2067,11 @@ DESCRIPTION_SYSTEM_PROMPT = """\
 7. Part 2 섹션: 체크박스 선택 후 일괄 처리(삭제, 상신 등)가 있으면 배치/벌크 처리 규칙 섹션을 반드시 작성하세요. 저장/삭제/승인 후 후속 동작(재조회, 초기화 등)이 있으면 이벤트/사이드이펙트 섹션도 반드시 작성하세요
 8. 엔티티 관계: 화면에서 다루는 데이터가 2개 이상의 테이블/엔티티에 걸치면 엔티티 관계 섹션을 작성하세요. 메인 그리드와 상세 그리드가 있으면 반드시 작성 대상입니다
 
-### 절대 하지 말아야 할 것:
-- 그리드 컬럼을 범위로 묶어서 "9~15번 컬럼", "세무/공급가 등"처럼 축약하는 것. 반드시 1행 = 1컬럼으로 개별 나열하세요
-- 드롭다운 코드 목록을 일부만 쓰고 나머지를 생략하는 것
-- API 응답 필드를 "주요 항목"이라며 일부만 나열하는 것
-- API 엔드포인트를 목록만 쓰고 상세 스펙을 생략하는 것
+### 절대 하지 말아야 할 것 (위반 시 문서 불합격):
+- 코드에 존재하는 데이터를 축약, 생략, 요약하는 모든 행위. 디스크립션은 코드의 모든 정보를 빠짐없이 1:1로 반영해야 합니다
+- 코드에 배열/목록이 N개 항목이면 디스크립션 테이블도 정확히 N행이어야 합니다. 일부만 나열하고 나머지를 한 행으로 묶는 것은 금지입니다
+- 범위 표기(N~M), 괄호 축약((생략), (기타 ...), (나머지 동일)), "등", "외 N건", "상동" 등 어떤 형태의 축약 표현도 사용 금지
+- 그리드 컬럼, 드롭다운 옵션, API 필드 등 반복 데이터는 반드시 1행 = 1항목으로 개별 나열하세요
 
 ### 도메인 일관성 규칙:
 - 화면명, 메뉴 위치, 브레드크럼, 다이얼로그/드로어 제목에 사용하는 도메인명은 **반드시 통일**하세요
@@ -2183,6 +2182,7 @@ DESCRIPTION_SYSTEM_PROMPT = """\
 
 > 드롭다운, 라디오 등 선택형 항목의 코드 목록을 정의합니다.
 > 선택형 항목이 없으면 이 섹션을 생략합니다.
+> **[필수] 코드에 정의된 모든 옵션을 한 행씩 빠짐없이 나열하세요. 코드에 N개 옵션이 있으면 아래 테이블도 정확히 N행이어야 합니다. 일부만 쓰고 나머지를 묶거나 생략하면 문서 불합격입니다.**
 
 ### ■ (항목명) 코드 목록
 
