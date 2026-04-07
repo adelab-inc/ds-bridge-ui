@@ -73,15 +73,12 @@ def _build_extraction_messages(
 
     messages = [Message(role="system", content=system_content)]
 
-    # 대화 히스토리 요약
+    # 대화 히스토리: 사용자 요청만 추출 (AI 응답은 최종 코드에 이미 반영됨)
     history_parts = []
     for msg in conversation_history:
         q = msg.get("question", "")
-        t = msg.get("text", "")
         if q:
             history_parts.append(f"[사용자] {q}")
-        if t:
-            history_parts.append(f"[AI] {t}")
 
     history_text = "\n".join(history_parts) if history_parts else "(대화 히스토리 없음)"
 
