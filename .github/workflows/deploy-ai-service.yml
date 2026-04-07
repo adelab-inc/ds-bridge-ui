@@ -1,0 +1,101 @@
+name: Deploy AI Service
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "apps/ai-service/**"
+      - ".github/workflows/deploy-ai-service.yml"
+
+env:
+  PROJECT_ID: ds-runtime-hub
+  REGION: asia-northeast3
+  REPO_NAME: ds-runtime-hub
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── 브랜치별 환경변수 분기 ──
+      - name: Set environment (prod)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          echo "SERVICE_NAME=ai-server" >> $GITHUB_ENV
+          echo "BUCKET_UPLOADS=user-uploads" >> $GITHUB_ENV
+          echo "BUCKET_EXPORTS=exports" >> $GITHUB_ENV
+          echo "MEMORY=1Gi" >> $GITHUB_ENV
+          echo "MIN_INSTANCES=1" >> $GITHUB_ENV
+          echo "MAX_INSTANCES=5" >> $GITHUB_ENV
+
+      - name: Set environment (dev)
+        if: github.ref == 'refs/heads/develop'
+        run: |
+          echo "SERVICE_NAME=ai-server-dev" >> $GITHUB_ENV
+          echo "BUCKET_UPLOADS=dev-user-uploads" >> $GITHUB_ENV
+          echo "BUCKET_EXPORTS=dev-exports" >> $GITHUB_ENV
+          echo "MEMORY=512Mi" >> $GITHUB_ENV
+          echo "MIN_INSTANCES=0" >> $GITHUB_ENV
+          echo "MAX_INSTANCES=2" >> $GITHUB_ENV
+
+      # ── GCP 인증 (Workload Identity Federation) ──
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      # ── Docker 빌드 & 푸시 ──
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      - name: Build Docker image
+        run: |
+          IMAGE=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.SERVICE_NAME }}
+          docker build --platform linux/amd64 \
+            -t ${IMAGE}:${{ github.sha }} \
+            -t ${IMAGE}:latest \
+            apps/ai-service/
+
+      - name: Push Docker image
+        run: |
+          IMAGE=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.SERVICE_NAME }}
+          docker push ${IMAGE}:${{ github.sha }}
+          docker push ${IMAGE}:latest
+
+      # ── Cloud Run 배포 ──
+      - name: Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ env.SERVICE_NAME }}
+          region: ${{ env.REGION }}
+          image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.SERVICE_NAME }}:${{ github.sha }}
+          flags: |
+            --port=8080
+            --cpu=1
+            --memory=${{ env.MEMORY }}
+            --min-instances=${{ env.MIN_INSTANCES }}
+            --max-instances=${{ env.MAX_INSTANCES }}
+            --timeout=300
+            --allow-unauthenticated
+          env_vars: |
+            PYTHONUNBUFFERED=1
+            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+            ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+            GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+            X_API_KEY=${{ secrets.X_API_KEY }}
+            CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}
+            SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+            SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+            STORAGE_BUCKET_UPLOADS=${{ env.BUCKET_UPLOADS }}
+            STORAGE_BUCKET_EXPORTS=${{ env.BUCKET_EXPORTS }}
