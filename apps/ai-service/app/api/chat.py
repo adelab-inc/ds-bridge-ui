@@ -267,6 +267,15 @@ async def build_conversation_history(
         # 첫 메시지 — 코드 없이 요청만
         final_message = current_message
 
+    # 완성도 리마인더: 사용자 메시지 끝에 추가 (recency bias 활용)
+    final_message += (
+        "\n\n⚠️ 완성도 필수: 위 요청에 명시된 그리드 컬럼, 드롭다운 옵션, "
+        "다이얼로그를 전부 구현하세요. 조건부 활성/비활성 컬럼이나 "
+        "단순 텍스트 입력 컬럼도 빠짐없이 columnDefs에 포함하세요. "
+        "코드 출력 전 요청된 컬럼 수와 columnDefs 항목 수가 일치하는지 "
+        "반드시 세어보고, 누락이 있으면 추가한 뒤 출력하세요."
+    )
+
     messages.append(Message(role="user", content=final_message))
 
     return messages
