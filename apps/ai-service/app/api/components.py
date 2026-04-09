@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from app.core.auth import verify_api_key
+from app.services.figma_simplify import simplify_node
 from app.services.supabase_storage import (
     DEFAULT_AG_GRID_SCHEMA_KEY,
     DEFAULT_AG_GRID_TOKENS_KEY,
@@ -99,6 +100,33 @@ AVAILABLE_COMPONENTS_WHITELIST = {
     "SpacingModeProvider",
     "ToastContainer",
     "ToastProvider",
+}
+
+# --------------------------------------------------------------------------- #
+# Component Visual Guide — 사용 가이드 룩업 테이블
+# --------------------------------------------------------------------------- #
+
+# 컴포넌트 + variant → 사용 가이드 (JSON에 없는 도메인 지식)
+_USAGE_GUIDELINES: dict[str, dict[str, str]] = {
+    "button": {
+        "primary": "주요 액션 (저장, 생성) — 화면당 1-2개",
+        "secondary": "보조 액션",
+        "outline": "일반 액션, 취소",
+        "tertiary": "낮은 강조 액션",
+        "destructive": "삭제/해지 등 위험 액션",
+    },
+    "iconButton": {
+        "ghost": "투명 배경 아이콘",
+        "secondary": "연한 배경",
+        "tertiary": "회색 배경",
+    },
+    "alert": {
+        "default": "일반 안내",
+        "info": "정보",
+        "success": "성공",
+        "warning": "주의",
+        "error": "오류",
+    },
 }
 
 
@@ -762,6 +790,156 @@ def format_component_definitions(definitions: dict | None) -> str:
         return ""
 
     lines.append("")
+    return "\n".join(lines) + "\n"
+
+
+def _extract_color_info(classes: str) -> tuple[str, str, str] | None:
+    """
+    Tailwind 클래스 문자열에서 (색상 유형, 토큰명, 설명 접미사) 추출.
+
+    반환:
+      ("배경", "bg-accent", "accent 배경")         ← bg-bg-accent
+      ("배경", "alert-info-bg", "alert-info 배경")  ← bg-alert-info-bg
+      ("테두리", "border-accent", "accent 테두리")  ← outline-border-accent
+    """
+    for cls in classes.split():
+        if cls.startswith("bg-"):
+            token = cls[3:]  # "bg-bg-accent" → "bg-accent"
+            # 토큰명에서 readable 이름 추출
+            name = token
+            if name.startswith("bg-"):
+                name = name[3:]  # "bg-accent" → "accent"
+            elif name.startswith("semantic-"):
+                parts = name.split("-")
+                name = parts[1] if len(parts) > 1 else name  # "semantic-info-subtle" → "info"
+            elif name.endswith("-bg"):
+                name = name[:-3]  # "alert-info-bg" → "alert-info"
+            return ("배경", token, f"{name} 배경")
+        if cls.startswith("outline-border-"):
+            token = cls[8:]  # "outline-border-accent" → "border-accent"
+            name = token[7:] if token.startswith("border-") else token
+            return ("테두리", token, f"{name} 테두리")
+    return None
+
+
+
+
+
+def format_component_visual_guide(
+    definitions: dict | None,
+    design_tokens: dict | None,
+) -> str:
+    """
+    컴포넌트 정의 + 디자인 토큰에서 variant별 시각 설명을 자동 생성.
+    토큰명 → hex는 design-tokens.json, 시각 설명은 토큰명 구조에서 자동 파싱.
+
+    Args:
+        definitions: 컴포넌트 정의 dict (Supabase에서 로드) 또는 None
+        design_tokens: 디자인 토큰 dict (Supabase에서 로드) 또는 None
+
+    Returns:
+        포맷팅된 Component Visual Guide 문자열
+    """
+    if not definitions:
+        return ""
+
+    # 디자인 토큰에서 colors 조회
+    dt = design_tokens or {}
+    dt_inner = dt.get("designTokens", dt)
+    colors: dict[str, str] = dt_inner.get("colors", {})
+
+    lines: list[str] = ["## Component Visual Guide", ""]
+
+    for def_name, d in definitions.items():
+        if "." in def_name:
+            continue  # sub-component 스킵
+        pascal_name = def_name[0].upper() + def_name[1:]
+        if pascal_name not in AVAILABLE_COMPONENTS_WHITELIST:
+            continue
+
+        variants_block = d.get("variants", {})
+        variant_map: dict[str, str] = variants_block.get("variant", {})
+        size_map: dict[str, str] = variants_block.get("size", {})
+        defaults = d.get("defaultVariants", {})
+
+        # variant 또는 size가 없으면 스킵
+        if not variant_map and not size_map:
+            continue
+
+        lines.append(f"### {pascal_name}")
+
+        # --- Variants 섹션 ---
+        if variant_map:
+            # compoundVariants에서 variant-only 색상 보완 (alert 등)
+            compound_by_variant: dict[str, str] = {}
+            for cv in d.get("compoundVariants", []):
+                cv_keys = {k for k in cv if k != "class"}
+                if cv_keys == {"variant"}:
+                    compound_by_variant[cv["variant"]] = cv.get("class", "")
+
+            lines.append("Variants:")
+            guidelines = _USAGE_GUIDELINES.get(def_name, {})
+
+            for vname, vclasses in variant_map.items():
+                # boolean/내부 전용 variant 제외
+                if vname in ("true", "false"):
+                    continue
+
+                # 클래스가 비어있으면 compoundVariants에서 보완
+                effective_classes = vclasses or compound_by_variant.get(vname, "")
+                color_info = _extract_color_info(effective_classes) if effective_classes else None
+
+                # 사용 가이드 조회
+                guideline = guidelines.get(vname, "")
+
+                # 출력 조합
+                parts: list[str] = []
+                if color_info:
+                    _type, token, desc = color_info
+                    hex_val = colors.get(token, "")
+                    if hex_val:
+                        parts.append(f"{desc} ({token} {hex_val})")
+                    else:
+                        parts.append(desc)
+                if guideline:
+                    parts.append(guideline)
+
+                detail = " — ".join(parts)
+                if detail:
+                    lines.append(f"- {vname}: {detail}")
+                else:
+                    lines.append(f"- {vname}")
+
+        # --- Sizes 섹션 ---
+        if size_map:
+            size_parts: list[str] = []
+            for sname, sclasses in size_map.items():
+                # min-w-[NNpx] 파싱
+                px = ""
+                for cls in sclasses.split():
+                    if cls.startswith("min-w-[") and cls.endswith("]"):
+                        px = cls[7:-1]  # "min-w-[56px]" → "56px"
+                        break
+                if px:
+                    size_parts.append(f"{sname} ({px})")
+                else:
+                    size_parts.append(sname)
+            lines.append("Sizes: " + " | ".join(size_parts))
+
+        # --- Default 섹션 ---
+        useful_defaults = {
+            k: v for k, v in defaults.items()
+            if k != "mode" and not isinstance(v, bool)
+        }
+        if useful_defaults:
+            default_str = ", ".join(f'{k}="{v}"' for k, v in useful_defaults.items())
+            lines.append(f"Default: {default_str}")
+
+        lines.append("")  # 컴포넌트 간 빈 줄
+
+    if len(lines) <= 2:
+        return ""
+
     return "\n".join(lines) + "\n"
 
 
@@ -1818,9 +1996,8 @@ def get_system_prompt() -> str:
 
 def format_layouts(layouts: list[dict]) -> str:
     """
-    레이아웃 JSON 리스트를 프롬프트용 문자열로 포맷팅
-    extractedComponents, styles 등 노이즈를 제거하고 layout 트리만 전달
-    componentProps 내 Figma 내부 ID(# 포함 키)를 정리
+    레이아웃 JSON 리스트를 프롬프트용 문자열로 포맷팅.
+    figma_simplify를 사용하여 AI-friendly compact 포맷으로 변환.
 
     Args:
         layouts: Figma에서 추출한 레이아웃 JSON 리스트
@@ -1831,56 +2008,27 @@ def format_layouts(layouts: list[dict]) -> str:
     if not layouts:
         return ""
 
-    def _clean_component_props(props: dict) -> dict:
-        """componentProps에서 Figma 내부 ID를 정리하고 유용한 값만 남김"""
-        cleaned = {}
-        for key, value in props.items():
-            if "#" not in key:
-                # Size, Type, Disabled 등 유용한 props → 그대로 유지
-                cleaned[key] = value
-            else:
-                # Label#307:254 → "Label" 키로 값 보존 (버튼 텍스트 등)
-                base_key = key.split("#")[0].strip()
-                if base_key.lower() in ("label", "title", "text", "placeholder"):
-                    cleaned[base_key] = value
-                # icon, show 관련은 제거 (아이콘 사용 금지 규칙과 일치)
-        return cleaned
-
-    def _clean_node(node: dict) -> dict:
-        """layout 트리 노드에서 불필요한 필드를 제거"""
-        cleaned = {}
-        for key, value in node.items():
-            if key == "componentProps":
-                props = _clean_component_props(value)
-                if props:
-                    cleaned["componentProps"] = props
-            elif key == "children":
-                cleaned["children"] = [_clean_node(child) for child in value]
-            else:
-                cleaned[key] = value
-        return cleaned
-
     section = """
 
 ## Reference Layouts (Figma Extracted)
 
 Below are reference layouts extracted from Figma. Use these as structural guides when generating similar pages.
-- Follow the layout hierarchy (FRAME, INSTANCE, etc.)
-- Respect the layoutMode (VERTICAL, HORIZONTAL)
+- `layout`: "column" = flex-direction: column, "row" = flex-direction: row, "grid" = CSS grid
+- `gap`: spacing between children (in px)
+- `padding`: CSS shorthand (e.g. "0 24" = top/bottom 0, left/right 24)
+- INSTANCE nodes: `component`, `variant`, `label` fields map to design system components
 
 **CRITICAL - Figma State to React Props Mapping:**
 - Figma `Selected=True`, `State=Selected` in Select → React `defaultValue` (NOT `value` or `selected`)
 - Figma placeholder text like "선택하세요", "전체 지역" in Select → React `placeholder` prop
 - Figma `Checked=True` in Checkbox/Radio/ToggleSwitch → React `checked` with `onChange` handler
-- Use similar spacing (itemSpacing, padding)
 - Match the component structure
 
 """
     for i, layout in enumerate(layouts, 1):
         name = layout.get("layout", {}).get("name", f"Layout {i}")
-        # layout 트리만 추출 + 노드 정리
         raw_layout = layout.get("layout", {})
-        clean_layout = _clean_node(raw_layout)
+        clean_layout = simplify_node(raw_layout)
         layout_json = json.dumps(
             {"layout": clean_layout}, ensure_ascii=False, separators=(",", ":")
         )
@@ -1896,6 +2044,7 @@ def generate_system_prompt(
     ag_grid_tokens: dict | None = None,
     layouts: list[dict] | None = None,
     component_definitions: dict | None = None,
+    skip_ui_patterns: bool = False,
 ) -> str:
     """
     주어진 스키마로 시스템 프롬프트 동적 생성
@@ -1907,6 +2056,7 @@ def generate_system_prompt(
         ag_grid_tokens: AG Grid 토큰 dict (Firebase에서 로드, None이면 미포함)
         layouts: Figma 레이아웃 JSON 리스트 (Firebase에서 로드, None이면 미포함)
         component_definitions: 컴포넌트 정의 dict (Firebase에서 로드, None이면 미포함)
+        skip_ui_patterns: True이면 UI_PATTERN_EXAMPLES 제외 (Figma 모드 등 도메인 예시 오염 방지)
 
     Returns:
         생성된 시스템 프롬프트 문자열 (현재 날짜 포함)
@@ -1923,8 +2073,10 @@ def generate_system_prompt(
     if ag_grid_tokens:
         ag_grid_section += format_ag_grid_tokens(ag_grid_tokens)
 
-    # 컴포넌트 정의 섹션
-    component_definitions_section = format_component_definitions(component_definitions)
+    # 컴포넌트 비주얼 가이드 (variant별 시각 설명 + 사용 가이드)
+    component_visual_guide = format_component_visual_guide(
+        component_definitions, design_tokens
+    )
 
     # 레이아웃 섹션
     layouts_section = format_layouts(layouts) if layouts else ""
@@ -1938,9 +2090,9 @@ def generate_system_prompt(
         + available_components
         + component_docs
         + ag_grid_section
-        + component_definitions_section
+        + component_visual_guide
         + layouts_section
-        + UI_PATTERN_EXAMPLES
+        + (UI_PATTERN_EXAMPLES if not skip_ui_patterns else "")
         + PRE_GENERATION_CHECKLIST
         + RESPONSE_FORMAT_INSTRUCTIONS
         + SYSTEM_PROMPT_FOOTER

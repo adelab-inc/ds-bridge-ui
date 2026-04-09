@@ -123,10 +123,71 @@ def build_instance_edit_context(
 """
 
 
+
+def _filter_relevant_layouts(
+    layouts: list[dict],
+    user_message: str,
+    *,
+    max_layouts: int = 2,
+) -> list[dict]:
+    """사용자 메시지와 관련된 레이아웃만 선택.
+
+    레이아웃 이름과 사용자 메시지를 키워드 매칭하여 관련성 높은 것만 반환.
+    중복 이름은 첫 번째만 유지.
+    """
+    if not layouts:
+        return []
+
+    msg_lower = user_message.lower()
+
+    # 중복 이름 제거 (첫 번째만 유지)
+    seen_names: set[str] = set()
+    unique_layouts: list[dict] = []
+    for layout in layouts:
+        name = layout.get("layout", {}).get("name", "")
+        if name not in seen_names:
+            seen_names.add(name)
+            unique_layouts.append(layout)
+
+    # 사용자 메시지가 없으면 중복 제거된 전체 반환 (최대 max_layouts)
+    if not msg_lower.strip():
+        return unique_layouts[:max_layouts]
+
+    # 키워드 매칭: 레이아웃 이름에서 키워드 추출 후 사용자 메시지와 비교
+    scored: list[tuple[int, dict]] = []
+    for layout in unique_layouts:
+        name = layout.get("layout", {}).get("name", "")
+        # "$최종 적용본/신계약리스트" → "신계약리스트"
+        short_name = name.split("/")[-1].strip() if "/" in name else name
+        short_lower = short_name.lower()
+
+        score = 0
+        # 레이아웃 이름이 메시지에 포함
+        if short_lower and short_lower in msg_lower:
+            score += 10
+        # 메시지 단어가 레이아웃 이름에 포함
+        for word in msg_lower.split():
+            if len(word) >= 2 and word in short_lower:
+                score += 5
+
+        scored.append((score, layout))
+
+    # 점수 높은 순 정렬, 매칭된 것만 반환
+    scored.sort(key=lambda x: -x[0])
+    matched = [layout for score, layout in scored if score > 0]
+
+    # 매칭된 것만 반환, 없으면 빈 리스트 (무관한 레이아웃은 포함하지 않음)
+    return matched[:max_layouts]
+
+
 async def resolve_system_prompt(
     schema_key: str | None,
     current_composition: CurrentComposition | None = None,
     selected_instance_id: str | None = None,
+    *,
+    user_message: str = "",
+    skip_layouts: bool = False,
+    skip_ui_patterns: bool = False,
 ) -> str:
     """
     schema_key 여부에 따라 시스템 프롬프트 반환 (데이터 병렬 로드)
@@ -135,6 +196,9 @@ async def resolve_system_prompt(
         schema_key: Firebase Storage 스키마 경로 (None이면 디폴트 경로 사용)
         current_composition: 현재 렌더링된 컴포넌트 구조 (인스턴스 편집용)
         selected_instance_id: 선택된 인스턴스 ID (인스턴스 편집용)
+        user_message: 사용자 메시지 (레이아웃 필터링용)
+        skip_layouts: True이면 레이아웃 섹션 완전 스킵 (Figma 모드 등)
+        skip_ui_patterns: True이면 UI_PATTERN_EXAMPLES 제외 (Figma 모드 등 도메인 예시 오염 방지)
 
     Returns:
         시스템 프롬프트 문자열
@@ -156,7 +220,7 @@ async def resolve_system_prompt(
     ag_grid_schema = results[1] if not isinstance(results[1], Exception) else None
     ag_grid_tokens = results[2] if not isinstance(results[2], Exception) else None
     component_definitions = results[3] if not isinstance(results[3], Exception) else None
-    layouts = results[4] if not isinstance(results[4], Exception) else []
+    all_layouts = results[4] if not isinstance(results[4], Exception) else []
     schema = results[5]
 
     if isinstance(schema, Exception):
@@ -168,11 +232,16 @@ async def resolve_system_prompt(
             status_code=500, detail="Failed to load schema from storage. Please try again."
         )
 
-    if layouts:
-        logger.info("Layouts loaded", extra={"count": len(layouts)})
+    # 레이아웃 필터링: Figma 모드면 스킵, 아니면 관련 레이아웃만 선택
+    layouts: list[dict] = []
+    if not skip_layouts and all_layouts:
+        layouts = _filter_relevant_layouts(all_layouts, user_message)
+        if layouts:
+            logger.info("Layouts loaded", extra={"total": len(all_layouts), "selected": len(layouts)})
 
     base_prompt = generate_system_prompt(
-        schema, design_tokens, ag_grid_schema, ag_grid_tokens, layouts, component_definitions
+        schema, design_tokens, ag_grid_schema, ag_grid_tokens, layouts, component_definitions,
+        skip_ui_patterns=skip_ui_patterns,
     )
 
     # 인스턴스 편집 모드면 컨텍스트 추가
@@ -553,6 +622,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
             schema_key=room.get("schema_key"),
             current_composition=request.current_composition,
             selected_instance_id=request.selected_instance_id,
+            user_message=request.message,
         )
 
         # 이전 대화 내역 포함하여 메시지 빌드
@@ -736,6 +806,9 @@ async def chat_stream(request: ChatRequest) -> JSONResponse:
                 schema_key=room.get("schema_key"),
                 current_composition=request.current_composition,
                 selected_instance_id=request.selected_instance_id,
+                user_message=request.message,
+                skip_layouts=True,
+                skip_ui_patterns=True,
             )
         elif is_vision_mode:
             # Vision 모드에서도 컴포넌트 정의 로드
@@ -755,6 +828,7 @@ async def chat_stream(request: ChatRequest) -> JSONResponse:
                 schema_key=room.get("schema_key"),
                 current_composition=request.current_composition,
                 selected_instance_id=request.selected_instance_id,
+                user_message=request.message,
             )
 
         # 5. 이전 대화 내역 포함하여 메시지 빌드
