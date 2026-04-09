@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator
+from dataclasses import dataclass, field
 from typing import Any
 
 from anthropic import AsyncAnthropic
@@ -13,23 +14,61 @@ from app.schemas.chat import ImageContent, Message
 settings = get_settings()
 
 
+@dataclass
+class ToolCallData:
+    """Provider에서 반환하는 tool call 정보."""
+    id: str
+    name: str
+    arguments: dict
+
+
+@dataclass
+class ToolCallResponse:
+    """chat_with_tools의 반환값.
+
+    tool_calls가 비어있으면 최종 텍스트 응답,
+    tool_calls가 있으면 tool 실행이 필요한 상태.
+    """
+    content: str | None = None
+    tool_calls: list[ToolCallData] = field(default_factory=list)
+    raw_message: Any = None  # Provider native 메시지 (대화 이력 추가용)
+
+
 class AIProvider(ABC):
     @abstractmethod
     async def chat(self, messages: list[Message], **kwargs: Any) -> tuple[Message, dict | None]:
         pass
 
     @abstractmethod
-    async def chat_stream(self, messages: list[Message]) -> AsyncGenerator[str, None]:
+    async def chat_stream(self, messages: list[Message], **kwargs: Any) -> AsyncGenerator[str, None]:
         pass
 
     async def chat_vision_stream(
         self,
         messages: list[Message],
         images: list[ImageContent],
+        **kwargs: Any,
     ) -> AsyncGenerator[str, None]:
         """Vision API 스트리밍 (기본: 미지원)"""
         raise NotImplementedError("Vision not supported by this provider")
         yield  # Generator 타입 힌트용
+
+    async def chat_with_tools(
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict] | list | None = None,
+    ) -> ToolCallResponse:
+        """Tool calling 지원 non-streaming 호출 (기본: 미지원)."""
+        raise NotImplementedError("Tool calling not supported by this provider")
+
+    async def chat_with_tools_stream(
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict] | list | None = None,
+    ) -> AsyncGenerator[str, None]:
+        """최종 응답 스트리밍 (tool calling 루프 마지막 턴)."""
+        raise NotImplementedError("Tool calling stream not supported by this provider")
+        yield
 
 
 class OpenAIProvider(AIProvider):
@@ -57,7 +96,7 @@ class OpenAIProvider(AIProvider):
             }
         return Message(role="assistant", content=content), usage
 
-    async def chat_stream(self, messages: list[Message]) -> AsyncGenerator[str, None]:
+    async def chat_stream(self, messages: list[Message], **kwargs: Any) -> AsyncGenerator[str, None]:
         stream = await self.client.chat.completions.create(
             model=self.model,
             messages=[{"role": m.role, "content": m.content} for m in messages],
@@ -73,6 +112,7 @@ class OpenAIProvider(AIProvider):
         self,
         messages: list[Message],
         images: list[ImageContent],
+        **kwargs: Any,
     ) -> AsyncGenerator[str, None]:
         """OpenAI Vision API 스트리밍"""
         chat_messages: list[dict[str, Any]] = []
@@ -116,6 +156,66 @@ class OpenAIProvider(AIProvider):
             if chunk.choices and chunk.choices[0].delta.content:
                 yield chunk.choices[0].delta.content
 
+    async def chat_with_tools(
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict] | list | None = None,
+    ) -> ToolCallResponse:
+        """OpenAI tool calling (non-streaming)."""
+        import json as _json
+
+        kwargs: dict[str, Any] = {
+            "model": self.model,
+            "messages": messages,
+            "temperature": 0.5,
+            "max_tokens": 8192,
+        }
+        if tools:
+            kwargs["tools"] = tools
+
+        response = await self.client.chat.completions.create(**kwargs)
+        choice = response.choices[0] if response.choices else None
+
+        if not choice:
+            return ToolCallResponse()
+
+        msg = choice.message
+        tool_calls: list[ToolCallData] = []
+
+        if msg.tool_calls:
+            for tc in msg.tool_calls:
+                tool_calls.append(ToolCallData(
+                    id=tc.id,
+                    name=tc.function.name,
+                    arguments=_json.loads(tc.function.arguments),
+                ))
+
+        return ToolCallResponse(
+            content=msg.content,
+            tool_calls=tool_calls,
+            raw_message=msg,
+        )
+
+    async def chat_with_tools_stream(
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict] | list | None = None,
+    ) -> AsyncGenerator[str, None]:
+        """OpenAI 최종 응답 스트리밍."""
+        kwargs: dict[str, Any] = {
+            "model": self.model,
+            "messages": messages,
+            "temperature": 0.5,
+            "max_tokens": 8192,
+            "stream": True,
+        }
+        # 최종 턴에서는 tools 제거하여 tool call 방지
+        stream = await self.client.chat.completions.create(**kwargs)
+
+        async for chunk in stream:
+            if chunk.choices and chunk.choices[0].delta.content:
+                yield chunk.choices[0].delta.content
+
 
 class AnthropicProvider(AIProvider):
     def __init__(self):
@@ -146,7 +246,7 @@ class AnthropicProvider(AIProvider):
         }
         return Message(role="assistant", content=content), usage
 
-    async def chat_stream(self, messages: list[Message]) -> AsyncGenerator[str, None]:
+    async def chat_stream(self, messages: list[Message], **kwargs: Any) -> AsyncGenerator[str, None]:
         system_message = ""
         chat_messages: list[dict[str, Any]] = []
 
@@ -170,6 +270,7 @@ class AnthropicProvider(AIProvider):
         self,
         messages: list[Message],
         images: list[ImageContent],
+        **kwargs: Any,
     ) -> AsyncGenerator[str, None]:
         """Claude Vision API 스트리밍"""
         system_message = ""
@@ -218,6 +319,81 @@ class AnthropicProvider(AIProvider):
             messages=chat_messages,
             temperature=0.5,
         ) as stream:
+            async for text in stream.text_stream:
+                yield text
+
+    async def chat_with_tools(
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict] | list | None = None,
+    ) -> ToolCallResponse:
+        """Anthropic tool use (non-streaming)."""
+        # system 메시지 분리
+        system_message = ""
+        chat_messages: list[dict[str, Any]] = []
+        for m in messages:
+            if m.get("role") == "system":
+                system_message = m.get("content", "")
+            else:
+                chat_messages.append(m)
+
+        kwargs: dict[str, Any] = {
+            "model": self.model,
+            "max_tokens": 8192,
+            "messages": chat_messages,
+            "temperature": 0.5,
+        }
+        if system_message:
+            kwargs["system"] = system_message
+        if tools:
+            kwargs["tools"] = tools
+
+        response = await self.client.messages.create(**kwargs)
+
+        tool_calls: list[ToolCallData] = []
+        text_content = ""
+
+        for block in response.content:
+            if block.type == "text":
+                text_content += block.text
+            elif block.type == "tool_use":
+                tool_calls.append(ToolCallData(
+                    id=block.id,
+                    name=block.name,
+                    arguments=block.input,
+                ))
+
+        return ToolCallResponse(
+            content=text_content or None,
+            tool_calls=tool_calls,
+            raw_message=response,
+        )
+
+    async def chat_with_tools_stream(
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict] | list | None = None,
+    ) -> AsyncGenerator[str, None]:
+        """Anthropic 최종 응답 스트리밍."""
+        system_message = ""
+        chat_messages: list[dict[str, Any]] = []
+        for m in messages:
+            if m.get("role") == "system":
+                system_message = m.get("content", "")
+            else:
+                chat_messages.append(m)
+
+        kwargs: dict[str, Any] = {
+            "model": self.model,
+            "max_tokens": 8192,
+            "messages": chat_messages,
+            "temperature": 0.5,
+        }
+        if system_message:
+            kwargs["system"] = system_message
+        # 최종 턴에서는 tools 제거하여 tool call 방지
+
+        async with self.client.messages.stream(**kwargs) as stream:
             async for text in stream.text_stream:
                 yield text
 
@@ -285,7 +461,7 @@ class GeminiProvider(AIProvider):
             }
         return Message(role="assistant", content=content), usage
 
-    async def chat_stream(self, messages: list[Message]) -> AsyncGenerator[str, None]:
+    async def chat_stream(self, messages: list[Message], **kwargs: Any) -> AsyncGenerator[str, None]:
         system_instruction = None
         contents: list[types.Content] = []
 
@@ -296,9 +472,12 @@ class GeminiProvider(AIProvider):
                 role = "user" if m.role == "user" else "model"
                 contents.append(types.Content(role=role, parts=[types.Part(text=m.content)]))
 
+        # disable_thinking=True 시 thinking 비활성화 (Figma 모드 등 속도 우선)
+        thinking_config = None if kwargs.get("disable_thinking") else self._thinking_config
+
         config = types.GenerateContentConfig(
             system_instruction=system_instruction,
-            thinking_config=self._thinking_config,
+            thinking_config=thinking_config,
             temperature=0.5,
         )
 
@@ -318,6 +497,7 @@ class GeminiProvider(AIProvider):
         self,
         messages: list[Message],
         images: list[ImageContent],
+        **kwargs: Any,
     ) -> AsyncGenerator[str, None]:
         """Gemini Vision API 스트리밍"""
         system_instruction = None
@@ -347,9 +527,12 @@ class GeminiProvider(AIProvider):
                 role = "user" if m.role == "user" else "model"
                 contents.append(types.Content(role=role, parts=[types.Part(text=m.content)]))
 
+        # disable_thinking=True 시 thinking 비활성화 (Figma 모드 등 속도 우선)
+        thinking_config = None if kwargs.get("disable_thinking") else self._thinking_config
+
         config = types.GenerateContentConfig(
             system_instruction=system_instruction,
-            thinking_config=self._thinking_config,
+            thinking_config=thinking_config,
             temperature=0.5,
         )
 
@@ -360,6 +543,101 @@ class GeminiProvider(AIProvider):
         )
         async for chunk in stream:
             # thinking 파트 제외하고 응답 텍스트만 스트리밍
+            if chunk.candidates and chunk.candidates[0].content:
+                for part in chunk.candidates[0].content.parts:
+                    if part.text and not getattr(part, "thought", False):
+                        yield part.text
+
+    async def chat_with_tools(
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict] | list | None = None,
+    ) -> ToolCallResponse:
+        """Gemini tool calling (non-streaming)."""
+        system_instruction = None
+        contents: list[types.Content] = []
+
+        for m in messages:
+            if isinstance(m, dict):
+                if m.get("role") == "system":
+                    system_instruction = m.get("content", "")
+                    continue
+                contents.append(m)  # type: ignore[arg-type] — dict 또는 types.Content
+            else:
+                contents.append(m)
+
+        # tool calling 시 thinking 비활성화 (thought_signature 호환 문제 방지)
+        config = types.GenerateContentConfig(
+            system_instruction=system_instruction,
+            temperature=0.5,
+            tools=tools if tools else None,
+        )
+
+        response = await self.client.aio.models.generate_content(
+            model=self.model,
+            contents=contents,
+            config=config,
+        )
+
+        parts = (
+            response.candidates[0].content.parts
+            if response.candidates and response.candidates[0].content
+            else []
+        )
+
+        tool_calls: list[ToolCallData] = []
+        text_content = ""
+
+        for part in parts:
+            if getattr(part, "thought", False):
+                continue
+            if part.function_call:
+                fc = part.function_call
+                tool_calls.append(ToolCallData(
+                    id=fc.name,  # Gemini는 별도 ID 없음, name 사용
+                    name=fc.name,
+                    arguments=dict(fc.args) if fc.args else {},
+                ))
+            elif part.text:
+                text_content += part.text
+
+        return ToolCallResponse(
+            content=text_content or None,
+            tool_calls=tool_calls,
+            raw_message=response,
+        )
+
+    async def chat_with_tools_stream(
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict] | list | None = None,
+    ) -> AsyncGenerator[str, None]:
+        """Gemini 최종 응답 스트리밍."""
+        system_instruction = None
+        contents: list[types.Content] = []
+
+        for m in messages:
+            if isinstance(m, dict):
+                if m.get("role") == "system":
+                    system_instruction = m.get("content", "")
+                    continue
+                contents.append(m)  # type: ignore[arg-type]
+            else:
+                contents.append(m)
+
+        config = types.GenerateContentConfig(
+            system_instruction=system_instruction,
+            thinking_config=self._thinking_config,
+            temperature=0.5,
+            # 최종 턴에서는 tools 제거하여 tool call 방지
+        )
+
+        stream = await self.client.aio.models.generate_content_stream(
+            model=self.model,
+            contents=contents,
+            config=config,
+        )
+        async for chunk in stream:
             if chunk.candidates and chunk.candidates[0].content:
                 for part in chunk.candidates[0].content.parts:
                     if part.text and not getattr(part, "thought", False):

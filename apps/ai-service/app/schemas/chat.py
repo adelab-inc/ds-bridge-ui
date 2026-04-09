@@ -181,6 +181,11 @@ class ChatRequest(BaseModel):
         description="특정 메시지의 코드를 기준으로 수정 (해당 메시지까지의 컨텍스트 + 코드 기반 수정)",
         json_schema_extra={"example": "886e7406-55f7-4582-9f4b-7a56ec4562d8"},
     )
+    figma_url: str | None = Field(
+        default=None,
+        description="Figma 디자인 URL — 지정 시 AI가 Figma API를 통해 디자인을 분석하여 코드 생성",
+        json_schema_extra={"example": "https://www.figma.com/design/ABC123/MyDesign?node-id=1-2"},
+    )
 
     model_config = {
         "json_schema_extra": {

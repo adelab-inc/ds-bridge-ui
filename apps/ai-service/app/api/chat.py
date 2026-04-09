@@ -24,6 +24,8 @@ from app.schemas.chat import (
 )
 from app.services.broadcast import broadcast_event, track_broadcast_task
 from app.services.ai_provider import AIProvider, get_ai_provider
+from app.services.figma_api import extract_figma_url
+from app.services.tool_calling_loop import run_figma_tool_calling_loop
 from app.services.supabase_storage import (
     DEFAULT_AG_GRID_SCHEMA_KEY,
     DEFAULT_SCHEMA_KEY,
@@ -127,7 +129,7 @@ async def resolve_system_prompt(
     selected_instance_id: str | None = None,
 ) -> str:
     """
-    schema_key 여부에 따라 시스템 프롬프트 반환
+    schema_key 여부에 따라 시스템 프롬프트 반환 (데이터 병렬 로드)
 
     Args:
         schema_key: Firebase Storage 스키마 경로 (None이면 디폴트 경로 사용)
@@ -137,51 +139,41 @@ async def resolve_system_prompt(
     Returns:
         시스템 프롬프트 문자열
     """
-    # 디자인 토큰 로드 (실패 시 기본값 사용)
-    design_tokens = await fetch_design_tokens_from_storage()
-
-    # AG Grid 스키마 및 토큰 로드 (실패 시 None, 프롬프트에서 생략됨)
-    ag_grid_schema = None
-    ag_grid_tokens = None
-    try:
-        ag_grid_schema = await fetch_schema_from_storage(DEFAULT_AG_GRID_SCHEMA_KEY)
-        ag_grid_tokens = await fetch_ag_grid_tokens_from_storage()
-    except Exception as e:
-        logger.warning("AG Grid data not loaded", extra={"error": str(e)})
-
-    # 컴포넌트 정의 로드 (실패 시 None, 프롬프트에서 생략됨)
-    component_definitions = None
-    try:
-        component_definitions = await fetch_component_definitions_from_storage()
-    except Exception as e:
-        logger.warning("Component definitions not loaded", extra={"error": str(e)})
-
-    # 레이아웃 로드 (실패 시 빈 리스트, 프롬프트에서 생략됨)
-    layouts: list[dict] = []
-    try:
-        layouts = await fetch_all_layouts_from_storage()
-        if layouts:
-            logger.info("Layouts loaded", extra={"count": len(layouts)})
-    except Exception as e:
-        logger.warning("Layouts not loaded", extra={"error": str(e)})
-
-    # 스키마 로드 (schema_key 없으면 Firebase 디폴트 경로 사용)
     effective_key = schema_key or DEFAULT_SCHEMA_KEY
-    try:
-        schema = await fetch_schema_from_storage(effective_key)
-        base_prompt = generate_system_prompt(
-            schema, design_tokens, ag_grid_schema, ag_grid_tokens, layouts, component_definitions
-        )
-    except FileNotFoundError:
-        logger.warning("Schema not found in storage", extra={"schema_key": effective_key})
-        raise HTTPException(
-            status_code=404, detail=f"Schema not found: {effective_key}"
-        )
-    except Exception as e:
-        logger.error("Failed to fetch schema", extra={"schema_key": effective_key, "error": str(e)})
+
+    # 모든 Supabase 데이터를 병렬 로드
+    results = await asyncio.gather(
+        fetch_design_tokens_from_storage(),
+        fetch_schema_from_storage(DEFAULT_AG_GRID_SCHEMA_KEY),
+        fetch_ag_grid_tokens_from_storage(),
+        fetch_component_definitions_from_storage(),
+        fetch_all_layouts_from_storage(),
+        fetch_schema_from_storage(effective_key),
+        return_exceptions=True,
+    )
+
+    design_tokens = results[0] if not isinstance(results[0], Exception) else None
+    ag_grid_schema = results[1] if not isinstance(results[1], Exception) else None
+    ag_grid_tokens = results[2] if not isinstance(results[2], Exception) else None
+    component_definitions = results[3] if not isinstance(results[3], Exception) else None
+    layouts = results[4] if not isinstance(results[4], Exception) else []
+    schema = results[5]
+
+    if isinstance(schema, Exception):
+        if isinstance(schema, FileNotFoundError):
+            logger.warning("Schema not found in storage", extra={"schema_key": effective_key})
+            raise HTTPException(status_code=404, detail=f"Schema not found: {effective_key}")
+        logger.error("Failed to fetch schema", extra={"schema_key": effective_key, "error": str(schema)})
         raise HTTPException(
             status_code=500, detail="Failed to load schema from storage. Please try again."
-        ) from e
+        )
+
+    if layouts:
+        logger.info("Layouts loaded", extra={"count": len(layouts)})
+
+    base_prompt = generate_system_prompt(
+        schema, design_tokens, ag_grid_schema, ag_grid_tokens, layouts, component_definitions
+    )
 
     # 인스턴스 편집 모드면 컨텍스트 추가
     if current_composition and selected_instance_id:
@@ -681,7 +673,10 @@ async def chat_stream(request: ChatRequest) -> JSONResponse:
     채팅방의 schema_key가 설정되어 있으면 Storage에서 스키마를 로드합니다.
     """
     try:
-        # Vision 모드 여부 판단
+        # Figma / Vision 모드 여부 판단
+        # 명시적 figma_url 필드 또는 메시지 내 Figma URL 자동 감지
+        figma_url = request.figma_url or extract_figma_url(request.message)
+        is_figma_mode = bool(figma_url)
         is_vision_mode = bool(request.image_urls and len(request.image_urls) > 0)
 
         # 이미지 URL에서 base64로 변환 (Vision 모드인 경우)
@@ -718,7 +713,9 @@ async def chat_stream(request: ChatRequest) -> JSONResponse:
 
         # 2. GENERATING 상태로 메시지 먼저 생성
         question_text = request.message
-        if is_vision_mode:
+        if is_figma_mode:
+            question_text = f"[Figma] {request.message}"
+        elif is_vision_mode:
             question_text = f"[이미지 {len(images)}개] {request.message}"
 
         message_data = await create_chat_message(
@@ -733,8 +730,14 @@ async def chat_stream(request: ChatRequest) -> JSONResponse:
         # 3. AI Provider 초기화
         provider = get_ai_provider()
 
-        # 4. 시스템 프롬프트 생성 (Vision/일반 모드에 따라 분기)
-        if is_vision_mode:
+        # 4. 시스템 프롬프트 생성 (Figma/Vision/일반 모드에 따라 분기)
+        if is_figma_mode:
+            system_prompt = await resolve_system_prompt(
+                schema_key=room.get("schema_key"),
+                current_composition=request.current_composition,
+                selected_instance_id=request.selected_instance_id,
+            )
+        elif is_vision_mode:
             # Vision 모드에서도 컴포넌트 정의 로드
             vision_component_definitions = None
             try:
@@ -772,6 +775,9 @@ async def chat_stream(request: ChatRequest) -> JSONResponse:
                 messages=messages,
                 images=images,
                 is_vision_mode=is_vision_mode,
+                figma_url=figma_url if is_figma_mode else None,
+                system_prompt=system_prompt if is_figma_mode else None,
+                user_message=request.message if is_figma_mode else None,
             ),
             name=f"broadcast:{request.room_id}:{message_id}",
         )
@@ -848,6 +854,9 @@ async def _run_broadcast_generation(
     messages: list,
     images: list[ImageContent],
     is_vision_mode: bool,
+    figma_url: str | None = None,
+    system_prompt: str | None = None,
+    user_message: str | None = None,
 ) -> None:
     """백그라운드에서 AI 응답을 생성하고 broadcast 이벤트를 발행한다."""
     parser = StreamingParser()
@@ -859,8 +868,16 @@ async def _run_broadcast_generation(
         await broadcast_event(room_id, "start", {"message_id": message_id, "user_id": user_id})
 
         async with asyncio.timeout(300):  # 5분 타임아웃
-            # Vision/일반 모드에 따라 스트리밍 호출
-            if is_vision_mode:
+            # Figma / Vision / 일반 모드에 따라 스트리밍 호출
+            if figma_url and system_prompt and user_message:
+                stream = run_figma_tool_calling_loop(
+                    room_id=room_id,
+                    provider=provider,
+                    system_prompt=system_prompt,
+                    user_message=user_message,
+                    figma_url=figma_url,
+                )
+            elif is_vision_mode:
                 # Vision 미지원 프로바이더인지 확인 후 폴백
                 _supports_vision = type(provider).chat_vision_stream is not AIProvider.chat_vision_stream
                 if not _supports_vision:

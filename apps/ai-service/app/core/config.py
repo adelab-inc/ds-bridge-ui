@@ -43,6 +43,10 @@ class Settings(BaseSettings):
     storage_bucket_uploads: str = "user-uploads"
     storage_bucket_exports: str = "exports"
 
+    # Figma
+    figma_personal_access_token: str = ""
+    figma_design_system_url: str = ""  # 기본 디자인시스템 Figma URL (키워드 감지 시 폴백)
+
     # Chat Settings
     max_history_count: int = 10  # 대화 컨텍스트에 포함할 최대 메시지 수
     max_image_size_mb: int = 10  # 이미지 업로드 최대 크기 (MB)
