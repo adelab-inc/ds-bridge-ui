@@ -212,7 +212,7 @@ async def fetch_node_detail(file_key: str, node_id: str, *, max_depth: int = 8, 
     """특정 노드의 compact 레이아웃 JSON을 가져온다.
 
     Returns:
-        compact JSON (ID 제거, characters 보존)
+        compact JSON (ID 제거, characters 보존, componentId→이름 매핑)
     """
     data = await _figma_get(
         f"/files/{file_key}/nodes",
@@ -220,9 +220,36 @@ async def fetch_node_detail(file_key: str, node_id: str, *, max_depth: int = 8, 
         max_retries=max_retries,
     )
     nodes = data.get("nodes", {})
-    document = nodes.get(node_id, {}).get("document", {})
+    node_data = nodes.get(node_id, {})
+    document = node_data.get("document", {})
 
-    compact = simplify_node(document, max_depth=max_depth)
+    # componentId → 이름 매핑 (같은 API 응답에서 추출)
+    component_map: dict[str, str] = {}
+    raw_components = node_data.get("components", {})
+    for comp_id, comp_meta in raw_components.items():
+        name = comp_meta.get("name", "")
+        if name:
+            component_map[comp_id] = name
+
+    # styleId → 디자인 토큰 이름 매핑
+    style_map: dict[str, str] = {}
+    raw_styles = node_data.get("styles", {})
+    for style_id, style_meta in raw_styles.items():
+        name = style_meta.get("name", "")
+        if name:
+            style_map[style_id] = name
+
+    if component_map:
+        logger.info(f"Component map: {len(component_map)} entries")
+    if style_map:
+        logger.info(f"Style map: {len(style_map)} entries")
+
+    compact = simplify_node(
+        document,
+        max_depth=max_depth,
+        component_map=component_map,
+        style_map=style_map,
+    )
     return compact or {}
 
 

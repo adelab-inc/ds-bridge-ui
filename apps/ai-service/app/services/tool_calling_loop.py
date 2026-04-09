@@ -180,11 +180,26 @@ async def run_figma_tool_calling_loop(
         "3. 시스템 프롬프트의 layouts 섹션은 레이아웃 '패턴 참고용'일 뿐, Figma 디자인의 실제 내용과 무관합니다. "
         "layouts 섹션의 페이지명이나 데이터를 Figma 결과물에 사용하지 마세요.\n"
         "4. Figma 노드의 name, characters(텍스트) 필드를 정확히 반영하세요.\n"
-        "5. 레이아웃 필드 매핑:\n"
-        '   - layout: "column" = flex-direction: column, "row" = flex-direction: row\n'
-        "   - gap: children 사이 간격 (px)\n"
-        '   - padding: CSS shorthand (예: "0 24" = 상하 0, 좌우 24)\n'
-        "   - INSTANCE의 component, variant, label 필드로 디자인 시스템 컴포넌트 매핑\n"
+        "\n### 레이아웃 필드 매핑\n"
+        '- layout: "column" = flex-direction: column, "row" = flex-direction: row\n'
+        "- gap: children 사이 간격 (px)\n"
+        '- padding: CSS shorthand (예: "0 24" = 상하 0, 좌우 24)\n'
+        "- w/h: 노드의 너비/높이 (px)\n"
+        "\n### 시각 속성 매핑 (매우 중요)\n"
+        "- fill: 배경색/텍스트색. 디자인 토큰명(예: 'primary/500')이면 해당 토큰 사용, hex 폴백이면 가장 가까운 디자인 시스템 색상으로 매핑\n"
+        "- stroke + borderWidth: 테두리 색상 및 두께\n"
+        "- borderRadius: 모서리 둥글기 (px)\n"
+        "- opacity: 투명도 (0~1)\n"
+        "- boxShadow: 그림자 효과\n"
+        "- fill 값이 '/' 포함 시 디자인 토큰 경로 (예: 'neutral/100' → 시스템의 해당 토큰 사용)\n"
+        "- fill 값이 '#' 시작 시 hex 폴백 → 디자인 시스템에서 가장 가까운 색상 토큰으로 매핑\n"
+        "\n### 컴포넌트 매핑 (매우 중요)\n"
+        "- type=INSTANCE인 노드의 component 필드가 실제 디자인 시스템 컴포넌트명입니다.\n"
+        "- component 필드의 값을 시스템 프롬프트의 컴포넌트 목록에서 찾아 정확히 매핑하세요.\n"
+        '  예: component="Button" → <Button>, component="TextField" → <TextField>\n'
+        "- variant 필드는 컴포넌트의 props로 매핑하세요.\n"
+        '  예: variant={"size":"sm","type":"tertiary"} → <Button size="sm" variant="tertiary">\n'
+        "- fill 색상 토큰으로 컴포넌트의 color/variant prop을 결정하세요.\n"
     )
 
     full_system_prompt = system_prompt + figma_context
