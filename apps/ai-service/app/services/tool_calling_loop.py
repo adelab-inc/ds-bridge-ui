@@ -200,6 +200,11 @@ async def run_figma_tool_calling_loop(
         "- variant 필드는 컴포넌트의 props로 매핑하세요.\n"
         '  예: variant={"size":"sm","type":"tertiary"} → <Button size="sm" variant="tertiary">\n'
         "- fill 색상 토큰으로 컴포넌트의 color/variant prop을 결정하세요.\n"
+        "\n### 절대 금지 규칙\n"
+        "- Figma 데이터에 없는 UI 요소를 임의로 추가하지 마세요. (예: 체크박스 컬럼이 Figma에 없으면 DataGrid에 checkbox 넣지 마세요)\n"
+        "- Figma 노드 트리에 존재하는 컴포넌트/요소만 코드에 포함하세요.\n"
+        "- 뱃지/칩 색상은 반드시 Figma의 fill 값을 따르세요. 임의로 색상을 지정하지 마세요.\n"
+        "- 필드 타입(Select vs TextField vs SearchField 등)은 Figma의 component 필드를 정확히 따르세요.\n"
     )
 
     full_system_prompt = system_prompt + figma_context
