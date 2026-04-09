@@ -26,15 +26,18 @@ from app.schemas.chat import ImageContent, Message
 logger = logging.getLogger(__name__)
 
 # Figma prefetch 전체 타임아웃 (초) — 이 시간 안에 못 가져오면 가진 데이터로 진행
-_PREFETCH_TIMEOUT = 15
+_PREFETCH_TIMEOUT = 60
 
 
-async def _fetch_with_timeout(coro, label: str, timeout: float = 10.0):
+async def _fetch_with_timeout(coro, label: str, timeout: float = 55.0):
     """개별 Figma 호출에 타임아웃 적용. 실패 시 None 반환."""
     try:
         return await asyncio.wait_for(coro, timeout=timeout)
+    except TimeoutError:
+        logger.warning(f"Figma {label} timeout after {timeout}s")
+        return None
     except Exception as e:
-        logger.warning(f"Figma {label} failed/timeout", extra={"error": str(e)})
+        logger.warning(f"Figma {label} error: {type(e).__name__}: {e}")
         return None
 
 
@@ -72,41 +75,75 @@ async def run_figma_tool_calling_loop(
 
     try:
         async with asyncio.timeout(_PREFETCH_TIMEOUT):
-            # Phase 1: 페이지 구조
-            page_result = await _fetch_with_timeout(
-                fetch_page_structure(file_key, node_id),
-                "page_structure",
-            )
-            page_structure = page_result if page_result else {"frames": []}
-            prefetch_info = json.dumps(page_structure, ensure_ascii=False, separators=(",", ":"))
-
-            # Phase 2: 노드 상세 + 스크린샷 (병렬, 개별 타임아웃)
-            frames = page_structure.get("frames", [])
-            target_node_id = node_id
-            if not target_node_id and frames:
-                target_node_id = frames[0].get("node_id")
-
-            if target_node_id:
-                # 노드 상세 (필수) + 스크린샷 (선택) 병렬
-                detail_result, image_result = await asyncio.gather(
+            if node_id:
+                # Case A: node_id 있음 → 3개 모두 병렬
+                page_result, detail_result, image_result = await asyncio.gather(
                     _fetch_with_timeout(
-                        fetch_node_detail(file_key, target_node_id),
+                        fetch_page_structure(file_key, node_id, max_retries=1),
+                        "page_structure",
+                    ),
+                    _fetch_with_timeout(
+                        fetch_node_detail(file_key, node_id, max_retries=1),
                         "node_detail",
                     ),
                     _fetch_with_timeout(
-                        export_node_image(file_key, target_node_id, scale=1.0),
+                        export_node_image(file_key, node_id, scale=0.5, image_format="jpg", max_retries=1),
                         "screenshot",
                     ),
                     return_exceptions=True,
                 )
 
+                # page_structure 결과 처리
+                if page_result and not isinstance(page_result, Exception):
+                    prefetch_info = json.dumps(
+                        page_result, ensure_ascii=False, separators=(",", ":"),
+                    )
+
+                # node_detail 결과 처리
                 if detail_result and not isinstance(detail_result, Exception):
-                    node_details[target_node_id] = json.dumps(
+                    node_details[node_id] = json.dumps(
                         detail_result, ensure_ascii=False, separators=(",", ":"),
                     )
 
+                # screenshot 결과 처리
                 if image_result and not isinstance(image_result, Exception):
                     screenshot_base64, screenshot_media_type = image_result
+
+            else:
+                # Case B: node_id 없음 → page_structure 먼저, 나머지 병렬
+                page_result = await _fetch_with_timeout(
+                    fetch_page_structure(file_key, node_id, max_retries=1),
+                    "page_structure",
+                )
+                page_structure = page_result if page_result else {"frames": []}
+                prefetch_info = json.dumps(
+                    page_structure, ensure_ascii=False, separators=(",", ":"),
+                )
+
+                # page_structure에서 node_id 추출
+                frames = page_structure.get("frames", [])
+                target_node_id = frames[0].get("node_id") if frames else None
+
+                if target_node_id:
+                    detail_result, image_result = await asyncio.gather(
+                        _fetch_with_timeout(
+                            fetch_node_detail(file_key, target_node_id, max_retries=1),
+                            "node_detail",
+                        ),
+                        _fetch_with_timeout(
+                            export_node_image(file_key, target_node_id, scale=0.5, image_format="jpg", max_retries=1),
+                            "screenshot",
+                        ),
+                        return_exceptions=True,
+                    )
+
+                    if detail_result and not isinstance(detail_result, Exception):
+                        node_details[target_node_id] = json.dumps(
+                            detail_result, ensure_ascii=False, separators=(",", ":"),
+                        )
+
+                    if image_result and not isinstance(image_result, Exception):
+                        screenshot_base64, screenshot_media_type = image_result
 
     except TimeoutError:
         logger.warning("Figma prefetch global timeout", extra={
@@ -135,9 +172,19 @@ async def run_figma_tool_calling_loop(
         figma_context += f"\n- 노드({nid}) 레이아웃:\n```json\n{detail_json}\n```\n"
 
     figma_context += (
-        "\n위 Figma 디자인 데이터"
+        "\n## 중요: Figma 기반 코드 생성 규칙\n"
+        "1. 위 Figma 디자인 데이터"
         + ("와 스크린샷" if screenshot_base64 else "")
-        + "를 분석하여 React 코드를 생성하세요."
+        + "를 분석하여 React 코드를 생성하세요.\n"
+        "2. 페이지 이름, 컴포넌트 구성, 텍스트 내용은 반드시 Figma 데이터에서 추출하세요.\n"
+        "3. 시스템 프롬프트의 layouts 섹션은 레이아웃 '패턴 참고용'일 뿐, Figma 디자인의 실제 내용과 무관합니다. "
+        "layouts 섹션의 페이지명이나 데이터를 Figma 결과물에 사용하지 마세요.\n"
+        "4. Figma 노드의 name, characters(텍스트) 필드를 정확히 반영하세요.\n"
+        "5. 레이아웃 필드 매핑:\n"
+        '   - layout: "column" = flex-direction: column, "row" = flex-direction: row\n'
+        "   - gap: children 사이 간격 (px)\n"
+        '   - padding: CSS shorthand (예: "0 24" = 상하 0, 좌우 24)\n'
+        "   - INSTANCE의 component, variant, label 필드로 디자인 시스템 컴포넌트 매핑\n"
     )
 
     full_system_prompt = system_prompt + figma_context
