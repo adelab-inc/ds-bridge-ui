@@ -1651,40 +1651,26 @@ import { GridLayout, FormGrid, FormGridCell, TitleSection, Field, Select, Button
 # PRE-GENERATION CHECKLIST (최종 경고)
 # ============================================================================
 
-PRE_GENERATION_CHECKLIST = """
+FINAL_REMINDER = """
 
----
+## Final Verification
+코드 완성 후 반드시 확인:
 
-## ⚠️ FINAL CHECKLIST (코드 생성 전 확인)
+### CRASH 방지 (필수):
+1. import한 컴포넌트가 모두 JSX에서 사용되는가? (미사용 import = CRASH)
+2. JSX에서 사용한 컴포넌트가 모두 import에 있는가? (누락 import = CRASH)
+3. Field는 모두 self-closing(`/>`)인가? (`</Field>` = CRASH)
 
-1. **Field**: 모든 `<Field`는 `/>` 로 끝나는가? `</Field>` 가 0개인가?
-2. **Whitelist**: 사용한 컴포넌트가 모두 Available Components에 있는가?
-3. **Import 완전성**: JSX에서 `<ComponentName`으로 사용한 모든 컴포넌트가 import에 포함되어 있는가? (Icon 포함) 누락된 import = ReferenceError CRASH.
-4. **Complete output**: `...` 이나 `// 나머지 동일` 같은 생략이 없는가?
-5. **Button/IconButton prop 확인**: Button에 `variant=` 사용 → `buttonType=`으로 교체. IconButton은 `iconButtonType=`과 `iconOnly=`와 `aria-label=`이 올바른 prop. `<Button>children</Button>` → `<Button label="..." />`로 교체.
-6. **interaction 확인**: `disabled`, `isDisabled`, `isLoading`, `isReadOnly` prop을 사용하지 않았는가? → `interaction="disabled"` / `"loading"` / `"readonly"` 로 교체.
-7. **Discriminated Union**: `showLabel` 없이 `label`만 전달하거나, `showHelptext` 없이 `helptext`만 전달하지 않았는가?
-8. **Section Card**: 조회형(RP-1) 화면에서 FilterBar + Grid가 **하나의 Section Card** 안에 있는가?
-9. **Drawer vs Dialog 검증**: 코드에 `<Dialog`가 있으면 다시 확인! 상세보기·등록·수정·편집 폼이면 → `<Drawer`로 교체!
-10. **⛔ 외부 아이콘 import 금지**: `lucide-react`, `heroicons`, `react-icons` import가 코드에 있는가? → **즉시 삭제!** 내장 `<Icon name="..." />` 만 사용.
-11. **⛔ 커스텀 컴포넌트 재정의 금지**: `const Divider = ...`, `const Card = ...` 등 Available Components에 이미 존재하는 이름으로 컴포넌트를 직접 정의했는가? → 삭제하고 `@/components`에서 import!
-12. **레이아웃 컴포넌트**: 페이지 레이아웃에 `GridLayout`, 세로 흐름에 `RowPattern`+`RowSlot`, 폼 그리드에 `FormGrid`+`FormGridCell`을 사용했는가? 수동 `grid-cols-12 col-span-N` 대신 `<GridLayout type="C">` 사용 권장.
-13. **Icon name+size 교차검증**: `<Icon name="..." size={N} />`에서 해당 name이 해당 size 목록에 존재하는가? 목록에 없는 조합 = "Icon not found" 에러.
-14. **색상 토큰 교차검증**: 텍스트에 사용한 hex가 토큰 테이블의 Text Class 컬럼에 있는가? bg- 전용 토큰을 text-에 사용하지 않았는가?
-15. **🚨 RowSlot 수동 간격**: `<RowSlot>` 안에 `mt-*`/`mb-*`가 있으면 즉시 제거! ❌ `<RowSlot slot="grid"><div className="mt-2">` → ✅ `<RowSlot slot="grid"><div>`
-16. **GridLayout 사용 범위**: GridLayout이 페이지 최상위에서만 사용되었는가? Drawer/Dialog/Popover 내부에서 사용하지 않았는가?
-17. **Checkbox/Radio onChange**: `e.target.checked` DOM 패턴이 아닌 상태 토글 패턴을 사용했는가?
-18. **🚨 import 양방향 점검**: import한 모든 컴포넌트가 JSX에서 `<Name` 또는 `<Name.`으로 사용되는가? 하나라도 미사용 시 CRASH! 특히 IconButton — import했으면 반드시 JSX에서 사용, 사용하지 않으면 import에서 제거!
-19. **폼 영역 FormGrid**: 폼/필터 입력 영역에 수동 `grid-cols-12` + `col-span-N` 대신 `<FormGrid columns={N}>` + `<FormGridCell>`을 사용했는가?
-20. **Dialog size="xl" 금지**: `<Dialog` 태그에 `size="xl"`이 있는가? → Dialog는 sm/md/lg만 허용. 대형 콘텐츠는 Drawer로 변경!
-21. **HTML table 태그 검증**: `<table>`, `<thead>`, `<tbody>`, `<tr>`, `<td>`, `<th>` 태그가 코드에 있는가? → DataGrid로 교체!
-22. **엑셀 버튼 tertiary 확인**: "엑셀 다운로드" 버튼의 buttonType이 `"tertiary"`인가? → ghost/secondary 사용 시 tertiary로 교체!
-23. **Radio Option 패턴 확인**: `<Radio`가 `<Option label="...">` 안에 감싸져 있는가? `<label><Radio/><span>` 수동 패턴은 없는가? onChange가 누락되지 않았는가?
-24. **DS 컴포넌트 bg 오버라이드 확인**: Button, Badge 등 DS 컴포넌트에 `className="bg-[#...]"` 배경색 오버라이드가 있는가? → 제거하고 전용 prop 사용!
-25. **날짜 형식 통일 확인**: `type="date"` Field의 value가 `YYYY-MM-DD` 형식인가? 다른 형식(YYYY/MM/DD 등) 사용 시 교체!
+### 품질 검증:
+4. 코드 생략(`...`, `// 나머지`)이 없는가?
+5. Icon name+size 조합이 유효한가? (size 목록 확인)
+6. interaction prop 사용 (disabled/isDisabled/isReadOnly 아님)
+7. Button은 buttonType + label, IconButton은 iconButtonType + iconOnly + aria-label
+8. 드로어 요청 → Drawer, 다이얼로그/모달/팝업 → Dialog
+9. 날짜 필드: YYYY-MM-DD 형식
+10. Select options 3개 이상 (2개 이하면 Radio)
 
----
-
+Create a premium, completed result.
 """
 
 RESPONSE_FORMAT_INSTRUCTIONS = """
@@ -1723,29 +1709,7 @@ export default Login;
 </file>
 """
 
-SYSTEM_PROMPT_FOOTER = """## 🎯 DESIGN CONSISTENCY CHECKLIST
-
-- **Same element types = same styling**: All form fields → same spacing, all cards → same shadow
-- **Page background**: ALWAYS `min-h-screen bg-[#f4f6f8] p-8`
-- **White card**: ALWAYS `bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6`
-- **Spacing**: Major sections `mb-6`~`mb-8`, form fields `mb-5`, related items `mb-3`~`mb-4`
-- **Colors**: Use ONLY hex values from the color token table. NEVER invent hex codes.
-- **Shadows**: `shadow-sm` only. Never `shadow`, `shadow-md`, `shadow-lg`.
-- **Borders**: `border border-[#dee2e6]` only. Never other gray shades.
-- **PROPS VALIDATION**: Button은 `buttonType=` 사용 (NOT `variant=`). IconButton은 `iconButtonType=` + `iconOnly=` + `aria-label=` 사용. Don't hallucinate props.
-- **interaction PROP**: disabled/readOnly/loading → `interaction` prop 사용. ❌ `isDisabled`, `disabled`, `isReadOnly` 금지.
-- **DISCRIMINATED UNION**: showLabel + label, showHelptext + helptext는 반드시 짝으로 사용.
-- **🚨 Badge/Chip 색상**: 레이아웃 JSON의 fill hex 값을 '컴포넌트 fill→variant 매핑' 테이블과 대조하여 variant prop 결정. variant 필드가 있으면 그대로 사용.
-- **DRAWER vs DIALOG**: "드로어" 요청 → `Drawer` 컴포넌트 사용 (Dialog 금지). "다이얼로그/모달/팝업" → `Dialog`.
-- **TITLE BAR**: `<TitleSection>` 컴포넌트 사용 또는 직접 구성. 브레드크럼 + h1 제목 + 액션 버튼은 반드시 **한 줄**에 배치.
-- **⛔ NO EXTERNAL ICONS**: `lucide-react`, `heroicons`, `react-icons` import 절대 금지 — 미설치, 앱 크래시. 내장 `<Icon name="..." size={N} />` 만 사용.
-- **LAYOUT COMPONENTS**: 페이지 레이아웃 → `<GridLayout type="A~H">`, 세로 흐름 → `<RowPattern pattern="RP-1~8">` + `<RowSlot slot="...">`, 폼 → `<FormGrid columns={N}>` + `<FormGridCell>`. 수동 grid-cols-12 대신 사용 권장.
-
-🚨 **FINAL STEP — import 정리**: 코드 완성 후, import 문을 다시 읽고 JSX에서 `<Name` 또는 `<Name.`으로 **실제 사용하지 않는 컴포넌트를 import에서 제거**하세요. 미사용 import 1개 = CRASH. 특히 IconButton — import했지만 JSX에서 `<IconButton`이 없으면 반드시 삭제!
-🚨 **Select options 최종 확인**: 모든 `<Select`의 options 배열에 항목이 3개 이상인지 확인하세요. 2개 이하면 Radio로 변경하세요.
-🚨 **Dialog/Drawer body gap 확인**: `<Dialog.Body>` 또는 `<Drawer.Body>` 내부에 `gap-5`, `gap-6`, `mb-5`, `mb-6`이 있으면 `gap-4`/`mb-4`로 교체하세요. 페이지 레벨 gap-6은 허용되지만 Dialog/Drawer 내부는 gap-4가 최대입니다.
-
-Create a premium, completed result."""
+# SYSTEM_PROMPT_FOOTER removed — consolidated into FINAL_REMINDER
 
 UI_PATTERN_EXAMPLES = """
 ## 📐 UI PATTERN REFERENCE
@@ -1907,9 +1871,8 @@ SYSTEM_PROMPT = (
     + AVAILABLE_COMPONENTS
     + COMPONENT_DOCS
     + UI_PATTERN_EXAMPLES
-    + PRE_GENERATION_CHECKLIST
     + RESPONSE_FORMAT_INSTRUCTIONS
-    + SYSTEM_PROMPT_FOOTER
+    + FINAL_REMINDER
 )
 
 
@@ -2192,9 +2155,8 @@ def generate_system_prompt(
         + layouts_section
         + usage_map_section
         + (UI_PATTERN_EXAMPLES if not skip_ui_patterns else "")
-        + PRE_GENERATION_CHECKLIST
         + RESPONSE_FORMAT_INSTRUCTIONS
-        + SYSTEM_PROMPT_FOOTER
+        + FINAL_REMINDER
     )
 
 
@@ -2302,7 +2264,7 @@ async def get_vision_system_prompt(
         + "\n"
         + RESPONSE_FORMAT_INSTRUCTIONS
         + "\n"
-        + SYSTEM_PROMPT_FOOTER
+        + FINAL_REMINDER
     )
 
 
