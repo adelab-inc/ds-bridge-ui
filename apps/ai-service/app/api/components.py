@@ -109,11 +109,13 @@ AVAILABLE_COMPONENTS_WHITELIST = {
 # 컴포넌트 + variant → 사용 가이드 (JSON에 없는 도메인 지식)
 _USAGE_GUIDELINES: dict[str, dict[str, str]] = {
     "button": {
-        "primary": "주요 액션 (저장, 생성) — 화면당 1-2개",
-        "secondary": "보조 액션",
-        "outline": "일반 액션, 취소",
-        "tertiary": "낮은 강조 액션",
-        "destructive": "삭제/해지 등 위험 액션",
+        "primary": "최종 CTA (가입완료, 신청) — 화면당 0~1개, 진한 파란색 배경 #0033a0 흰 글자",
+        "secondary": "주요 액션 (조회, 검색, 저장, 등록) — 연한 하늘색 배경 #98b3ee",
+        "outline": "테두리 버튼 (글쓰기 등) — 투명 배경 + 파란 테두리 #0033a0",
+        "tertiary": "낮은 강조 (엑셀, 인쇄) — 회색 배경",
+        "ghost": "텍스트 전용 (초기화, 취소) — 투명 배경, 파란색 글자, 테두리 없음",
+        "destructive": "삭제/해지 등 위험 액션 — 빨간색 배경",
+        "outline-destructive": "위험 테두리 버튼 — 투명 배경 + 빨간 테두리",
     },
     "iconButton": {
         "ghost": "투명 배경 아이콘",
@@ -127,6 +129,33 @@ _USAGE_GUIDELINES: dict[str, dict[str, str]] = {
         "warning": "주의",
         "error": "오류",
     },
+}
+
+# Badge/Chip처럼 compoundVariants로 색상이 결정되는 컴포넌트의 명시적 가이드
+# format_component_visual_guide()의 variant 단일 클래스 파싱으로는 못 잡으므로 별도 정의
+_COMPOUND_VARIANT_GUIDES: dict[str, str] = {
+    "badge": (
+        "### Badge\n"
+        "Props: `type` + `status`/`level` + `appearance` + `label`\n"
+        "- type=\"level\": level=\"primary\" | \"neutral\"\n"
+        "- type=\"status\": status=\"info\" | \"success\" | \"warning\" | \"error\"\n"
+        "- type=\"count\": label={숫자}\n"
+        "- type=\"dot\": 점 표시용 (label 없음)\n"
+        "- appearance: \"solid\" (진한 배경, 기본) | \"subtle\" (연한 배경)\n"
+        "- label: 텍스트 내용 (React.ReactNode)\n"
+        "- **색상은 status/level prop이 자동 결정. className으로 색상 지정 금지.**\n"
+        "- **prop 이름: `status` (NOT statusVariant), `level` (NOT levelVariant)**\n"
+        "- **fill→variant 결정: 레이아웃 JSON의 fill 값 또는 variant 필드를 아래 '컴포넌트 fill→variant 매핑' 섹션과 대조**\n"
+    ),
+    "chip": (
+        "### Chip\n"
+        "Props: `variant` + `state` + `size`\n"
+        "- variant: \"default\" (배경 있음) | \"ghost\" (배경 없음)\n"
+        "- state: \"default\" | \"selected\" (선택됨, 파란 배경) | \"disabled\"\n"
+        "- size: \"md\" | \"sm\"\n"
+        "- **색상은 state/variant prop이 자동 결정합니다. className에 색상을 직접 지정하지 마세요.**\n"
+        "- Figma에서 selected 상태이면 state=\"selected\" 사용\n"
+    ),
 }
 
 
@@ -170,11 +199,58 @@ _SCHEMA_SUPPLEMENTS: dict[str, dict[str, dict]] = {
 
 
 def _supplement_schema(schema: dict) -> dict:
-    """Schema에 누락된 HTML 기반 props를 보충 (스키마에 있는 컴포넌트만)"""
+    """Schema에 누락/변경된 props를 실제 소스 기준으로 교정 (스키마에 있는 컴포넌트만)"""
     components = schema.get("components", {})
 
+    # Badge: 스키마의 statusVariant/levelVariant → 실제 소스는 status/level
+    badge_props = components.get("Badge", {}).get("props", {})
+    for old, new in [("statusVariant", "status"), ("levelVariant", "level")]:
+        if old in badge_props and new not in badge_props:
+            badge_props[new] = badge_props.pop(old)
+        elif old in badge_props:
+            del badge_props[old]
+    # Badge: label prop 추가 (스키마에 누락됨)
+    if "Badge" in components and "label" not in badge_props:
+        badge_props["label"] = {"type": "React.ReactNode", "required": False}
+
+    # Button: 스키마의 variant → 실제 소스는 buttonType, 값 목록도 다름
+    btn_props = components.get("Button", {}).get("props", {})
+    if "variant" in btn_props:
+        del btn_props["variant"]
+    btn_props["buttonType"] = {
+        "type": ["primary", "secondary", "tertiary", "ghost", "outline", "destructive", "ghost-inverse", "secondary-destructive", "outline-destructive"],
+        "required": False,
+    }
+    # Button: 구버전 icon props 제거 → showStartIcon/startIcon 패턴
+    for old_prop in ("leftIcon", "rightIcon", "isLoading", "isDisabled"):
+        btn_props.pop(old_prop, None)
+    btn_props["label"] = {"type": "React.ReactNode", "required": True}
+    btn_props["showStartIcon"] = {"type": "boolean", "required": False}
+    btn_props["startIcon"] = {"type": "React.ReactNode", "required": False}
+    btn_props["showEndIcon"] = {"type": "boolean", "required": False}
+    btn_props["endIcon"] = {"type": "React.ReactNode", "required": False}
+    btn_props["interaction"] = {
+        "type": ["default", "disabled", "loading"],
+        "required": False,
+    }
+
+    # IconButton: 스키마에 variant → iconButtonType
+    ibtn_props = components.get("IconButton", {}).get("props", {})
+    if "variant" in ibtn_props:
+        del ibtn_props["variant"]
+    ibtn_props["iconButtonType"] = {
+        "type": ["primary", "secondary", "tertiary", "ghost", "destructive", "ghost-inverse"],
+        "required": False,
+    }
+    for old_prop in ("leftIcon", "rightIcon", "isLoading", "isDisabled"):
+        ibtn_props.pop(old_prop, None)
+    ibtn_props["iconOnly"] = {"type": "React.ReactNode", "required": True}
+    ibtn_props["interaction"] = {
+        "type": ["default", "disabled", "loading"],
+        "required": False,
+    }
+
     # DEPRECATED: isDisabled/isReadOnly → interaction prop으로 통합됨 (d537869)
-    # 스키마 JSON이 아직 구버전이면 disabled/readOnly로 교정 유지
     _PROP_RENAMES = {"isDisabled": "disabled", "isReadOnly": "readOnly"}
     for comp_data in components.values():
         props = comp_data.get("props", {})
@@ -285,6 +361,62 @@ def get_available_components_note(schema: dict) -> str:
     return f"**Available Components ({len(names)}):** {', '.join(names)}\n\n"
 
 
+def _build_component_color_mapping(colors: dict[str, str]) -> str:
+    """디자인 토큰의 컴포넌트 색상에서 fill hex → variant 매핑 테이블을 동적 생성.
+
+    토큰 키 패턴: {component}-{variant_info}-{property}
+    예: badge-status-warning-subtle-bg → component=Badge, status=warning, appearance=subtle
+
+    Returns:
+        프롬프트에 포함할 매핑 테이블 문자열
+    """
+    import re
+
+    # 매핑 대상 컴포넌트 접두사
+    _COMP_PREFIXES = ("badge-", "chip-", "tag-", "alert-")
+
+    # bg 토큰만 수집 (fill 매칭용 — text 토큰은 제외)
+    # {hex_value: {component, variant_props}} 형태로 정리
+    mapping_lines: list[str] = []
+    # 컴포넌트별 그룹핑
+    comp_groups: dict[str, list[str]] = {}
+
+    for token_name in sorted(colors.keys()):
+        if not any(token_name.startswith(p) for p in _COMP_PREFIXES):
+            continue
+
+        hex_val = colors[token_name]
+
+        # bg 토큰에서 variant 정보 추출
+        # 예: badge-status-warning-subtle-bg → parts: [badge, status, warning, subtle, bg]
+        # 예: badge-primary-solid-bg → parts: [badge, primary, solid, bg]
+        # 예: chip-status-info-subtle-bg → parts: [chip, status, info, subtle, bg]
+        parts = token_name.split("-")
+        if len(parts) < 3:
+            continue
+
+        comp = parts[0]  # badge, chip, tag, alert
+        prop_suffix = parts[-1]  # bg, text
+
+        # bg 토큰 → fill 매핑, text 토큰 → 참고용
+        middle = parts[1:-1]  # status/warning/subtle 등
+
+        if comp not in comp_groups:
+            comp_groups[comp] = []
+        comp_groups[comp].append(f"    `{hex_val}` ({token_name}) → {'/'.join(middle)}")
+
+    if not comp_groups:
+        return ""
+
+    lines: list[str] = []
+    for comp, entries in sorted(comp_groups.items()):
+        lines.append(f"  **{comp.capitalize()}**:")
+        for entry in entries:
+            lines.append(entry)
+
+    return "\n".join(lines)
+
+
 def format_design_tokens(tokens: dict | None) -> str:
     """
     디자인 토큰을 시스템 프롬프트용 문자열로 포맷팅
@@ -349,6 +481,9 @@ def format_design_tokens(tokens: dict | None) -> str:
   - Brand Hover: `bg-[{c('brand-primary-hover', '#154cc1')}]`
   - Brand Pressed: `bg-[{c('brand-primary-pressed', '#002480')}]`"""
 
+    # 컴포넌트별 색상 토큰 → fill hex ↔ variant 매핑 테이블 동적 생성
+    comp_color_section = _build_component_color_mapping(colors)
+
     # 폰트 크기/두께 추출 (Mapping to smaller tokens for better density)
     # Page Title (h1) -> Use Heading LG token
     heading_xl = font_size.get("typography-heading-lg-bold", ["24px", {}])
@@ -398,6 +533,10 @@ def format_design_tokens(tokens: dict | None) -> str:
 
   **브랜드 색상**:
 {brand_colors}
+
+  **🚨 컴포넌트 fill→variant 매핑** (레이아웃 JSON의 fill hex 값으로 컴포넌트 variant를 결정할 때 이 테이블 참조):
+{comp_color_section}
+
 - **Visuals**:
   - **Shadows**: `shadow-sm`
   - **Borders**: `border border-[#dee2e6]`
@@ -850,6 +989,17 @@ def format_component_visual_guide(
 
     lines: list[str] = ["## Component Visual Guide", ""]
 
+    # 시각 표현에 관련 없는 variant 키 (스킵 대상)
+    _SKIP_VARIANT_KEYS = {
+        "size", "mode", "interaction", "isLoading", "isDisabled",
+        "disabled", "isOpen", "orientation", "showIcon", "showClose",
+        "iconOnly", "value", "hasError", "selected", "truncation",
+        "widthMode", "position", "labelWidth", "isToast", "layout",
+    }
+
+    # definitions의 outdated variant 값 보정 (현재 모두 유효하므로 빈 dict)
+    _DEF_VARIANT_VALUE_REMAP: dict[str, dict[str, dict[str, str]]] = {}
+
     for def_name, d in definitions.items():
         if "." in def_name:
             continue  # sub-component 스킵
@@ -858,39 +1008,61 @@ def format_component_visual_guide(
             continue
 
         variants_block = d.get("variants", {})
-        variant_map: dict[str, str] = variants_block.get("variant", {})
         size_map: dict[str, str] = variants_block.get("size", {})
         defaults = d.get("defaultVariants", {})
 
+        # compound variant 가이드가 별도로 있는 컴포넌트는 메인 루프에서 스킵
+        if def_name in _COMPOUND_VARIANT_GUIDES:
+            continue
+
+        # 시각적 variant 키 수집 (skip 대상 제외)
+        visual_variant_keys = [
+            k for k in variants_block
+            if k not in _SKIP_VARIANT_KEYS
+        ]
+
         # variant 또는 size가 없으면 스킵
-        if not variant_map and not size_map:
+        if not visual_variant_keys and not size_map:
             continue
 
         lines.append(f"### {pascal_name}")
 
-        # --- Variants 섹션 ---
-        if variant_map:
-            # compoundVariants에서 variant-only 색상 보완 (alert 등)
-            compound_by_variant: dict[str, str] = {}
+        # --- Variants 섹션 (모든 시각적 variant 키 처리) ---
+        for var_key in visual_variant_keys:
+            variant_map: dict[str, str] = variants_block[var_key]
+            if not variant_map:
+                continue
+
+            # compoundVariants에서 이 키 기반 색상 보완
+            compound_by_value: dict[str, str] = {}
             for cv in d.get("compoundVariants", []):
                 cv_keys = {k for k in cv if k != "class"}
-                if cv_keys == {"variant"}:
-                    compound_by_variant[cv["variant"]] = cv.get("class", "")
+                if cv_keys == {var_key}:
+                    compound_by_value[cv[var_key]] = cv.get("class", "")
 
-            lines.append("Variants:")
+            # variant 키 이름을 표시 (variant 가 1개면 생략, 여러 개면 키 이름 표시)
+            if len(visual_variant_keys) > 1:
+                lines.append(f"{var_key}:")
+            else:
+                lines.append("Variants:")
+
             guidelines = _USAGE_GUIDELINES.get(def_name, {})
+            value_remap = _DEF_VARIANT_VALUE_REMAP.get(def_name, {}).get(var_key, {})
 
             for vname, vclasses in variant_map.items():
                 # boolean/내부 전용 variant 제외
                 if vname in ("true", "false"):
                     continue
 
+                # outdated variant 값 보정
+                display_name = value_remap.get(vname, vname)
+
                 # 클래스가 비어있으면 compoundVariants에서 보완
-                effective_classes = vclasses or compound_by_variant.get(vname, "")
+                effective_classes = vclasses or compound_by_value.get(vname, "")
                 color_info = _extract_color_info(effective_classes) if effective_classes else None
 
-                # 사용 가이드 조회
-                guideline = guidelines.get(vname, "")
+                # 사용 가이드 조회 (보정된 이름으로)
+                guideline = guidelines.get(display_name, "")
 
                 # 출력 조합
                 parts: list[str] = []
@@ -906,9 +1078,9 @@ def format_component_visual_guide(
 
                 detail = " — ".join(parts)
                 if detail:
-                    lines.append(f"- {vname}: {detail}")
+                    lines.append(f"- {display_name}: {detail}")
                 else:
-                    lines.append(f"- {vname}")
+                    lines.append(f"- {display_name}")
 
         # --- Sizes 섹션 ---
         if size_map:
@@ -936,6 +1108,13 @@ def format_component_visual_guide(
             lines.append(f"Default: {default_str}")
 
         lines.append("")  # 컴포넌트 간 빈 줄
+
+    # compound variant 기반 컴포넌트 가이드 추가 (Badge, Chip 등)
+    for def_name, guide_text in _COMPOUND_VARIANT_GUIDES.items():
+        pascal_name = def_name[0].upper() + def_name[1:]
+        if pascal_name in AVAILABLE_COMPONENTS_WHITELIST and def_name in definitions:
+            lines.append(guide_text)
+            logger.info(f"Compound variant guide added: {pascal_name}")
 
     if len(lines) <= 2:
         return ""
@@ -1141,19 +1320,26 @@ Button, Field, Select, IconButton, Checkbox, Radio 등 대부분의 컴포넌트
 - `<Alert type="error" title="오류" body="설명" />`
 
 ### Badge
-- type="status" + statusVariant: 상태 표시 전용
-  - "success": 정상, 완료, 활성
-  - "error": 실패, 해지, 오류
-  - "warning": 대기, 심사중, 주의
-  - "info": 진행중, 접수
+- type="status" + status: 상태 표시 전용
+  - status="success": 정상, 완료, 활성, 승인, 유효, 가입, 계약중, 납입완료
+  - status="error": 실패, 해지, 오류, 거절, 탈퇴, 만기, 무효, 취소, 미납
+  - status="warning": 대기, 심사중, 주의, 보류, 공지, 알림, 경고, 임박, 미확인, 일시정지
+  - status="info": 진행중, 접수, 처리중, NEW, 신규, 업데이트, 변경, 안내, 확인필요
+- type="level" + level: 카테고리/등급 분류
+  - level="primary": 메인 카테고리, VIP, 1등급, 중요 라벨
+  - level="neutral": 보조 카테고리, 일반, 기타, 부가 정보
+- type="count": 숫자 카운트 표시 (알림 건수 등). label={숫자}
+- type="dot": 새 항목 점 표시 (label 없음)
+- appearance="solid": 진한 배경 (기본, 강조). appearance="subtle": 연한 배경 (보조, 목록 내)
 - ❌ NEVER invent hex colors — only use exact values from the COLOR TOKEN TABLE above
+- **prop 이름: `status` (NOT statusVariant), `level` (NOT levelVariant)**
 
 ### ⚠️ DS 컴포넌트 className 규칙
 - DS 컴포넌트(Button, Field, Select, Badge 등)에 `className`으로 배경색/텍스트색을 오버라이드하지 마세요
 - ❌ `<Button className="bg-[#0033a0]" .../>` — DS 컴포넌트의 색상은 buttonType/variant로 제어
-- ❌ `<Badge className="bg-red-500 text-white" .../>` — DS 컴포넌트의 색상은 statusVariant로 제어
+- ❌ `<Badge className="bg-red-500 text-white" .../>` — DS 컴포넌트의 색상은 status/level prop으로 제어
 - ✅ className은 **레이아웃 제어에만** 사용: `className="w-full"`, `className="mt-4"`, `className="col-span-3"`
-- ✅ DS 컴포넌트의 색상/스타일은 해당 컴포넌트의 전용 prop(buttonType, statusVariant 등)으로 제어
+- ✅ DS 컴포넌트의 색상/스타일은 해당 컴포넌트의 전용 prop(buttonType, status 등)으로 제어
 
 ### Tag
 - label prop 사용: `<Tag label="카테고리" />` (❌ children 아님!)
@@ -1291,11 +1477,14 @@ Drawer는 Compound 패턴입니다. 반드시 `Drawer.Header`, `Drawer.Body`, `D
 
 ### FilterBar
 - 12컬럼 CSS Grid 필터 패널, 초기화/조회 버튼 내장
-- `<FilterBar mode="compact" onReset={fn} onSearch={fn}>`
-    `<div className="col-span-2"><Select .../></div>`
-    `<div className="col-span-2"><Field .../></div>`
+- 각 필드는 `col-span-3`(기본) 래퍼로 감싸고, 12컬럼 그리드가 자동 줄바꿈 처리
+- **필드 수에 맞춰 col-span을 줄여 한 줄에 구겨 넣지 마세요.** col-span-3 유지 → 한 행에 최대 4필드, 초과분은 자연스럽게 다음 행으로
+- 예: 필드 6개 + 버튼(actionSpan=2) → 행1: 필드4개(3×4=12), 행2: 필드2개(3×2=6) + 공백(4) + 버튼(2)
+- `<FilterBar mode="compact" onReset={fn} onSearch={fn} actionSpan={2}>`
+    `<div className="col-span-3"><Select .../></div>`
+    `<div className="col-span-3"><Field .../></div>`
   `</FilterBar>`
-- actionSpan: 버튼 영역 컬럼 수 (기본 2)
+- actionSpan: 버튼 영역 컬럼 수 (기본 2), 항상 마지막 행 우측에 자동 배치
 
 ### LabelValue (읽기 전용 표시)
 - Field의 display 대응, 수평 레이아웃 (라벨 좌, 값 우)
@@ -1425,7 +1614,7 @@ Drawer는 Compound 패턴입니다. 반드시 `Drawer.Header`, `Drawer.Body`, `D
 5. **ENUM PROPS**: Match context — NEVER use the same size/variant for every component on a page
    - 페이지 헤더 버튼: `size="md"`, 필터 조회 버튼: `size="md"`, DataGrid 내부: `size="sm"`, 폼 제출: `size="lg"`
    - Button: `buttonType` prop 사용 (❌ `variant` 금지). IconButton: `iconButtonType` prop 사용 (❌ `buttonType` 금지), `iconOnly` prop 사용, `aria-label` 필수. Button은 `label` prop (❌ `children` 금지)
-   - Badge 상태: 성공="success", 실패="error", 대기="warning"
+   - Badge/Button variant: 컴포넌트 사용 컨벤션 섹션 참조
    - ❌ 모든 Button에 동일한 size 적용 금지 — 위치마다 다르게 설정
 7. **ZERO OMISSION**: If user asks for 5 fields, implement ALL 5. Missing features = FAILURE.
    - 사용자가 필드를 그룹으로 정의해도 **각 필드를 개별적으로 모두 생성**
@@ -1476,6 +1665,82 @@ ONLY use components from the Available Components list below. DO NOT create or i
 """
 
 # ============================================================================
+# Component Usage Convention (도메인 사용 컨벤션)
+# 디자인 토큰 + 컴포넌트 정의에서 추출한 "언제 무엇을 써야 하는지" 규칙
+# ============================================================================
+
+COMPONENT_USAGE_CONVENTION = """
+## 🎨 컴포넌트 사용 컨벤션 (Domain Usage Convention)
+
+**이 섹션은 "어떤 맥락에서 어떤 variant/prop을 써야 하는지" 정의합니다.**
+새로운 화면을 생성할 때 아래 규칙을 반드시 따르세요.
+
+### Badge 텍스트→variant 매핑 규칙
+
+**⚠️ 우선순위: Figma 레이아웃 데이터의 variant 필드가 있으면 반드시 그 값을 사용하세요. 아래 테이블은 Figma variant가 없을 때만 폴백으로 참고합니다.**
+
+| 텍스트/맥락 | type | status/level | appearance |
+|-------------|------|--------------|------------|
+| 주의, 경고, 대기, 심사중, 보류, 임박 | status | warning | subtle |
+| 공지, 알림, NEW, 신규, 업데이트, 진행중, 접수, 처리중, 안내 | status | info | subtle |
+| 완료, 정상, 활성, 승인, 유효, 가입, 납입완료 | status | success | subtle |
+| 실패, 해지, 오류, 거절, 취소, 만기, 무효, 미납 | status | error | subtle |
+| VIP, 우수, 1등급, 주요 카테고리 | level | primary | solid |
+| 일반, 기타, 부가 정보 | level | neutral | subtle |
+| 숫자 (알림 건수, 미읽음 수) | count | - | solid |
+
+**판단 기준** (Figma variant 없을 때만 적용): 텍스트의 감정/긴급성으로 결정
+- 부정적/위험 → error, 주의/경고 → warning, 긍정적/완료 → success, 중립적 정보 → info
+- 목록 내 상태 표시 → appearance="subtle", 강조 필요 → appearance="solid"
+
+### Button buttonType 시각 가이드
+
+아래 색상/시각 정보를 기반으로 화면 맥락에 맞는 buttonType을 선택하세요.
+
+| buttonType | 색상 | 시각적 느낌 | 사용 빈도 |
+|------------|------|-------------|-----------|
+| secondary | 연한 하늘색 배경 (#98b3ee) | 부드러운 파란색 배경 | 가장 많이 사용 |
+| primary | 진한 파란색 배경 (#0033a0) 흰 글자 | 강한 대비, 눈에 확 띔 | 드물게 (최종 CTA) |
+| outline | 투명 배경 + 파란 테두리 (#0033a0) | 테두리로 구분 | 보조 액션 |
+| tertiary | 연한 회색 배경 | 낮은 강조 | 유틸리티 |
+| ghost | 투명 배경, 파란 글자, 테두리 없음 | 텍스트만 보임 | 취소/리셋 |
+| destructive | 빨간색 배경 (#d32f2f) 흰 글자 | 위험 강조 | 삭제/해지 |
+
+**⚠️ 우선순위: Figma 레이아웃 데이터의 variant 필드(buttonType, size)가 있으면 반드시 그 값을 사용하세요. 아래는 Figma variant가 없을 때만 폴백으로 참고합니다.**
+- 배경 채움 버튼 (secondary/primary) → 핵심 액션
+- 테두리 버튼 (outline) → 보조 액션
+- 텍스트 전용 (ghost) → 취소, 리셋
+- 위험 액션 → destructive
+
+### Alert 맥락→type 규칙
+
+| 맥락 | type |
+|------|------|
+| 시스템 오류, 실패 알림 | error |
+| 성공 완료 알림 | success |
+| 주의사항, 데이터 손실 경고 | warning |
+| 도움말, 안내, 참고 정보 | info |
+
+### 화면 유형별 공통 패턴
+
+#### 목록 화면 (게시판, 관리 목록)
+- 상단: 페이지 제목 (h2) + 우측 등록/액션 버튼
+- 중간: 조회 필터 영역 (Select/Field + 조회 버튼)
+- 하단: DataGrid (status 컬럼 → Badge subtle, 행 액션 → Button ghost sm)
+- 검색 결과 건수: "총 N건" 텍스트
+
+#### 상세/등록 화면
+- 상단: 제목 + 뒤로가기
+- 본문: 폼 필드 그룹 (Field/Select w-full, 2~3열 grid)
+- 하단: 저장 + 취소 우측 정렬
+
+#### 대시보드
+- 카드 그리드로 요약 정보 표시
+- 각 카드 내 Badge로 상태 요약
+- 하단 DataGrid로 최근 항목 표시
+"""
+
+# ============================================================================
 # Layout Guide (Grid Type × Row Pattern)
 # ============================================================================
 
@@ -1497,10 +1762,10 @@ LAYOUT_GUIDE = """
 
 ### 필터/검색 영역 그리드 규칙
 
-- 필터 영역은 col-12 내부에서 독립 그리드 사용
-- 내부 Gutter: **12px** (`gap-3`), Padding: **16px** (`p-4`)
-- 6그리드 기반: 1컬럼당 col-1 또는 col-2 폭
-- 우측 최하단 2컬럼 = 검색/초기화 버튼 위치
+- FilterBar는 12컬럼 CSS Grid. 각 필드를 `col-span-3` 래퍼로 감싸면 한 행에 최대 4필드
+- **col-span-3을 기본으로 유지하고, 필드 수에 맞춰 col-span을 줄이지 마세요.** 초과분은 자연스럽게 다음 행으로 배치됩니다
+- 날짜 범위(시작~종료)처럼 2개 필드를 묶을 때만 `col-span-3` 안에서 flex로 구성
+- 우측 최하단에 초기화/조회 버튼이 자동 배치됨 (actionSpan으로 영역 크기 조절)
 
 ### 액션 버튼 정렬 규칙
 
@@ -1820,6 +2085,7 @@ SYSTEM_PROMPT_FOOTER = """## 🎯 DESIGN CONSISTENCY CHECKLIST
 - **PROPS VALIDATION**: Button은 `buttonType=` 사용 (NOT `variant=`). IconButton은 `iconButtonType=` + `iconOnly=` + `aria-label=` 사용. Don't hallucinate props.
 - **interaction PROP**: disabled/readOnly/loading → `interaction` prop 사용. ❌ `isDisabled`, `disabled`, `isReadOnly` 금지.
 - **DISCRIMINATED UNION**: showLabel + label, showHelptext + helptext는 반드시 짝으로 사용.
+- **🚨 Badge/Chip 색상**: 레이아웃 JSON의 fill hex 값을 '컴포넌트 fill→variant 매핑' 테이블과 대조하여 variant prop 결정. variant 필드가 있으면 그대로 사용.
 - **DRAWER vs DIALOG**: "드로어" 요청 → `Drawer` 컴포넌트 사용 (Dialog 금지). "다이얼로그/모달/팝업" → `Dialog`.
 - **TITLE BAR**: `<TitleSection>` 컴포넌트 사용 또는 직접 구성. 브레드크럼 + h1 제목 + 액션 버튼은 반드시 **한 줄**에 배치.
 - **⛔ NO EXTERNAL ICONS**: `lucide-react`, `heroicons`, `react-icons` import 절대 금지 — 미설치, 앱 크래시. 내장 `<Icon name="..." size={N} />` 만 사용.
@@ -1887,21 +2153,31 @@ export default MemberDetail;
 ### Filter + Button + Grid Layout (조회 영역 = 하나의 Section Card)
 🚨 **FilterBar 컴포넌트 또는 수동 Grid 레이아웃으로 필터 + Grid를 하나의 Section Card에 포함!**
 ```tsx
-{/* ✅ FilterBar 컴포넌트 사용 */}
+{/* ✅ FilterBar 컴포넌트 사용 — 12그리드, 한 행에 최대 4필드 (col-span-3 × 4 = 12) */}
 <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6">
-  <FilterBar mode="compact" onReset={() => handleReset()} onSearch={() => handleSearch()}>
+  <FilterBar mode="compact" onReset={() => handleReset()} onSearch={() => handleSearch()} actionSpan={2}>
+    {/* 행 1: 필드 4개 (3×4=12) */}
     <div className="col-span-3">
-      <Field type="date" showLabel={true} label="조회기간(시작)" value={startDate} onChange={(e) => setStartDate(e.target.value)} showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
+      <Select showLabel={true} label="구분" placeholder="전체" value={type} onChange={(v) => setType(v)} showHelptext={false} showStartIcon={false}
+        options={[{label:'전체',value:'all'},{label:'업무',value:'work'}]} className="w-full" size="sm" />
     </div>
     <div className="col-span-3">
-      <Field type="date" showLabel={true} label="조회기간(종료)" value={endDate} onChange={(e) => setEndDate(e.target.value)} showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
+      <Field type="date" showLabel={true} label="조회기간(시작)" value={startDate} onChange={(e) => setStartDate(e.target.value)} showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" size="sm" />
+    </div>
+    <div className="col-span-3">
+      <Select showLabel={true} label="소속" placeholder="전체" value={dept} onChange={(v) => setDept(v)} showHelptext={false} showStartIcon={false}
+        options={[{label:'전체',value:'all'}]} className="w-full" size="sm" />
+    </div>
+    <div className="col-span-3">
+      <Field type="text" showLabel={true} label="작성자" placeholder="이름" value={author} onChange={(e) => setAuthor(e.target.value)} showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" size="sm" />
+    </div>
+    {/* 행 2: 필드 2개(3×2=6) + 공백(4) + 버튼(actionSpan=2, 자동 우측 배치) */}
+    <div className="col-span-3">
+      <Field type="text" showLabel={true} label="제목" placeholder="제목을 입력하세요" value={title} onChange={(e) => setTitle(e.target.value)} showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" size="sm" />
     </div>
     <div className="col-span-3">
       <Select showLabel={true} label="상태" placeholder="전체" value={status} onChange={(v) => setStatus(v)} showHelptext={false} showStartIcon={false}
-        options={[{label:'전체',value:'all'},{label:'정상',value:'active'},{label:'해지',value:'inactive'}]} className="w-full" />
-    </div>
-    <div className="col-span-3">
-      <Field type="text" showLabel={true} label="검색어" placeholder="이름 또는 코드" value={keyword} onChange={(e) => setKeyword(e.target.value)} showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
+        options={[{label:'전체',value:'all'},{label:'정상',value:'active'}]} className="w-full" size="sm" />
     </div>
   </FilterBar>
   {/* Grid — 같은 Section Card 안! 절대 별도 카드로 분리 금지 */}
@@ -1994,6 +2270,148 @@ def get_system_prompt() -> str:
     )
 
 
+
+def extract_component_usage_summary(simplified_layout: dict) -> str:
+    """Simplified layout 트리에서 INSTANCE 노드를 수집하여 컴포넌트 사용 요약 생성.
+
+    트리를 DFS 순회하며 type=="INSTANCE" 노드를 찾고,
+    component + variant + label 기준으로 그룹핑하여 마크다운 요약 반환.
+
+    Args:
+        simplified_layout: simplify_node()로 변환된 레이아웃 딕셔너리
+
+    Returns:
+        마크다운 형식의 컴포넌트 사용 요약 문자열 (INSTANCE 없으면 빈 문자열)
+    """
+    instances: list[dict] = []
+
+    def _collect(node: dict) -> None:
+        if node.get("type") == "INSTANCE":
+            instances.append(node)
+        for child in node.get("children", []):
+            if isinstance(child, dict):
+                _collect(child)
+
+    _collect(simplified_layout)
+
+    if not instances:
+        return ""
+
+    # (component, variant_key, label) → count 그룹핑
+    from collections import Counter
+
+    groups: dict[str, Counter] = {}  # component → Counter of (variant_str, label)
+    for inst in instances:
+        comp = inst.get("component") or inst.get("name") or "Unknown"
+        variant = inst.get("variant", {})
+        label = inst.get("label") or inst.get("placeholder") or ""
+
+        # variant를 정렬된 key=value 문자열로
+        variant_str = " ".join(f'{k}="{v}"' for k, v in sorted(variant.items())) if variant else ""
+        group_key = (variant_str, label)
+
+        if comp not in groups:
+            groups[comp] = Counter()
+        groups[comp][group_key] += 1
+
+    lines = ["## Component Usage Summary (from Figma)", ""]
+    for comp in sorted(groups.keys()):
+        parts = []
+        for (variant_str, label), count in groups[comp].most_common():
+            desc = variant_str if variant_str else "(default)"
+            if label:
+                desc += f' (label="{label}")'
+            if count > 1:
+                desc += f" x{count}"
+            parts.append(desc)
+        lines.append(f"- **{comp}**: {', '.join(parts)}")
+
+    return "\n".join(lines) + "\n"
+
+
+def extract_component_usage_map(simplified_layout: dict) -> dict:
+    """Simplified layout에서 INSTANCE 노드의 label→variant 매핑을 추출.
+
+    Figma 모드에서 추출한 데이터를 component-usage-map.json에 누적 저장용으로 사용.
+
+    Returns:
+        {ComponentName: {label: {prop: value, ...}, ...}, ...}
+        label이 없는 INSTANCE는 스킵.
+    """
+    instances: list[dict] = []
+
+    def _collect(node: dict) -> None:
+        if node.get("type") == "INSTANCE":
+            instances.append(node)
+        for child in node.get("children", []):
+            if isinstance(child, dict):
+                _collect(child)
+
+    _collect(simplified_layout)
+
+    usage_map: dict[str, dict] = {}
+    for inst in instances:
+        comp = inst.get("component") or inst.get("name") or ""
+        if not comp or comp.lower() in ("header", "unknown"):
+            continue
+
+        label = inst.get("label") or ""
+        if not label:
+            continue
+
+        variant = inst.get("variant", {})
+        fill = inst.get("fill", "")
+
+        props: dict = {}
+        if variant:
+            props.update(variant)
+        if fill:
+            props["_fill"] = fill  # fill도 보존 (역매핑용)
+
+        if comp not in usage_map:
+            usage_map[comp] = {}
+        # 같은 label이면 덮어쓰기 (최신 데이터 우선)
+        usage_map[comp][label] = props
+
+    return usage_map
+
+
+def format_component_usage_map(usage_map: dict) -> str:
+    """컴포넌트 사용 맵을 프롬프트용 문자열로 포맷팅.
+
+    Args:
+        usage_map: {ComponentName: {label: {prop: value}, ...}, ...}
+
+    Returns:
+        프롬프트에 포함할 마크다운 문자열
+    """
+    if not usage_map:
+        return ""
+
+    lines = [
+        "\n## Component Usage Patterns (디자인 시스템 컨벤션)",
+        "아래는 Figma 디자인에서 추출한 컴포넌트 사용 패턴입니다. "
+        "동일한 label/텍스트를 사용할 때 반드시 이 패턴을 따르세요.",
+        "",
+    ]
+
+    for comp in sorted(usage_map.keys()):
+        entries = usage_map[comp]
+        if not entries:
+            continue
+        lines.append(f"### {comp}")
+        for label, props in sorted(entries.items()):
+            # _fill은 프롬프트에 노출하지 않음
+            visible_props = {k: v for k, v in props.items() if not k.startswith("_")}
+            if visible_props:
+                prop_str = " ".join(f'{k}="{v}"' for k, v in sorted(visible_props.items()))
+                lines.append(f'- label="{label}" → `<{comp} {prop_str} label="{label}" />`')
+            else:
+                lines.append(f'- label="{label}"')
+        lines.append("")
+
+    return "\n".join(lines)
+
 def format_layouts(layouts: list[dict]) -> str:
     """
     레이아웃 JSON 리스트를 프롬프트용 문자열로 포맷팅.
@@ -2018,6 +2436,22 @@ Below are reference layouts extracted from Figma. Use these as structural guides
 - `padding`: CSS shorthand (e.g. "0 24" = top/bottom 0, left/right 24)
 - INSTANCE nodes: `component`, `variant`, `label` fields map to design system components
 
+**CRITICAL - INSTANCE 노드의 `label` 필드 매핑 규칙:**
+- `label` 필드는 Figma에서 추출한 텍스트 내용입니다 → 컴포넌트의 `label` prop으로 전달
+- 예: `{"component":"Badge","label":"공지"}` → `<Badge label="공지" />`
+- 예: `{"component":"Button","label":"조회하기"}` → `<Button label="조회하기" />`
+
+**CRITICAL - INSTANCE 노드의 `variant` 필드는 반드시 그대로 사용:**
+- variant 필드의 모든 key-value를 컴포넌트 props로 정확히 매핑하세요. 임의로 변경하지 마세요.
+- `size` 값도 variant 안에 포함되어 있으며, 반드시 그대로 사용하세요 (sm이면 sm, md이면 md).
+- 예: `{"variant":{"size":"sm","buttonType":"outline"}}` → `<Button size="sm" buttonType="outline" />`
+- 예: `{"variant":{"size":"sm","buttonType":"primary"}}` → `<Button size="sm" buttonType="primary" />`
+- **금지**: variant에 size="sm"이라고 되어 있는데 size="md"로 바꾸거나, buttonType="outline"을 "secondary"로 바꾸는 행위
+
+**CRITICAL - fill → variant 매핑:**
+- fill 값(토큰 키 또는 hex)을 프롬프트의 '컴포넌트 fill→variant 매핑' 테이블과 대조하여 variant prop 결정
+- variant 필드가 이미 있으면 fill보다 variant 필드를 우선 사용
+
 **CRITICAL - Figma State to React Props Mapping:**
 - Figma `Selected=True`, `State=Selected` in Select → React `defaultValue` (NOT `value` or `selected`)
 - Figma placeholder text like "선택하세요", "전체 지역" in Select → React `placeholder` prop
@@ -2034,6 +2468,12 @@ Below are reference layouts extracted from Figma. Use these as structural guides
         )
         section += f"### {name}\n```json\n{layout_json}\n```\n\n"
 
+        # 컴포넌트 사용 요약 추가
+        if clean_layout:
+            usage_summary = extract_component_usage_summary(clean_layout)
+            if usage_summary:
+                section += usage_summary + "\n"
+
     return section
 
 
@@ -2045,6 +2485,7 @@ def generate_system_prompt(
     layouts: list[dict] | None = None,
     component_definitions: dict | None = None,
     skip_ui_patterns: bool = False,
+    component_usage_map: dict | None = None,
 ) -> str:
     """
     주어진 스키마로 시스템 프롬프트 동적 생성
@@ -2057,6 +2498,7 @@ def generate_system_prompt(
         layouts: Figma 레이아웃 JSON 리스트 (Firebase에서 로드, None이면 미포함)
         component_definitions: 컴포넌트 정의 dict (Firebase에서 로드, None이면 미포함)
         skip_ui_patterns: True이면 UI_PATTERN_EXAMPLES 제외 (Figma 모드 등 도메인 예시 오염 방지)
+        component_usage_map: Figma에서 추출한 컴포넌트 사용 패턴 (label→variant 매핑)
 
     Returns:
         생성된 시스템 프롬프트 문자열 (현재 날짜 포함)
@@ -2081,10 +2523,14 @@ def generate_system_prompt(
     # 레이아웃 섹션
     layouts_section = format_layouts(layouts) if layouts else ""
 
+    # 컴포넌트 사용 패턴 (Figma에서 추출, 텍스트 모드에서 참조)
+    usage_map_section = format_component_usage_map(component_usage_map) if component_usage_map else ""
+
     return (
         SYSTEM_PROMPT_HEADER.replace("{current_date}", current_date).replace(
             "{design_tokens_section}", design_tokens_section
         )
+        + COMPONENT_USAGE_CONVENTION
         + LAYOUT_GUIDE
         + "\n## Available Components\n\n"
         + available_components
@@ -2092,6 +2538,7 @@ def generate_system_prompt(
         + ag_grid_section
         + component_visual_guide
         + layouts_section
+        + usage_map_section
         + (UI_PATTERN_EXAMPLES if not skip_ui_patterns else "")
         + PRE_GENERATION_CHECKLIST
         + RESPONSE_FORMAT_INSTRUCTIONS
