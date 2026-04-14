@@ -199,50 +199,17 @@ async def run_figma_tool_calling_loop(
             pass
 
     figma_context += (
-        "\n## 최우선 규칙: Figma 데이터가 절대적 기준\n"
-        "1. 위 Figma 디자인 데이터"
+        "\n## Figma 데이터 우선 규칙\n"
+        "1. Figma 데이터"
         + ("와 스크린샷" if screenshot_base64 else "")
-        + "를 분석하여 React 코드를 생성하세요.\n"
-        "2. **INSTANCE 노드의 variant 필드 값은 반드시 그대로 사용하세요. 임의로 다른 값으로 변경하지 마세요.**\n"
-        "   예: variant={\"buttonType\":\"outline\"} → buttonType=\"outline\" 그대로 사용\n"
-        "   예: variant={\"status\":\"warning\"} → status=\"warning\" 그대로 사용\n"
-        "   **size도 variant에 포함됩니다. size=\"sm\"이면 반드시 sm, size=\"md\"이면 반드시 md를 사용하세요.**\n"
-        "   예: variant={\"size\":\"sm\",\"buttonType\":\"outline\"} → <Button size=\"sm\" buttonType=\"outline\" />\n"
-        "3. 페이지 이름, 컴포넌트 구성, 텍스트 내용은 반드시 Figma 데이터에서 추출하세요.\n"
-        "4. 시스템 프롬프트의 layouts 섹션은 레이아웃 '패턴 참고용'일 뿐, Figma 디자인의 실제 내용과 무관합니다. "
-        "layouts 섹션의 페이지명이나 데이터를 Figma 결과물에 사용하지 마세요.\n"
-        "5. Figma 노드의 name, characters(텍스트) 필드를 정확히 반영하세요.\n"
-        "\n### 레이아웃 필드 매핑\n"
-        '- layout: "column" = flex-direction: column, "row" = flex-direction: row\n'
-        "- gap: 간격 (px). **px÷4** = Tailwind 값 (12→gap-3, 24→gap-6). 4로 안 나눠지면 gap-[Npx]\n"
-        '- padding: CSS shorthand (px). **px÷4** = Tailwind 값 ("16 24"→py-4 px-6)\n'
-        "- w/h: 노드 크기 (px). 고정폭은 w-[Npx], FILL은 w-full\n"
-        "- borderRadius: 모서리 (px). 2→rounded-sm, 4→rounded, 6→rounded-md, 8→rounded-lg, 12→rounded-xl, 9999→rounded-full\n"
-        "- borderWidth: 테두리 두께. 1→border, 2→border-2\n"
-        "- opacity: 투명도 (0~1). **×100** = Tailwind 값 (0.5→opacity-50, 0.9→opacity-90)\n"
-        "\n### 시각 속성 매핑 (매우 중요)\n"
-        "- fill: 디자인 토큰명 또는 hex. INSTANCE의 fill → 컴포넌트 variant 결정 (fill→variant 매핑 테이블 참조). FRAME의 fill → bg-[hex] 또는 bg-토큰명\n"
-        "- stroke: 테두리 색상. border-[hex] 또는 border-토큰명\n"
-        "- boxShadow: 그림자. shadow-sm/shadow-md 또는 shadow-[값]\n"
-        "\n### 컴포넌트 매핑 (매우 중요)\n"
-        "- type=INSTANCE인 노드의 component 필드가 실제 디자인 시스템 컴포넌트명입니다.\n"
-        "- component 필드의 값을 시스템 프롬프트의 컴포넌트 목록에서 찾아 정확히 매핑하세요.\n"
-        '  예: component="Button" → <Button>, component="TextField" → <TextField>\n'
-        "- variant 필드는 컴포넌트의 props로 매핑하세요.\n"
-        '  예: variant={"size":"sm","buttonType":"tertiary"} → <Button size="sm" buttonType="tertiary">\n'
-        "- label 필드 → 컴포넌트의 label prop으로 전달\n"
-        '  예: Badge → <Badge type="status" status="warning" label="공지" />\n'
-        '  예: Button → <Button label="조회하기" />\n'
-        "- icon 필드 → 아이콘 매핑\n"
-        '  예: IconButton icon={"name":"search","size":20} → <IconButton iconOnly={<Icon name="search" size={20} />} />\n'
-        '  예: Button icon={"name":"add","size":18} → <Button showStartIcon={true} startIcon={<Icon name="add" size={18} />} />\n'
-        "- fill 색상 토큰으로 컴포넌트의 color/variant prop을 결정하세요.\n"
-        "\n### 절대 금지 규칙\n"
-        "- **Figma variant 값을 임의로 변경하지 마세요.** buttonType=\"outline\"이면 outline 그대로, size=\"sm\"이면 sm 그대로, status=\"warning\"이면 warning 그대로 사용.\n"
-        "- Figma 데이터에 없는 UI 요소를 임의로 추가하지 마세요.\n"
-        "- Figma 노드 트리에 존재하는 컴포넌트/요소만 코드에 포함하세요.\n"
-        "- 뱃지/칩의 variant(status, level 등)는 반드시 Figma의 variant 필드를 따르세요.\n"
-        "- 필드 타입(Select vs TextField vs SearchField 등)은 Figma의 component 필드를 정확히 따르세요.\n"
+        + "가 절대적 기준. Figma에 없는 요소 추가 금지.\n"
+        "2. **INSTANCE variant 값을 그대로 사용** (buttonType, size, status 등 임의 변경 금지)\n"
+        "3. component 필드 → 컴포넌트명, variant → props, label → label prop, icon → Icon 컴포넌트\n"
+        "4. name/characters(텍스트) 필드를 정확히 반영. layouts 섹션은 패턴 참고용일 뿐 Figma와 무관.\n"
+        "\n### Figma 필드 → Tailwind 매핑\n"
+        '- layout: "column"→flex-col, "row"→flex-row | gap/padding: px÷4=Tailwind (12→gap-3, 24→gap-6)\n'
+        "- w/h: 고정→w-[Npx], FILL→w-full | borderRadius: 4→rounded, 8→rounded-lg, 9999→rounded-full\n"
+        "- fill: INSTANCE→variant 결정, FRAME→bg-[hex] | stroke→border-[hex] | opacity: ×100 (0.5→opacity-50)\n"
     )
 
     full_system_prompt = system_prompt + figma_context
