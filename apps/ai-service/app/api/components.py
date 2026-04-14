@@ -1540,147 +1540,32 @@ export default Login;
 # SYSTEM_PROMPT_FOOTER removed — consolidated into FINAL_REMINDER
 
 UI_PATTERN_EXAMPLES = """
-## 📐 UI PATTERN REFERENCE
+## UI Pattern Reference
 
-### Form Page (폼 + 다양한 컴포넌트 조합 — FormGrid 사용)
+### ActionBar (DataGrid 선택 액션)
 ```tsx
-import { Button, Field, Select, Radio, Option, OptionGroup, TitleSection, GridLayout, FormGrid, FormGridCell, Icon } from '@/components';
-
-const MemberDetail = () => {
-  const [name, setName] = React.useState('김민준');
-  const [email, setEmail] = React.useState('minjun@example.com');
-  const [dept, setDept] = React.useState('개발팀');
-  const [gender, setGender] = React.useState('male');
-
-  return (
-    <div className="min-h-screen bg-[#f4f6f8] p-8">
-      <GridLayout type="A">
-        <div>
-          {/* TitleSection — 브레드크럼 + 제목 + 액션 */}
-          <TitleSection title="회원 상세" menu2="회원관리" showBreadcrumb={true} showMenu2={true} showMenu3={false} showMenu4={false} mode="base" />
-          <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6 mt-5">
-            {/* Section: 기본 정보 — FormGrid 2열 */}
-            <FormGrid columns={2} title="기본 정보">
-              <FormGridCell>
-                <Field type="text" showLabel={true} label="이름" value={name} onChange={(e) => setName(e.target.value)} showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
-              </FormGridCell>
-              <FormGridCell>
-                <Field type="email" showLabel={true} label="이메일" value={email} onChange={(e) => setEmail(e.target.value)} showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
-              </FormGridCell>
-              <FormGridCell>
-                <Select showLabel={true} label="부서" className="w-full" value={dept} onChange={(v) => setDept(v)} showHelptext={false} showStartIcon={false}
-                  options={[{label:'개발팀',value:'개발팀'},{label:'디자인팀',value:'디자인팀'},{label:'마케팅팀',value:'마케팅팀'},{label:'경영지원',value:'경영지원'}]} />
-              </FormGridCell>
-              <FormGridCell>
-                <OptionGroup label="성별" showLabel={true} orientation="horizontal" size="sm">
-                  <Option label="남성"><Radio value={gender==='male' ? 'checked' : 'unchecked'} onChange={() => setGender('male')} /></Option>
-                  <Option label="여성"><Radio value={gender==='female' ? 'checked' : 'unchecked'} onChange={() => setGender('female')} /></Option>
-                </OptionGroup>
-              </FormGridCell>
-            </FormGrid>
-            {/* Action buttons */}
-            <div className="flex justify-end gap-3 mt-6">
-              <Button buttonType="ghost" label="취소" showStartIcon={false} showEndIcon={false} />
-              <Button buttonType="primary" size="lg" label="저장" showStartIcon={false} showEndIcon={false} />
-            </div>
-          </div>
-        </div>
-      </GridLayout>
-    </div>
-  );
-};
-export default MemberDetail;
-```
-
-### Filter + Button + Grid Layout (조회 영역 = 하나의 Section Card)
-🚨 **FilterBar 컴포넌트 또는 수동 Grid 레이아웃으로 필터 + Grid를 하나의 Section Card에 포함!**
-```tsx
-{/* ✅ FilterBar 컴포넌트 사용 — 12그리드, 한 행에 최대 4필드 (col-span-3 × 4 = 12) */}
-<div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6">
-  <FilterBar mode="compact" onReset={() => handleReset()} onSearch={() => handleSearch()} actionSpan={2}>
-    {/* 행 1: 필드 4개 (3×4=12) */}
-    <div className="col-span-3">
-      <Select showLabel={true} label="구분" placeholder="전체" value={type} onChange={(v) => setType(v)} showHelptext={false} showStartIcon={false}
-        options={[{label:'전체',value:'all'},{label:'업무',value:'work'}]} className="w-full" size="sm" />
-    </div>
-    <div className="col-span-3">
-      <Field type="date" showLabel={true} label="조회기간(시작)" value={startDate} onChange={(e) => setStartDate(e.target.value)} showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" size="sm" />
-    </div>
-    <div className="col-span-3">
-      <Select showLabel={true} label="소속" placeholder="전체" value={dept} onChange={(v) => setDept(v)} showHelptext={false} showStartIcon={false}
-        options={[{label:'전체',value:'all'}]} className="w-full" size="sm" />
-    </div>
-    <div className="col-span-3">
-      <Field type="text" showLabel={true} label="작성자" placeholder="이름" value={author} onChange={(e) => setAuthor(e.target.value)} showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" size="sm" />
-    </div>
-    {/* 행 2: 필드 2개(3×2=6) + 공백(4) + 버튼(actionSpan=2, 자동 우측 배치) */}
-    <div className="col-span-3">
-      <Field type="text" showLabel={true} label="제목" placeholder="제목을 입력하세요" value={title} onChange={(e) => setTitle(e.target.value)} showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" size="sm" />
-    </div>
-    <div className="col-span-3">
-      <Select showLabel={true} label="상태" placeholder="전체" value={status} onChange={(v) => setStatus(v)} showHelptext={false} showStartIcon={false}
-        options={[{label:'전체',value:'all'},{label:'정상',value:'active'}]} className="w-full" size="sm" />
-    </div>
-  </FilterBar>
-  {/* Grid — 같은 Section Card 안! 절대 별도 카드로 분리 금지 */}
-  <div className="mt-5">
-    <DataGrid rowData={rowData} columnDefs={columnDefs} domLayout="autoHeight" />
-  </div>
-</div>
-```
-- ⚠️ FilterBar 내부 필드는 `<div className="col-span-N">` 으로 감싸서 12컬럼 그리드 배치
-- FilterBar의 onReset/onSearch로 초기화/조회 버튼 자동 생성
-- 🚨 **Grid는 FilterBar와 같은 Section Card 안에 배치. 별도 카드 금지!**
-
-### Title Bar (TitleSection 컴포넌트 사용)
-```tsx
-{/* TitleSection — 브레드크럼 + 제목 + 액션 버튼 자동 배치 */}
-<TitleSection title="발령등록" menu2="인사관리" showBreadcrumb={true} showMenu2={true} showMenu3={false} showMenu4={false} mode="base">
-  <div className="flex items-center gap-2">
-    <Button buttonType="tertiary" size="md" label="엑셀 다운로드" showStartIcon={true} startIcon={<Icon name="external" size={18} />} showEndIcon={false} />
-    <Button buttonType="primary" size="md" label="신규 등록" showStartIcon={true} startIcon={<Icon name="add" size={18} />} showEndIcon={false} />
-  </div>
-</TitleSection>
-```
-- ✅ TitleSection children에 액션 버튼 배치 → 우측 자동 정렬
-- 액션 버튼이 없으면 children 생략
-
-### DataGrid 선택 액션 바 (ActionBar 컴포넌트)
-```tsx
-{/* ActionBar — 체크된 항목이 있을 때 표시 */}
 <ActionBar count={selectedRows.length} visible={selectedRows.length > 0} onClose={() => clearSelection()}>
   <Button buttonType="ghost-inverse" size="md" label="일괄 승인" showStartIcon={false} showEndIcon={false} />
-  <Button buttonType="ghost-inverse" size="md" label="일괄 삭제" showStartIcon={false} showEndIcon={false} />
 </ActionBar>
 ```
-- ActionBar는 플로팅 바 (fixed position 기본)
-- buttonType="ghost-inverse" 사용 (어두운 배경)
 
-### 드로어(Drawer) 패턴 — "드로어" 요청 시 반드시 이 패턴 사용
-🚨 **사용자가 "드로어"라고 하면 Dialog가 아닌 반드시 Drawer를 사용!**
+### Drawer (사이드 패널 — "드로어" 요청 시 필수)
+"드로어" = Drawer, "다이얼로그/모달/팝업" = Dialog. 혼동 금지.
 ```tsx
-import { Button, Field, Select, Drawer } from '@/components';
-
-{/* ✅ 드로어 = Drawer 컴포넌트. ❌ Dialog 절대 사용 금지 */}
-<Drawer open={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} size="md">
-  <Drawer.Header title="조직원 등록" showSubtitle={false} />
+<Drawer open={isOpen} onClose={() => setIsOpen(false)} size="md">
+  <Drawer.Header title="등록" showSubtitle={false} />
   <Drawer.Body>
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-2 gap-4">
-        <Field showLabel={true} label="성명" placeholder="이름 입력" showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
-        <Field showLabel={true} label="사번" placeholder="자동 부여" interaction="disabled" showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
-      </div>
-      <Select showLabel={true} label="소속 부서" placeholder="부서 선택" showHelptext={false} showStartIcon={false} options={[{label:'개발팀',value:'dev'},{label:'디자인팀',value:'design'}]} className="w-full" />
+      <Field showLabel={true} label="이름" showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
+      <Select showLabel={true} label="부서" showHelptext={false} showStartIcon={false} options={deptOptions} className="w-full" />
     </div>
   </Drawer.Body>
   <Drawer.Footer>
-    <Button buttonType="ghost" label="취소" onClick={() => setIsDrawerOpen(false)} showStartIcon={false} showEndIcon={false} />
+    <Button buttonType="ghost" label="취소" onClick={() => setIsOpen(false)} showStartIcon={false} showEndIcon={false} />
     <Button buttonType="primary" label="등록" showStartIcon={false} showEndIcon={false} />
   </Drawer.Footer>
 </Drawer>
 ```
-- ⚠️ "드로어" = `Drawer` | "다이얼로그/모달/팝업" = `Dialog`
-- ❌ 드로어 요청에 Dialog 사용은 **컴포넌트 오용** — 반드시 Drawer 사용
 """
 
 
