@@ -1579,6 +1579,7 @@ AVAILABLE_COMPONENTS = get_available_components_note(_schema) if _schema else ""
 SYSTEM_PROMPT = (
     SYSTEM_PROMPT_HEADER
     + COMPONENT_QUICK_REFERENCE
+    + COMPONENT_USAGE_CONVENTION
     + LAYOUT_GUIDE
     + "\n## Available Components\n\n"
     + AVAILABLE_COMPONENTS
