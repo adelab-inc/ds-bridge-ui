@@ -1395,130 +1395,62 @@ COMPONENT_USAGE_CONVENTION = """
 # ============================================================================
 
 LAYOUT_GUIDE = """
-## 📐 레이아웃 가이드 (Grid Type × Row Pattern)
+## 레이아웃 가이드
 
-유저가 "Type C", "RP-1" 등 레이아웃 용어를 사용하면 아래 정의에 따라 코드를 생성하세요.
+### 기본 구조
+- 기준: 1920px, 콘텐츠 1872px (좌우 24px), 12-column grid (gutter 24px)
+- `<GridLayout type="X">` 필수 (수동 `grid-cols-12` 금지). children이 column에 자동 배치됨
+- `<RowPattern pattern="RP-X">` + `<RowSlot slot="...">` 필수 (수동 간격 대신). 간격 자동 적용
+- RowSlot 내부에 `mt-*`/`mb-*` 금지 (이중 간격 발생)
+- 폼은 `<FormGrid columns={N}>` + `<FormGridCell>` 필수 (수동 grid 금지)
+- FilterBar children은 `<div className="col-span-3">` 래퍼로 감쌈. col-span-3 기본 유지, 줄이지 말 것
+- 액션 버튼: 우측 정렬 (`flex justify-end gap-2`). 순서: Tertiary → Ghost → Secondary → Primary
 
-### 기본 구조 원칙
+### Grid Type (가로 분할)
 
-- 기준 해상도: **1920px**
-- 콘텐츠 최대 영역: **1872px** (좌우 Margin 24px씩)
-- 좌우 Margin: **24px** (`px-6`)
-- 헤더 ↔ 메인 섹션 간 Gap: **20px** (`gap-5`)
-- 12 Column Grid: Gutter **24px** (`gap-6`), col-1 = 134px
-- 🚨 **`<GridLayout type="A">` 컴포넌트 사용 권장** (수동 `grid grid-cols-12` 대신)
-  - GridLayout은 `type` prop으로 12-column 자동 분할: 각 child가 해당 col-span에 자동 배치됨
-  - 예: `type="C"` → child[0]=col-3, child[1]=col-9
+| Type | 구성 | 용도 |
+|------|------|------|
+| A | col-12 | 리스트, 상세, 입력 폼 |
+| B | 6+6 | 비교/병렬 |
+| C-1 | 3+9 | 목록+상세 (탐색형) |
+| C-2 | 9+3 | C-1 반전 |
+| D-1 | 4+8 | 필터 고정형 |
+| D-2 | 8+4 | D-1 반전 |
+| E | 4+4+4 | 3열 동일 위계 |
+| F | 2+8+2 | 검토/승인 |
+| G | 2+2+8 | 트리+목록+상세 |
+| H | 3+3+3+3 | 4열 동일 위계 |
 
-### 필터/검색 영역 그리드 규칙
+### Row Pattern (세로 흐름)
 
-- FilterBar는 12컬럼 CSS Grid. 각 필드를 `col-span-3` 래퍼로 감싸면 한 행에 최대 4필드
-- **col-span-3을 기본으로 유지하고, 필드 수에 맞춰 col-span을 줄이지 마세요.** 초과분은 자연스럽게 다음 행으로 배치됩니다
-- 날짜 범위(시작~종료)처럼 2개 필드를 묶을 때만 `col-span-3` 안에서 flex로 구성
-- 우측 최하단에 초기화/조회 버튼이 자동 배치됨 (actionSpan으로 영역 크기 조절)
+| RP | 이름 | 구조 | 용도 |
+|----|------|------|------|
+| 1 | 조회형 | Title → [Section Card: FilterBar → Grid] | 대량 데이터 조회 |
+| 2 | 단일 상세 | Title → 상세 정보 | 단일 객체 조회 |
+| 3 | 입력/수정 | Title → Form → 저장/취소 | 데이터 CRUD |
+| 4 | 요약+Grid | Title → 요약 → Grid | 기본정보 + 관련데이터 |
+| 5 | 다중 Grid | Title → Grid A → Grid B | 병렬 데이터 |
+| 6 | 탐색형 | Title → Nav + Detail | 코드/조직 관리 |
+| 7 | 병렬형 | Title → A | B | 전후 비교 |
+| 8 | 상세+탭 | Title → 기본정보 → Tab → Grid | 탭별 관련 데이터 |
 
-### 액션 버튼 정렬 규칙
+RowSlot slot: `"filter"` | `"actions"` | `"grid"` | `"detail"` | `"form"` | `"summary"` | `"navigation"` | `"section"` | `"info"` | `"tab"`
 
-- 항상 **우측 정렬** (`flex justify-end gap-2`)
-- 좌→우 순서: 중립 텍스트(Tertiary) → 중립 보조(Ghost) → 보조(Secondary) → 주요(Primary)
+### Section Card 규칙 (RP-1 필수)
+- TitleSection은 Section Card **바깥** 상단
+- FilterBar + ActionButtons + DataGrid = **하나의 Section Card** (`bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6`)
+- FilterBar와 Grid를 별도 카드로 분리 금지
 
-### Grid Type (가로 분할 구조)
-
-| Type | 컬럼 구성 | Tailwind 구조 | 대표 RP | 용도 |
-|------|----------|---------------|---------|------|
-| TYPE-A | col-12 (단일) | 전체 `col-span-12` | RP-1, RP-2, RP-3 | 리스트, 단일 상세, 입력 폼, 리포트 |
-| TYPE-B | col-6 + col-6 | `col-span-6` + `col-span-6` | RP-7 | 비교 화면, 병렬 입력 |
-| TYPE-C (C-1) | col-3 + col-9 | `col-span-3` + `col-span-9` | RP-6 | 목록+상세, 코드/조직/설정 관리 |
-| TYPE-C (C-2) | col-9 + col-3 | `col-span-9` + `col-span-3` | RP-6 | C-1 좌우 반전 |
-| TYPE-D (D-1) | col-4 + col-8 | `col-span-4` + `col-span-8` | RP-1, RP-4 | 고급 검색, 필터 고정형 리포트 |
-| TYPE-D (D-2) | col-8 + col-4 | `col-span-8` + `col-span-4` | RP-4 | D-1 좌우 반전 |
-| TYPE-E | col-4 × 3 | `col-span-4` × 3 | — | 동일 위계 정보 병렬 배치 |
-| TYPE-F | col-2 + col-8 + col-2 | `col-span-2` + `col-span-8` + `col-span-2` | RP-2, RP-4 | 검토/승인 프로세스 |
-| TYPE-G | col-2 + col-2 + col-8 | `col-span-2` + `col-span-2` + `col-span-8` | RP-6 | 트리+목록+상세 (2단계 탐색) |
-| TYPE-H | col-3 × 4 | `col-span-3` × 4 | — | 동일 위계 정보 4열 배치 |
-
-- 🚨 **`<GridLayout type="X">` 컴포넌트를 사용하세요** (수동 grid-cols-12 대신).
-  - children 순서대로 각 column에 자동 배치됨
-  - 예: `<GridLayout type="C"><NavPanel /><DetailPanel /></GridLayout>` → col-3 + col-9
-  - Type A는 child 1개, Type B는 2개, Type E는 3개, Type H는 4개
-
-### Row Pattern (세로 흐름 구조)
-
-| 패턴 | 이름 | 구조 | 스크롤 정책 | 용도 |
-|------|------|------|------------|------|
-| RP-1 | 조회형(기본형) | Title → **[Section Card: FilterBar → ActionButtons → Grid]** | 전체 스크롤 + Grid 내부 스크롤 | 대량 데이터 조회 (계약 리스트, 승인 목록) |
-| RP-2 | 단일 상세형 | Title → 상세 정보 영역 | 전체 스크롤 | 단일 객체 조회 (계약 상세, 고객 상세) |
-| RP-3 | 입력/수정형 | Title → Form Section → Action(저장/취소) | 전체 스크롤, Form 자동 확장 | 데이터 생성/수정 |
-| RP-4 | 요약+Grid형 | Title → 상단 요약 → 하단 Grid | 전체 스크롤, 하단 Grid 내부 스크롤 | 기본 정보 + 관련 데이터 |
-| RP-5 | 다중 Grid형 | Title → Grid A → Grid B | 전체 스크롤, 각 Grid 독립 가능 | 성격 다른 데이터 병렬 (승인대기/완료) |
-| RP-6 | 탐색형 | Title → Navigation Area + Detail Area | 좌측 독립 스크롤, 우측 전체 스크롤 | 관리성 화면 (코드 관리, 조직 관리) |
-| RP-7 | 병렬형 | Title → Section A \\| Section B | 좌우 독립 스크롤 | 변경 전/후 비교, A/B 비교 |
-| RP-8 | 상세+탭형 | Title → 상단 기본정보 → Tab → 하단 Grid/Content | 전체 스크롤, 탭 콘텐츠 내부 스크롤 | 상세 + 탭별 관련 데이터 |
-
-- 🚨 **`<RowPattern pattern="RP-X">` + `<RowSlot slot="...">` 컴포넌트를 사용하세요** (수동 간격 대신).
-  - RowSlot 간 간격이 자동 적용됨 (filter→grid: 20px, filter→summary: 12px, actions→grid: 12px 등)
-  - slot 값: `"filter"` | `"actions"` | `"grid"` | `"detail"` | `"form"` | `"summary"` | `"navigation"` | `"section"` | `"info"` | `"tab"`
-
-### FormGrid / FormGridCell (폼 레이아웃)
-
-- `<FormGrid columns={2}>` — 2열 폼 그리드 (1~4열 지원), 자동 gap 적용
-- `<FormGrid columns={2} title="기본 정보">` — 제목 + 그리드
-- `<FormGridCell>` — 기본 1칸 차지
-- `<FormGridCell colSpan={2}>` — 2칸 차지 (전체 너비 등)
-- `<FormGridCell align="end">` — 수직 정렬 (start/center/end)
-- 🚨 **폼 입력 영역은 `<FormGrid>` + `<FormGridCell>` 필수** (수동 `grid-cols-12` + `col-span-N` 금지). "N단 구조" 요청 → `<FormGrid columns={N}>` 사용
-
-### Grid Type × Row Pattern 적용 범위
-
-| Type \\ RP | RP-1 | RP-2 | RP-3 | RP-4 | RP-5 | RP-6 | RP-7 | RP-8 |
-|-----------|------|------|------|------|------|------|------|------|
-| TYPE-A | O | O | O | O | O | X | X | O |
-| TYPE-B | X | △ | △ | △ | △ | X | O | X |
-| TYPE-C | △ | △ | △ | O | △ | O | X | O |
-| TYPE-D | O | △ | X | O | △ | △ | X | △ |
-| TYPE-E | X | X | X | △ | △ | X | △ | X |
-| TYPE-F | X | O | △ | O | X | X | X | O |
-| TYPE-G | △ | △ | △ | △ | X | O | X | △ |
-| TYPE-H | X | X | X | △ | △ | X | △ | X |
-
-(O=권장, △=가능, X=부적합)
-
-### 레이아웃 간격 규칙
-
-| 구간 | 간격 | Tailwind |
-|------|------|----------|
-| 헤더 ↔ 메인 섹션 | 20px | `mb-5` |
-| 타이틀 ↔ 콘텐츠 | 20px | `mb-5` |
-| 탭 ↔ 타이틀 | 24px | `mb-6` |
-| 필터바 ↔ 그리드 | 20px | `mb-5` |
-| 필터바 ↔ 세그먼트 | 20px | `mb-5` |
-| 필터바 ↔ 서머리바 | 12px | `mb-3` |
-| 서머리바 ↔ 액션버튼 | 12px | `mb-3` |
-| 액션버튼 ↔ 그리드 | 12px | `mb-3` |
-| 탭 ↔ 필터바 | 20px | `mb-5` |
-| 탭 섹션: 타이틀 ↔ 폼 | 12px | `mb-3` |
-
-💡 **RowPattern + RowSlot 사용 시 위 간격이 자동 적용됩니다.**
-🚨 **RowSlot 내부에 `mt-*`/`mb-*` 절대 사용 금지!**
-  - ❌ `<RowSlot slot="grid"><div className="mt-4">...</div></RowSlot>` ← 이중 간격 발생!
-  - ❌ `<RowSlot slot="filter"><div className="mb-2">...</div></RowSlot>` ← 이중 간격 발생!
-  - ✅ `<RowSlot slot="grid"><div>...</div></RowSlot>` ← RowSlot이 간격 자동 관리
-
-### 레이아웃 컴포넌트 코드 예제
-
-#### RP-1 조회형 (GridLayout type="A" + RowPattern)
+### RP-1 조회형 정석 코드
 ```tsx
 import { GridLayout, RowPattern, RowSlot, TitleSection, FilterBar, Field, Select, Button, DataGrid } from '@/components';
 
 <div className="min-h-screen bg-[#f4f6f8] p-8">
   <GridLayout type="A">
     <div>
-      {/* TitleSection — Section Card 바깥 */}
       <TitleSection title="계약 관리" menu2="계약" showBreadcrumb={true} showMenu2={true} showMenu3={false} showMenu4={false} mode="base">
         <Button buttonType="primary" size="sm" label="신규 등록" showStartIcon={false} showEndIcon={false} />
       </TitleSection>
-
-      {/* Section Card */}
       <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6 mt-5">
         <RowPattern pattern="RP-1">
           <RowSlot slot="filter">
@@ -1531,7 +1463,7 @@ import { GridLayout, RowPattern, RowSlot, TitleSection, FilterBar, Field, Select
               </div>
             </FilterBar>
           </RowSlot>
-          <RowSlot slot="grid">{/* ⚠️ RowSlot 안에 mt-*/mb-* 금지! 간격은 RowSlot이 자동 관리 */}
+          <RowSlot slot="grid">
             <DataGrid rowData={[]} columnDefs={[]} domLayout="autoHeight" />
           </RowSlot>
         </RowPattern>
@@ -1539,110 +1471,6 @@ import { GridLayout, RowPattern, RowSlot, TitleSection, FilterBar, Field, Select
     </div>
   </GridLayout>
 </div>
-```
-
-#### RP-6 탐색형 (GridLayout type="C" — col-3 + col-9)
-```tsx
-import { GridLayout, RowPattern, RowSlot, TitleSection, TreeMenu } from '@/components';
-
-<div className="min-h-screen bg-[#f4f6f8] p-8">
-  <TitleSection title="코드 관리" menu2="시스템" showBreadcrumb={true} showMenu2={true} showMenu3={false} showMenu4={false} mode="base" />
-  <div className="mt-5">
-    <GridLayout type="C">
-      {/* col-3: Navigation */}
-      <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-4">
-        <TreeMenu items={treeData} />
-      </div>
-      {/* col-9: Detail */}
-      <RowPattern pattern="RP-6">
-        <RowSlot slot="detail">
-          <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6">
-            {/* 상세 내용 */}
-          </div>
-        </RowSlot>
-      </RowPattern>
-    </GridLayout>
-  </div>
-</div>
-```
-
-#### RP-3 입력/수정형 (FormGrid 사용)
-```tsx
-import { GridLayout, FormGrid, FormGridCell, TitleSection, Field, Select, Button } from '@/components';
-
-<div className="min-h-screen bg-[#f4f6f8] p-8">
-  <GridLayout type="A">
-    <div>
-      <TitleSection title="계약 등록" menu2="계약" showBreadcrumb={true} showMenu2={true} showMenu3={false} showMenu4={false} mode="base" />
-      <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6 mt-5">
-        <FormGrid columns={2} title="기본 정보">
-          <FormGridCell>
-            <Field type="text" showLabel={true} label="계약명" showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
-          </FormGridCell>
-          <FormGridCell>
-            <Select showLabel={true} label="계약유형" showHelptext={false} showStartIcon={false} className="w-full" options={[]} />
-          </FormGridCell>
-          <FormGridCell colSpan={2}>
-            <Field type="text" showLabel={true} label="비고" showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
-          </FormGridCell>
-        </FormGrid>
-        <div className="flex justify-end gap-3 mt-6">
-          <Button buttonType="ghost" label="취소" showStartIcon={false} showEndIcon={false} />
-          <Button buttonType="primary" label="저장" showStartIcon={false} showEndIcon={false} />
-        </div>
-      </div>
-    </div>
-  </GridLayout>
-</div>
-```
-
-### 🚨 RP-1 Section Card 규칙 (CRITICAL)
-
-**RP-1(조회형) 레이아웃에서 FilterBar, ActionButtons, Grid는 반드시 하나의 Section Card 안에 포함되어야 합니다.**
-
-- Title Bar(브레드크럼 + 버튼)는 Section Card **바깥** 상단에 위치
-- FilterBar, ActionButtons, DataGrid/Table은 모두 **같은 하나의 `bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6`** 안에 배치
-- ❌ FilterBar와 Grid를 **별도 카드**로 분리 금지
-- ❌ FilterBar, ActionButtons, Grid를 카드 없이 **직접 나열** 금지
-
-#### RP-1 올바른 구조:
-```tsx
-<div className="min-h-screen bg-[#f4f6f8] p-8">
-  {/* TitleSection — Section Card 바깥 */}
-  <TitleSection title="계약 관리" menu2="계약" showBreadcrumb={true} showMenu2={true} showMenu3={false} showMenu4={false} mode="base">
-    <Button buttonType="tertiary" size="sm" label="엑셀 다운로드" showStartIcon={false} showEndIcon={false} />
-    <Button buttonType="primary" size="sm" label="신규 등록" showStartIcon={false} showEndIcon={false} />
-  </TitleSection>
-
-  {/* 🚨 하나의 Section Card 안에 FilterBar + Grid 모두 포함 */}
-  <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6 mt-5">
-    {/* FilterBar 컴포넌트 — 초기화/조회 버튼 내장 */}
-    <FilterBar mode="compact" onReset={() => handleReset()} onSearch={() => handleSearch()}>
-      <div className="col-span-3">
-        <Field type="date" showLabel={true} label="조회기간(시작)" showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
-      </div>
-      <div className="col-span-3">
-        <Field type="date" showLabel={true} label="조회기간(종료)" showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
-      </div>
-      <div className="col-span-3">
-        <Select showLabel={true} label="상태" placeholder="전체" showHelptext={false} showStartIcon={false} className="w-full" options={statusOptions} />
-      </div>
-    </FilterBar>
-    {/* Grid — 같은 카드 안 */}
-    <div className="mt-5">
-      <DataGrid rowData={rowData} columnDefs={columnDefs} domLayout="autoHeight" />
-    </div>
-  </div>
-</div>
-```
-
-#### ❌ 잘못된 구조 (FilterBar와 Grid가 분리됨):
-```tsx
-{/* ❌ 이렇게 하면 안 됨 */}
-<nav>홈 / 계약 / 계약 관리</nav>
-<h1>계약 관리</h1>  {/* ❌ 브레드크럼과 별도 행 금지! TitleSection 사용 */}
-<div className="bg-white ...">FilterBar + Buttons</div>  {/* 카드 1 */}
-<div className="bg-white ...">Grid</div>                  {/* 카드 2 — 분리됨! */}
 ```
 
 """
