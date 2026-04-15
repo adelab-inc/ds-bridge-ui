@@ -1297,9 +1297,9 @@ COMPONENT_QUICK_REFERENCE = """
 
 ### FilterBar (12컬럼 CSS Grid, 버튼 내장)
 - `<FilterBar mode="compact" onReset={fn} onSearch={fn} actionSpan={2}>`
-- 각 필드: `<div className="col-span-3">` 래핑 필수. **col-span-3 고정**, col-span-6/4 등으로 바꾸지 마세요. 초과분 자동 다음 행
-- FilterBar 자체가 `bg-bg-subtle rounded-xl` 배경을 가짐. **외부에 배경 div 래핑 금지** (이중 배경 발생)
-- 내장 버튼: 초기화=tertiary, 조회=primary (고정). Figma에서 조회 버튼이 secondary면 `showSearch={false}`로 숨기고 수동 배치
+- 각 필드: `<div className="col-span-N">` 래핑. 기본 col-span-3 (한 행 4필드). Figma 노드의 w 비율에 따라 col-span-6(넓은 필드) 등 조정
+- FilterBar 자체가 배경(`bg-bg-subtle rounded-xl`)을 가짐 → 외부에 배경 div 래핑 금지
+- 내장 버튼: 초기화=tertiary, 조회=primary (고정, 변경 불가)
 
 ### Pagination
 - `<Pagination totalItems={N} pageSize={20} currentPage={page} onPageChange={setPage} />`
