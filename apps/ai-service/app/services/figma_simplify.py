@@ -46,15 +46,77 @@ _STRIP_KEYS = {
     "primaryAxisSizingMode",
     "counterAxisSizingMode",
     "counterAxisAlignContent",
+    # raw Figma 노이즈 키
+    "scrollBehavior",
+    "interactions",
+    "complexStrokeProperties",
+    "background",
+    "backgroundColor",
+    "layoutWrap",
+    "targetAspectRatio",
+    "layoutGrids",
+    "booleanOperation",
+    "characterStyleOverrides",
+    "styleOverrideTable",
+    "componentPropertyReferences",
+    "cornerSmoothing",
+    "exposedInstances",
+    "isExposedInstance",
+    "layoutVersion",
+    "lineIndentations",
+    "lineTypes",
+    "strokesIncludedInLayout",
+    "style",
+    "individualStrokeWeights",
+    # grid 관련 (AG Grid 컴포넌트로 대체)
+    "gridChildHorizontalAlign",
+    "gridChildVerticalAlign",
+    "gridColumnAnchorIndex",
+    "gridColumnCount",
+    "gridColumnGap",
+    "gridColumnSpan",
+    "gridColumnsSizing",
+    "gridRowAnchorIndex",
+    "gridRowCount",
+    "gridRowGap",
+    "gridRowSpan",
+    "gridRowsSizing",
 }
 
 _LAYOUT_MODE_MAP = {"VERTICAL": "column", "HORIZONTAL": "row", "GRID": "grid"}
-_DEFAULT_VALUES = {"False", "false", "default", "None", "none"}
-_STATE_PROPS = {"Focus", "Interaction", "Hover", "Pressed", "Active", "State"}
+_DEFAULT_VALUES = {"False", "false", "default", "None", "none", "hover", "pressed"}
+# State는 Chip 등에서 selected/disabled 구분에 필요하므로 제외
+_STATE_PROPS = {"Focus", "Interaction", "Hover", "Pressed", "Active"}
 _TEXT_CONTENT_KEYS = {"label", "title", "text", "placeholder", "value"}
 
 _FIGMA_ID_RE = re.compile(r"^\d+:\d+$")
 
+
+
+# 컴포넌트별 Figma variant key → DS prop 매핑
+# Figma에서 내려오는 key(소문자)를 DS 컴포넌트 prop 이름으로 치환
+_VARIANT_PROP_REMAP: dict[str, dict[str, str]] = {
+    "button": {"type": "buttonType", "state": ""},
+    "iconbutton": {"type": "iconButtonType", "state": ""},
+    "badge": {
+        "status variant": "status",
+        "level variant": "level",
+    },
+    "chip": {},  # state, type 그대로 유지
+    "alert": {"variant": "type"},
+    "field": {"display": "isDisplay"},
+    "select": {},
+    "tag": {},
+}
+
+# 컴포넌트별 Figma variant VALUE → DS prop VALUE 매핑
+# 스키마/Figma에서 쓰는 이름이 실제 컴포넌트와 다를 때 값 변환
+# Figma variant 값 → DS prop 값 매핑
+_VARIANT_VALUE_REMAP: dict[str, dict[str, dict[str, str]]] = {
+    "button": {
+        "buttonType": {"outline": "secondary"},
+    },
+}
 
 def _rgba_to_hex(color: dict, opacity: float = 1.0) -> str:
     """Figma RGBA (0~1 float) → CSS hex 색상.
@@ -201,6 +263,25 @@ def simplify_component_props(props: dict) -> dict:
     return cleaned
 
 
+
+def _normalize_token_path(figma_name: str) -> str:
+    """Figma 스타일 경로를 디자인 토큰 키 형식으로 변환.
+
+    >>> _normalize_token_path("color/role/badge/primary/subtle/bg")
+    'badge-primary-subtle-bg'
+    >>> _normalize_token_path("color/role/bg/canvas")
+    'bg-canvas'
+    >>> _normalize_token_path("color/neutral/100")
+    'neutral-100'
+    >>> _normalize_token_path("effect/shadow/sm")
+    'shadow-sm'
+    """
+    for prefix in ("color/role/", "color/", "effect/"):
+        if figma_name.startswith(prefix):
+            figma_name = figma_name[len(prefix):]
+            break
+    return figma_name.replace("/", "-")
+
 def simplify_node(
     node: dict,
     depth: int = 0,
@@ -256,11 +337,19 @@ def simplify_node(
                     out["padding"] = shorthand
             continue
 
+        # paddingTop/Right/Bottom/Left → CSS shorthand
+        if key in ("paddingTop", "paddingRight", "paddingBottom", "paddingLeft"):
+            # 모든 개별 padding이 수집된 후 처리하기 위해 임시 저장
+            if "_pad" not in out:
+                out["_pad"] = {}
+            out["_pad"][key] = value
+            continue
+
         # fills → 디자인 토큰명 우선, 없으면 hex 폴백
         if key == "fills" and isinstance(value, list):
             fill_style_id = node_styles.get("fill") or node_styles.get("fills")
             if fill_style_id and style_map and fill_style_id in style_map:
-                out["fill"] = style_map[fill_style_id]
+                out["fill"] = _normalize_token_path(style_map[fill_style_id])
             else:
                 hex_color = simplify_fills(value)
                 if hex_color:
@@ -271,7 +360,7 @@ def simplify_node(
         if key == "strokes" and isinstance(value, list):
             stroke_style_id = node_styles.get("stroke") or node_styles.get("strokes")
             if stroke_style_id and style_map and stroke_style_id in style_map:
-                out["stroke"] = style_map[stroke_style_id]
+                out["stroke"] = _normalize_token_path(style_map[stroke_style_id])
             else:
                 hex_color = simplify_strokes(value)
                 if hex_color:
@@ -301,7 +390,7 @@ def simplify_node(
         if key == "effects" and isinstance(value, list):
             effect_style_id = node_styles.get("effect")
             if effect_style_id and style_map and effect_style_id in style_map:
-                out["boxShadow"] = style_map[effect_style_id]
+                out["boxShadow"] = _normalize_token_path(style_map[effect_style_id])
             else:
                 for effect in value:
                     if not isinstance(effect, dict):
@@ -326,10 +415,22 @@ def simplify_node(
         if key == "styles":
             continue
 
-        # componentId → component_map으로 이름 매핑
+        # componentId → component_map으로 이름 매핑 + variant 파싱
         if key == "componentId":
             if component_map and value in component_map:
-                out["component"] = component_map[value]
+                mapped_name = component_map[value]
+                if "=" in mapped_name:
+                    # component_map name이 variant 문자열인 경우 파싱
+                    comp_name, variant = parse_component_name(mapped_name)
+                    if variant:
+                        out["variant"] = variant
+                    if comp_name:
+                        out["component"] = comp_name
+                    # comp_name이 None이면 name 필드를 component로 승격
+                    elif "name" in out:
+                        out["component"] = out["name"]
+                else:
+                    out["component"] = mapped_name
             continue
 
         if key == "componentName":
@@ -338,6 +439,40 @@ def simplify_node(
                 out["component"] = comp_name
             if variant:
                 out["variant"] = variant
+            continue
+
+        # componentProperties: raw Figma 형식 {key: {value, type}} → flatten 후 처리
+        if key == "componentProperties":
+            if isinstance(value, dict):
+                flattened: dict = {}
+                for prop_key, prop_data in value.items():
+                    if isinstance(prop_data, dict):
+                        flattened[prop_key] = prop_data.get("value", "")
+                    else:
+                        flattened[prop_key] = prop_data
+                simplified = simplify_component_props(flattened)
+                for tk in list(_TEXT_CONTENT_KEYS):
+                    if tk in simplified:
+                        out[tk] = simplified.pop(tk)
+                if simplified:
+                    if "variant" in out:
+                        out["variant"].update(simplified)
+                    else:
+                        out["variant"] = simplified
+            continue
+
+        # component 키 (legacy — componentName/componentId가 없는 경우)
+        if key == "component":
+            if isinstance(value, str) and "=" in value:
+                comp_name, variant = parse_component_name(value)
+                if variant:
+                    out["variant"] = variant
+                if comp_name:
+                    out["component"] = comp_name
+                elif "name" in out:
+                    out["component"] = out["name"]
+            else:
+                out["component"] = value
             continue
 
         if key == "componentProps":
@@ -375,5 +510,79 @@ def simplify_node(
             continue
 
         out[key] = value
+
+    # 개별 padding → CSS shorthand 변환
+    if "_pad" in out:
+        pad = out.pop("_pad")
+        top = pad.get("paddingTop", 0)
+        right = pad.get("paddingRight", 0)
+        bottom = pad.get("paddingBottom", 0)
+        left = pad.get("paddingLeft", 0)
+        if any(v > 0 for v in (top, right, bottom, left)):
+            shorthand = padding_shorthand(
+                {"top": top, "right": right, "bottom": bottom, "left": left}
+            )
+            if shorthand and "padding" not in out:
+                out["padding"] = shorthand
+
+    # visible=False인 노드는 제거
+    if out.get("visible") is False:
+        return None
+    out.pop("visible", None)
+
+    # component 이름 정규화: "Select/Select" → "Select", "Tab/Item" → "Tab"
+    if "component" in out and isinstance(out["component"], str) and "/" in out["component"]:
+        # 계층 이름에서 첫 번째 의미 있는 세그먼트 사용 (보통 컴포넌트 이름)
+        out["component"] = out["component"].split("/")[0]
+
+    # INSTANCE 노드의 variant key를 DS prop 이름으로 치환 + 값 소문자화 + 값 리매핑
+    if out.get("type") == "INSTANCE" and "variant" in out and isinstance(out["variant"], dict):
+        comp_name = (out.get("component") or out.get("name") or "").lower()
+        remap = _VARIANT_PROP_REMAP.get(comp_name)
+        value_remap = _VARIANT_VALUE_REMAP.get(comp_name, {})
+        if remap:
+            remapped: dict = {}
+            for k, v in out["variant"].items():
+                new_key = remap.get(k, k)
+                if new_key:  # 빈 문자열이면 해당 키 삭제 (Figma 내부 상태)
+                    new_val = v.lower() if isinstance(v, str) else v
+                    # 값 리매핑 (outline→ghost 등)
+                    key_remap = value_remap.get(new_key, {})
+                    new_val = key_remap.get(new_val, new_val) if isinstance(new_val, str) else new_val
+                    remapped[new_key] = new_val
+            out["variant"] = remapped
+        else:
+            # remap 없어도 variant 값은 소문자로 통일 (Figma PascalCase → DS lowercase)
+            out["variant"] = {
+                k: v.lower() if isinstance(v, str) else v
+                for k, v in out["variant"].items()
+            }
+
+    # IconButton/Button의 자식 Icon을 icon 필드로 승격 (children에서 제거)
+    if out.get("type") == "INSTANCE":
+        comp_lower = (out.get("component") or out.get("name") or "").lower()
+        if comp_lower in ("iconbutton", "button") and "children" in out:
+            for i, child in enumerate(out["children"]):
+                if not isinstance(child, dict):
+                    continue
+                child_name = (child.get("component") or child.get("name") or "").lower()
+                # Icon 컴포넌트: "icon-edit-16", "icon-search-20" 등 패턴 매칭
+                if child.get("type") == "INSTANCE" and (
+                    child_name == "icon"
+                    or child_name.startswith("icon-")
+                    or child_name.startswith("icon_")
+                ):
+                    icon_name = child.get("name", "")
+                    # icon-edit-16 → name="edit", size=16
+                    icon_size = 20
+                    match = re.match(r"icon-(.+)-(\d+)$", icon_name)
+                    if match:
+                        icon_name = match.group(1)
+                        icon_size = int(match.group(2))
+                    out["icon"] = {"name": icon_name, "size": icon_size}
+                    out["children"].pop(i)
+                    break
+            if not out["children"]:
+                del out["children"]
 
     return out

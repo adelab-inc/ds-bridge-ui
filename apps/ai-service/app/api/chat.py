@@ -32,6 +32,7 @@ from app.services.supabase_storage import (
     fetch_ag_grid_tokens_from_storage,
     fetch_all_layouts_from_storage,
     fetch_component_definitions_from_storage,
+    fetch_component_usage_map,
     fetch_design_tokens_from_storage,
     fetch_image_as_base64,
     fetch_schema_from_storage,
@@ -162,12 +163,13 @@ def _filter_relevant_layouts(
         short_lower = short_name.lower()
 
         score = 0
-        # 레이아웃 이름이 메시지에 포함
+        # 레이아웃 이름이 메시지에 포함 (정확 매칭)
         if short_lower and short_lower in msg_lower:
             score += 10
-        # 메시지 단어가 레이아웃 이름에 포함
+        # 사용자 단어가 레이아웃 이름의 앞부분과 일치 (prefix 매칭)
+        # 예: "신계약" → "신계약리스트" ✅, "리스트" → "신계약리스트" ❌
         for word in msg_lower.split():
-            if len(word) >= 2 and word in short_lower:
+            if len(word) >= 2 and short_lower.startswith(word):
                 score += 5
 
         scored.append((score, layout))
@@ -213,6 +215,7 @@ async def resolve_system_prompt(
         fetch_component_definitions_from_storage(),
         fetch_all_layouts_from_storage(),
         fetch_schema_from_storage(effective_key),
+        fetch_component_usage_map(),
         return_exceptions=True,
     )
 
@@ -222,6 +225,7 @@ async def resolve_system_prompt(
     component_definitions = results[3] if not isinstance(results[3], Exception) else None
     all_layouts = results[4] if not isinstance(results[4], Exception) else []
     schema = results[5]
+    component_usage_map = results[6] if not isinstance(results[6], Exception) else None
 
     if isinstance(schema, Exception):
         if isinstance(schema, FileNotFoundError):
@@ -242,6 +246,7 @@ async def resolve_system_prompt(
     base_prompt = generate_system_prompt(
         schema, design_tokens, ag_grid_schema, ag_grid_tokens, layouts, component_definitions,
         skip_ui_patterns=skip_ui_patterns,
+        component_usage_map=component_usage_map,
     )
 
     # 인스턴스 편집 모드면 컨텍스트 추가

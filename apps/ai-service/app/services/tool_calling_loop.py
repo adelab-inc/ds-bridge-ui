@@ -41,6 +41,53 @@ async def _fetch_with_timeout(coro, label: str, timeout: float = 55.0):
         return None
 
 
+def _strip_title_frame_buttons(node: dict) -> None:
+    """Title FRAME 내부의 Button INSTANCE를 JSON에서 제거 (in-place).
+
+    페이지 템플릿의 기본 슬롯 버튼(신계약등록2/3, 이미지시스템 등)이
+    모든 페이지에 동일하게 나타나므로 AI 프롬프트에서 제거한다.
+    """
+    ntype = node.get("type", "")
+    name = node.get("name", "")
+
+    if ntype == "FRAME" and name.lower() == "title":
+        # Title FRAME의 children에서 Button INSTANCE 제거
+        children = node.get("children", [])
+        node["children"] = [
+            c for c in children
+            if not (
+                isinstance(c, dict)
+                and c.get("type") == "INSTANCE"
+                and (c.get("component", "") or c.get("name", "")).lower() == "button"
+            )
+        ]
+        # 남은 children의 하위도 재귀 처리 (중첩 FRAME 안의 Button)
+        for child in node["children"]:
+            if isinstance(child, dict):
+                _strip_title_buttons_recursive(child)
+        return
+
+    for child in node.get("children", []):
+        if isinstance(child, dict):
+            _strip_title_frame_buttons(child)
+
+
+def _strip_title_buttons_recursive(node: dict) -> None:
+    """Title FRAME 하위의 모든 Button INSTANCE를 재귀적으로 제거."""
+    children = node.get("children", [])
+    node["children"] = [
+        c for c in children
+        if not (
+            isinstance(c, dict)
+            and c.get("type") == "INSTANCE"
+            and (c.get("component", "") or c.get("name", "")).lower() == "button"
+        )
+    ]
+    for child in node["children"]:
+        if isinstance(child, dict):
+            _strip_title_buttons_recursive(child)
+
+
 async def _save_usage_map_background(usage_map: dict, room_id: str) -> None:
     """컴포넌트 사용 패턴을 Supabase에 비동기 저장 (fire-and-forget)."""
     try:
@@ -97,7 +144,7 @@ async def run_figma_tool_calling_loop(
                         "node_detail",
                     ),
                     _fetch_with_timeout(
-                        export_node_image(file_key, node_id, scale=0.5, image_format="jpg", max_retries=1),
+                        export_node_image(file_key, node_id, scale=1, image_format="png", max_retries=1),
                         "screenshot",
                     ),
                     return_exceptions=True,
@@ -141,7 +188,7 @@ async def run_figma_tool_calling_loop(
                             "node_detail",
                         ),
                         _fetch_with_timeout(
-                            export_node_image(file_key, target_node_id, scale=0.5, image_format="jpg", max_retries=1),
+                            export_node_image(file_key, target_node_id, scale=1, image_format="png", max_retries=1),
                             "screenshot",
                         ),
                         return_exceptions=True,
@@ -179,9 +226,41 @@ async def run_figma_tool_calling_loop(
         figma_context += f"- 페이지 구조:\n```json\n{prefetch_info}\n```\n"
 
     for nid, detail_json in node_details.items():
+        # Title FRAME 내부 Button 제거 (페이지 템플릿 기본 슬롯 콘텐츠)
+        try:
+            detail_dict_raw = json.loads(detail_json)
+            _strip_title_frame_buttons(detail_dict_raw)
+            detail_json = json.dumps(detail_dict_raw, ensure_ascii=False, separators=(",", ":"))
+            node_details[nid] = detail_json  # 인벤토리에서도 stripped 데이터 사용
+        except (json.JSONDecodeError, TypeError):
+            pass
         figma_context += f"\n- 노드({nid}) 레이아웃:\n```json\n{detail_json}\n```\n"
 
-    # 컴포넌트 사용 요약 추가 (variant/label 매핑 가이드)
+    figma_context += (
+        "\n## ⚠️ Figma 모드 — 아래 규칙이 시스템 프롬프트의 일반 규칙보다 우선합니다\n"
+        "1. "
+        + ("**스크린샷이 최우선 기준.** 스크린샷을 보고 픽셀 단위로 동일하게 재현하세요. JSON은 보조 참고용.\n" if screenshot_base64 else "Figma 데이터가 절대적 기준.\n")
+        + "2. **Page wrapper(header, nav, sidebar, footer, logo, 검색창) 생성 금지.** "
+        "Figma 트리 최상위 노드부터 바로 시작하세요. Visual Standards의 Page/Container 템플릿은 무시.\n"
+        "3. **Mock Data**: Figma에 보이는 텍스트·행 수를 그대로 반영. 시스템 프롬프트의 10건 이상 규칙은 Figma 모드에서 무시.\n"
+        "4. 아래 인벤토리의 JSX를 props/variant 참고용으로 사용. Figma에 보이는 UI는 자유롭게 생성.\n"
+        "   - **TitleSection children에 신계약등록2/3·이미지시스템 버튼 금지** (매 페이지 반복 템플릿 슬롯이므로 제외됨).\n"
+        "5. name/characters(텍스트) 필드를 정확히 반영.\n"
+        "6. **calendar 아이콘 Select → Field 변환**: 인벤토리에서 calendar 아이콘이 달린 Select는 "
+        "날짜 입력 필드입니다. `<Field startIcon={<Icon name=\"calendar\" />}>` 로 변환하세요. Select 드롭다운 금지.\n"
+        "7. **FilterBar**: DataGrid 위에 검색/필터용 Select·Field가 있으면(조회형 RP-1) "
+        "`<FilterBar mode=\"compact\" onReset={() => {}} onSearch={() => {}} actionSpan={N}>`로 감싸세요.\n"
+        "   - Figma 레이아웃을 따름. **필드가 한 줄이면 한 줄로 배치.** "
+        "각 필드 `<div className=\"col-span-N\">`로 래핑. Figma w(너비)가 넓으면 col-span-2, 좁으면 col-span-1.\n"
+        "   - **필드 col-span 합 + actionSpan = 12** (한 행). actionSpan은 최소 2.\n"
+        "   - 초기화(tertiary)/조회(primary) 버튼은 FilterBar가 자동 렌더링하므로 **별도 Button 배치 금지**.\n"
+        "\n### Figma 필드 → Tailwind 매핑\n"
+        '- layout: "column"→flex-col, "row"→flex-row | gap/padding: px÷4=Tailwind (12→gap-3, 24→gap-6)\n'
+        "- w/h: 고정→w-[Npx], FILL→w-full | borderRadius: 4→rounded, 8→rounded-lg, 9999→rounded-full\n"
+        "- fill: FRAME→bg-[hex] | stroke→border-[hex] | opacity: ×100 (0.5→opacity-50)\n"
+    )
+
+    # 컴포넌트 인벤토리 (recency bias 활용 — figma_context 맨 마지막에 배치)
     from app.api.components import extract_component_usage_summary, extract_component_usage_map
 
     for detail_json in node_details.values():
@@ -190,6 +269,7 @@ async def run_figma_tool_calling_loop(
             usage_summary = extract_component_usage_summary(detail_dict)
             if usage_summary:
                 figma_context += f"\n{usage_summary}\n"
+                logger.info("Component inventory:\n%s", usage_summary)
 
             # 컴포넌트 사용 패턴을 Supabase에 비동기 저장 (텍스트 모드에서 참조용)
             usage_map = extract_component_usage_map(detail_dict)
@@ -197,30 +277,6 @@ async def run_figma_tool_calling_loop(
                 asyncio.create_task(_save_usage_map_background(usage_map, room_id))
         except (json.JSONDecodeError, TypeError):
             pass
-
-    figma_context += (
-        "\n## Figma 데이터 우선 규칙\n"
-        "1. Figma 데이터"
-        + ("와 스크린샷" if screenshot_base64 else "")
-        + "가 절대적 기준. Figma에 없는 요소 추가 금지.\n"
-        "2. **INSTANCE variant 값을 그대로 사용** (buttonType, size, status 등 임의 변경 금지)\n"
-        "3. name/characters(텍스트) 필드를 정확히 반영. layouts 섹션은 패턴 참고용일 뿐 Figma와 무관.\n"
-        "\n### 컴포넌트 매핑 (필수)\n"
-        "- type=INSTANCE인 노드의 **component 필드가 실제 컴포넌트명**. 시스템 프롬프트의 컴포넌트 목록에서 찾아 정확히 매핑.\n"
-        '  예: component="Button" → <Button>, component="Select" → <Select>, component="Tab" → <Tab>\n'
-        "- **variant 필드 → 컴포넌트 props로 매핑**\n"
-        '  예: variant={"size":"sm","buttonType":"tertiary"} → <Button size="sm" buttonType="tertiary">\n'
-        "- label 필드 → label prop으로 전달\n"
-        '  예: label="조회하기" → <Button label="조회하기" />\n'
-        "- icon 필드 → Icon 컴포넌트\n"
-        '  예: icon={"name":"search","size":16} → startIcon={<Icon name="search" size={16} />}\n'
-        "- fill 색상 토큰으로 컴포넌트의 color/variant prop을 결정\n"
-        "- **필드 타입(Select vs Field vs SearchField)은 Figma의 component 필드를 정확히 따르세요. 임의 변환 금지.**\n"
-        "\n### Figma 필드 → Tailwind 매핑\n"
-        '- layout: "column"→flex-col, "row"→flex-row | gap/padding: px÷4=Tailwind (12→gap-3, 24→gap-6)\n'
-        "- w/h: 고정→w-[Npx], FILL→w-full | borderRadius: 4→rounded, 8→rounded-lg, 9999→rounded-full\n"
-        "- fill: INSTANCE→variant 결정, FRAME→bg-[hex] | stroke→border-[hex] | opacity: ×100 (0.5→opacity-50)\n"
-    )
 
     full_system_prompt = system_prompt + figma_context
 

@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import re
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -110,12 +111,11 @@ AVAILABLE_COMPONENTS_WHITELIST = {
 _USAGE_GUIDELINES: dict[str, dict[str, str]] = {
     "button": {
         "primary": "최종 CTA (가입완료, 신청) — 화면당 0~1개, 진한 파란색 배경 #0033a0 흰 글자",
-        "secondary": "주요 액션 (조회, 검색, 저장, 등록) — 연한 하늘색 배경 #98b3ee",
-        "outline": "테두리 버튼 (글쓰기 등) — 투명 배경 + 파란 테두리 #0033a0",
+        "secondary": "주요 액션 (조회, 검색, 저장, 등록, 글쓰기) — 연한 하늘색 배경 #98b3ee",
         "tertiary": "낮은 강조 (엑셀, 인쇄) — 회색 배경",
         "ghost": "텍스트 전용 (초기화, 취소) — 투명 배경, 파란색 글자, 테두리 없음",
         "destructive": "삭제/해지 등 위험 액션 — 빨간색 배경",
-        "outline-destructive": "위험 테두리 버튼 — 투명 배경 + 빨간 테두리",
+        "secondary-destructive": "위험 보조 버튼 — 빨간 배경 연한",
     },
     "iconButton": {
         "ghost": "투명 배경 아이콘",
@@ -218,7 +218,7 @@ def _supplement_schema(schema: dict) -> dict:
     if "variant" in btn_props:
         del btn_props["variant"]
     btn_props["buttonType"] = {
-        "type": ["primary", "secondary", "tertiary", "ghost", "outline", "destructive", "ghost-inverse", "secondary-destructive", "outline-destructive"],
+        "type": ["primary", "secondary", "tertiary", "ghost", "destructive", "ghost-inverse", "secondary-destructive"],
         "required": False,
     }
     # Button: 구버전 icon props 제거 → showStartIcon/startIcon 패턴
@@ -1258,7 +1258,7 @@ COMPONENT_QUICK_REFERENCE = """
 
 ### Button
 - `<Button buttonType="primary" size="md" label="저장" showStartIcon={false} showEndIcon={false} />`
-- buttonType: primary(CTA, 1-2/page) | secondary(조회,저장) | outline(보조 테두리) | tertiary(엑셀,인쇄) | ghost(취소,초기화) | destructive(삭제) | ghost-inverse(ActionBar 전용)
+- buttonType: primary(CTA, 1-2/page) | secondary(조회,저장,보조 테두리) | tertiary(엑셀,인쇄) | ghost(취소,초기화) | destructive(삭제) | ghost-inverse(ActionBar 전용)
 - size: lg(폼 제출) | md(헤더,필터,Dialog) | sm(DataGrid 행, 컴팩트, 툴바)
 - 아이콘: `showStartIcon={true} startIcon={<Icon name="add" size={18} />} showEndIcon={false}`
 
@@ -1301,9 +1301,10 @@ COMPONENT_QUICK_REFERENCE = """
 - FilterBar 자체가 배경(`bg-bg-subtle rounded-xl`)을 가짐 → 외부에 배경 div 래핑 금지
 - 내장 버튼: 초기화=tertiary, 조회=primary (고정, 변경 불가)
 
-### Pagination
-- `<Pagination totalItems={N} pageSize={20} currentPage={page} onPageChange={setPage} />`
-- DataGrid 하단에 페이지네이션이 있으면 반드시 Pagination 컴포넌트 사용. 수동 텍스트 금지
+### Pagination (DataGrid 내장)
+- **별도 `<Pagination>` 컴포넌트 없음.** DataGrid의 `pagination` prop 사용
+- `<DataGrid rowData={data} columnDefs={cols} pagination paginationPageSize={20} />`
+- "총 N개 중 X-Y행" 텍스트 + 페이지 네비게이션이 자동 렌더링됨
 
 ### TitleSection
 - `<TitleSection title="제목" menu2="메뉴" showBreadcrumb={true} showMenu2={true} showMenu3={false} showMenu4={false} mode="base"><Button .../></TitleSection>`
@@ -1357,14 +1358,12 @@ COMPONENT_USAGE_CONVENTION = """
 |------------|------|-------------|-----------|
 | secondary | 연한 하늘색 배경 (#98b3ee) | 부드러운 파란색 배경 | 가장 많이 사용 |
 | primary | 진한 파란색 배경 (#0033a0) 흰 글자 | 강한 대비, 눈에 확 띔 | 드물게 (최종 CTA) |
-| outline | 투명 배경 + 파란 테두리 (#0033a0) | 테두리로 구분 | 보조 액션 |
 | tertiary | 연한 회색 배경 | 낮은 강조 | 유틸리티 |
 | ghost | 투명 배경, 파란 글자, 테두리 없음 | 텍스트만 보임 | 취소/리셋 |
 | destructive | 빨간색 배경 (#d32f2f) 흰 글자 | 위험 강조 | 삭제/해지 |
 
 **⚠️ 우선순위: Figma 레이아웃 데이터의 variant 필드(buttonType, size)가 있으면 반드시 그 값을 사용하세요. 아래는 Figma variant가 없을 때만 폴백으로 참고합니다.**
 - 배경 채움 버튼 (secondary/primary) → 핵심 액션
-- 테두리 버튼 (outline) → 보조 액션
 - 텍스트 전용 (ghost) → 취소, 리셋
 - 위험 액션 → destructive
 
@@ -1409,7 +1408,7 @@ LAYOUT_GUIDE = """
 - `<RowPattern pattern="RP-X">` + `<RowSlot slot="...">` 필수 (수동 간격 대신). 간격 자동 적용
 - RowSlot 내부에 `mt-*`/`mb-*` 금지 (이중 간격 발생)
 - 폼은 `<FormGrid columns={N}>` + `<FormGridCell>` 필수 (수동 grid 금지)
-- FilterBar children은 `<div className="col-span-3">` 래퍼로 감쌈. col-span-3 기본 유지, 줄이지 말 것
+- FilterBar children은 `<div className="col-span-N">` 래퍼로 감쌈. Figma 레이아웃이 1행이면 1행 유지 (col-span-1~2). 필드 col-span 합 + actionSpan = 12
 - 액션 버튼: 우측 정렬 (`flex justify-end gap-2`). 순서: Tertiary → Ghost → Secondary → Primary
 
 ### Grid Type (가로 분할)
@@ -1605,62 +1604,188 @@ def get_system_prompt() -> str:
 
 
 
-def extract_component_usage_summary(simplified_layout: dict) -> str:
-    """Simplified layout 트리에서 INSTANCE 노드를 수집하여 컴포넌트 사용 요약 생성.
 
-    트리를 DFS 순회하며 type=="INSTANCE" 노드를 찾고,
-    component + variant + label 기준으로 그룹핑하여 마크다운 요약 반환.
+# DS 컴포넌트 화이트리스트 — 이 목록에 있는 INSTANCE만 인벤토리에 포함
+_DS_COMPONENT_NAMES = frozenset({
+    "Button", "Field", "Select", "SearchField", "Badge", "Checkbox", "Radio",
+    "Toggle", "IconButton", "Drawer", "Dialog", "FilterBar",
+    "TitleSection", "Alert", "Tag", "LabelValue", "Popover", "Tab", "Segment",
+    "OptionGroup", "ActionBar", "Tooltip", "Divider", "DataGrid",
+    "GridLayout", "RowPattern", "RowSlot", "FormGrid", "FormGridCell",
+    "Option", "Chip",
+})
 
-    Args:
-        simplified_layout: simplify_node()로 변환된 레이아웃 딕셔너리
+# Figma 컴포넌트 이름 → DS 컴포넌트 이름 매핑
+_FIGMA_NAME_REMAP: dict[str, str] = {
+    "ag grid": "DataGrid",
+    "ag grid (column based layout)": "DataGrid",
+}
 
-    Returns:
-        마크다운 형식의 컴포넌트 사용 요약 문자열 (INSTANCE 없으면 빈 문자열)
+# FilterBar 내장 버튼 라벨 (인벤토리에서 제외)
+_FILTERBAR_BUILTIN_LABELS = frozenset({"초기화", "조회", "조회하기"})
+
+_ICON_NAME_RE = re.compile(r"icon-(.+)-(\d+)$")
+
+
+def _resolve_component_name(inst: dict) -> str | None:
+    """INSTANCE 노드에서 DS 컴포넌트 이름 추출. DS 컴포넌트가 아니면 None."""
+    comp = inst.get("component") or inst.get("name") or ""
+    # Figma 이름 → DS 이름 매핑
+    remapped = _FIGMA_NAME_REMAP.get(comp.lower())
+    if remapped:
+        return remapped
+    if comp in _DS_COMPONENT_NAMES:
+        return comp
+    return None
+
+
+def _extract_child_icon(inst: dict) -> dict | None:
+    """INSTANCE 노드의 하위 트리에서 leading Icon 인스턴스를 찾아 {name, size} 반환.
+
+    chevron-down 등 trailing(드롭다운 화살표) 아이콘은 제외.
     """
-    instances: list[dict] = []
+    _trailing = {"chevron-down", "chevron-up", "arrow-drop-down", "arrow-drop-up"}
 
-    def _collect(node: dict) -> None:
-        if node.get("type") == "INSTANCE":
-            instances.append(node)
+    def _search(node: dict) -> dict | None:
+        for child in node.get("children", []):
+            if not isinstance(child, dict):
+                continue
+            if child.get("type") == "INSTANCE":
+                child_comp = (child.get("component") or child.get("name") or "")
+                child_comp_lower = child_comp.lower()
+                if child_comp_lower == "icon" or child_comp_lower.startswith("icon-"):
+                    for candidate in [child_comp, child.get("name", "")]:
+                        match = _ICON_NAME_RE.match(candidate.lower())
+                        if match:
+                            icon_name = match.group(1)
+                            if icon_name not in _trailing:
+                                return {"name": icon_name, "size": int(match.group(2))}
+            # FRAME 등 비-INSTANCE 노드 안에도 Icon이 있을 수 있음
+            result = _search(child)
+            if result:
+                return result
+        return None
+
+    return _search(inst)
+
+
+def _instance_to_jsx(inst: dict, comp_name: str) -> str:
+    """INSTANCE 노드를 JSX 스니펫 문자열로 변환."""
+    variant = inst.get("variant", {})
+    label = inst.get("label") or ""
+    placeholder = inst.get("placeholder") or ""
+    title = inst.get("title") or ""
+    text = inst.get("text") or ""
+    value = inst.get("value") or ""
+    w = inst.get("w")  # Figma 너비 (col-span 계산용)
+
+    # simplify_node이 승격한 icon 또는 자식 Icon INSTANCE에서 추출
+    icon = inst.get("icon")
+    if not icon:
+        icon = _extract_child_icon(inst)
+
+    props: list[str] = []
+    for k, v in sorted(variant.items()):
+        if isinstance(v, bool):
+            props.append(f'{k}={{{str(v).lower()}}}')
+        elif isinstance(v, (int, float)):
+            props.append(f'{k}={{{v}}}')
+        else:
+            props.append(f'{k}="{v}"')
+
+    if label:
+        props.append(f'label="{label}"')
+    if placeholder:
+        props.append(f'placeholder="{placeholder}"')
+    if title:
+        props.append(f'title="{title}"')
+    if text:
+        props.append(f'text="{text}"')
+    if value:
+        props.append(f'value="{value}"')
+    if icon and isinstance(icon, dict):
+        props.append(f'icon="{icon.get("name", "")}"')
+
+    props_str = " ".join(props)
+    jsx = f"<{comp_name} {props_str} />" if props_str else f"<{comp_name} />"
+
+    # 너비 힌트 추가 (FilterBar col-span 계산용)
+    if w and isinstance(w, (int, float)):
+        jsx += f"  {{/* w:{int(w)} */}}"
+
+    return jsx
+
+
+def extract_component_usage_summary(simplified_layout: dict) -> str:
+    """Simplified layout 트리에서 DS 컴포넌트 INSTANCE만 수집하여 JSX 인벤토리 생성.
+
+    - DS 컴포넌트 화이트리스트로 필터링 (header, icon-* 등 Figma 내부 요소 제외)
+    - Icon 자식 노드를 부모의 startIcon prop으로 승격
+    - FilterBar 내장 버튼(초기화, 조회하기) 제외
+    - Title FRAME 내부 버튼 제외 (페이지 템플릿 기본 슬롯 콘텐츠)
+    """
+    instances: list[tuple[str, dict]] = []  # (ds_comp_name, node)
+
+    def _collect(node: dict, inside_title: bool = False) -> None:
+        ntype = node.get("type", "")
+        name = node.get("name", "")
+
+        if ntype == "INSTANCE":
+            ds_name = _resolve_component_name(node)
+            if ds_name:
+                # Title FRAME 내부의 Button은 페이지 템플릿 기본 버튼이므로 제외
+                if inside_title and ds_name == "Button":
+                    return
+                # FilterBar 내장 버튼 제외
+                if ds_name == "Button":
+                    btn_label = node.get("label") or ""
+                    if btn_label in _FILTERBAR_BUILTIN_LABELS:
+                        for child in node.get("children", []):
+                            if isinstance(child, dict):
+                                _collect(child, inside_title)
+                        return
+                instances.append((ds_name, node))
+
+        # Title FRAME 진입 감지
+        is_title = ntype == "FRAME" and name.lower() == "title"
+
         for child in node.get("children", []):
             if isinstance(child, dict):
-                _collect(child)
+                _collect(child, inside_title=inside_title or is_title)
 
     _collect(simplified_layout)
 
     if not instances:
         return ""
 
-    # (component, variant_key, label) → count 그룹핑
-    from collections import Counter
+    # 컴포넌트별 그룹핑 (순서 보존)
+    from collections import OrderedDict
 
-    groups: dict[str, Counter] = {}  # component → Counter of (variant_str, label)
-    for inst in instances:
-        comp = inst.get("component") or inst.get("name") or "Unknown"
-        variant = inst.get("variant", {})
-        label = inst.get("label") or inst.get("placeholder") or ""
+    groups: OrderedDict[str, list[str]] = OrderedDict()
+    for ds_name, inst in instances:
+        jsx = _instance_to_jsx(inst, ds_name)
+        if ds_name not in groups:
+            groups[ds_name] = []
+        groups[ds_name].append(jsx)
 
-        # variant를 정렬된 key=value 문자열로
-        variant_str = " ".join(f'{k}="{v}"' for k, v in sorted(variant.items())) if variant else ""
-        group_key = (variant_str, label)
+    total = len(instances)
+    lines = [
+        "## 컴포넌트 인벤토리 (Figma에서 추출한 DS 컴포넌트)",
+        "",
+        f"이 디자인의 DS 컴포넌트 총 {total}개. props/variant 참고용.",
+        "- Figma에 보이는 UI 요소는 자유롭게 생성하세요. 이 목록은 props 참고용입니다.",
+        "- **TitleSection children에 신계약등록2/3·이미지시스템 버튼 금지** (매 페이지 반복되는 템플릿 기본 슬롯).",
+        "- FilterBar 내장 버튼(초기화, 조회하기)은 onReset/onSearch로 자동 렌더링됨. 별도 배치 금지.",
+        "",
+    ]
 
-        if comp not in groups:
-            groups[comp] = Counter()
-        groups[comp][group_key] += 1
+    for comp, snippets in groups.items():
+        lines.append(f"### {comp} ({len(snippets)}개)")
+        for i, jsx in enumerate(snippets, 1):
+            lines.append(f"{i}. `{jsx}`")
+        lines.append("")
 
-    lines = ["## Component Usage Summary (from Figma)", ""]
-    for comp in sorted(groups.keys()):
-        parts = []
-        for (variant_str, label), count in groups[comp].most_common():
-            desc = variant_str if variant_str else "(default)"
-            if label:
-                desc += f' (label="{label}")'
-            if count > 1:
-                desc += f" x{count}"
-            parts.append(desc)
-        lines.append(f"- **{comp}**: {', '.join(parts)}")
-
-    return "\n".join(lines) + "\n"
+    return "\n".join(lines)
 
 
 def extract_component_usage_map(simplified_layout: dict) -> dict:
@@ -1778,9 +1903,9 @@ Below are reference layouts extracted from Figma. Use these as structural guides
 **CRITICAL - INSTANCE 노드의 `variant` 필드는 반드시 그대로 사용:**
 - variant 필드의 모든 key-value를 컴포넌트 props로 정확히 매핑하세요. 임의로 변경하지 마세요.
 - `size` 값도 variant 안에 포함되어 있으며, 반드시 그대로 사용하세요 (sm이면 sm, md이면 md).
-- 예: `{"variant":{"size":"sm","buttonType":"outline"}}` → `<Button size="sm" buttonType="outline" />`
+- 예: `{"variant":{"size":"sm","buttonType":"secondary"}}` → `<Button size="sm" buttonType="secondary" />`
 - 예: `{"variant":{"size":"sm","buttonType":"primary"}}` → `<Button size="sm" buttonType="primary" />`
-- **금지**: variant에 size="sm"이라고 되어 있는데 size="md"로 바꾸거나, buttonType="outline"을 "secondary"로 바꾸는 행위
+- **금지**: variant에 size="sm"이라고 되어 있는데 size="md"로 바꾸거나, buttonType을 임의로 바꾸는 행위
 
 **CRITICAL - fill → variant 매핑:**
 - fill 값(토큰 키 또는 hex)을 프롬프트의 '컴포넌트 fill→variant 매핑' 테이블과 대조하여 variant prop 결정

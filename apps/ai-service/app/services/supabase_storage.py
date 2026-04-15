@@ -541,6 +541,86 @@ def clear_layouts_cache() -> None:
 
 
 # ============================================================================
+# Component Usage Map — Figma에서 추출한 컴포넌트 사용 패턴
+# ============================================================================
+
+DEFAULT_USAGE_MAP_KEY = "exports/default/component-usage-map.json"
+_usage_map_cache: dict | None = None
+
+
+async def fetch_component_usage_map(
+    key: str = DEFAULT_USAGE_MAP_KEY,
+) -> dict:
+    """Supabase Storage에서 컴포넌트 사용 맵 로드.
+
+    Returns:
+        {ComponentName: {label: {prop: value, ...}, ...}, ...}
+    """
+    global _usage_map_cache
+
+    if _usage_map_cache is not None:
+        return _usage_map_cache
+
+    try:
+        client = await get_supabase_client()
+        bucket, path = _resolve_bucket_and_path(key)
+        content = await client.storage.from_(bucket).download(path)
+        data = json.loads(content.decode("utf-8"))
+        _usage_map_cache = data
+        logger.info("Component usage map loaded", extra={"entries": sum(len(v) for v in data.values())})
+        return data
+    except Exception:
+        logger.debug("Component usage map not found, returning empty")
+        return {}
+
+
+async def save_component_usage_map(
+    usage_map: dict,
+    key: str = DEFAULT_USAGE_MAP_KEY,
+) -> bool:
+    """컴포넌트 사용 맵을 Supabase Storage에 저장.
+
+    기존 맵과 병합(merge)하여 저장한다.
+    """
+    global _usage_map_cache
+
+    try:
+        # 기존 맵 로드 후 병합
+        existing = await fetch_component_usage_map(key)
+        merged = _merge_usage_maps(existing, usage_map)
+
+        client = await get_supabase_client()
+        bucket, path = _resolve_bucket_and_path(key)
+        content = json.dumps(merged, ensure_ascii=False, indent=2).encode("utf-8")
+        await client.storage.from_(bucket).upload(
+            path, content,
+            {"content-type": "application/json", "x-upsert": "true"},
+        )
+
+        _usage_map_cache = merged
+        logger.info("Component usage map saved", extra={
+            "entries": sum(len(v) for v in merged.values()),
+        })
+        return True
+    except Exception as e:
+        logger.error("Failed to save component usage map", extra={"error": str(e)})
+        return False
+
+
+def _merge_usage_maps(existing: dict, new: dict) -> dict:
+    """두 usage map을 병합. 새 데이터가 기존 데이터를 덮어쓴다."""
+    merged = {}
+    for comp in set(list(existing.keys()) + list(new.keys())):
+        merged[comp] = {**existing.get(comp, {}), **new.get(comp, {})}
+    return merged
+
+
+def clear_usage_map_cache() -> None:
+    global _usage_map_cache
+    _usage_map_cache = None
+
+
+# ============================================================================
 # Description Upload
 # ============================================================================
 
