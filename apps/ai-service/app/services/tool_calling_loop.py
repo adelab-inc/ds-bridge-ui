@@ -204,8 +204,18 @@ async def run_figma_tool_calling_loop(
         + ("와 스크린샷" if screenshot_base64 else "")
         + "가 절대적 기준. Figma에 없는 요소 추가 금지.\n"
         "2. **INSTANCE variant 값을 그대로 사용** (buttonType, size, status 등 임의 변경 금지)\n"
-        "3. component 필드 → 컴포넌트명, variant → props, label → label prop, icon → Icon 컴포넌트\n"
-        "4. name/characters(텍스트) 필드를 정확히 반영. layouts 섹션은 패턴 참고용일 뿐 Figma와 무관.\n"
+        "3. name/characters(텍스트) 필드를 정확히 반영. layouts 섹션은 패턴 참고용일 뿐 Figma와 무관.\n"
+        "\n### 컴포넌트 매핑 (필수)\n"
+        "- type=INSTANCE인 노드의 **component 필드가 실제 컴포넌트명**. 시스템 프롬프트의 컴포넌트 목록에서 찾아 정확히 매핑.\n"
+        '  예: component="Button" → <Button>, component="Select" → <Select>, component="Tab" → <Tab>\n'
+        "- **variant 필드 → 컴포넌트 props로 매핑**\n"
+        '  예: variant={"size":"sm","buttonType":"tertiary"} → <Button size="sm" buttonType="tertiary">\n'
+        "- label 필드 → label prop으로 전달\n"
+        '  예: label="조회하기" → <Button label="조회하기" />\n'
+        "- icon 필드 → Icon 컴포넌트\n"
+        '  예: icon={"name":"search","size":16} → startIcon={<Icon name="search" size={16} />}\n'
+        "- fill 색상 토큰으로 컴포넌트의 color/variant prop을 결정\n"
+        "- **필드 타입(Select vs Field vs SearchField)은 Figma의 component 필드를 정확히 따르세요. 임의 변환 금지.**\n"
         "\n### Figma 필드 → Tailwind 매핑\n"
         '- layout: "column"→flex-col, "row"→flex-row | gap/padding: px÷4=Tailwind (12→gap-3, 24→gap-6)\n'
         "- w/h: 고정→w-[Npx], FILL→w-full | borderRadius: 4→rounded, 8→rounded-lg, 9999→rounded-full\n"
