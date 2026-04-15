@@ -1297,7 +1297,13 @@ COMPONENT_QUICK_REFERENCE = """
 
 ### FilterBar (12컬럼 CSS Grid, 버튼 내장)
 - `<FilterBar mode="compact" onReset={fn} onSearch={fn} actionSpan={2}>`
-- 각 필드: `<div className="col-span-3">` 래핑. 한 행 최대 4필드, 초과분 자동 다음 행
+- 각 필드: `<div className="col-span-3">` 래핑 필수. **col-span-3 고정**, col-span-6/4 등으로 바꾸지 마세요. 초과분 자동 다음 행
+- FilterBar 자체가 `bg-bg-subtle rounded-xl` 배경을 가짐. **외부에 배경 div 래핑 금지** (이중 배경 발생)
+- 내장 버튼: 초기화=tertiary, 조회=primary (고정). Figma에서 조회 버튼이 secondary면 `showSearch={false}`로 숨기고 수동 배치
+
+### Pagination
+- `<Pagination totalItems={N} pageSize={20} currentPage={page} onPageChange={setPage} />`
+- DataGrid 하단에 페이지네이션이 있으면 반드시 Pagination 컴포넌트 사용. 수동 텍스트 금지
 
 ### TitleSection
 - `<TitleSection title="제목" menu2="메뉴" showBreadcrumb={true} showMenu2={true} showMenu3={false} showMenu4={false} mode="base"><Button .../></TitleSection>`
@@ -1307,7 +1313,7 @@ COMPONENT_QUICK_REFERENCE = """
 - Tag: `<Tag label="카테고리" />` (tagType: closable+onClose, swatch+color)
 - LabelValue: `<LabelValue showLabel={true} label="이름" text="홍길동" showHelptext={false} showPrefix={false} showStartIcon={false} showEndIcon={false} />`
 - Popover: `<Popover><Popover.Trigger>...</Popover.Trigger><Popover.Content>...</Popover.Content></Popover>`
-- Tab: `<Tab items={[{value:'home',label:'홈'}]} value={v} onChange={set} widthMode="content" />`
+- Tab: `<Tab items={[{value:'home',label:'홈'}]} value={v} onChange={set} widthMode="content" />` — Figma에 Tab이 있으면 반드시 Tab 컴포넌트 사용. 수동 div 구현 금지
 - Segment: `<Segment items={[{value:'day',label:'일간'}]} value={v} onChange={set} size="md" widthMode="equal" />`
 - OptionGroup: `<OptionGroup label="그룹" showLabel={true} orientation="horizontal" size="sm"><Option label="항목"><Checkbox .../></Option></OptionGroup>`
 - ActionBar: `<ActionBar count={N} visible={true} onClose={fn}><Button buttonType="ghost-inverse" label="삭제" /></ActionBar>`
