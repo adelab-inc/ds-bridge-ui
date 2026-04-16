@@ -7,9 +7,12 @@ from __future__ import annotations
 
 import json
 import re
+import time
 from collections.abc import Iterable  # noqa: F401
 from dataclasses import dataclass
 from pathlib import Path
+
+from app.schemas.validation import ValidationError, ValidationReport
 
 # TODO(sub-spec 2): component-schema.json 확장 후 제거
 LAYOUT_COMPONENTS_V1: frozenset[str] = frozenset(
@@ -196,3 +199,81 @@ def scan_external_urls(source: str) -> list[UrlHit]:
         raw_line = source.splitlines()[line - 1] if line - 1 < len(source.splitlines()) else ""
         hits.append(UrlHit(line=line, snippet=raw_line.strip()))
     return hits
+
+
+def _format_location(line: int, name: str | None = None) -> str:
+    if name:
+        return f"line {line}, <{name}>"
+    return f"line {line}"
+
+
+def validate_code(source: str, catalog: ComponentCatalog) -> ValidationReport:
+    """TSX 소스를 검증한다.
+
+    - `unknown_component`: DS 카탈로그에도 없고 로컬 선언/import에도 없는 PascalCase 사용
+    - `missing_import`: DS 카탈로그에는 있으나 import/로컬 선언 없음
+    - `external_url`: src/href/url()의 https?:// 리터럴
+    - 중복 방지: `(name, line)` 쌍당 1회.
+    - 예외 발생 시 `validator_internal_error` 1건을 담은 리포트 반환.
+    """
+    t0 = time.perf_counter()
+    errors: list[ValidationError] = []
+    try:
+        usages = scan_jsx_components(source)
+        imports = scan_imports(source)
+        locals_ = scan_local_decls(source)
+        known_local = imports | locals_
+
+        seen: set[tuple[str, int]] = set()
+        for u in usages:
+            if (u.name, u.line) in seen:
+                continue
+            seen.add((u.name, u.line))
+
+            in_local = u.name in known_local
+            in_catalog = catalog.is_known(u.name)
+            if not in_local and not in_catalog:
+                errors.append(
+                    ValidationError(
+                        category="unknown_component",
+                        location=_format_location(u.line, u.name),
+                        message=f"{u.name} is not in DS catalog and not declared locally",
+                        suggested_fix=None,
+                    )
+                )
+            elif not in_local and in_catalog:
+                errors.append(
+                    ValidationError(
+                        category="missing_import",
+                        location=_format_location(u.line, u.name),
+                        message=f"{u.name} used but not imported",
+                        suggested_fix=f'add `import {{ {u.name} }} from "@/components"`',
+                    )
+                )
+
+        for hit in scan_external_urls(source):
+            errors.append(
+                ValidationError(
+                    category="external_url",
+                    location=_format_location(hit.line),
+                    message=f"external URL hardcoded: {hit.snippet}",
+                    suggested_fix="외부 URL 대신 placeholder box 또는 실제 자산 경로 사용",
+                )
+            )
+    except Exception as exc:  # noqa: BLE001 — validator 자체 장애는 삼킴
+        errors = [
+            ValidationError(
+                category="validator_internal_error",
+                location="-",
+                message=f"validator crashed: {type(exc).__name__}: {exc}",
+                suggested_fix=None,
+            )
+        ]
+
+    elapsed_ms = int((time.perf_counter() - t0) * 1000)
+    return ValidationReport(
+        passed=not errors,
+        errors=errors,
+        warnings=[],
+        elapsed_ms=elapsed_ms,
+    )

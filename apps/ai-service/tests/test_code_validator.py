@@ -337,3 +337,106 @@ class TestScanExternalUrls:
         # data-src should NOT match src
         src = '<img data-src="https://x.com" />'
         assert scan_external_urls(src) == []
+
+
+class TestValidateCode:
+    def _catalog(self):
+        from app.services.code_validator import ComponentCatalog
+
+        return ComponentCatalog.load_default()
+
+    def test_happy_path(self):
+        from app.services.code_validator import validate_code
+
+        src = (
+            'import { Button } from "@/components";\n'
+            "const Page = () => <Button>hi</Button>;\n"
+        )
+        report = validate_code(src, self._catalog())
+        assert report.passed is True
+        assert report.errors == []
+
+    def test_unknown_component(self):
+        from app.services.code_validator import validate_code
+
+        src = "const Page = () => <TotallyFake />;"
+        report = validate_code(src, self._catalog())
+        assert report.passed is False
+        categories = [e.category for e in report.errors]
+        assert "unknown_component" in categories
+
+    def test_missing_import(self):
+        from app.services.code_validator import validate_code
+
+        # Chip는 DS 카탈로그에 존재 but import 없음
+        src = "const Page = () => <Chip />;"
+        report = validate_code(src, self._catalog())
+        assert report.passed is False
+        categories = [e.category for e in report.errors]
+        assert "missing_import" in categories
+        assert "unknown_component" not in categories  # 상호 배타
+
+    def test_external_url(self):
+        from app.services.code_validator import validate_code
+
+        src = '<img src="https://foo.com/a.jpg" />'
+        report = validate_code(src, self._catalog())
+        assert report.passed is False
+        assert any(e.category == "external_url" for e in report.errors)
+
+    def test_local_component_not_flagged(self):
+        from app.services.code_validator import validate_code
+
+        src = (
+            "const MyBlock = () => <div/>;\n"
+            "const Page = () => <MyBlock />;\n"
+        )
+        report = validate_code(src, self._catalog())
+        assert report.passed is True
+
+    def test_alias_import_not_flagged(self):
+        from app.services.code_validator import validate_code
+
+        src = (
+            'import { Button as Btn } from "@/components";\n'
+            "const Page = () => <Btn />;\n"
+        )
+        report = validate_code(src, self._catalog())
+        assert report.passed is True
+
+    def test_fragment_not_flagged(self):
+        from app.services.code_validator import validate_code
+
+        src = (
+            'import { Button } from "@/components";\n'
+            "const Page = () => <><Button /></>;\n"
+        )
+        report = validate_code(src, self._catalog())
+        assert report.passed is True
+
+    def test_elapsed_ms_recorded(self):
+        from app.services.code_validator import validate_code
+
+        report = validate_code("<Button />", self._catalog())
+        assert report.elapsed_ms >= 0
+
+    def test_duplicate_usage_not_double_reported(self):
+        from app.services.code_validator import validate_code
+
+        # 같은 unknown 이름이 같은 줄에 2번 — 1건만 리포트
+        src = "<Fake /><Fake />"
+        report = validate_code(src, self._catalog())
+        fakes = [e for e in report.errors if "Fake" in e.message]
+        assert len(fakes) == 1
+
+    def test_internal_error_graceful(self, monkeypatch):
+        """validator 내부 예외가 발생해도 ValidationReport를 반환한다."""
+        from app.services import code_validator
+
+        def _boom(_source: str) -> list:
+            raise RuntimeError("boom")
+
+        monkeypatch.setattr(code_validator, "scan_jsx_components", _boom)
+        report = code_validator.validate_code("<Button />", self._catalog())
+        assert report.passed is False
+        assert any(e.category == "validator_internal_error" for e in report.errors)
