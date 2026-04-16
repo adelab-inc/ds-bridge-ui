@@ -22,20 +22,11 @@ from app.schemas.chat import (
     Message,
     ParsedResponse,
 )
-from app.services.broadcast import broadcast_event, track_broadcast_task
+from app.schemas.validation import ValidationError, ValidationReport
 from app.services.ai_provider import AIProvider, get_ai_provider
+from app.services.broadcast import broadcast_event, track_broadcast_task
+from app.services.code_validator import ComponentCatalog, validate_code
 from app.services.figma_api import extract_figma_url
-from app.services.tool_calling_loop import run_figma_tool_calling_loop
-from app.services.supabase_storage import (
-    DEFAULT_AG_GRID_SCHEMA_KEY,
-    DEFAULT_SCHEMA_KEY,
-    fetch_ag_grid_tokens_from_storage,
-    fetch_component_definitions_from_storage,
-    fetch_component_usage_map,
-    fetch_design_tokens_from_storage,
-    fetch_image_as_base64,
-    fetch_schema_from_storage,
-)
 from app.services.supabase_db import (
     DatabaseError,
     RoomNotFoundError,
@@ -46,6 +37,47 @@ from app.services.supabase_db import (
     get_timestamp_ms,
     update_chat_message,
 )
+from app.services.supabase_storage import (
+    DEFAULT_AG_GRID_SCHEMA_KEY,
+    DEFAULT_SCHEMA_KEY,
+    fetch_ag_grid_tokens_from_storage,
+    fetch_component_definitions_from_storage,
+    fetch_component_usage_map,
+    fetch_design_tokens_from_storage,
+    fetch_image_as_base64,
+    fetch_schema_from_storage,
+)
+from app.services.tool_calling_loop import run_figma_tool_calling_loop
+
+# Validator 싱글턴 (모듈 import 시 1회 로드)
+_CODE_CATALOG = ComponentCatalog.load_default()
+
+
+def _maybe_validate_parsed(parsed: ParsedResponse) -> None:
+    """ENABLE_VALIDATION이 켜져 있으면 parsed.files를 검증해 parsed.validation에 기록한다.
+
+    여러 파일이 있어도 모두 검증하며, errors/elapsed_ms는 합산한다.
+    """
+    settings = get_settings()
+    if not settings.enable_validation or not parsed.files:
+        return
+
+    merged_errors: list[ValidationError] = []
+    merged_warnings: list[ValidationError] = []
+    elapsed_total = 0
+    for f in parsed.files:
+        report = validate_code(f.content, _CODE_CATALOG)
+        merged_errors.extend(report.errors)
+        merged_warnings.extend(report.warnings)
+        elapsed_total += report.elapsed_ms
+
+    parsed.validation = ValidationReport(
+        passed=not merged_errors,
+        errors=merged_errors,
+        warnings=merged_warnings,
+        elapsed_ms=elapsed_total,
+    )
+
 
 router = APIRouter(dependencies=[Depends(verify_api_key)])
 logger = logging.getLogger(__name__)
@@ -671,6 +703,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
 
         response_message, usage = await provider.chat(messages)
         parsed = parse_ai_response(response_message.content)
+        _maybe_validate_parsed(parsed)
 
         # DB에 메시지 저장 (question + text + code 하나의 문서로)
         first_file = parsed.files[0] if parsed.files else None

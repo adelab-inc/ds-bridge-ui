@@ -440,3 +440,75 @@ class TestValidateCode:
         report = code_validator.validate_code("<Button />", self._catalog())
         assert report.passed is False
         assert any(e.category == "validator_internal_error" for e in report.errors)
+
+
+class TestChatNonStreamingIntegration:
+    """chat.py의 validator 훅이 feature flag에 따라 동작/비동작하는지.
+
+    실제 /chat 엔드포인트 호출은 AI/DB 의존성이 커서 여기서는
+    chat.py 내부의 훅 함수(`_maybe_validate_parsed`)를 직접 임포트해
+    단위 수준에서 검사한다.
+    """
+
+    def test_validation_field_none_when_flag_off(self, monkeypatch):
+        """ENABLE_VALIDATION=False (기본)일 때 validation 필드는 None."""
+        from app.api.chat import _maybe_validate_parsed  # 신규 helper
+        from app.schemas.chat import FileContent, ParsedResponse
+
+        parsed = ParsedResponse(
+            conversation="",
+            files=[FileContent(path="x.tsx", content="<Chip />")],
+            raw="",
+        )
+        monkeypatch.setattr(
+            "app.api.chat.get_settings",
+            lambda: type("S", (), {"enable_validation": False})(),
+        )
+        _maybe_validate_parsed(parsed)
+        assert parsed.validation is None
+
+    def test_validation_field_set_when_flag_on(self, monkeypatch):
+        from app.api.chat import _maybe_validate_parsed
+        from app.schemas.chat import FileContent, ParsedResponse
+
+        parsed = ParsedResponse(
+            conversation="",
+            files=[FileContent(path="x.tsx", content="<Chip />")],  # missing_import
+            raw="",
+        )
+        monkeypatch.setattr(
+            "app.api.chat.get_settings",
+            lambda: type("S", (), {"enable_validation": True})(),
+        )
+        _maybe_validate_parsed(parsed)
+        assert parsed.validation is not None
+        categories = [e.category for e in parsed.validation.errors]
+        assert "missing_import" in categories
+
+    def test_validation_merges_multiple_files(self, monkeypatch):
+        """복수 파일의 errors 는 하나의 ValidationReport 로 합쳐진다."""
+        from app.api.chat import _maybe_validate_parsed
+        from app.schemas.chat import FileContent, ParsedResponse
+
+        parsed = ParsedResponse(
+            conversation="",
+            files=[
+                FileContent(
+                    path="a.tsx",
+                    content='import { Button } from "@/components";\nconst A = () => <Button/>;\n',
+                ),  # clean
+                FileContent(
+                    path="b.tsx",
+                    content="<Chip />",  # missing_import
+                ),
+            ],
+            raw="",
+        )
+        monkeypatch.setattr(
+            "app.api.chat.get_settings",
+            lambda: type("S", (), {"enable_validation": True})(),
+        )
+        _maybe_validate_parsed(parsed)
+        assert parsed.validation is not None
+        categories = [e.category for e in parsed.validation.errors]
+        assert categories == ["missing_import"]  # 합쳐진 결과에 1건만
