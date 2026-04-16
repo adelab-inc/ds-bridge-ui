@@ -235,27 +235,67 @@ async def run_figma_tool_calling_loop(
         except (json.JSONDecodeError, TypeError):
             pass
         figma_context += f"\n- 노드({nid}) 레이아웃:\n```json\n{detail_json}\n```\n"
+        logger.info("Figma node %s simplified JSON (len=%d)", nid, len(detail_json))
+        # 디버그: 모든 FRAME의 gap/padding 요약 로깅
+        def _extract_layout_summary(node: dict, path: str = "") -> list[str]:
+            results = []
+            name = node.get("name", "?")
+            cur_path = f"{path}/{name}" if path else name
+            gap = node.get("gap")
+            padding = node.get("padding")
+            layout = node.get("layout")
+            h = node.get("h")
+            if gap or padding:
+                parts = [cur_path]
+                if layout:
+                    parts.append(f"layout={layout}")
+                if gap:
+                    parts.append(f"gap={gap}")
+                if padding:
+                    parts.append(f"padding={padding}")
+                if h:
+                    parts.append(f"h={h}")
+                results.append(" | ".join(parts))
+            for child in node.get("children", []):
+                if isinstance(child, dict):
+                    results.extend(_extract_layout_summary(child, cur_path))
+            return results
+        try:
+            summary_lines = _extract_layout_summary(json.loads(detail_json))
+            if summary_lines:
+                logger.info("Figma layout summary:\n%s", "\n".join(summary_lines))
+        except Exception:
+            pass
 
     figma_context += (
         "\n## ⚠️ Figma 모드 — 아래 규칙이 시스템 프롬프트의 일반 규칙보다 우선합니다\n"
         "1. "
         + ("**스크린샷이 최우선 기준.** 스크린샷을 보고 픽셀 단위로 동일하게 재현하세요. JSON은 보조 참고용.\n" if screenshot_base64 else "Figma 데이터가 절대적 기준.\n")
-        + "2. **Page wrapper(header, nav, sidebar, footer, logo, 검색창) 생성 금지.** "
-        "Figma 트리 최상위 노드부터 바로 시작하세요. Visual Standards의 Page/Container 템플릿은 무시.\n"
-        "3. **Mock Data**: Figma에 보이는 텍스트·행 수를 그대로 반영. 시스템 프롬프트의 10건 이상 규칙은 Figma 모드에서 무시.\n"
-        "4. 아래 인벤토리의 JSX를 props/variant 참고용으로 사용. Figma에 보이는 UI는 자유롭게 생성.\n"
-        "   - **TitleSection children에 신계약등록2/3·이미지시스템 버튼 금지** (매 페이지 반복 템플릿 슬롯이므로 제외됨).\n"
+        + "2. **Page wrapper 절대 생성 금지** (header, nav, GNB, sidebar, footer, logo, 검색창, tab bar, breadcrumb 바깥 영역). "
+        "Figma JSON에 header/nav/tab_floor 등이 보여도 **무시**하고 **Body/Content 영역부터만** 렌더링하세요. "
+        "이것들은 앱 공통 레이아웃에 이미 있으므로 만들면 중복됩니다.\n"
+        "3. **Mock Data**: Figma에 보이는 텍스트·행 수를 그대로 반영.\n"
+        "4. 인벤토리 JSX는 props/variant 참고용. Figma에 보이는 UI는 자유롭게 생성.\n"
         "5. name/characters(텍스트) 필드를 정확히 반영.\n"
-        "6. **calendar 아이콘 Select → Field 변환**: 인벤토리에서 calendar 아이콘이 달린 Select는 "
-        "날짜 입력 필드입니다. `<Field startIcon={<Icon name=\"calendar\" />}>` 로 변환하세요. Select 드롭다운 금지.\n"
-        "7. **FilterBar**: DataGrid 위에 검색/필터용 Select·Field가 있으면(조회형 RP-1) "
-        "`<FilterBar mode=\"compact\" onReset={() => {}} onSearch={() => {}} actionSpan={N}>`로 감싸세요.\n"
-        "   - Figma 레이아웃을 따름. **필드가 한 줄이면 한 줄로 배치.** "
-        "각 필드 `<div className=\"col-span-N\">`로 래핑. Figma w(너비)가 넓으면 col-span-2, 좁으면 col-span-1.\n"
-        "   - **필드 col-span 합 + actionSpan = 12** (한 행). actionSpan은 최소 2.\n"
-        "   - 초기화(tertiary)/조회(primary) 버튼은 FilterBar가 자동 렌더링하므로 **별도 Button 배치 금지**.\n"
-        "\n### Figma 필드 → Tailwind 매핑\n"
-        '- layout: "column"→flex-col, "row"→flex-row | gap/padding: px÷4=Tailwind (12→gap-3, 24→gap-6)\n'
+        "6. **⚠️ gap/padding 값은 JSON에서 읽은 그대로 쓰세요. 절대 임의값(gap-6 등) 금지.**\n"
+        "   - JSON에 `gap: 16` 이면 반드시 `gap-4` (16÷4). `gap-6` 쓰지 마세요.\n"
+        "   - JSON에 `gap: 8` 이면 `gap-2`. JSON에 `gap: 12`면 `gap-3`. JSON에 `gap: 20`이면 `gap-5`.\n"
+        "   - JSON에 gap이 없으면 gap 클래스 넣지 마세요 (기본값 임의로 추가 금지).\n"
+        "7. **⚠️ 높이 고정 금지**: `h-[calc(100vh-XXXpx)]`, `h-screen`, `min-h-screen` 등 viewport 기반 높이 계산 절대 금지. "
+        "콘텐츠 높이는 자연스럽게 늘어나게 두세요 (높이 prop 없음 = 자동).\n"
+        "8. **⚠️ GridLayout type은 Figma `w` 값 비율로 선택**: 임의로 `<div className=\"grid grid-cols-2/3\">` 균등 분할 금지. "
+        "Figma JSON 최상위 자식들의 `w` 값을 12 기준으로 환산해 type 선택.\n"
+        "   - 자식 2개 6:6 → B, 3:9 → C, 9:3 → C-2, 4:8 → D, 8:4 → D-2\n"
+        "   - 자식 3개 4:4:4 균등 → E, 2:8:2 → F, **2:2:8 (마지막이 압도적으로 넓음, 트리+목록+상세 패턴) → G**\n"
+        "   - 자식 4개 3:3:3:3 → H\n"
+        "9. **⚠️ 컴포넌트 래핑 원칙**:\n"
+        "   - **TreeMenu**는 자체 border/배경 없음 → Figma에 box 테두리가 보일 때만 `border rounded` div로 외부 래핑. Figma에 박스 없는데 감싸면 불필요한 중복 박스.\n"
+        "   - **OptionGroup**은 자체 flex-col + 라벨/헬퍼텍스트 컨테이너 내장 → 외부에서 `<div className=\"flex flex-col gap-*\">` 로 감싸지 마세요 (이중 래핑 = 간격 중복).\n"
+        "   - **Alert**는 에러/경고/성공/정보 메시지 박스 전용. Figma의 일반 안내·가이드 bullet 텍스트를 Alert로 감싸지 마세요. 단순 텍스트는 `<ul><li>` 또는 `<p>` 사용.\n"
+        "\n### Figma 필드 → Tailwind 매핑 (px÷4)\n"
+        '- layout: "column"→flex-col, "row"→flex-row\n'
+        "- **gap/padding 변환표**: 4→1, 8→2, 12→3, 16→4, 20→5, 24→6, 32→8, 40→10, 48→12\n"
+        "- padding 단축형: `padding: '20 24'` → `py-5 px-6`, `padding: '24'` → `p-6`\n"
         "- w/h: 고정→w-[Npx], FILL→w-full | borderRadius: 4→rounded, 8→rounded-lg, 9999→rounded-full\n"
         "- fill: FRAME→bg-[hex] | stroke→border-[hex] | opacity: ×100 (0.5→opacity-50)\n"
     )

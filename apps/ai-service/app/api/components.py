@@ -741,7 +741,7 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("import { DataGrid, COLUMN_TYPES } from '@aplus/ui';")
     lines.append("import { Button } from '@/components';")
     lines.append("")
-    lines.append("// For grouped headers, use headerName prefix instead of column groups")
+    lines.append("// [prefix] 방식: 단순 시각적 그룹핑용 (1-depth 헤더 유지). 2-depth+ 다단 헤더는 ColGroupDef 사용")
     lines.append("const columnDefs: ColDef[] = [")
     lines.append("  { field: 'empNo', headerName: '사번', width: 100 },")
     lines.append("  { field: 'name', headerName: '성명', width: 120 },")
@@ -763,15 +763,91 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("```")
     lines.append("")
 
-    # columnDefs 안전 규칙
-    lines.append("### ⚠️ CRITICAL: columnDefs Rules (VIOLATION = SILENT GRID FAILURE)")
-    lines.append("AG Grid will **silently fail to render** (empty container, no error) if columnDefs are invalid.")
+    # 다단 헤더 Usage Example (2-depth)
+    lines.append("### Usage Example (Multi-Level Header — 2-depth)")
+    lines.append("사용자가 **그룹 헤더 / 다단 헤더 / 2단 헤더**를 요청하면 `ColGroupDef`의 `children`을 사용하세요.")
+    lines.append("```tsx")
+    lines.append("import { DataGrid, COLUMN_TYPES } from '@aplus/ui';")
+    lines.append("import { ColDef, ColGroupDef } from 'ag-grid-community';")
     lines.append("")
-    lines.append("**1. FLAT columnDefs ONLY — NO column groups:**")
-    lines.append("- ❌ `{ headerName: '인사정보', children: [{ field: 'name' }, { field: 'dept' }] }` — GRID DIES SILENTLY")
-    lines.append("- ❌ `marryChildren: true` — NOT SUPPORTED")
-    lines.append("- ✅ Use flat columns: `{ field: 'name', headerName: '이름' }, { field: 'dept', headerName: '부서' }`")
-    lines.append("- To visually group headers, use `headerName` prefix: `'[인사] 이름'`, `'[인사] 부서'`")
+    lines.append("const columnDefs: (ColDef | ColGroupDef)[] = [")
+    lines.append("  { field: 'empNo', headerName: '사번', width: 100 },")
+    lines.append("  { field: 'name', headerName: '성명', width: 120 },")
+    lines.append("  {")
+    lines.append("    headerName: '인사정보',")
+    lines.append("    marryChildren: true,  // 그룹 내 컬럼 순서 고정")
+    lines.append("    children: [")
+    lines.append("      { field: 'dept', headerName: '부서', flex: 1 },")
+    lines.append("      { field: 'position', headerName: '직급', width: 100 },")
+    lines.append("      { field: 'joinDate', headerName: '입사일', ...COLUMN_TYPES.dateColumn },")
+    lines.append("    ],")
+    lines.append("  },")
+    lines.append("  {")
+    lines.append("    headerName: '급여정보',")
+    lines.append("    children: [")
+    lines.append("      { field: 'baseSalary', headerName: '기본급', ...COLUMN_TYPES.currencyColumn },")
+    lines.append("      { field: 'bonus', headerName: '상여금', ...COLUMN_TYPES.currencyColumn },")
+    lines.append("    ],")
+    lines.append("  },")
+    lines.append("];")
+    lines.append("")
+    lines.append("<DataGrid rowData={rowData} columnDefs={columnDefs} height={400} />")
+    lines.append("```")
+    lines.append("")
+
+    # 다단 헤더 Usage Example (3-depth)
+    lines.append("### Usage Example (Multi-Level Header — 3-depth)")
+    lines.append("**3단 헤더 / 3Depth / CrossTab Grid** 요청 시 `children` 내부에 `children`을 중첩하세요.")
+    lines.append("```tsx")
+    lines.append("import { DataGrid, COLUMN_TYPES } from '@aplus/ui';")
+    lines.append("import { ColDef, ColGroupDef } from 'ag-grid-community';")
+    lines.append("")
+    lines.append("const columnDefs: (ColDef | ColGroupDef)[] = [")
+    lines.append("  // 독립 컬럼 — AG Grid가 자동으로 모든 헤더 row를 span 처리")
+    lines.append("  { field: 'orgName', headerName: '사업단', width: 160 },")
+    lines.append("  {")
+    lines.append("    headerName: '합계',")
+    lines.append("    children: [")
+    lines.append("      { field: 'totalQty', headerName: '총수량', ...COLUMN_TYPES.numberColumn, width: 100 },")
+    lines.append("      { field: 'totalCount', headerName: '총배분건수', ...COLUMN_TYPES.numberColumn, width: 100 },")
+    lines.append("      { field: 'totalRate', headerName: '총진도율', width: 100 },")
+    lines.append("    ],")
+    lines.append("  },")
+    lines.append("  {")
+    lines.append("    headerName: '권역별',")
+    lines.append("    children: [")
+    lines.append("      {")
+    lines.append("        headerName: '수도권',")
+    lines.append("        children: [")
+    lines.append("          { field: 'seoulQty', headerName: '수량', ...COLUMN_TYPES.numberColumn, width: 80 },")
+    lines.append("          { field: 'seoulCount', headerName: '배분건수', ...COLUMN_TYPES.numberColumn, width: 80 },")
+    lines.append("          { field: 'seoulRate', headerName: '진도율', width: 80 },")
+    lines.append("        ],")
+    lines.append("      },")
+    lines.append("      {")
+    lines.append("        headerName: '강원권',")
+    lines.append("        children: [")
+    lines.append("          { field: 'gwQty', headerName: '수량', ...COLUMN_TYPES.numberColumn, width: 80 },")
+    lines.append("          { field: 'gwCount', headerName: '배분건수', ...COLUMN_TYPES.numberColumn, width: 80 },")
+    lines.append("          { field: 'gwRate', headerName: '진도율', width: 80 },")
+    lines.append("        ],")
+    lines.append("      },")
+    lines.append("    ],")
+    lines.append("  },")
+    lines.append("];")
+    lines.append("```")
+    lines.append("")
+
+    # columnDefs 안전 규칙
+    lines.append("### ⚠️ columnDefs Rules (위반 시 그리드 렌더 실패 또는 동작 이상)")
+    lines.append("")
+    lines.append("**1. columnDefs — flat 기본, ColGroupDef로 다단 헤더 지원:**")
+    lines.append("- ✅ flat 기본: `{ field: 'name', headerName: '이름' }, { field: 'dept', headerName: '부서' }`")
+    lines.append("- ✅ 단순 시각적 그룹핑은 headerName prefix: `'[인사] 이름'`, `'[인사] 부서'` (1-depth 헤더 유지)")
+    lines.append("- ✅ 다단 헤더(2-depth+)는 `ColGroupDef` 사용: `{ headerName: '인사정보', children: [{ field: 'name' }, { field: 'dept' }] }`")
+    lines.append("- ✅ 그룹 내 컬럼 순서 고정·분리 방지: `marryChildren: true` 지원")
+    lines.append("- ⚠️ `children` 배열 내 leaf 컬럼에는 반드시 `field` 필수")
+    lines.append("- ⚠️ column group 사용 시 pinned는 group 레벨에서만 적용 (leaf에 pinned 금지)")
     lines.append("")
     lines.append("**2. cellRenderer — 화살표 함수 또는 named component 사용:**")
     lines.append("- ✅ `cellRenderer: (params) => <Button buttonType=\"ghost\" size=\"sm\" label=\"상세\" showStartIcon={false} showEndIcon={false} />` — 디자인 시스템 Button 직접 사용")
@@ -1224,12 +1300,21 @@ Always respond in Korean.
 - Select options: 4-6개 이상. 필터 Select: `placeholder="전체"` + "전체" 옵션 포함
 - show* prop(showLabel, showHelptext, showStartIcon, showEndIcon) 항상 명시 (Dialog/Drawer 내부 포함)
 
-### Icon
-- `<Icon name="search" size={20} />` — size={20}(58개), size={16}(23개), size={24}(21개)
-- size={20} 권장. name+size 조합 반드시 존재하는지 확인
-- size={20}: add, all, arrow-drop-down, arrow-drop-up, arrow-right, blank, calendar, check, chevron-down, chevron-left, chevron-right, chevron-up, close, delete, dot, edit, error, external, filter-list, folder, folder-fill, format-align-center, format-align-left, format-align-right, format-bold, format-color-text, format-color-text-bg, format-italic, format-list-bulleted, format-list-numbered, format-underlined, help, image, info, keyboard-arrow-left, keyboard-arrow-right, keyboard-double-arrow-left, keyboard-double-arrow-right, link, loading, menu, minus, more-vert, person, post, redo, reset, search, star-fill, star-line, success, table, undo, video, warning, widgets
-- size={16}: add, announcement, blank, calendar, check, chevron-down, chevron-left, chevron-right, chevron-up, close, delete, dot, edit, external, loading, minus, more-vert, reset, search, star-fill, star-line
-- size={24}: add, all, arrow-drop-down, arrow-drop-up, blank, chevron-down, chevron-left, chevron-right, close, dehaze, delete, edit, filter-list, loading, menu, more-vert, person, post, search, star-fill, star-line, widgets
+### Icon ⚠️ size 불일치 = CRASH
+- **항상 `size={20}` 사용.** `<Icon name="search" size={20} />`
+- size={16}은 21개 기본 아이콘만 지원: add, announcement, blank, calendar, check, chevron-down, chevron-left, chevron-right, chevron-up, close, delete, dot, edit, external, loading, minus, more-vert, reset, search, star-fill, star-line
+- **size={16}에 없는 아이콘을 size={16}으로 쓰면 CRASH**: image, video, link, table, folder, undo, redo, format-bold, format-italic, format-underlined, format-align-*, format-list-*, format-color-* 등 → 반드시 size={20}
+- **⚠️ Button/IconButton는 size에 따라 icon size를 강제 변환** → 아이콘이 해당 size에 없으면 CRASH
+  - Button: sm→icon16, md→icon16, **lg→icon20**
+  - IconButton: sm→icon16, **md→icon20**, lg→icon24
+  - size-20-only 아이콘(image, video, link, table, folder, undo, redo, format-* 등) 사용 시:
+    - **Button은 `size="lg"`** 사용 → icon20 ✅
+    - **IconButton은 `size="md"`** 사용 → icon20 ✅
+  - `<Button size="lg" startIcon={<Icon name="image" size={20} />} />` ✅
+  - `<Button size="sm" startIcon={<Icon name="image" size={20} />} />` ❌ CRASH (icon16에 image 없음)
+  - `<IconButton size="md" iconOnly={<Icon name="undo" size={20} />} />` ✅
+  - `<IconButton size="sm" iconOnly={<Icon name="undo" size={20} />} />` ❌ CRASH (icon16에 undo 없음)
+  - `<IconButton size="lg" iconOnly={<Icon name="undo" size={20} />} />` ❌ CRASH (icon24에 undo 없음)
 - 외부 아이콘 라이브러리(lucide-react, heroicons 등) import = CRASH. 이모지/SVG도 금지
 - Profile avatar: `<div className="w-10 h-10 rounded-full bg-[#0033a0] text-white flex items-center justify-center font-semibold text-sm">{name.charAt(0)}</div>`
 
@@ -1237,8 +1322,8 @@ Always respond in Korean.
 1. `import { Button, Field, Select, Icon } from '@/components'` — 사용하는 컴포넌트 전부 import. 미사용/누락 = CRASH
 2. import 양방향 점검: import→JSX, JSX→import 모두 1:1 매칭. 커스텀 컴포넌트 정의 금지(import 사용)
 3. `React.useState`, `React.useEffect` 직접 사용 (import 불필요)
-4. Tailwind CSS only. `style={{}}` = 동적 JS 값만. 외부 라이브러리 import 금지
-5. 테이블 = `<DataGrid>` only (HTML table 태그 금지). 10건+ mock data
+4. Tailwind CSS only. `style={{}}` = 동적 JS 값만. 외부 라이브러리 import 금지 (예외: DataGrid 컬럼 타입은 `import { ColDef } from 'ag-grid-community'` 허용. 다단 헤더 사용 시 `import { ColDef, ColGroupDef } from 'ag-grid-community'` 허용)
+5. 테이블 = `<DataGrid>` only (HTML table 태그 금지). 10건+ mock data. 페이지네이션이 보이면 `pagination paginationPageSize={20}` prop 추가 (별도 Pagination 컴포넌트 없음)
 6. 코드 생략(`...`, `// 나머지 동일`) 절대 금지. 전체 코드 출력. 모든 button→onClick, input→value+onChange
 7. 수정 요청 시 기존 코드 전부 유지 + 대상만 변경
 8. interaction prop: disabled/loading/readonly/error → `interaction="..."` 사용
@@ -1260,17 +1345,19 @@ COMPONENT_QUICK_REFERENCE = """
 - `<Button buttonType="primary" size="md" label="저장" showStartIcon={false} showEndIcon={false} />`
 - buttonType: primary(CTA, 1-2/page) | secondary(조회,저장,보조 테두리) | tertiary(엑셀,인쇄) | ghost(취소,초기화) | destructive(삭제) | ghost-inverse(ActionBar 전용)
 - size: lg(폼 제출) | md(헤더,필터,Dialog) | sm(DataGrid 행, 컴팩트, 툴바)
-- 아이콘: `showStartIcon={true} startIcon={<Icon name="add" size={18} />} showEndIcon={false}`
+- 아이콘: `showStartIcon={true} startIcon={<Icon name="add" size={20} />} showEndIcon={false}` (Button이 size 강제 변환하므로 size={16} 목록 아이콘만 안전)
 
 ### Field (self-closing — `</Field>` = CRASH)
 - `<Field type="text" showLabel={true} label="이름" value={v} onChange={(e) => set(e.target.value)} showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />`
 - type: text | email | number | date | password | tel | url | search
 - isDisplay={true}: 읽기 전용 표시
+- 날짜 입력(작성기간, 조회기간 등 calendar 아이콘)은 `<Field type="date">` 사용. Select 드롭다운 아님
 
 ### Select
 - `<Select showLabel={true} label="상태" placeholder="전체" value={v} onChange={(v) => set(v)} showHelptext={false} showStartIcon={false} className="w-full" options={opts} />`
 - onChange: value 직접 수신 (event 아님). className="w-full" 필수
 - options 최소 3개 (2개 이하면 Radio). defaultValue: option의 value 사용
+- calendar 아이콘이 달린 Select는 날짜 필드 → `<Field type="date">` 로 변환
 
 ### Badge
 - `<Badge type="status" status="info" appearance="subtle" label="공지" />`
@@ -1297,9 +1384,9 @@ COMPONENT_QUICK_REFERENCE = """
 
 ### FilterBar (12컬럼 CSS Grid, 버튼 내장)
 - `<FilterBar mode="compact" onReset={fn} onSearch={fn} actionSpan={2}>`
-- 각 필드: `<div className="col-span-N">` 래핑. 기본 col-span-3 (한 행 4필드). Figma 노드의 w 비율에 따라 col-span-6(넓은 필드) 등 조정
+- 각 필드: `<div className="col-span-N">` 래핑. 필드 col-span 합 + actionSpan = 12 (한 행). actionSpan 최소 2
 - FilterBar 자체가 배경(`bg-bg-subtle rounded-xl`)을 가짐 → 외부에 배경 div 래핑 금지
-- 내장 버튼: 초기화=tertiary, 조회=primary (고정, 변경 불가)
+- 초기화(tertiary)/조회(primary) 버튼은 FilterBar가 자동 렌더링 → 별도 Button 배치 금지
 
 ### Pagination (DataGrid 내장)
 - **별도 `<Pagination>` 컴포넌트 없음.** DataGrid의 `pagination` prop 사용
@@ -1308,15 +1395,17 @@ COMPONENT_QUICK_REFERENCE = """
 
 ### TitleSection
 - `<TitleSection title="제목" menu2="메뉴" showBreadcrumb={true} showMenu2={true} showMenu3={false} showMenu4={false} mode="base"><Button .../></TitleSection>`
+- children에 신계약등록2/3·이미지시스템 버튼 금지 (매 페이지 반복되는 템플릿 기본 슬롯)
 
-### Alert / Tag / LabelValue / Popover / Tab / Segment / OptionGroup / ActionBar / Tooltip
-- Alert: `<Alert type="error" title="오류" body="설명" />` (type: error|info|success|warning)
+### Alert / Tag / LabelValue / Popover / Tab / Segment / OptionGroup / ActionBar / Tooltip / TreeMenu
+- Alert: `<Alert type="error" title="오류" body="설명" />` (type: error|info|success|warning). **⚠️ 에러/경고/성공/정보 메시지 박스 전용. 일반 안내·가이드 bullet 텍스트는 `<ul><li>` 또는 `<p>` 사용 (Alert 남용 금지)**
 - Tag: `<Tag label="카테고리" />` (tagType: closable+onClose, swatch+color)
 - LabelValue: `<LabelValue showLabel={true} label="이름" text="홍길동" showHelptext={false} showPrefix={false} showStartIcon={false} showEndIcon={false} />`
 - Popover: `<Popover><Popover.Trigger>...</Popover.Trigger><Popover.Content>...</Popover.Content></Popover>`
 - Tab: `<Tab items={[{value:'home',label:'홈'}]} value={v} onChange={set} widthMode="content" />` — Figma에 Tab이 있으면 반드시 Tab 컴포넌트 사용. 수동 div 구현 금지
 - Segment: `<Segment items={[{value:'day',label:'일간'}]} value={v} onChange={set} size="md" widthMode="equal" />`
-- OptionGroup: `<OptionGroup label="그룹" showLabel={true} orientation="horizontal" size="sm"><Option label="항목"><Checkbox .../></Option></OptionGroup>`
+- OptionGroup: `<OptionGroup label="그룹" showLabel={true} orientation="horizontal" size="sm"><Option label="항목"><Checkbox .../></Option></OptionGroup>`. **⚠️ 자체 flex-col + 라벨/헬퍼텍스트 컨테이너 내장 → 외부에서 `<div className="flex flex-col gap-*">` 로 감싸지 마세요 (이중 래핑 = 간격 중복)**
+- TreeMenu: `<TreeMenu items={[{id, label, children: [...]}]} />`. **자체 border/배경 없음 (순수 컨테이너)**. Figma에 테두리·박스가 있을 때만 외부에서 `border border-[#dee2e6] rounded-lg` div로 감싸기. Figma에 박스가 없는데 감싸면 불필요한 박스 생성.
 - ActionBar: `<ActionBar count={N} visible={true} onClose={fn}><Button buttonType="ghost-inverse" label="삭제" /></ActionBar>`
 - Tooltip: `<Tooltip content="설명" side="top"><span>대상</span></Tooltip>`
 """
@@ -1339,8 +1428,8 @@ COMPONENT_USAGE_CONVENTION = """
 | 텍스트/맥락 | type | status/level | appearance |
 |-------------|------|--------------|------------|
 | 주의, 경고, 대기, 심사중, 보류, 임박 | status | warning | subtle |
-| 공지, 알림, NEW, 신규, 업데이트, 진행중, 접수, 처리중, 안내 | status | info | subtle |
-| 완료, 정상, 활성, 승인, 유효, 가입, 납입완료 | status | success | subtle |
+| 공지, 알림, 진행중, 접수, 처리중, 안내, 업데이트 | status | info | subtle |
+| NEW, 신규, 완료, 정상, 활성, 승인, 유효, 가입, 납입완료 | status | success | subtle |
 | 실패, 해지, 오류, 거절, 취소, 만기, 무효, 미납 | status | error | subtle |
 | VIP, 우수, 1등급, 주요 카테고리 | level | primary | solid |
 | 일반, 기타, 부가 정보 | level | neutral | subtle |
@@ -1407,7 +1496,7 @@ LAYOUT_GUIDE = """
 - `<GridLayout type="X">` 필수 (수동 `grid-cols-12` 금지). children이 column에 자동 배치됨
 - `<RowPattern pattern="RP-X">` + `<RowSlot slot="...">` 필수 (수동 간격 대신). 간격 자동 적용
 - RowSlot 내부에 `mt-*`/`mb-*` 금지 (이중 간격 발생)
-- 폼은 `<FormGrid columns={N}>` + `<FormGridCell>` 필수 (수동 grid 금지)
+- 폼은 `<FormGrid columns={N}>` + `<FormGridCell colSpan={N}>` 필수 (수동 grid 금지). Figma에서 필드 너비가 다르면 colSpan으로 비율 반영 (좁은 필드 1, 넓은 필드 2 등)
 - FilterBar children은 `<div className="col-span-N">` 래퍼로 감쌈. Figma 레이아웃이 1행이면 1행 유지 (col-span-1~2). 필드 col-span 합 + actionSpan = 12
 - 액션 버튼: 우측 정렬 (`flex justify-end gap-2`). 순서: Tertiary → Ghost → Secondary → Primary
 
@@ -1425,6 +1514,8 @@ LAYOUT_GUIDE = """
 | F | 2+8+2 | 검토/승인 |
 | G | 2+2+8 | 트리+목록+상세 |
 | H | 3+3+3+3 | 4열 동일 위계 |
+
+**⚠️ Figma 자식 `w` 값 비율 → type 매핑**: Figma JSON의 최상위 자식들의 `w` 값을 합산 후 12 기준으로 환산해 가장 가까운 type 선택. 예: 자식 3개가 240/240/960이면 2:2:8 비율 → **type="G"** (트리+목록+상세 패턴). 균등 3분할(400/400/400)이면 type="E". **임의로 `<div className="grid grid-cols-2/3">` 로 균등 분할하지 마세요** — Figma 비율을 무시하면 레이아웃이 틀어집니다.
 
 ### Row Pattern (세로 흐름)
 
@@ -1469,7 +1560,7 @@ import { GridLayout, RowPattern, RowSlot, TitleSection, FilterBar, Field, Select
             </FilterBar>
           </RowSlot>
           <RowSlot slot="grid">
-            <DataGrid rowData={[]} columnDefs={[]} domLayout="autoHeight" />
+            <DataGrid rowData={[]} columnDefs={[]} domLayout="autoHeight" pagination paginationPageSize={20} />
           </RowSlot>
         </RowPattern>
       </div>
@@ -2292,9 +2383,34 @@ DESCRIPTION_SYSTEM_PROMPT = """\
 
 ### ■ 목록 컬럼 정의
 
+**단순 컬럼(그룹 헤더 없음)인 경우:**
+
 | No | 표시명 | 정렬 | 너비 | 비고 |
 |----|-------|------|------|------|
 | 1 | (헤더 텍스트) | 좌/중/우 | (넓음/보통/좁음) | (클릭 동작, 포맷 등) |
+
+**다단 헤더(그룹 컬럼, ColGroupDef)가 있는 경우:**
+
+컬럼 그룹 구조를 표현하기 위해 "그룹 경로" 열을 추가합니다.
+그룹 경로는 " > "로 계층을 구분하며, 그룹에 속하지 않는 독립 컬럼은 "-"로 표기합니다.
+
+| No | 그룹 경로 | 표시명 | 정렬 | 너비 | 비고 |
+|----|----------|-------|------|------|------|
+| 1 | - | (독립 컬럼) | 좌/중/우 | (넓음/보통/좁음) | (비고) |
+| 2 | (1depth 그룹명) | (leaf 컬럼) | 좌/중/우 | (넓음/보통/좁음) | (비고) |
+| 3 | (1depth) > (2depth) | (leaf 컬럼) | 좌/중/우 | (넓음/보통/좁음) | (비고) |
+
+> 예시 (3-depth 헤더):
+>
+> | No | 그룹 경로 | 표시명 | 정렬 | 너비 | 비고 |
+> |----|----------|-------|------|------|------|
+> | 1 | - | 사업단 | 좌 | 보통 | - |
+> | 2 | 합계 | 총수량 | 우 | 좁음 | 천단위 콤마 |
+> | 3 | 합계 | 총배분건수 | 우 | 좁음 | 천단위 콤마 |
+> | 4 | 합계 | 총진도율 | 우 | 좁음 | 소수점 1자리 + % |
+> | 5 | 권역별 > 수도권 | 수량 | 우 | 좁음 | 천단위 콤마 |
+> | 6 | 권역별 > 수도권 | 배분건수 | 우 | 좁음 | 천단위 콤마 |
+> | 7 | 권역별 > 수도권 | 진도율 | 우 | 좁음 | 소수점 1자리 + % |
 
 > ⚠️ 너비는 픽셀값(120px, 200px)이나 코드 값(width: 150) 대신 자연어(넓음/보통/좁음)로 표현하세요.
 
@@ -2605,7 +2721,7 @@ DESCRIPTION_SYSTEM_PROMPT = """\
 2. 코드에 실제로 존재하는 UI 요소만 기술 (추측 금지)
 3. 컴포넌트 props, state, 이벤트 핸들러, JSX 구조를 근거로 작성하되, 코드 함수명/변수명/CSS 클래스명은 출력에 포함하지 마세요
 4. 조건부 렌더링(권한, 상태 등)이 있으면 조건과 함께 명시
-5. 테이블 컬럼은 코드에서 정의된 것만 나열하고 정렬/포맷 정보 포함
+5. 테이블 컬럼은 코드에서 정의된 것만 나열하고 정렬/포맷 정보 포함. 코드에 `ColGroupDef`(children으로 그룹 헤더 구성)가 사용된 경우 반드시 "다단 헤더" 테이블 형식(그룹 경로 열 포함)을 사용하고, 그룹 경로는 " > "로 계층 구분, 독립 컬럼은 "-"로 표기
 6. 입력 항목은 타입, 포맷, 필수 여부, 제약조건을 명시
 7. 버튼은 클릭 시 동작을 구체적으로 기술 (페이지 전환, 다이얼로그 오픈 등)
 8. 유효성 검증은 성공/실패 시 동작을 구분하여 기술하고, 토스트 메시지가 있으면 원문 포함
