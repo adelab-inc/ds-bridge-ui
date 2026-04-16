@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
+import pytest
+
 from app.schemas.chat import FileContent, ParsedResponse
 from app.schemas.validation import ValidationError, ValidationReport
 
@@ -552,3 +557,25 @@ class TestChatStreamingIntegration:
         )
         payload = _build_done_validation_payload(collected_files=[])
         assert payload == {}
+
+
+class TestRegressionFixtures:
+    FIXTURES_DIR = Path(__file__).parent / "fixtures" / "validator"
+
+    @pytest.mark.parametrize(
+        "stem",
+        ["clean_page", "missing_imports", "external_url"],
+    )
+    def test_fixture(self, stem: str):
+        from app.services.code_validator import ComponentCatalog, validate_code
+
+        src_path = self.FIXTURES_DIR / f"{stem}.tsx"
+        expected_path = self.FIXTURES_DIR / "expected" / f"{stem}.json"
+
+        source = src_path.read_text(encoding="utf-8")
+        expected = json.loads(expected_path.read_text(encoding="utf-8"))
+
+        report = validate_code(source, ComponentCatalog.load_default())
+        categories = sorted({e.category for e in report.errors})
+        assert report.passed == expected["passed"]
+        assert categories == expected["categories"]
