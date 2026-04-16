@@ -193,3 +193,49 @@ class TestScanJsxComponents:
         usages = scan_jsx_components("<><Button /></>")
         names = [u.name for u in usages]
         assert names == ["Button"]
+
+
+class TestScanImports:
+    def test_named_imports(self):
+        from app.services.code_validator import scan_imports
+
+        src = 'import { Button, Chip } from "@/components";'
+        assert scan_imports(src) == {"Button", "Chip"}
+
+    def test_alias_import(self):
+        from app.services.code_validator import scan_imports
+
+        src = 'import { Button as Btn } from "@/components";'
+        assert scan_imports(src) == {"Btn"}
+
+    def test_default_import(self):
+        from app.services.code_validator import scan_imports
+
+        src = 'import Foo from "./foo";'
+        assert scan_imports(src) == {"Foo"}
+
+    def test_default_plus_named(self):
+        from app.services.code_validator import scan_imports
+
+        src = 'import React, { useState } from "react";'
+        result = scan_imports(src)
+        assert "React" in result
+        assert "useState" in result
+
+    def test_type_only_imports(self):
+        from app.services.code_validator import scan_imports
+
+        src = 'import type { Foo } from "./types";'
+        assert "Foo" in scan_imports(src)
+
+    def test_no_imports(self):
+        from app.services.code_validator import scan_imports
+
+        assert scan_imports("const x = 1;") == set()
+
+    def test_multiline_named_imports(self):
+        """실제 AI 출력은 보통 여러 줄에 걸쳐 named import를 쓴다."""
+        from app.services.code_validator import scan_imports
+
+        src = 'import {\n  Button,\n  Field,\n  Chip,\n} from "@/components";\n'
+        assert scan_imports(src) == {"Button", "Field", "Chip"}

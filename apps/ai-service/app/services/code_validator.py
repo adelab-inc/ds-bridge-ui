@@ -112,3 +112,37 @@ def scan_jsx_components(source: str) -> list[JSXUsage]:
         line = cleaned.count("\n", 0, match.start()) + 1
         usages.append(JSXUsage(name=name, line=line))
     return usages
+
+
+# import { A, B as BB } from "..."  또는  import Default from "..."  또는  import type { ... } from "..."
+_IMPORT_LINE_RE = re.compile(
+    r"""
+    import \s+ (?:type \s+)?       # type-only import 허용
+    (?:
+        (?P<default>[A-Za-z_$][\w$]*)\s*  # default import
+        (?:,\s*)?
+    )?
+    (?:\{\s*(?P<named>[^}]*)\s*\})?  # named imports
+    \s* from \s* ['"][^'"]+['"]
+    """,
+    re.VERBOSE,
+)
+
+
+def scan_imports(source: str) -> set[str]:
+    """top-level `import` 문에서 사용 이름(alias는 우변) 수집."""
+    names: set[str] = set()
+    for match in _IMPORT_LINE_RE.finditer(source):
+        default = match.group("default")
+        if default:
+            names.add(default)
+        named = match.group("named")
+        if named:
+            for raw in named.split(","):
+                token = raw.strip()
+                if not token:
+                    continue
+                # "X as Y" → Y 사용
+                parts = [p.strip() for p in token.split(" as ")]
+                names.add(parts[-1])
+    return names
