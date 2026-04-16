@@ -1393,18 +1393,11 @@ COMPONENT_QUICK_REFERENCE = """
 - `<DataGrid rowData={data} columnDefs={cols} pagination paginationPageSize={20} />`
 - "총 N개 중 X-Y행" 텍스트 + 페이지 네비게이션이 자동 렌더링됨
 
-### FormGrid / FormGridCell (폼 레이아웃 필수)
-- `<FormGrid columns={4} title="기본 정보">` — **columns는 숫자만** (1|2|3|4). 문자열 "4" 금지 (그리드 깨짐!)
-- `<FormGridCell colSpan={2}>` — **colSpan도 숫자만** (1|2|3|4). 기본값 1
+### FormGrid / FormGridCell (폼 레이아웃)
+- **columns는 숫자만** (1|2|3|4). `columns={4}` (O) / `columns="4"` (X — 문자열이면 그리드 깨짐!)
+- **colSpan도 숫자만** (1|2|3|4). 기본값 1
 - **title prop으로 섹션 제목 자동 생성** → 수동 `<h2>`, `<Heading>` 불필요
-- Figma에서 한 줄에 5~6개 필드면 → `columns={4}` + 개별 필드 너비 좁게 조정 (최대 4 컬럼)
-```tsx
-<FormGrid columns={4} title="기본 정보">
-  <FormGridCell><Field label="조직명" interaction="display" value="동탄사업단" /></FormGridCell>
-  <FormGridCell><Field label="직급" interaction="display" value="TFA" /></FormGridCell>
-  <FormGridCell colSpan={2}><Field label="주소" interaction="display" value="서울시..." /></FormGridCell>
-</FormGrid>
-```
+- ⚠️ **columns 최대 4**. 한 줄에 5~6개 필드면 → `<div className="grid grid-cols-N gap-x-6 gap-y-4">` 직접 사용
 
 ### TitleSection
 - `<TitleSection title="제목" menu2="메뉴" showBreadcrumb={true} showMenu2={true} mode="base"><Button .../></TitleSection>`
@@ -1509,10 +1502,11 @@ LAYOUT_GUIDE = """
 - `<GridLayout type="X">` 필수 (수동 `grid-cols-12` 금지). children이 column에 자동 배치됨
 - `<RowPattern pattern="RP-X">` + `<RowSlot slot="...">` 필수 (수동 간격 대신). 간격 자동 적용
 - RowSlot 내부에 `mt-*`/`mb-*` 금지 (이중 간격 발생)
-- 폼은 `<FormGrid columns={N}>` + `<FormGridCell colSpan={N}>` 필수 (수동 grid 금지)
+- 폼 레이아웃:
+  - **1~4열**: `<FormGrid columns={N}>` + `<FormGridCell colSpan={N}>` 사용
+  - **5~6열**: FormGrid 미지원 → `<div className="grid grid-cols-5 gap-x-6 gap-y-4">` 또는 `grid-cols-6` 직접 사용
   - ⚠️ **columns, colSpan은 반드시 숫자**: `columns={4}` (O) / `columns="4"` (X — 문자열이면 그리드 안 먹힘!)
-  - ⚠️ **columns 최댓값은 4** (1|2|3|4). Figma에서 5~6개 필드가 한 줄이면 `columns={4}` + colSpan 조합으로 표현
-  - **title prop 사용**: `<FormGrid columns={4} title="기본 정보">` → 섹션 제목 자동 생성. 수동 `<h2>` 금지
+  - **FormGrid title prop**: `<FormGrid columns={4} title="기본 정보">` → 섹션 제목 자동 생성. 수동 `<h2>` 금지
   - Figma에서 필드 너비가 다르면 colSpan으로 비율 반영 (좁은 필드 1, 넓은 필드 2 등)
 - FilterBar children은 `<div className="col-span-N">` 래퍼로 감쌈. Figma 레이아웃이 1행이면 1행 유지 (col-span-1~2). 필드 col-span 합 + actionSpan = 12
 - 액션 버튼: 우측 정렬 (`flex justify-end gap-2`). 순서: Tertiary → Ghost → Secondary → Primary
