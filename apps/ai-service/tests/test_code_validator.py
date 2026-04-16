@@ -61,3 +61,18 @@ class TestParsedResponseValidation:
         )
         assert parsed.validation is not None
         assert parsed.validation.passed is True
+
+
+class TestConfigValidationFlags:
+    def test_enable_validation_default_false(self, monkeypatch):
+        """기본값 검증. Supabase 필수 env 는 conftest 실행 시점 .env 또는 실제
+        환경변수로부터 로드된다. 혹시 로컬 실행 환경이 다를 수 있어 명시적으로
+        주입해둔다."""
+        monkeypatch.setenv("SUPABASE_URL", "http://x")
+        monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "x")
+        # `lru_cache` 초기화 방지 — 매번 새 인스턴스 생성
+        from app.core.config import Settings
+
+        s = Settings()
+        assert s.enable_validation is False
+        assert s.validation_timeout_ms == 200

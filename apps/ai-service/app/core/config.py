@@ -51,6 +51,10 @@ class Settings(BaseSettings):
     max_history_count: int = 10  # 대화 컨텍스트에 포함할 최대 메시지 수
     max_image_size_mb: int = 10  # 이미지 업로드 최대 크기 (MB)
 
+    # Code Validation (Stage 4)
+    enable_validation: bool = False       # 기본 off, 단계적 롤아웃
+    validation_timeout_ms: int = 200      # validator 자체 타임아웃
+
     @model_validator(mode="after")
     def _validate_supabase(self) -> "Settings":
         """Supabase 필수 환경변수 검증 (빈 문자열이면 서버 시작 시 즉시 실패)"""
