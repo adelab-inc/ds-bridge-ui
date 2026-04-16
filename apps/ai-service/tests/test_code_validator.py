@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from app.schemas.chat import FileContent, ParsedResponse
 from app.schemas.validation import ValidationError, ValidationReport
 
 
@@ -39,3 +40,24 @@ class TestValidationSchemas:
         report = ValidationReport(passed=False, errors=[err], warnings=[], elapsed_ms=12)
         assert report.passed is False
         assert len(report.errors) == 1
+
+
+class TestParsedResponseValidation:
+    def test_parsed_response_validation_default_none(self):
+        parsed = ParsedResponse(
+            conversation="hi",
+            files=[],
+            raw="hi",
+        )
+        assert parsed.validation is None
+
+    def test_parsed_response_accepts_validation_report(self):
+        report = ValidationReport(passed=True, errors=[], warnings=[], elapsed_ms=3)
+        parsed = ParsedResponse(
+            conversation="hi",
+            files=[FileContent(path="a.tsx", content="x")],
+            raw="hi",
+            validation=report,
+        )
+        assert parsed.validation is not None
+        assert parsed.validation.passed is True

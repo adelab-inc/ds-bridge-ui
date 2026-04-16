@@ -2,6 +2,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
+from app.schemas.validation import ValidationReport
+
 
 class Message(BaseModel):
     """채팅 메시지"""
@@ -75,6 +77,10 @@ class ParsedResponse(BaseModel):
     raw: str = Field(
         ...,
         description="AI 원본 응답 (파싱 전)",
+    )
+    validation: ValidationReport | None = Field(
+        None,
+        description="정적 검증 결과 (ENABLE_VALIDATION=false이면 None)",
     )
 
     model_config = {
