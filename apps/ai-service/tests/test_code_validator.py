@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import time
 from pathlib import Path
 
 import pytest
@@ -579,3 +580,32 @@ class TestRegressionFixtures:
         categories = sorted({e.category for e in report.errors})
         assert report.passed == expected["passed"]
         assert categories == expected["categories"]
+
+
+class TestLatency:
+    def test_p50_under_50ms_for_1kb_input(self):
+        """1KB TSX 입력 50회 실행 중 median <50ms.
+
+        목표는 p50 <20ms 이지만 CI 머신 편차를 고려해 assertion은 <50ms 로 완화.
+        실제 로컬 기대치는 5~15ms. 지속적으로 20ms를 초과하면 성능 회귀로 간주.
+        """
+        import statistics
+
+        from app.services.code_validator import ComponentCatalog, validate_code
+
+        catalog = ComponentCatalog.load_default()
+        # 약 1KB TSX 조립 (문자 수 기준)
+        line = 'import { Button, Field, Chip } from "@/components";\n'
+        body = '<GridLayout type="A"><Field label="x"/><Button>ok</Button></GridLayout>\n'
+        source = line + (body * 20)  # 대략 1KB+
+        assert len(source) >= 800  # 샘플 크기 sanity
+
+        times: list[float] = []
+        for _ in range(50):
+            t0 = time.perf_counter()
+            validate_code(source, catalog)
+            times.append((time.perf_counter() - t0) * 1000)
+
+        median = statistics.median(times)
+        # CI 여유 마진 포함 <50ms. 로컬 기대치 <20ms.
+        assert median < 50.0, f"median={median:.2f}ms (target <50ms, goal <20ms)"
