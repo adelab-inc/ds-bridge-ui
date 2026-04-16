@@ -512,3 +512,43 @@ class TestChatNonStreamingIntegration:
         assert parsed.validation is not None
         categories = [e.category for e in parsed.validation.errors]
         assert categories == ["missing_import"]  # 합쳐진 결과에 1건만
+
+
+class TestChatStreamingIntegration:
+    def test_build_done_payload_flag_off(self, monkeypatch):
+        from app.api.chat import _build_done_validation_payload
+
+        monkeypatch.setattr(
+            "app.api.chat.get_settings",
+            lambda: type("S", (), {"enable_validation": False})(),
+        )
+        payload = _build_done_validation_payload(
+            collected_files=[{"path": "x.tsx", "content": "<Chip />"}]
+        )
+        assert payload == {}  # 플래그 off면 빈 dict
+
+    def test_build_done_payload_flag_on(self, monkeypatch):
+        from app.api.chat import _build_done_validation_payload
+
+        monkeypatch.setattr(
+            "app.api.chat.get_settings",
+            lambda: type("S", (), {"enable_validation": True})(),
+        )
+        payload = _build_done_validation_payload(
+            collected_files=[{"path": "x.tsx", "content": "<Chip />"}]
+        )
+        assert "validation" in payload
+        vdict = payload["validation"]
+        assert vdict["passed"] is False
+        categories = [e["category"] for e in vdict["errors"]]
+        assert "missing_import" in categories
+
+    def test_build_done_payload_no_files(self, monkeypatch):
+        from app.api.chat import _build_done_validation_payload
+
+        monkeypatch.setattr(
+            "app.api.chat.get_settings",
+            lambda: type("S", (), {"enable_validation": True})(),
+        )
+        payload = _build_done_validation_payload(collected_files=[])
+        assert payload == {}

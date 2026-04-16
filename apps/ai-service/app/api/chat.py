@@ -79,6 +79,37 @@ def _maybe_validate_parsed(parsed: ParsedResponse) -> None:
     )
 
 
+def _build_done_validation_payload(collected_files: list[dict]) -> dict:
+    """스트리밍 `done` 이벤트에 첨부할 검증 리포트 딕셔너리를 만든다.
+
+    ENABLE_VALIDATION=false 이거나 생성 파일이 없으면 빈 dict를 반환해
+    기존 페이로드 형식을 유지한다.
+    """
+    settings = get_settings()
+    if not settings.enable_validation or not collected_files:
+        return {}
+
+    merged_errors: list[ValidationError] = []
+    merged_warnings: list[ValidationError] = []
+    elapsed_total = 0
+    for f in collected_files:
+        content = f.get("content", "")
+        if not content:
+            continue
+        report = validate_code(content, _CODE_CATALOG)
+        merged_errors.extend(report.errors)
+        merged_warnings.extend(report.warnings)
+        elapsed_total += report.elapsed_ms
+
+    report_obj = ValidationReport(
+        passed=not merged_errors,
+        errors=merged_errors,
+        warnings=merged_warnings,
+        elapsed_ms=elapsed_total,
+    )
+    return {"validation": report_obj.model_dump()}
+
+
 router = APIRouter(dependencies=[Depends(verify_api_key)])
 logger = logging.getLogger(__name__)
 
@@ -1065,7 +1096,9 @@ async def _run_broadcast_generation(
             status="DONE",
         )
 
-        await broadcast_event(room_id, "done", {"message_id": message_id})
+        done_payload = {"message_id": message_id}
+        done_payload.update(_build_done_validation_payload(collected_files))
+        await broadcast_event(room_id, "done", done_payload)
 
     except TimeoutError:
         logger.error(
