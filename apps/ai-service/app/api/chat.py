@@ -398,9 +398,109 @@ def _fix_icon_sizes(content: str) -> str:
     return _ICON_TAG_PATTERN.sub(_replace, content)
 
 
+def _fix_button_icon_crash(content: str) -> str:
+    """Button/IconButton의 size prop이 icon size를 강제 변환하여 발생하는 CRASH를 교정한다.
+
+    Button:     sm→16, md→16, lg→20
+    IconButton: sm→16, md→20, lg→24
+
+    아이콘이 해당 size에 없으면 icon이 존재하는 size로 버튼 size를 변경한다.
+    """
+    # 버튼 size → 내부 icon size 매핑
+    _BUTTON_ICON_SIZE = {"sm": 16, "md": 16, "lg": 20}
+    _ICONBUTTON_ICON_SIZE = {"sm": 16, "md": 20, "lg": 24}
+
+    # icon size → 필요한 버튼 size (역매핑, size 20 우선)
+    _BUTTON_SIZE_FOR_ICON = {20: "lg", 16: "sm"}
+    _ICONBUTTON_SIZE_FOR_ICON = {20: "md", 16: "sm", 24: "lg"}
+
+    tag_re = re.compile(
+        r'<((?:Icon)?Button)\b((?:[^>{}]|\{(?:[^{}]|\{[^{}]*\})*\})*)(/>|>)',
+        re.DOTALL,
+    )
+
+    def _find_best_size(icon_names: list[str], size_for_icon: dict[int, str]) -> str | None:
+        """아이콘들이 모두 존재하는 버튼 size를 찾는다. 없으면 None."""
+        # size 20 → 16 → 24 순으로 시도 (size 20이 가장 많은 아이콘 보유)
+        for icon_size in (20, 16, 24):
+            available = _ICON_NAMES_BY_SIZE.get(icon_size, set())
+            if all(name in available for name in icon_names):
+                btn_size = size_for_icon.get(icon_size)
+                if btn_size:
+                    return btn_size
+        return None
+
+    def _fix_tag(m: re.Match[str]) -> str:
+        tag_name = m.group(1)
+        props = m.group(2)
+        closing = m.group(3)
+        is_icon_button = tag_name == "IconButton"
+
+        # 현재 size 추출
+        size_match = re.search(r'\bsize="(sm|md|lg)"', props)
+        if not size_match:
+            return m.group(0)
+        current_size = size_match.group(1)
+
+        # 아이콘 이름 추출
+        icon_names = re.findall(
+            r'(?:startIcon|endIcon|iconOnly)=\{<Icon\s+name="([^"]+)"', props
+        )
+        if not icon_names:
+            return m.group(0)
+
+        # 현재 size로 강제되는 icon size 확인
+        size_map = _ICONBUTTON_ICON_SIZE if is_icon_button else _BUTTON_ICON_SIZE
+        forced_icon_size = size_map.get(current_size, 20)
+        available = _ICON_NAMES_BY_SIZE.get(forced_icon_size, set())
+
+        # 모든 아이콘이 해당 size에 존재하면 OK
+        if all(name in available for name in icon_names):
+            return m.group(0)
+
+        # 유효한 버튼 size 찾기
+        size_for_icon = _ICONBUTTON_SIZE_FOR_ICON if is_icon_button else _BUTTON_SIZE_FOR_ICON
+        best_size = _find_best_size(icon_names, size_for_icon)
+        if not best_size or best_size == current_size:
+            return m.group(0)
+
+        fixed_props = re.sub(r'\bsize="(?:sm|md|lg)"', f'size="{best_size}"', props)
+        return f"<{tag_name}{fixed_props}{closing}"
+
+    return tag_re.sub(_fix_tag, content)
+
+
+def _fix_viewport_height(content: str) -> str:
+    """viewport 기반 고정 높이 클래스를 제거한다.
+
+    앱 공통 레이아웃이 이미 높이 계산을 처리하므로
+    페이지 콘텐츠에서 `h-[calc(100vh-...)]`, `h-screen`, `min-h-screen` 등을 쓰면
+    2중 계산되어 콘텐츠가 잘리거나 짧아진다.
+    """
+    # h-[calc(100vh-...)] / min-h-[calc(100vh-...)] / h-[100vh] 등 제거
+    content = re.sub(
+        r'\s*(?:min-)?h-\[(?:calc\()?100vh[^\]]*\]',
+        '',
+        content,
+    )
+    # h-screen, min-h-screen, max-h-screen 제거
+    content = re.sub(
+        r'\s*(?:min-|max-)?h-screen\b',
+        '',
+        content,
+    )
+    # className="" 또는 className=" " 남은 경우 정리
+    content = re.sub(r'className="\s+', 'className="', content)
+    content = re.sub(r'\s+"', '"', content)
+    return content
+
+
 def _postprocess_code(content: str) -> str:
-    """AI 생성 코드의 Icon size 오류를 교정한다."""
-    return _fix_icon_sizes(content)
+    """AI 생성 코드의 Icon 관련 오류와 레이아웃 문제를 교정한다."""
+    result = _fix_icon_sizes(content)
+    result = _fix_button_icon_crash(result)
+    result = _fix_viewport_height(result)
+    return result
 
 
 def parse_ai_response(content: str) -> ParsedResponse:
