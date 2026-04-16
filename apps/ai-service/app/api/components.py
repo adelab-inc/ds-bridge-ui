@@ -673,7 +673,7 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("  headerName: '상세',  // 버튼 용도에 따라 '수정', '삭제', '보기' 등으로 변경")
     lines.append("  width: 100,")
     lines.append("  cellRenderer: (params: any) => (")
-    lines.append("    <Button buttonType=\"ghost\" size=\"sm\" label=\"상세\" showStartIcon={false} showEndIcon={false} onClick={() => {")
+    lines.append("    <Button buttonType=\"ghost\" size=\"sm\" label=\"상세\" onClick={() => {")
     lines.append("      setSelectedItem(params.data);")
     lines.append("      setIsDetailOpen(true);")
     lines.append("    }} />")
@@ -755,7 +755,7 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("  // Action button — Button 컴포넌트를 cellRenderer로 직접 사용")
     lines.append("  { headerName: '상세', width: 100,")
     lines.append("    cellRenderer: (params: any) => (")
-    lines.append("      <Button buttonType=\"ghost\" size=\"sm\" label=\"상세\" showStartIcon={false} showEndIcon={false} onClick={() => { setSelectedItem(params.data); setIsDetailOpen(true); }} />")
+    lines.append("      <Button buttonType=\"ghost\" size=\"sm\" label=\"상세\" onClick={() => { setSelectedItem(params.data); setIsDetailOpen(true); }} />")
     lines.append("    ) },")
     lines.append("];")
     lines.append("")
@@ -850,7 +850,7 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("- ⚠️ column group 사용 시 pinned는 group 레벨에서만 적용 (leaf에 pinned 금지)")
     lines.append("")
     lines.append("**2. cellRenderer — 화살표 함수 또는 named component 사용:**")
-    lines.append("- ✅ `cellRenderer: (params) => <Button buttonType=\"ghost\" size=\"sm\" label=\"상세\" showStartIcon={false} showEndIcon={false} />` — 디자인 시스템 Button 직접 사용")
+    lines.append("- ✅ `cellRenderer: (params) => <Button buttonType=\"ghost\" size=\"sm\" label=\"상세\" />` — 디자인 시스템 Button 직접 사용")
     lines.append("- ✅ `cellRenderer: CheckboxCellRenderer` — Named component from @aplus/ui")
     lines.append("- ✅ `cellRenderer: ImageCellRenderer` — Named component from @aplus/ui")
     lines.append("- ❌ `cellRenderer: ButtonCellRenderer` — 사용 금지 (디자인 시스템 미적용, 파란색 하드코딩)")
@@ -1342,19 +1342,19 @@ COMPONENT_QUICK_REFERENCE = """
 ## Component Quick Reference
 
 ### Button
-- `<Button buttonType="primary" size="md" label="저장" showStartIcon={false} showEndIcon={false} />`
+- `<Button buttonType="primary" size="md" label="저장" />`
 - buttonType: primary(CTA, 1-2/page) | secondary(조회,저장,보조 테두리) | tertiary(엑셀,인쇄) | ghost(취소,초기화) | destructive(삭제) | ghost-inverse(ActionBar 전용)
 - size: lg(폼 제출) | md(헤더,필터,Dialog) | sm(DataGrid 행, 컴팩트, 툴바)
-- 아이콘: `showStartIcon={true} startIcon={<Icon name="add" size={20} />} showEndIcon={false}` (Button이 size 강제 변환하므로 size={16} 목록 아이콘만 안전)
+- 아이콘: `showStartIcon={true} startIcon={<Icon name="add" size={20} />}` (Button이 size 강제 변환하므로 size={16} 목록 아이콘만 안전)
 
 ### Field (self-closing — `</Field>` = CRASH)
-- `<Field type="text" showLabel={true} label="이름" value={v} onChange={(e) => set(e.target.value)} showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />`
+- `<Field type="text" label="이름" value={v} onChange={(e) => set(e.target.value)} />`
 - type: text | email | number | date | password | tel | url | search
-- isDisplay={true}: 읽기 전용 표시
+- interaction="display": 읽기 전용 표시 (Figma에서 display 모드일 때)
 - 날짜 입력(작성기간, 조회기간 등 calendar 아이콘)은 `<Field type="date">` 사용. Select 드롭다운 아님
 
 ### Select
-- `<Select showLabel={true} label="상태" placeholder="전체" value={v} onChange={(v) => set(v)} showHelptext={false} showStartIcon={false} className="w-full" options={opts} />`
+- `<Select label="상태" placeholder="전체" value={v} onChange={(v) => set(v)} options={opts} />`
 - onChange: value 직접 수신 (event 아님). className="w-full" 필수
 - options 최소 3개 (2개 이하면 Radio). defaultValue: option의 value 사용
 - calendar 아이콘이 달린 Select는 날짜 필드 → `<Field type="date">` 로 변환
@@ -1400,7 +1400,7 @@ COMPONENT_QUICK_REFERENCE = """
 ### Alert / Tag / LabelValue / Popover / Tab / Segment / OptionGroup / ActionBar / Tooltip / TreeMenu
 - Alert: `<Alert type="error" title="오류" body="설명" />` (type: error|info|success|warning). **⚠️ 에러/경고/성공/정보 메시지 박스 전용. 일반 안내·가이드 bullet 텍스트는 `<ul><li>` 또는 `<p>` 사용 (Alert 남용 금지)**
 - Tag: `<Tag label="카테고리" />` (tagType: closable+onClose, swatch+color)
-- LabelValue: `<LabelValue showLabel={true} label="이름" text="홍길동" showHelptext={false} showPrefix={false} showStartIcon={false} showEndIcon={false} />`
+- LabelValue: `<LabelValue label="이름" text="홍길동" />`
 - Popover: `<Popover><Popover.Trigger>...</Popover.Trigger><Popover.Content>...</Popover.Content></Popover>`
 - Tab: `<Tab items={[{value:'home',label:'홈'}]} value={v} onChange={set} widthMode="content" />` — Figma에 Tab이 있으면 반드시 Tab 컴포넌트 사용. 수동 div 구현 금지
 - Segment: `<Segment items={[{value:'day',label:'일간'}]} value={v} onChange={set} size="md" widthMode="equal" />`
@@ -1544,18 +1544,18 @@ import { GridLayout, RowPattern, RowSlot, TitleSection, FilterBar, Field, Select
 <div className="min-h-screen bg-[#f4f6f8] p-8">
   <GridLayout type="A">
     <div>
-      <TitleSection title="계약 관리" menu2="계약" showBreadcrumb={true} showMenu2={true} showMenu3={false} showMenu4={false} mode="base">
-        <Button buttonType="primary" size="sm" label="신규 등록" showStartIcon={false} showEndIcon={false} />
+      <TitleSection title="계약 관리" menu2="계약" showBreadcrumb={true} showMenu2={true} mode="base">
+        <Button buttonType="primary" size="sm" label="신규 등록" />
       </TitleSection>
       <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6 mt-5">
         <RowPattern pattern="RP-1">
           <RowSlot slot="filter">
             <FilterBar mode="compact" onReset={() => {}} onSearch={() => {}}>
               <div className="col-span-3">
-                <Field type="date" showLabel={true} label="조회기간" showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
+                <Field type="date" label="조회기간" />
               </div>
               <div className="col-span-3">
-                <Select showLabel={true} label="상태" placeholder="전체" showHelptext={false} showStartIcon={false} className="w-full" options={[]} />
+                <Select label="상태" placeholder="전체" options={[]} />
               </div>
             </FilterBar>
           </RowSlot>
@@ -1603,6 +1603,11 @@ RESPONSE_FORMAT_INSTRUCTIONS = """
 1. 간단한 한글 설명 (1-2문장)
 2. `<file path="src/...">코드</file>` 태그
 
+### ⚠️ Props 간결성 규칙
+- **기본값과 동일한 prop은 생략하세요.** 예: `showStartIcon`의 기본값이 `false`이면 `showStartIcon={false}` 쓰지 마세요.
+- `showLabel={true}` → 기본값이 true이면 생략. `showHelptext={false}` → 기본값이 false이면 생략.
+- **변경이 필요한 prop만** 명시하세요. 코드가 짧을수록 유지보수가 쉽습니다.
+
 ### Example:
 로그인 폼입니다.
 
@@ -1618,12 +1623,12 @@ const Login = () => {
       <div className="w-full max-w-[420px] bg-white rounded-xl border border-[#dee2e6] shadow-sm p-8">
         <h1 className="text-2xl font-bold text-[#212529] mb-6">로그인</h1>
         <div className="mb-5">
-          <Field type="email" showLabel={true} label="이메일" value={email} onChange={(e) => setEmail(e.target.value)} showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
+          <Field type="email" label="이메일" value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
         <div className="mb-6">
-          <Field type="password" showLabel={true} label="비밀번호" value={password} onChange={(e) => setPassword(e.target.value)} showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
+          <Field type="password" label="비밀번호" value={password} onChange={(e) => setPassword(e.target.value)} />
         </div>
-        <Button buttonType="primary" label="로그인" showStartIcon={false} showEndIcon={false} className="w-full" />
+        <Button buttonType="primary" label="로그인" className="w-full" />
       </div>
     </div>
   );
@@ -1641,7 +1646,7 @@ UI_PATTERN_EXAMPLES = """
 ### ActionBar (DataGrid 선택 액션)
 ```tsx
 <ActionBar count={selectedRows.length} visible={selectedRows.length > 0} onClose={() => clearSelection()}>
-  <Button buttonType="ghost-inverse" size="md" label="일괄 승인" showStartIcon={false} showEndIcon={false} />
+  <Button buttonType="ghost-inverse" size="md" label="일괄 승인" />
 </ActionBar>
 ```
 
@@ -1649,16 +1654,16 @@ UI_PATTERN_EXAMPLES = """
 "드로어" = Drawer, "다이얼로그/모달/팝업" = Dialog. 혼동 금지.
 ```tsx
 <Drawer open={isOpen} onClose={() => setIsOpen(false)} size="md">
-  <Drawer.Header title="등록" showSubtitle={false} />
+  <Drawer.Header title="등록" />
   <Drawer.Body>
     <div className="flex flex-col gap-4">
-      <Field showLabel={true} label="이름" showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
-      <Select showLabel={true} label="부서" showHelptext={false} showStartIcon={false} options={deptOptions} className="w-full" />
+      <Field label="이름" />
+      <Select label="부서" options={deptOptions} />
     </div>
   </Drawer.Body>
   <Drawer.Footer>
-    <Button buttonType="ghost" label="취소" onClick={() => setIsOpen(false)} showStartIcon={false} showEndIcon={false} />
-    <Button buttonType="primary" label="등록" showStartIcon={false} showEndIcon={false} />
+    <Button buttonType="ghost" label="취소" onClick={() => setIsOpen(false)} />
+    <Button buttonType="primary" label="등록" />
   </Drawer.Footer>
 </Drawer>
 ```
@@ -1962,69 +1967,7 @@ def format_component_usage_map(usage_map: dict) -> str:
 
     return "\n".join(lines)
 
-def format_layouts(layouts: list[dict]) -> str:
-    """
-    레이아웃 JSON 리스트를 프롬프트용 문자열로 포맷팅.
-    figma_simplify를 사용하여 AI-friendly compact 포맷으로 변환.
 
-    Args:
-        layouts: Figma에서 추출한 레이아웃 JSON 리스트
-
-    Returns:
-        포맷팅된 레이아웃 섹션 문자열
-    """
-    if not layouts:
-        return ""
-
-    section = """
-
-## Reference Layouts (Figma Extracted)
-
-Below are reference layouts extracted from Figma. Use these as structural guides when generating similar pages.
-- `layout`: "column" = flex-direction: column, "row" = flex-direction: row, "grid" = CSS grid
-- `gap`: spacing between children (in px)
-- `padding`: CSS shorthand (e.g. "0 24" = top/bottom 0, left/right 24)
-- INSTANCE nodes: `component`, `variant`, `label` fields map to design system components
-
-**CRITICAL - INSTANCE 노드의 `label` 필드 매핑 규칙:**
-- `label` 필드는 Figma에서 추출한 텍스트 내용입니다 → 컴포넌트의 `label` prop으로 전달
-- 예: `{"component":"Badge","label":"공지"}` → `<Badge label="공지" />`
-- 예: `{"component":"Button","label":"조회하기"}` → `<Button label="조회하기" />`
-
-**CRITICAL - INSTANCE 노드의 `variant` 필드는 반드시 그대로 사용:**
-- variant 필드의 모든 key-value를 컴포넌트 props로 정확히 매핑하세요. 임의로 변경하지 마세요.
-- `size` 값도 variant 안에 포함되어 있으며, 반드시 그대로 사용하세요 (sm이면 sm, md이면 md).
-- 예: `{"variant":{"size":"sm","buttonType":"secondary"}}` → `<Button size="sm" buttonType="secondary" />`
-- 예: `{"variant":{"size":"sm","buttonType":"primary"}}` → `<Button size="sm" buttonType="primary" />`
-- **금지**: variant에 size="sm"이라고 되어 있는데 size="md"로 바꾸거나, buttonType을 임의로 바꾸는 행위
-
-**CRITICAL - fill → variant 매핑:**
-- fill 값(토큰 키 또는 hex)을 프롬프트의 '컴포넌트 fill→variant 매핑' 테이블과 대조하여 variant prop 결정
-- variant 필드가 이미 있으면 fill보다 variant 필드를 우선 사용
-
-**CRITICAL - Figma State to React Props Mapping:**
-- Figma `Selected=True`, `State=Selected` in Select → React `defaultValue` (NOT `value` or `selected`)
-- Figma placeholder text like "선택하세요", "전체 지역" in Select → React `placeholder` prop
-- Figma `Checked=True` in Checkbox/Radio/ToggleSwitch → React `checked` with `onChange` handler
-- Match the component structure
-
-"""
-    for i, layout in enumerate(layouts, 1):
-        name = layout.get("layout", {}).get("name", f"Layout {i}")
-        raw_layout = layout.get("layout", {})
-        clean_layout = simplify_node(raw_layout)
-        layout_json = json.dumps(
-            {"layout": clean_layout}, ensure_ascii=False, separators=(",", ":")
-        )
-        section += f"### {name}\n```json\n{layout_json}\n```\n\n"
-
-        # 컴포넌트 사용 요약 추가
-        if clean_layout:
-            usage_summary = extract_component_usage_summary(clean_layout)
-            if usage_summary:
-                section += usage_summary + "\n"
-
-    return section
 
 
 def generate_system_prompt(
@@ -2032,7 +1975,6 @@ def generate_system_prompt(
     design_tokens: dict | None = None,
     ag_grid_schema: dict | None = None,
     ag_grid_tokens: dict | None = None,
-    layouts: list[dict] | None = None,
     component_definitions: dict | None = None,
     skip_ui_patterns: bool = False,
     component_usage_map: dict | None = None,
@@ -2045,7 +1987,6 @@ def generate_system_prompt(
         design_tokens: 디자인 토큰 dict (Firebase에서 로드, None이면 기본값 사용)
         ag_grid_schema: AG Grid 컴포넌트 스키마 dict (Firebase에서 로드, None이면 미포함)
         ag_grid_tokens: AG Grid 토큰 dict (Firebase에서 로드, None이면 미포함)
-        layouts: Figma 레이아웃 JSON 리스트 (Firebase에서 로드, None이면 미포함)
         component_definitions: 컴포넌트 정의 dict (Firebase에서 로드, None이면 미포함)
         skip_ui_patterns: True이면 UI_PATTERN_EXAMPLES 제외 (Figma 모드 등 도메인 예시 오염 방지)
         component_usage_map: Figma에서 추출한 컴포넌트 사용 패턴 (label→variant 매핑)
@@ -2070,9 +2011,6 @@ def generate_system_prompt(
         component_definitions, design_tokens
     )
 
-    # 레이아웃 섹션
-    layouts_section = format_layouts(layouts) if layouts else ""
-
     # 컴포넌트 사용 패턴 (Figma에서 추출, 텍스트 모드에서 참조)
     usage_map_section = format_component_usage_map(component_usage_map) if component_usage_map else ""
 
@@ -2088,7 +2026,6 @@ def generate_system_prompt(
         + component_docs
         + ag_grid_section
         + component_visual_guide
-        + layouts_section
         + usage_map_section
         + (UI_PATTERN_EXAMPLES if not skip_ui_patterns else "")
         + RESPONSE_FORMAT_INSTRUCTIONS

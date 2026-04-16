@@ -294,6 +294,12 @@ async def run_figma_tool_calling_loop(
         "   - **Alert**는 에러/경고/성공/정보 메시지 박스 전용. Figma의 일반 안내·가이드 bullet 텍스트를 Alert로 감싸지 마세요. 단순 텍스트는 `<ul><li>` 또는 `<p>` 사용.\n"
         "\n### Figma 필드 → Tailwind 매핑 (px÷4)\n"
         '- layout: "column"→flex-col, "row"→flex-row\n'
+        '- **justify** (주축 정렬): "center"→justify-center, "space-between"→justify-between, "end"→justify-end\n'
+        '- **align** (교차축 정렬): "center"→items-center, "end"→items-end, "baseline"→items-baseline\n'
+        '- **hSizing**: "fill"→w-full, "hug"→w-auto (생략 시 고정 w 값 사용)\n'
+        '- **vSizing**: "fill"→h-full, "hug"→h-auto (생략 시 고정 h 값 사용)\n'
+        '- **selfAlign**: "stretch"→self-stretch, "center"→self-center\n'
+        '- **wrap**: true→flex-wrap\n'
         "- **gap/padding 변환표**: 4→1, 8→2, 12→3, 16→4, 20→5, 24→6, 32→8, 40→10, 48→12\n"
         "- padding 단축형: `padding: '20 24'` → `py-5 px-6`, `padding: '24'` → `p-6`\n"
         "- w/h: 고정→w-[Npx], FILL→w-full | borderRadius: 4→rounded, 8→rounded-lg, 9999→rounded-full\n"

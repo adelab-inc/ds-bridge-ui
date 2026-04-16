@@ -37,12 +37,7 @@ _STRIP_KEYS = {
     "strokeMiterAngle",
     "strokeCap",
     "strokeJoin",
-    "layoutAlign",
     "layoutGrow",
-    "layoutSizingHorizontal",
-    "layoutSizingVertical",
-    "primaryAxisAlignItems",
-    "counterAxisAlignItems",
     "primaryAxisSizingMode",
     "counterAxisSizingMode",
     "counterAxisAlignContent",
@@ -52,7 +47,6 @@ _STRIP_KEYS = {
     "complexStrokeProperties",
     "background",
     "backgroundColor",
-    "layoutWrap",
     "targetAspectRatio",
     "layoutGrids",
     "booleanOperation",
@@ -325,6 +319,58 @@ def simplify_node(
                 out["layout"] = mapped
             continue
 
+        # primaryAxisAlignItems → justify (CSS justify-content)
+        if key == "primaryAxisAlignItems":
+            _justify_map = {
+                "MIN": "start", "MAX": "end", "CENTER": "center",
+                "SPACE_BETWEEN": "space-between",
+            }
+            mapped = _justify_map.get(value)
+            if mapped and mapped != "start":  # start는 기본값이므로 생략
+                out["justify"] = mapped
+            continue
+
+        # counterAxisAlignItems → align (CSS align-items)
+        if key == "counterAxisAlignItems":
+            _align_map = {
+                "MIN": "start", "MAX": "end", "CENTER": "center",
+                "BASELINE": "baseline",
+            }
+            mapped = _align_map.get(value)
+            if mapped and mapped != "start":  # start는 기본값이므로 생략
+                out["align"] = mapped
+            continue
+
+        # layoutSizingHorizontal → hSizing (fill=w-full, hug=w-auto)
+        if key == "layoutSizingHorizontal":
+            if isinstance(value, str):
+                v = value.lower()
+                if v != "fixed":  # fixed는 이미 w 값으로 표현됨
+                    out["hSizing"] = v
+            continue
+
+        # layoutSizingVertical → vSizing (fill=h-full, hug=h-auto)
+        if key == "layoutSizingVertical":
+            if isinstance(value, str):
+                v = value.lower()
+                if v != "fixed":  # fixed는 이미 h 값으로 표현됨
+                    out["vSizing"] = v
+            continue
+
+        # layoutAlign → selfAlign (부모 cross-axis에서 자신의 정렬)
+        if key == "layoutAlign":
+            _self_align_map = {"STRETCH": "stretch", "MIN": "start", "MAX": "end", "CENTER": "center"}
+            mapped = _self_align_map.get(value)
+            if mapped:
+                out["selfAlign"] = mapped
+            continue
+
+        # layoutWrap → wrap (flex-wrap)
+        if key == "layoutWrap":
+            if value == "WRAP":
+                out["wrap"] = True
+            continue
+
         if key == "itemSpacing":
             if value and value != 0:
                 out["gap"] = value
@@ -558,9 +604,11 @@ def simplify_node(
                 for k, v in out["variant"].items()
             }
 
-    # IconButton/Button의 자식 Icon을 icon 필드로 승격 (children에서 제거)
+    # INSTANCE 노드 후처리: 아이콘 승격 + 내부 children 제거
     if out.get("type") == "INSTANCE":
         comp_lower = (out.get("component") or out.get("name") or "").lower()
+
+        # IconButton/Button의 자식 Icon을 icon 필드로 승격
         if comp_lower in ("iconbutton", "button") and "children" in out:
             for i, child in enumerate(out["children"]):
                 if not isinstance(child, dict):
@@ -582,7 +630,16 @@ def simplify_node(
                     out["icon"] = {"name": icon_name, "size": icon_size}
                     out["children"].pop(i)
                     break
-            if not out["children"]:
-                del out["children"]
+
+        # INSTANCE children 제거: DS 컴포넌트 내부 구조는 AI에게 불필요한 노이즈
+        # component/variant 정보만 있으면 충분 (Button, Field, Badge 등)
+        # 단, children에 TEXT 노드가 있으면 텍스트 내용을 승격한 뒤 제거
+        if "children" in out:
+            for child in out["children"]:
+                if isinstance(child, dict) and child.get("type") == "TEXT":
+                    chars = child.get("characters") or child.get("text")
+                    if chars and "label" not in out and "title" not in out and "text" not in out:
+                        out["label"] = chars
+            del out["children"]
 
     return out
