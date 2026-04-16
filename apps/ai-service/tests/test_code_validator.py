@@ -274,3 +274,47 @@ class TestScanLocalDecls:
             "const x = 1;\n"
         )
         assert scan_local_decls(src) == {"Foo", "Bar"}
+
+
+class TestScanExternalUrls:
+    def test_src_https(self):
+        from app.services.code_validator import scan_external_urls
+
+        src = '<img src="https://example.com/a.jpg" />'
+        hits = scan_external_urls(src)
+        assert len(hits) == 1
+        assert hits[0].line == 1
+
+    def test_href_http(self):
+        from app.services.code_validator import scan_external_urls
+
+        hits = scan_external_urls('<a href="http://x.com">link</a>')
+        assert len(hits) == 1
+
+    def test_css_url(self):
+        from app.services.code_validator import scan_external_urls
+
+        src = "backgroundImage: url('https://x.com/bg.png')"
+        hits = scan_external_urls(src)
+        assert len(hits) == 1
+
+    def test_relative_url_ignored(self):
+        from app.services.code_validator import scan_external_urls
+
+        assert scan_external_urls('<img src="/local/a.jpg" />') == []
+
+    def test_template_literal_ignored(self):
+        from app.services.code_validator import scan_external_urls
+
+        # 동적 치환 URL은 오탐 방지 차원에서 현재 구현 단계에선 스킵
+        src = "const s = `https://${host}/a.jpg`;"
+        assert scan_external_urls(src) == []
+
+    def test_multiple_hits(self):
+        from app.services.code_validator import scan_external_urls
+
+        src = (
+            '<img src="https://a.com/1.png" />\n'
+            '<img src="https://b.com/2.png" />'
+        )
+        assert len(scan_external_urls(src)) == 2

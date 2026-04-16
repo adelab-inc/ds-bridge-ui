@@ -91,10 +91,11 @@ def _strip_comments_and_strings(source: str) -> str:
         # 개행은 보존
         return "".join("\n" if ch == "\n" else " " for ch in s)
 
-    without_block = _BLOCK_COMMENT_RE.sub(_blank, source)
+    # 문자열을 먼저 제거해야 문자열 안의 // 나 /* 가 주석으로 오인되지 않음
+    without_strings = _STRING_RE.sub(_blank, source)
+    without_block = _BLOCK_COMMENT_RE.sub(_blank, without_strings)
     without_line = _LINE_COMMENT_RE.sub(_blank, without_block)
-    without_strings = _STRING_RE.sub(_blank, without_line)
-    return without_strings
+    return without_line
 
 
 @dataclass(frozen=True)
@@ -157,3 +158,41 @@ def scan_local_decls(source: str) -> set[str]:
     """파일 내부 `const/let/var/function/class` PascalCase 선언 식별자."""
     cleaned = _strip_comments_and_strings(source)
     return {m.group(1) for m in _LOCAL_DECL_RE.finditer(cleaned)}
+
+
+_EXTERNAL_URL_RE = re.compile(
+    r"""
+    (?:src|href)\s*=\s*['"]https?://[^'"]+['"]
+    |
+    url\(\s*['"]?https?://[^)'"]+
+    """,
+    re.VERBOSE,
+)
+
+
+@dataclass(frozen=True)
+class UrlHit:
+    line: int
+    snippet: str
+
+
+def scan_external_urls(source: str) -> list[UrlHit]:
+    """src/href/url() 내 https?:// 리터럴을 수집한다.
+
+    템플릿 리터럴, 주석, 문자열 리터럴 안의 URL은 제외된다.
+    """
+    cleaned = _strip_comments_and_strings(source)
+    hits: list[UrlHit] = []
+
+    # Raw source에서 패턴을 찾되, cleaned에서 blanked된 위치는 제외
+    for match in _EXTERNAL_URL_RE.finditer(source):
+        # match.start() 위치가 cleaned에서 blanked 되었는지 확인
+        # (주석/문자열 안에 있으면 blanked 됨)
+        if match.start() < len(cleaned) and cleaned[match.start()] == ' ':
+            # 이 매치는 주석/문자열 안에 있음 → 스킵
+            continue
+
+        line = source.count("\n", 0, match.start()) + 1
+        raw_line = source.splitlines()[line - 1] if line - 1 < len(source.splitlines()) else ""
+        hits.append(UrlHit(line=line, snippet=raw_line.strip()))
+    return hits
