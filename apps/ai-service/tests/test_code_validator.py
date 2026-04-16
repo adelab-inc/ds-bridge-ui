@@ -116,3 +116,80 @@ class TestComponentCatalog:
         assert catalog.is_known("Widget") is False
         catalog.add("Widget")
         assert catalog.is_known("Widget") is True
+
+
+class TestScanJsxComponents:
+    def test_single_self_closing(self):
+        from app.services.code_validator import scan_jsx_components
+
+        usages = scan_jsx_components("<Button />")
+        names = [u.name for u in usages]
+        assert names == ["Button"]
+
+    def test_open_close_pair(self):
+        from app.services.code_validator import scan_jsx_components
+
+        usages = scan_jsx_components("<Button>Click</Button>")
+        names = [u.name for u in usages]
+        assert names == ["Button"]
+
+    def test_nested(self):
+        from app.services.code_validator import scan_jsx_components
+
+        usages = scan_jsx_components("<GridLayout><Button /></GridLayout>")
+        names = sorted({u.name for u in usages})
+        assert names == ["Button", "GridLayout"]
+
+    def test_html_tags_ignored(self):
+        from app.services.code_validator import scan_jsx_components
+
+        usages = scan_jsx_components("<div><section>hi</section></div>")
+        assert usages == []
+
+    def test_line_comment_ignored(self):
+        from app.services.code_validator import scan_jsx_components
+
+        usages = scan_jsx_components("// <Foo />\nconst x = 1;")
+        assert usages == []
+
+    def test_block_comment_ignored(self):
+        from app.services.code_validator import scan_jsx_components
+
+        usages = scan_jsx_components("/* <Foo /> */ const x = 1;")
+        assert usages == []
+
+    def test_string_literal_ignored(self):
+        from app.services.code_validator import scan_jsx_components
+
+        usages = scan_jsx_components('const s = "<Bar />"; <Button />')
+        names = [u.name for u in usages]
+        assert names == ["Button"]
+
+    def test_line_number_tracked(self):
+        from app.services.code_validator import scan_jsx_components
+
+        src = "const x = 1;\n\n<Button />"
+        usages = scan_jsx_components(src)
+        assert len(usages) == 1
+        assert usages[0].line == 3
+
+    def test_react_fragment_dotted(self):
+        """<React.Fragment> 는 전체가 스캐너에서 skip 된다.
+
+        `_JSX_OPEN_RE` 의 lookahead `(?=[\\s/>])` 는 `.` 을 허용하지 않으므로
+        `<React.Fragment>` 는 매치되지 않는다. Fragment 구문은 단순히 "JSX 컴포넌트
+        사용"이 아니라고 보는 것이 의미상 정확하므로 이 동작을 고정한다.
+        """
+        from app.services.code_validator import scan_jsx_components
+
+        usages = scan_jsx_components("<React.Fragment><Button /></React.Fragment>")
+        names = [u.name for u in usages]
+        assert names == ["Button"]
+
+    def test_shorthand_fragment(self):
+        """<></> 단축 문법은 JSX 컴포넌트로 인식되지 않는다."""
+        from app.services.code_validator import scan_jsx_components
+
+        usages = scan_jsx_components("<><Button /></>")
+        names = [u.name for u in usages]
+        assert names == ["Button"]
