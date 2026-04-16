@@ -318,3 +318,22 @@ class TestScanExternalUrls:
             '<img src="https://b.com/2.png" />'
         )
         assert len(scan_external_urls(src)) == 2
+
+    def test_line_comment_ignored(self):
+        from app.services.code_validator import scan_external_urls
+
+        src = '// <img src="https://x.com" />'
+        assert scan_external_urls(src) == []
+
+    def test_block_comment_ignored(self):
+        from app.services.code_validator import scan_external_urls
+
+        src = '/* <img src="https://x.com" /> */'
+        assert scan_external_urls(src) == []
+
+    def test_word_boundary_data_src(self):
+        from app.services.code_validator import scan_external_urls
+
+        # data-src should NOT match src
+        src = '<img data-src="https://x.com" />'
+        assert scan_external_urls(src) == []

@@ -162,9 +162,9 @@ def scan_local_decls(source: str) -> set[str]:
 
 _EXTERNAL_URL_RE = re.compile(
     r"""
-    (?:src|href)\s*=\s*['"]https?://[^'"]+['"]
+    (?<![a-zA-Z0-9_-])(?:src|href)\s*=\s*['"]https?://[^'"]+['"]
     |
-    url\(\s*['"]?https?://[^)'"]+
+    \burl\(\s*['"]?https?://[^)'"]+
     """,
     re.VERBOSE,
 )
