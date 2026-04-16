@@ -186,7 +186,7 @@ class ValidationError:
 ## 7. 테스트 전략
 
 - **골든 입력셋**: `apps/ai-service/layout/*.detail.json` (이미 캐시된 Figma 응답 재사용)
-- **골든 출력셋**: `apps/ai-service/test_batch_output/`에 이미 쌓인 생성물을 참조. **주의**: 현재 이 디렉터리는 git 미추적 — `spec-validator` 착수 시점에 일부를 `apps/ai-service/tests/fixtures/`로 커밋해 회귀 기준 고정
+- **골든 출력셋**: `apps/ai-service/test-batch-output/`(하이픈, 현재 디렉터리명)에 이미 쌓인 생성물을 참조. **주의**: 현재 이 디렉터리는 git 미추적 — `spec-validator` 착수 시점에 일부를 `apps/ai-service/tests/fixtures/`로 커밋해 회귀 기준 고정
 - **단위 테스트**: 각 신규 모듈(`semantic_layout`, `component_matcher`, `code_validator`, `repair_loop`) 단독 테스트
 - **파이프라인 e2e**: Figma JSON → 최종 TSX까지 통합 테스트 (모의 LLM 또는 snapshot)
 - **회귀 지표**: `ValidationError.category` 별 발생률 추적 — 주차별/릴리즈별 감소 확인
