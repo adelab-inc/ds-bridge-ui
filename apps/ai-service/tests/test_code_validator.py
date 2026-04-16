@@ -76,3 +76,43 @@ class TestConfigValidationFlags:
         s = Settings()
         assert s.enable_validation is False
         assert s.validation_timeout_ms == 200
+
+
+class TestComponentCatalog:
+    def test_load_default_includes_ds_components(self):
+        from app.services.code_validator import ComponentCatalog
+
+        catalog = ComponentCatalog.load_default()
+        # component-schema.json의 대표 컴포넌트
+        assert catalog.is_known("Button") is True
+        assert catalog.is_known("Field") is True
+
+    def test_load_default_includes_layout_components(self):
+        from app.services.code_validator import ComponentCatalog
+
+        catalog = ComponentCatalog.load_default()
+        assert catalog.is_known("GridLayout") is True
+        assert catalog.is_known("FormGrid") is True
+        assert catalog.is_known("TitleSection") is True
+        assert catalog.is_known("Icon") is True
+
+    def test_unknown_component_returns_false(self):
+        from app.services.code_validator import ComponentCatalog
+
+        catalog = ComponentCatalog.load_default()
+        assert catalog.is_known("TotallyFakeComponent") is False
+
+    def test_react_fragment_allowed(self):
+        from app.services.code_validator import ComponentCatalog
+
+        catalog = ComponentCatalog.load_default()
+        assert catalog.is_known("Fragment") is True
+        assert catalog.is_known("React") is True
+
+    def test_add_custom_name(self):
+        from app.services.code_validator import ComponentCatalog
+
+        catalog = ComponentCatalog(schema_components=set(), extra=set())
+        assert catalog.is_known("Widget") is False
+        catalog.add("Widget")
+        assert catalog.is_known("Widget") is True
