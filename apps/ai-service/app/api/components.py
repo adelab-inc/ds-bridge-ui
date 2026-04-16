@@ -1298,7 +1298,7 @@ Always respond in Korean.
 ### Mock Data
 - 리스트/테이블: 10건 이상. 현실적인 한국어 데이터 (김민준, 이서연 / 토스, 당근)
 - Select options: 4-6개 이상. 필터 Select: `placeholder="전체"` + "전체" 옵션 포함
-- show* prop(showLabel, showHelptext, showStartIcon, showEndIcon) 항상 명시 (Dialog/Drawer 내부 포함)
+- `showLabel={true}` 필수 명시 (기본값 false). `showHelptext={false}`, `showStartIcon={false}` 등 false 기본값은 생략
 
 ### Icon ⚠️ size 불일치 = CRASH
 - **항상 `size={20}` 사용.** `<Icon name="search" size={20} />`
@@ -1410,7 +1410,7 @@ COMPONENT_QUICK_REFERENCE = """
 - Popover: `<Popover><Popover.Trigger>...</Popover.Trigger><Popover.Content>...</Popover.Content></Popover>`
 - Tab: `<Tab items={[{value:'home',label:'홈'}]} value={v} onChange={set} widthMode="content" />` — Figma에 Tab이 있으면 반드시 Tab 컴포넌트 사용. 수동 div 구현 금지
 - Segment: `<Segment items={[{value:'day',label:'일간'}]} value={v} onChange={set} size="md" widthMode="equal" />`
-- OptionGroup: `<OptionGroup label="그룹" showLabel={true} orientation="horizontal" size="sm"><Option label="항목"><Checkbox .../></Option></OptionGroup>`. **⚠️ 자체 flex-col + 라벨/헬퍼텍스트 컨테이너 내장 → 외부에서 `<div className="flex flex-col gap-*">` 로 감싸지 마세요 (이중 래핑 = 간격 중복)**
+- OptionGroup: `<OptionGroup label="그룹" orientation="horizontal" size="sm"><Option label="항목"><Checkbox .../></Option></OptionGroup>`. **⚠️ 자체 flex-col + 라벨/헬퍼텍스트 컨테이너 내장 → 외부에서 `<div className="flex flex-col gap-*">` 로 감싸지 마세요 (이중 래핑 = 간격 중복)**
 - TreeMenu: `<TreeMenu items={[{id, label, children: [...]}]} />`. **자체 border/배경 없음 (순수 컨테이너)**. Figma에 테두리·박스가 있을 때만 외부에서 `border border-[#dee2e6] rounded-lg` div로 감싸기. Figma에 박스가 없는데 감싸면 불필요한 박스 생성.
 - ActionBar: `<ActionBar count={N} visible={true} onClose={fn}><Button buttonType="ghost-inverse" label="삭제" /></ActionBar>`
 - Tooltip: `<Tooltip content="설명" side="top"><span>대상</span></Tooltip>`
@@ -1615,8 +1615,8 @@ RESPONSE_FORMAT_INSTRUCTIONS = """
 2. `<file path="src/...">코드</file>` 태그
 
 ### ⚠️ Props 간결성 규칙
-- **기본값과 동일한 prop은 생략하세요.** 예: `showStartIcon`의 기본값이 `false`이면 `showStartIcon={false}` 쓰지 마세요.
-- `showLabel={true}` → 기본값이 true이면 생략. `showHelptext={false}` → 기본값이 false이면 생략.
+- `showHelptext={false}`, `showStartIcon={false}`, `showEndIcon={false}` 등 false 기본값 prop은 생략하세요.
+- **`showLabel={true}`는 반드시 명시하세요** (기본값이 false이므로 생략하면 라벨이 사라짐).
 - **변경이 필요한 prop만** 명시하세요. 코드가 짧을수록 유지보수가 쉽습니다.
 
 ### Example:

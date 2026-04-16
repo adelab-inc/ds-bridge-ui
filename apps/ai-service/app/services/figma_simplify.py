@@ -310,6 +310,23 @@ def simplify_node(
     node_styles = node.get("styles", {})
 
     for key, value in node.items():
+        # absoluteBoundingBox에서 좌표 + 크기 추출 (strip 전에 처리)
+        if key == "absoluteBoundingBox" and isinstance(value, dict):
+            y = value.get("y")
+            x = value.get("x")
+            bbox_w = value.get("width")
+            bbox_h = value.get("height")
+            if y is not None:
+                out["_y"] = round(y)
+            if x is not None:
+                out["_x"] = round(x)
+            # w/h가 아직 안 잡힌 경우(fill/hug sizing) bbox에서 보충
+            if bbox_w is not None and isinstance(bbox_w, (int, float)):
+                out["_w"] = round(bbox_w)
+            if bbox_h is not None and isinstance(bbox_h, (int, float)):
+                out["_h"] = round(bbox_h)
+            continue
+
         if key in _STRIP_KEYS:
             continue
 
@@ -604,6 +621,37 @@ def simplify_node(
                 for k, v in out["variant"].items()
             }
 
+    # Row FRAME 그리드 힌트: INSTANCE 자식의 w 비율을 분석하여 인라인 힌트 추가
+    if (
+        out.get("type") == "FRAME"
+        and out.get("layout") == "row"
+        and "children" in out
+    ):
+        instances = [
+            c for c in out["children"]
+            if isinstance(c, dict) and c.get("type") == "INSTANCE"
+        ]
+        if len(instances) >= 2:
+            widths = []
+            for inst in instances:
+                w = inst.get("w", 0)
+                widths.append(round(w) if isinstance(w, float) else (w or 0))
+            positive = [w for w in widths if w > 0]
+            if positive:
+                min_w = min(positive)
+                ratios = [max(1, round(w / min_w)) if w > 0 else 1 for w in widths]
+                total = sum(ratios)
+                if len(set(ratios)) > 1:
+                    # 비균등: col-span 명시
+                    labels = [
+                        inst.get("label") or inst.get("title") or inst.get("name") or "?"
+                        for inst in instances
+                    ]
+                    parts = [f"{l}:{r}" for l, r in zip(labels, ratios)]
+                    out["gridHint"] = f"grid-cols-{total} ({', '.join(parts)})"
+                else:
+                    out["gridHint"] = f"{len(instances)}cols-equal"
+
     # INSTANCE 노드 후처리: 아이콘 승격 + 내부 children 제거
     if out.get("type") == "INSTANCE":
         comp_lower = (out.get("component") or out.get("name") or "").lower()
@@ -643,3 +691,393 @@ def simplify_node(
             del out["children"]
 
     return out
+
+
+# ---------------------------------------------------------------------------
+# 그리드 레이아웃 자동 분석
+# ---------------------------------------------------------------------------
+
+def analyze_grid_hints(root: dict) -> str:
+    """Y좌표 기반 그리드 레이아웃 힌트 생성.
+
+    Figma 절대 좌표(_y)로 같은 행의 필드를 그룹핑하고,
+    _x로 정렬, w로 폭 비율을 계산합니다.
+    JSON 구조(row/column 중첩)에 의존하지 않습니다.
+    """
+    # 1) 트리에서 모든 INSTANCE(Field) 노드를 수집
+    fields: list[dict] = []
+
+    def _collect_fields(node: dict, section: str = "") -> None:
+        if not isinstance(node, dict):
+            return
+        ntype = node.get("type", "")
+        comp = (node.get("component") or node.get("name") or "").lower()
+
+        # Field INSTANCE 수집
+        if ntype == "INSTANCE" and "field" in comp:
+            label = (
+                node.get("label") or node.get("title") or node.get("text")
+                or node.get("name") or "?"
+            )
+            y = node.get("_y", 0)
+            x = node.get("_x", 0)
+            w = node.get("w", 0)
+            if isinstance(w, float):
+                w = round(w)
+            fields.append({"label": label, "y": y, "x": x, "w": w, "section": section})
+            return  # INSTANCE는 children이 이미 제거됨
+
+        # Divider로 섹션 구분
+        if ntype == "INSTANCE" and "divider" in comp:
+            return
+
+        children = node.get("children", [])
+
+        # 자식 중 TEXT를 먼저 탐색해서 섹션 제목 추출
+        cur_section = section
+        for child in children:
+            if isinstance(child, dict) and child.get("type") == "TEXT":
+                chars = child.get("characters") or child.get("text") or ""
+                if 2 <= len(chars) <= 20:
+                    cur_section = chars
+                    break
+
+        for child in children:
+            if isinstance(child, dict):
+                _collect_fields(child, cur_section)
+
+    _collect_fields(root)
+
+    if len(fields) < 2:
+        return ""
+
+    # 2) Y좌표로 행 그룹핑 (Y차이 10px 이내 = 같은 행)
+    fields.sort(key=lambda f: (f["y"], f["x"]))
+    rows: list[list[dict]] = []
+    current_row: list[dict] = [fields[0]]
+    for f in fields[1:]:
+        if abs(f["y"] - current_row[0]["y"]) <= 10:
+            current_row.append(f)
+        else:
+            rows.append(sorted(current_row, key=lambda f: f["x"]))
+            current_row = [f]
+    if current_row:
+        rows.append(sorted(current_row, key=lambda f: f["x"]))
+
+    # 3) 연속된 행들을 섹션으로 그룹핑 (같은 section 이름 기준)
+    from itertools import groupby
+
+    def _section_key(row: list[dict]) -> str:
+        # 행의 필드들 중 가장 많이 나오는 섹션 이름
+        sections = [f["section"] for f in row if f["section"]]
+        return sections[0] if sections else ""
+
+    section_outputs: list[str] = []
+
+    for sec_name, sec_rows_iter in groupby(rows, key=_section_key):
+        sec_rows = list(sec_rows_iter)
+        if not sec_name:
+            sec_name = "폼 섹션"
+
+        lines: list[str] = [f"### {sec_name}"]
+
+        # 행별 분석
+        row_infos: list[dict] = []
+        for row in sec_rows:
+            count = len(row)
+            widths = [f["w"] for f in row]
+            labels = [f["label"] for f in row]
+            positive = [w for w in widths if w > 0]
+            if positive:
+                min_w = min(positive)
+                ratios = [max(1, round(w / min_w)) if w > 0 else 1 for w in widths]
+            else:
+                ratios = [1] * count
+            total = sum(ratios)
+            uniform = len(set(ratios)) <= 1
+            row_infos.append({
+                "count": count, "labels": labels, "widths": widths,
+                "ratios": ratios, "total_units": total, "uniform": uniform,
+            })
+
+        if not row_infos:
+            continue
+
+        # 섹션 레벨 결정
+        all_totals = [r["total_units"] for r in row_infos]
+        base_cols = max(all_totals)
+        all_uniform = all(r["uniform"] for r in row_infos)
+        all_same_count = len(set(r["count"] for r in row_infos)) == 1
+
+        if all_uniform and all_same_count and row_infos[0]["count"] <= 4:
+            n = row_infos[0]["count"]
+            lines.append(f'→ `<FormGrid columns={{{n}}} title="{sec_name}">`')
+            for i, row in enumerate(row_infos):
+                lines.append(f"  행{i+1}: {', '.join(row['labels'])}")
+        elif base_cols <= 4:
+            lines.append(f'→ `<FormGrid columns={{{base_cols}}} title="{sec_name}">`')
+            for i, row in enumerate(row_infos):
+                if row["uniform"] and row["count"] == base_cols:
+                    lines.append(f"  행{i+1}: {', '.join(row['labels'])}")
+                elif row["count"] < base_cols:
+                    remaining = base_cols - row["count"]
+                    parts = list(row["labels"][:-1])
+                    parts.append(f"{row['labels'][-1]}(colSpan={{{remaining + 1}}})")
+                    lines.append(f"  행{i+1}: {', '.join(parts)}")
+                else:
+                    parts = [
+                        f"{l}(colSpan={{{r}}})" if r > 1 else l
+                        for l, r in zip(row["labels"], row["ratios"])
+                    ]
+                    lines.append(f"  행{i+1}: {', '.join(parts)}")
+        else:
+            lines.append(f'→ `<div className="grid grid-cols-{base_cols} gap-x-6 gap-y-4">`')
+            for i, row in enumerate(row_infos):
+                if row["uniform"] and row["total_units"] == base_cols:
+                    lines.append(f"  행{i+1}: {', '.join(row['labels'])}")
+                else:
+                    scale = base_cols / row["total_units"] if row["total_units"] > 0 else 1
+                    scaled = [max(1, round(r * scale)) for r in row["ratios"]]
+                    diff = base_cols - sum(scaled)
+                    if diff != 0 and scaled:
+                        scaled[-1] = max(1, scaled[-1] + diff)
+                    parts = [
+                        f"{l}(col-span-{s})" if s > 1 else l
+                        for l, s in zip(row["labels"], scaled)
+                    ]
+                    lines.append(f"  행{i+1}: {', '.join(parts)}")
+
+        section_outputs.append("\n".join(lines))
+
+    if not section_outputs:
+        return ""
+    return (
+        "\n## 📐 그리드 레이아웃 분석 (자동 계산 — 반드시 이 컬럼 수와 비율을 따르세요)\n\n"
+        + "\n\n".join(section_outputs)
+        + "\n"
+    )
+
+
+# ---------------------------------------------------------------------------
+# GridLayout type 자동 감지
+# ---------------------------------------------------------------------------
+
+# 12-grid 기준 GridLayout type 매핑
+_GRID_TYPE_MAP: dict[tuple[int, ...], str] = {
+    # 1패널
+    (12,): "A",
+    # 2패널
+    (6, 6): "B",
+    (3, 9): "C-1",
+    (9, 3): "C-2",
+    (4, 8): "D-1",
+    (8, 4): "D-2",
+    # 3패널
+    (4, 4, 4): "E",
+    (2, 8, 2): "F",
+    (2, 2, 8): "G",
+    # 4패널
+    (3, 3, 3, 3): "H",
+}
+
+
+def _scale_to_12(ratios: list[int]) -> tuple[int, ...]:
+    """비율 리스트를 12-grid 기준으로 정규화."""
+    total = sum(ratios)
+    if total <= 0:
+        return (12,)
+    scaled = [max(1, round(r * 12 / total)) for r in ratios]
+    diff = 12 - sum(scaled)
+    if diff != 0 and scaled:
+        max_idx = scaled.index(max(scaled))
+        scaled[max_idx] = max(1, scaled[max_idx] + diff)
+    return tuple(scaled)
+
+
+def _best_grid_type(ratios: list[int]) -> tuple[str, tuple[int, ...], tuple[int, ...], int]:
+    """w 비율 리스트를 12-grid로 환산하고 가장 가까운 GridLayout type을 반환.
+
+    Returns:
+        (type_name, matched_pattern, actual_scaled, distance)
+        - distance == 0 이면 정확히 매칭됨
+        - distance > 0 이면 근사 매칭 (AI에게 경고 필요)
+    """
+    scaled = _scale_to_12(ratios)
+    n = len(scaled)
+
+    # 정확히 매칭
+    if scaled in _GRID_TYPE_MAP:
+        return _GRID_TYPE_MAP[scaled], scaled, scaled, 0
+
+    # 같은 패널 수 중 가장 가까운 type 찾기 (절대 차이 최소)
+    best_type = "A"
+    best_dist = float("inf")
+    best_pattern: tuple[int, ...] = (12,)
+    for pattern, gtype in _GRID_TYPE_MAP.items():
+        if len(pattern) != n:
+            continue
+        dist = sum(abs(a - b) for a, b in zip(scaled, pattern))
+        if dist < best_dist:
+            best_dist = dist
+            best_type = gtype
+            best_pattern = pattern
+
+    return best_type, best_pattern, scaled, int(best_dist)
+
+
+def _candidate_grid_types(scaled: tuple[int, ...], top_k: int = 3) -> list[tuple[str, tuple[int, ...], int]]:
+    """scaled 비율에 가까운 상위 K개 GridLayout type을 거리순으로 반환."""
+    n = len(scaled)
+    candidates: list[tuple[str, tuple[int, ...], int]] = []
+    for pattern, gtype in _GRID_TYPE_MAP.items():
+        if len(pattern) != n:
+            continue
+        dist = sum(abs(a - b) for a, b in zip(scaled, pattern))
+        candidates.append((gtype, pattern, dist))
+    candidates.sort(key=lambda x: x[2])
+    return candidates[:top_k]
+
+
+def _get_numeric_w(node: dict) -> int:
+    """노드의 실제 픽셀 너비를 반환. w → _w 순서로 fallback."""
+    w = node.get("w")
+    if isinstance(w, (int, float)):
+        return round(w) if isinstance(w, float) else w
+    # w가 'FILL'/None이면 absoluteBoundingBox에서 추출한 _w 사용
+    _w = node.get("_w")
+    if isinstance(_w, (int, float)):
+        return round(_w) if isinstance(_w, float) else _w
+    return 0
+
+
+def _get_numeric_h(node: dict) -> int | str:
+    """노드의 실제 높이 반환. h → _h 순서로 fallback. 'FILL' 문자열도 유효."""
+    h = node.get("h")
+    if h == "FILL" or h == "fill":
+        return "FILL"
+    if isinstance(h, (int, float)):
+        return round(h) if isinstance(h, float) else h
+    _h = node.get("_h")
+    if isinstance(_h, (int, float)):
+        return round(_h) if isinstance(_h, float) else _h
+    # hSizing이 fill/hug이면 유의미한 높이로 간주
+    vSizing = node.get("vSizing", "")
+    if vSizing in ("fill", "hug"):
+        return "FILL"
+    return 0
+
+
+def analyze_grid_layout_type(root: dict) -> str:
+    """Figma 최상위 구조에서 GridLayout type을 자동 감지.
+
+    Body/Content 영역의 주요 FRAME 자식들의 w 비율을 분석하여
+    GridLayout type (A~H)을 결정합니다.
+    """
+    # Title/header 등 패널이 아닌 영역 이름
+    _SKIP_NAMES = {"title", "header", "tab_floor", "tab_floor1", "tab_floor2", "tabbox"}
+
+    def _find_content_panels(node: dict, depth: int = 0) -> list[dict] | None:
+        """Body/Content 영역의 병렬 패널들을 찾음."""
+        if depth > 5 or not isinstance(node, dict):
+            return None
+
+        # Title/header 같은 프레임은 패널 탐색 대상에서 제외
+        name_lower = (node.get("name") or "").lower()
+        if name_lower in _SKIP_NAMES:
+            return None
+
+        children = node.get("children", [])
+        if not children:
+            return None
+
+        layout = node.get("layout", "")
+
+        if layout == "row":
+            # row 레이아웃의 직접 FRAME 자식들이 패널 후보
+            frame_children = []
+            for c in children:
+                if not isinstance(c, dict) or c.get("type") != "FRAME":
+                    continue
+                w = _get_numeric_w(c)
+                if w <= 100:
+                    continue
+                h = _get_numeric_h(c)
+                # h가 유의미한(FILL 또는 100+ px) FRAME만 포함
+                if h == "FILL" or (isinstance(h, (int, float)) and h > 100):
+                    frame_children.append(c)
+            if len(frame_children) >= 2:
+                return frame_children
+
+        # 재귀적으로 탐색 (Title/header 제외 후)
+        for child in children:
+            if isinstance(child, dict):
+                result = _find_content_panels(child, depth + 1)
+                if result:
+                    return result
+        return None
+
+    panels = _find_content_panels(root)
+    if not panels or len(panels) < 2:
+        return ""
+
+    # 패널들의 w 비율 계산
+    widths = []
+    panel_names = []
+    for p in panels:
+        widths.append(_get_numeric_w(p))
+        name = p.get("name", "")
+        # 패널 내부의 주요 컴포넌트 이름도 참고
+        if not name or name.startswith("Frame"):
+            # 자식에서 의미 있는 이름 찾기
+            for child in p.get("children", []):
+                if isinstance(child, dict):
+                    child_comp = child.get("component") or child.get("name") or ""
+                    if child_comp and not child_comp.startswith("Frame"):
+                        name = child_comp
+                        break
+        panel_names.append(name or "패널")
+
+    if all(w == 0 for w in widths):
+        return ""
+
+    # 비율 계산
+    positive = [w for w in widths if w > 0]
+    if not positive:
+        return ""
+
+    # widths를 직접 12-grid로 환산 (실제 Figma 픽셀 기반)
+    scaled = _scale_to_12([w if w > 0 else 1 for w in widths])
+    grid_type, grid_pattern, _, distance = _best_grid_type(list(widths))
+
+    scaled_str = ":".join(str(s) for s in scaled)
+
+    # 정확히 매칭: 기존처럼 type 강제
+    if distance == 0:
+        panel_desc = " | ".join(
+            f"{name}({p}col)" for name, p in zip(panel_names, grid_pattern)
+        )
+        return (
+            f'\n## 📐 GridLayout 자동 감지 (반드시 따르세요)\n'
+            f'→ `<GridLayout type="{grid_type}">` ({scaled_str} = {panel_desc})\n'
+            f'- Figma w: {widths} → 12-grid: {list(scaled)}\n'
+            f'- 각 패널은 GridLayout의 자식 `<div>`로 감싸세요\n'
+        )
+
+    # 근사 매칭: 강제하지 않고 실제 비율 + 후보 제시
+    candidates = _candidate_grid_types(scaled, top_k=3)
+    cand_lines = []
+    for gtype, pattern, dist in candidates:
+        pat_str = ":".join(str(p) for p in pattern)
+        cand_lines.append(f'  - `type="{gtype}"` ({pat_str}) — 차이 {dist}')
+
+    panel_widths = ", ".join(f'{name}={w}px' for name, w in zip(panel_names, widths))
+
+    return (
+        f'\n## 📐 Figma 레이아웃 분석 (정확한 매칭 없음 — 주의)\n'
+        f'- 실제 Figma 패널 폭: {panel_widths}\n'
+        f'- 12-grid 환산: **{scaled_str}** (표준 GridLayout type과 불일치)\n'
+        f'- 후보 type (가까운 순):\n'
+        + "\n".join(cand_lines) + "\n"
+        f'- ⚠️ **실제 비율은 {scaled_str}** — 시맨틱과 시각 비율을 함께 고려해 위 후보 중 하나를 선택하세요. '
+        f'"트리+목록+상세"면 G, "균등 3열"이면 E, "검토/승인 중앙강조"면 F가 우선 후보입니다.\n'
+    )

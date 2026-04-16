@@ -234,8 +234,70 @@ async def run_figma_tool_calling_loop(
             node_details[nid] = detail_json  # 인벤토리에서도 stripped 데이터 사용
         except (json.JSONDecodeError, TypeError):
             pass
-        figma_context += f"\n- 노드({nid}) 레이아웃:\n```json\n{detail_json}\n```\n"
+
+        # AI에게 보낼 JSON에서 _y, _x 좌표 제거 (분석용 메타데이터)
+        def _strip_coords(node: dict) -> None:
+            node.pop("_y", None)
+            node.pop("_x", None)
+            node.pop("_w", None)
+            node.pop("_h", None)
+            for child in node.get("children", []):
+                if isinstance(child, dict):
+                    _strip_coords(child)
+
+        try:
+            clean_dict = json.loads(detail_json)
+            _strip_coords(clean_dict)
+            clean_json = json.dumps(clean_dict, ensure_ascii=False, separators=(",", ":"))
+        except (json.JSONDecodeError, TypeError):
+            clean_json = detail_json
+        figma_context += f"\n- 노드({nid}) 레이아웃:\n```json\n{clean_json}\n```\n"
         logger.info("Figma node %s simplified JSON (len=%d)", nid, len(detail_json))
+        # 디버그: Figma 트리 구조 로깅 (type, layout, children count/types)
+        def _tree_structure(node: dict, depth: int = 0, max_depth: int = 5) -> list[str]:
+            if depth > max_depth or not isinstance(node, dict):
+                return []
+            indent = "  " * depth
+            ntype = node.get("type", "?")
+            name = node.get("name", "")
+            layout = node.get("layout", "")
+            w = node.get("w", "")
+            grid_hint = node.get("gridHint", "")
+            comp = node.get("component", "")
+            label = node.get("label", "")
+            children = node.get("children", [])
+            child_types = {}
+            for c in children:
+                if isinstance(c, dict):
+                    ct = c.get("type", "?")
+                    child_types[ct] = child_types.get(ct, 0) + 1
+            child_summary = ", ".join(f"{v}×{k}" for k, v in child_types.items()) if child_types else ""
+            parts = [f"{indent}{ntype}"]
+            if name:
+                parts[0] += f' "{name}"'
+            if comp:
+                parts[0] += f" ({comp})"
+            if layout:
+                parts[0] += f" [{layout}]"
+            if w:
+                parts[0] += f" w={w}"
+            if label:
+                parts[0] += f' label="{label}"'
+            if grid_hint:
+                parts[0] += f" gridHint={grid_hint}"
+            if child_summary:
+                parts[0] += f" → {child_summary}"
+            lines = parts
+            for c in children:
+                if isinstance(c, dict):
+                    lines.extend(_tree_structure(c, depth + 1, max_depth))
+            return lines
+        try:
+            tree_lines = _tree_structure(json.loads(detail_json))
+            if tree_lines:
+                logger.info("Figma tree structure:\n%s", "\n".join(tree_lines))
+        except Exception:
+            pass
         # 디버그: 모든 FRAME의 gap/padding 요약 로깅
         def _extract_layout_summary(node: dict, path: str = "") -> list[str]:
             results = []
@@ -245,7 +307,8 @@ async def run_figma_tool_calling_loop(
             padding = node.get("padding")
             layout = node.get("layout")
             h = node.get("h")
-            if gap or padding:
+            grid_hint = node.get("gridHint")
+            if gap or padding or grid_hint:
                 parts = [cur_path]
                 if layout:
                     parts.append(f"layout={layout}")
@@ -255,6 +318,8 @@ async def run_figma_tool_calling_loop(
                     parts.append(f"padding={padding}")
                 if h:
                     parts.append(f"h={h}")
+                if grid_hint:
+                    parts.append(f"gridHint={grid_hint}")
                 results.append(" | ".join(parts))
             for child in node.get("children", []):
                 if isinstance(child, dict):
@@ -266,6 +331,29 @@ async def run_figma_tool_calling_loop(
                 logger.info("Figma layout summary:\n%s", "\n".join(summary_lines))
         except Exception:
             pass
+
+    # 그리드 레이아웃 자동 분석 힌트 생성
+    from app.services.figma_simplify import analyze_grid_hints, analyze_grid_layout_type
+
+    for nid, detail_json in node_details.items():
+        try:
+            detail_dict = json.loads(detail_json)
+
+            # 1) GridLayout type 자동 감지 (페이지 전체 레이아웃)
+            layout_hint = analyze_grid_layout_type(detail_dict)
+            if layout_hint:
+                figma_context += layout_hint
+                logger.info("GridLayout type hint for node %s:\n%s", nid, layout_hint)
+
+            # 2) 폼 필드 그리드 분석 (FormGrid/grid-cols)
+            grid_hints = analyze_grid_hints(detail_dict)
+            if grid_hints:
+                figma_context += grid_hints
+                logger.info("Grid layout hints for node %s:\n%s", nid, grid_hints)
+            else:
+                logger.info("No grid hints detected for node %s", nid)
+        except (json.JSONDecodeError, TypeError) as e:
+            logger.warning("Grid hint analysis failed for node %s: %s", nid, e)
 
     figma_context += (
         "\n## ⚠️ Figma 모드 — 아래 규칙이 시스템 프롬프트의 일반 규칙보다 우선합니다\n"
@@ -288,7 +376,14 @@ async def run_figma_tool_calling_loop(
         "   - 자식 2개 6:6 → B, 3:9 → C, 9:3 → C-2, 4:8 → D, 8:4 → D-2\n"
         "   - 자식 3개 4:4:4 균등 → E, 2:8:2 → F, **2:2:8 (마지막이 압도적으로 넓음, 트리+목록+상세 패턴) → G**\n"
         "   - 자식 4개 3:3:3:3 → H\n"
-        "9. **⚠️ 컴포넌트 래핑 원칙**:\n"
+        "9. **⚠️ 폼 그리드 = Figma 자식 수 + w 비율 반영**:\n"
+        "   - 같은 FRAME 안 동일 레벨 INSTANCE 수 = 한 행의 필드 수. **절대 기본값 4 고정 금지. 실제 자식 수를 세세요.**\n"
+        "   - **w 비율이 다르면 균등 분할 금지**: 필드별 `w` 값을 비교해 가장 좁은 필드=1단위, 넓은 필드=비율만큼 colSpan 부여.\n"
+        "     예) w=[170,170,170,170,340,340] → 좁은=1, 넓은=2 → 총 8단위 → `grid-cols-8` + 좁은 `col-span-1`, 넓은 `col-span-2`\n"
+        "   - 필드 수 4 이하 & w 균등 → `<FormGrid columns={N}>` (colSpan으로 넓은 필드 처리)\n"
+        "   - 필드 수 5+ 또는 w 비균등 → `<div className=\"grid grid-cols-{총단위} gap-x-6 gap-y-4\">` + `col-span-{비율}`\n"
+        "10. **⚠️ 불필요한 prop 생략**: `showHelptext={false}`, `showStartIcon={false}`, `showEndIcon={false}` 등 false 기본값 prop은 쓰지 마세요. **단 `showLabel={true}`는 반드시 명시** (기본값이 false이므로 생략하면 라벨이 안 보임).\n"
+        "11. **⚠️ 컴포넌트 래핑 원칙**:\n"
         "   - **TreeMenu**는 자체 border/배경 없음 → Figma에 box 테두리가 보일 때만 `border rounded` div로 외부 래핑. Figma에 박스 없는데 감싸면 불필요한 중복 박스.\n"
         "   - **OptionGroup**은 자체 flex-col + 라벨/헬퍼텍스트 컨테이너 내장 → 외부에서 `<div className=\"flex flex-col gap-*\">` 로 감싸지 마세요 (이중 래핑 = 간격 중복).\n"
         "   - **Alert**는 에러/경고/성공/정보 메시지 박스 전용. Figma의 일반 안내·가이드 bullet 텍스트를 Alert로 감싸지 마세요. 단순 텍스트는 `<ul><li>` 또는 `<p>` 사용.\n"
