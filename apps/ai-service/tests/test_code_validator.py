@@ -239,3 +239,38 @@ class TestScanImports:
 
         src = 'import {\n  Button,\n  Field,\n  Chip,\n} from "@/components";\n'
         assert scan_imports(src) == {"Button", "Field", "Chip"}
+
+
+class TestScanLocalDecls:
+    def test_const_pascal(self):
+        from app.services.code_validator import scan_local_decls
+
+        src = "const MyBlock = () => <div/>;"
+        assert scan_local_decls(src) == {"MyBlock"}
+
+    def test_function_pascal(self):
+        from app.services.code_validator import scan_local_decls
+
+        src = "function Header() { return <div/>; }"
+        assert scan_local_decls(src) == {"Header"}
+
+    def test_class_pascal(self):
+        from app.services.code_validator import scan_local_decls
+
+        assert scan_local_decls("class Widget {}") == {"Widget"}
+
+    def test_lowercase_ignored(self):
+        from app.services.code_validator import scan_local_decls
+
+        src = "const useSomething = () => {};"
+        assert "useSomething" not in scan_local_decls(src)
+
+    def test_multiple(self):
+        from app.services.code_validator import scan_local_decls
+
+        src = (
+            "const Foo = () => <div/>;\n"
+            "function Bar() { return <div/>; }\n"
+            "const x = 1;\n"
+        )
+        assert scan_local_decls(src) == {"Foo", "Bar"}

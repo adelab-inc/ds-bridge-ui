@@ -146,3 +146,14 @@ def scan_imports(source: str) -> set[str]:
                 parts = [p.strip() for p in token.split(" as ")]
                 names.add(parts[-1])
     return names
+
+
+_LOCAL_DECL_RE = re.compile(
+    r"\b(?:const|let|var|function|class)\s+([A-Z][A-Za-z0-9_]*)\b"
+)
+
+
+def scan_local_decls(source: str) -> set[str]:
+    """파일 내부 `const/let/var/function/class` PascalCase 선언 식별자."""
+    cleaned = _strip_comments_and_strings(source)
+    return {m.group(1) for m in _LOCAL_DECL_RE.finditer(cleaned)}
