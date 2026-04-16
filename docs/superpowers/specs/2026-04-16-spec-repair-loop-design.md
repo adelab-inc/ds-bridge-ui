@@ -33,7 +33,7 @@ Stage 4 Validator가 검출한 오류를 AI에게 피드백해 **1회 자동 수
 
 - Streaming `/chat/stream` 훅 (향후 별도 작업)
 - 2회 이상 재시도 (v1은 최대 1회)
-- Figma 컨텍스트 / 시스템 프롬프트 재전달 (코드 + 에러만 전달)
+- Figma 컨텍스트 / 원본 시스템 프롬프트 재전달 (코드 + 에러 + DS 컴포넌트 이름만 전달)
 - Repair 프롬프트 자체의 A/B 테스트 프레임워크
 
 ---
@@ -41,23 +41,24 @@ Stage 4 Validator가 검출한 오류를 AI에게 피드백해 **1회 자동 수
 ## 3. 아키텍처
 
 ```
-[S3] AI Generate → 1차 코드 (ParsedResponse)
+[S3] AI Generate → 1차 코드 (ParsedResponse.files: list[FileContent])
     │
     ▼
-[S4] validate_code() → ValidationReport
+[S4] validate_code() per file → merged ValidationReport
     │
     ├── passed=True → 그대로 반환
     │
     ├── passed=False + ENABLE_REPAIR=False
-    │   → 1차 코드 + ValidationReport 반환 (현재 동작)
+    │   → 1차 파일 + ValidationReport 반환 (현재 동작)
     │
     └── passed=False + ENABLE_REPAIR=True
          │
          ▼
-        [S5] repair_code(source, report, provider)
+        [S5] repair_code(files, report, provider, catalog)
+         │   (모든 파일을 <file> 블록으로 합쳐 단일 AI 호출)
          │
-         ├── 2차 검증 passed=True → 수정 코드로 교체, 새 ValidationReport 첨부
-         └── 2차 검증 passed=False → 1차 코드 유지, 원래 ValidationReport 첨부
+         ├── 2차 검증 passed=True → 수정 파일로 교체, 새 ValidationReport 첨부
+         └── 2차 검증 passed=False → 1차 파일 유지, 원래 ValidationReport 첨부
 ```
 
 ### 설계 원칙
@@ -74,31 +75,62 @@ Stage 4 Validator가 검출한 오류를 AI에게 피드백해 **1회 자동 수
 ### 4.1 RepairResult (S5 → chat.py)
 
 ```python
+from app.schemas.chat import FileContent
+
 @dataclass
 class RepairResult:
-    success: bool              # 2차 검증 통과 여부
-    code: str                  # 수정된 코드 (실패 시 원본)
-    report: ValidationReport   # 2차 검증 리포트 (실패 시 1차 리포트)
-    elapsed_ms: int            # repair 전체 소요 시간 (AI 호출 + 검증)
+    success: bool                  # 2차 검증 통과 여부
+    files: list[FileContent]       # 수정된 파일 목록 (실패 시 원본 파일 목록)
+    report: ValidationReport       # 2차 검증 리포트 (실패 시 1차 리포트)
+    elapsed_ms: int                # repair 전체 소요 시간 (AI 호출 + 검증)
 ```
+
+`RepairResult`는 `@dataclass`를 사용한다 (API 응답으로 직렬화되지 않는 내부 전용 타입이므로 Pydantic `BaseModel` 불필요).
+
+**다중 파일 전략**: `ParsedResponse.files`는 `list[FileContent]`이므로, repair 시 모든 파일을 `<file path="...">content</file>` 형태로 합쳐서 단일 AI 호출로 전달한다. AI 응답을 `parse_ai_response`로 재파싱하여 파일 목록을 추출한다. `parse_ai_response`는 기존 `_postprocess_code()`를 자동 적용하므로, 수정 코드에도 아이콘 크기/뷰포트 후처리가 적용된다.
 
 ### 4.2 Repair 프롬프트 구조
 
 ```
 System: "당신은 코드 수정 전문가입니다. 아래 TSX 코드에서 발견된 오류를 수정하세요.
         수정 시 기존 구조와 로직은 최대한 유지하고, 오류만 정확히 고치세요.
-        전체 코드를 <file path="...">...</file> 형식으로 반환하세요."
+        수정 여부와 관계없이 모든 파일을 <file path="...">...</file> 형식으로 반환하세요.
+        오류가 없는 파일도 원본 그대로 포함해야 합니다.
 
-User: "## 원본 코드\n```tsx\n{source}\n```\n\n## 검출된 오류\n{formatted_errors}"
+        ## 사용 가능한 DS 컴포넌트
+        {component_names}
+        위 컴포넌트는 `import { ComponentName } from \"@/components\"` 로 사용합니다."
+
+User: "## 원본 코드\n{file_blocks}\n\n## 검출된 오류\n{formatted_errors}"
 ```
 
-에러 포맷팅 예시:
+**컴포넌트 목록**: `ComponentCatalog.get_names()`에서 DS 컴포넌트 이름을 추출한다 (`REACT_BUILTINS` 제외 — `Fragment`, `React` 등은 DS 컴포넌트가 아님). 쉼표 구분 문자열로 포맷. 이를 통해 AI가 `missing_import` / `unknown_component` 에러를 올바르게 수정할 수 있다.
+
+**파일 블록 구성**: `parsed.files`의 각 `FileContent`를 `<file path="{path}">\n{content}\n</file>` 형태로 합친다 (1차 AI 응답과 동일한 포맷).
+
+**에러 파일 귀속**: 다중 파일 시 각 에러를 해당 파일 경로와 함께 그룹핑한다. `_maybe_validate_and_repair`에서 파일별 `validate_code()` 결과를 머지할 때, 각 `ValidationError.location`에 파일 경로를 접두사로 추가한다 (예: `"src/pages/Detail.tsx: line 5, <Chip>"`). `format_errors_for_repair()`에서 에러를 파일별로 그룹핑하여 포맷한다.
+
+에러 포맷팅 예시 (단일 파일):
 ```
+## src/pages/Login.tsx
 1. [missing_import] line 5, <Chip> — Chip used but not imported
    → 수정 힌트: add `import { Chip } from "@/components"`
 2. [external_url] line 8 — external URL hardcoded: <img src="https://example.com/banner.png" />
    → 수정 힌트: 외부 URL 대신 placeholder box 또는 실제 자산 경로 사용
 ```
+
+에러 포맷팅 예시 (다중 파일):
+```
+## src/pages/Login.tsx
+1. [missing_import] line 5, <Chip> — Chip used but not imported
+   → 수정 힌트: add `import { Chip } from "@/components"`
+
+## src/pages/Detail.tsx
+1. [external_url] line 12 — external URL hardcoded: <img src="https://example.com/banner.png" />
+   → 수정 힌트: 외부 URL 대신 placeholder box 또는 실제 자산 경로 사용
+```
+
+**누락 파일 방지**: 시스템 프롬프트에 "수정 여부와 관계없이 모든 파일을 반환하세요"를 명시한다. 추가 안전장치로 `repair_code()` 내부에서 AI 응답의 파일 목록이 원본보다 적으면 원본에서 누락된 파일을 보충(backfill)한다.
 
 ---
 
@@ -107,8 +139,9 @@ User: "## 원본 코드\n```tsx\n{source}\n```\n\n## 검출된 오류\n{formatte
 | 파일 | 변경 | 책임 |
 |------|------|------|
 | `app/services/repair_loop.py` | **신규** | `repair_code()` — AI 재호출 + 재검증 |
+| `app/services/code_validator.py` | 수정 | `ComponentCatalog.get_names() -> set[str]` 추가 (DS 전용, `REACT_BUILTINS` 제외) |
 | `app/core/config.py` | 수정 | `enable_repair: bool = False` 추가 |
-| `app/api/chat.py` | 수정 | `_maybe_validate_parsed` → `_maybe_validate_and_repair` 확장 |
+| `app/api/chat.py` | 수정 | `_maybe_validate_parsed`(동기) → `_maybe_validate_and_repair`(async) 교체 |
 | `app/schemas/chat.py` | 수정 없음 | `ParsedResponse.validation` 이미 존재 |
 | `tests/test_repair_loop.py` | **신규** | 단위 + 통합 테스트 |
 
@@ -118,7 +151,7 @@ User: "## 원본 코드\n```tsx\n{source}\n```\n\n## 검출된 오류\n{formatte
 
 ```python
 async def repair_code(
-    source: str,
+    files: list[FileContent],
     report: ValidationReport,
     provider: AIProvider,
     catalog: ComponentCatalog,
@@ -126,10 +159,10 @@ async def repair_code(
     """검증 실패 코드를 AI에게 수정 요청. 최대 1회.
 
     Args:
-        source: 1차 생성 TSX 코드
+        files: 1차 생성 파일 목록 (ParsedResponse.files)
         report: 1차 검증 리포트 (errors가 있어야 의미 있음)
         provider: AI 프로바이더 (chat 메서드 사용)
-        catalog: 컴포넌트 카탈로그 (재검증용)
+        catalog: 컴포넌트 카탈로그 (재검증 + 컴포넌트 이름 추출용)
 
     Returns:
         RepairResult — success=True면 수정 성공
@@ -137,16 +170,20 @@ async def repair_code(
 ```
 
 내부 흐름:
-1. `report.errors`를 사람이 읽을 수 있는 문자열로 포맷팅
-2. Repair 전용 system/user 메시지 조립
-3. `await provider.chat(messages)` — AI 호출
-4. 응답에서 코드 추출 (`parse_ai_response` 재사용)
-5. `validate_code(repaired_code, catalog)` — 재검증
-6. passed=True면 `RepairResult(success=True, code=repaired_code, ...)`
-7. passed=False면 `RepairResult(success=False, code=source, report=원래report, ...)`
+1. `files`를 `<file path="...">content</file>` 형태의 문자열로 조립
+2. `catalog`에서 DS 컴포넌트 이름 목록 추출
+3. `report.errors`를 사람이 읽을 수 있는 문자열로 포맷팅
+4. Repair 전용 system/user 메시지 조립 (컴포넌트 목록 포함)
+5. `await provider.chat(messages)` — AI 호출
+6. 응답에서 파일 추출 (`parse_ai_response` 재사용 → `ParsedResponse`)
+7. 각 파일에 대해 `validate_code(file.content, catalog)` — 재검증, 결과 머지
+8. passed=True면 `RepairResult(success=True, files=repaired_files, ...)`
+9. passed=False면 `RepairResult(success=False, files=원본files, report=원래report, ...)`
+
+**성공 판단 (v1)**: 2차 검증 결과 `ValidationReport.passed=True` (에러 0건)인 경우만 성공. 에러 수가 줄었더라도 `passed=False`면 실패 처리한다. 부분 개선(partial success)은 v1에서 고려하지 않는다.
 
 예외 발생 시:
-- AI 호출 실패, 파싱 실패 등 → `RepairResult(success=False, code=source, report=원래report)`
+- AI 호출 실패, 파싱 실패 등 → `RepairResult(success=False, files=원본files, report=원래report)`
 - 로그에 경고 기록
 
 ---
@@ -158,22 +195,25 @@ async def repair_code(
 현재:
 ```python
 parsed = parse_ai_response(response_message.content)
-_maybe_validate_parsed(parsed)
+_maybe_validate_parsed(parsed)  # 동기 함수
 ```
 
 변경 후:
 ```python
 parsed = parse_ai_response(response_message.content)
-await _maybe_validate_and_repair(parsed, provider)
+await _maybe_validate_and_repair(parsed, provider)  # async 함수
 ```
+
+기존 `_maybe_validate_parsed`(동기)를 `_maybe_validate_and_repair`(async)로 **교체**한다. `provider.chat()` 호출이 async이므로 `async def` 필수.
 
 `_maybe_validate_and_repair` 로직:
 1. `ENABLE_VALIDATION=False` → return (아무것도 안 함)
-2. validate → `passed=True` → `parsed.validation` 설정, return
-3. `ENABLE_REPAIR=False` → `parsed.validation` 설정(실패 리포트), return
-4. `ENABLE_REPAIR=True` → `repair_code()` 호출
-5. repair 성공 → `parsed.files[i].content` 교체, `parsed.validation` 갱신
-6. repair 실패 → `parsed.validation`에 1차 리포트 유지
+2. 각 `parsed.files`에 대해 `validate_code()` 실행, 결과 머지 → `merged_report`
+3. `merged_report.passed=True` → `parsed.validation = merged_report`, return
+4. `ENABLE_REPAIR=False` → `parsed.validation = merged_report`, return
+5. `ENABLE_REPAIR=True` → `await repair_code(parsed.files, merged_report, provider, _CODE_CATALOG)` 호출 (모듈 레벨 싱글톤 재사용)
+6. repair 성공 → `parsed.files`를 `result.files`로 교체, `parsed.validation = result.report`
+7. repair 실패 → `parsed.validation = merged_report` (1차 리포트 유지, 1차 파일 유지)
 
 ### Streaming (향후)
 
@@ -243,6 +283,8 @@ logger.info("repair result", extra={
 - `test_repair_parse_error`: AI 응답이 파싱 불가 → success=False
 - `test_error_formatting`: ValidationReport → 사람 읽기 좋은 문자열 변환
 - `test_repair_prompt_structure`: system/user 메시지가 올바른 형식인지
+- `test_repair_multi_file`: 2개 파일 중 1개만 에러 → 모든 파일이 AI에 전달되고, 결과도 2개 파일 포함
+- `test_repair_backfill_missing_files`: AI가 일부 파일만 반환 시 원본에서 누락 파일 보충 확인
 
 ### 통합 테스트 (`tests/test_code_validator.py` 확장)
 
@@ -265,6 +307,6 @@ logger.info("repair result", extra={
 
 - Streaming 엔드포인트 repair (향후 별도)
 - 2회 이상 재시도
-- Figma 컨텍스트 / 원본 시스템 프롬프트 재전달
+- Figma 컨텍스트 / 원본 시스템 프롬프트 재전달 (DS 컴포넌트 이름 목록은 포함)
 - Repair 프롬프트 A/B 테스트
 - 프론트엔드 변경
