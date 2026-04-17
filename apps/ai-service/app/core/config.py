@@ -55,6 +55,9 @@ class Settings(BaseSettings):
     enable_validation: bool = False       # 기본 off, 단계적 롤아웃
     validation_timeout_ms: int = 200      # validator 자체 타임아웃
 
+    # Code Repair (Stage 5)
+    enable_repair: bool = False           # Repair 루프 (ENABLE_VALIDATION=True 전제)
+
     @model_validator(mode="after")
     def _validate_supabase(self) -> "Settings":
         """Supabase 필수 환경변수 검증 (빈 문자열이면 서버 시작 시 즉시 실패)"""

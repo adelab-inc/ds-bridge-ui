@@ -83,6 +83,14 @@ class TestConfigValidationFlags:
         assert s.enable_validation is False
         assert s.validation_timeout_ms == 200
 
+    def test_enable_repair_default_false(self, monkeypatch):
+        monkeypatch.setenv("SUPABASE_URL", "http://x")
+        monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "x")
+        from app.core.config import Settings
+
+        s = Settings()
+        assert s.enable_repair is False
+
 
 class TestComponentCatalog:
     def test_load_default_includes_ds_components(self):
