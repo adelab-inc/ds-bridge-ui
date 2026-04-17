@@ -55,6 +55,10 @@ class ComponentCatalog:
     def add(self, name: str) -> None:
         self._known.add(name)
 
+    def get_names(self) -> set[str]:
+        """DS 컴포넌트 이름 반환 (REACT_BUILTINS 제외)."""
+        return self._known - REACT_BUILTINS
+
     @classmethod
     def load_default(cls, schema_path: Path | None = None) -> ComponentCatalog:
         """`component-schema.json`에서 컴포넌트 이름을 로드한다."""

@@ -131,6 +131,25 @@ class TestComponentCatalog:
         catalog.add("Widget")
         assert catalog.is_known("Widget") is True
 
+    def test_get_names_excludes_react_builtins(self):
+        from app.services.code_validator import ComponentCatalog
+        catalog = ComponentCatalog.load_default()
+        names = catalog.get_names()
+        assert "Button" in names
+        assert "GridLayout" in names
+        assert "Fragment" not in names
+        assert "React" not in names
+
+    def test_get_names_returns_set_of_str(self):
+        from app.services.code_validator import ComponentCatalog
+        catalog = ComponentCatalog(schema_components={"Button", "Chip"}, extra={"CustomWidget"})
+        names = catalog.get_names()
+        assert isinstance(names, set)
+        assert "Button" in names
+        assert "Chip" in names
+        assert "CustomWidget" in names
+        assert "GridLayout" in names
+
 
 class TestScanJsxComponents:
     def test_single_self_closing(self):
