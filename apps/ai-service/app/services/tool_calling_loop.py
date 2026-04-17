@@ -253,6 +253,27 @@ async def run_figma_tool_calling_loop(
             clean_json = detail_json
         figma_context += f"\n- 노드({nid}) 레이아웃:\n```json\n{clean_json}\n```\n"
         logger.info("Figma node %s simplified JSON (len=%d)", nid, len(detail_json))
+        # 디버그: INSTANCE 컴포넌트 variant 요약 로깅
+        def _extract_instances(node: dict) -> list[str]:
+            results = []
+            if node.get("type") == "INSTANCE":
+                comp = node.get("component", node.get("name", "?"))
+                variant = node.get("variant", {})
+                label = node.get("label", "")
+                info = f"  {comp}: variant={variant}"
+                if label:
+                    info += f' label="{label}"'
+                results.append(info)
+            for c in node.get("children", []):
+                if isinstance(c, dict):
+                    results.extend(_extract_instances(c))
+            return results
+        try:
+            instances = _extract_instances(json.loads(detail_json))
+            if instances:
+                logger.info("Figma INSTANCE variants:\n%s", "\n".join(instances))
+        except Exception:
+            pass
         # 디버그: Figma 트리 구조 로깅 (type, layout, children count/types)
         def _tree_structure(node: dict, depth: int = 0, max_depth: int = 5) -> list[str]:
             if depth > max_depth or not isinstance(node, dict):
@@ -356,49 +377,26 @@ async def run_figma_tool_calling_loop(
             logger.warning("Grid hint analysis failed for node %s: %s", nid, e)
 
     figma_context += (
-        "\n## ⚠️ Figma 모드 — 아래 규칙이 시스템 프롬프트의 일반 규칙보다 우선합니다\n"
-        "1. "
-        + ("**스크린샷이 최우선 기준.** 스크린샷을 보고 픽셀 단위로 동일하게 재현하세요. JSON은 보조 참고용.\n" if screenshot_base64 else "Figma 데이터가 절대적 기준.\n")
-        + "2. **Page wrapper 절대 생성 금지** (header, nav, GNB, sidebar, footer, logo, 검색창, tab bar, breadcrumb 바깥 영역). "
-        "Figma JSON에 header/nav/tab_floor 등이 보여도 **무시**하고 **Body/Content 영역부터만** 렌더링하세요. "
-        "이것들은 앱 공통 레이아웃에 이미 있으므로 만들면 중복됩니다.\n"
-        "3. **Mock Data**: Figma에 보이는 텍스트·행 수를 그대로 반영.\n"
-        "4. 인벤토리 JSX는 props/variant 참고용. Figma에 보이는 UI는 자유롭게 생성.\n"
-        "5. name/characters(텍스트) 필드를 정확히 반영.\n"
-        "6. **⚠️ gap/padding 값은 JSON에서 읽은 그대로 쓰세요. 절대 임의값(gap-6 등) 금지.**\n"
-        "   - JSON에 `gap: 16` 이면 반드시 `gap-4` (16÷4). `gap-6` 쓰지 마세요.\n"
-        "   - JSON에 `gap: 8` 이면 `gap-2`. JSON에 `gap: 12`면 `gap-3`. JSON에 `gap: 20`이면 `gap-5`.\n"
-        "   - JSON에 gap이 없으면 gap 클래스 넣지 마세요 (기본값 임의로 추가 금지).\n"
-        "7. **⚠️ 높이 고정 금지**: `h-[calc(100vh-XXXpx)]`, `h-screen`, `min-h-screen` 등 viewport 기반 높이 계산 절대 금지. "
-        "콘텐츠 높이는 자연스럽게 늘어나게 두세요 (높이 prop 없음 = 자동).\n"
-        "8. **⚠️ GridLayout type은 Figma `w` 값 비율로 선택**: 임의로 `<div className=\"grid grid-cols-2/3\">` 균등 분할 금지. "
-        "Figma JSON 최상위 자식들의 `w` 값을 12 기준으로 환산해 type 선택.\n"
-        "   - 자식 2개 6:6 → B, 3:9 → C, 9:3 → C-2, 4:8 → D, 8:4 → D-2\n"
-        "   - 자식 3개 4:4:4 균등 → E, 2:8:2 → F, **2:2:8 (마지막이 압도적으로 넓음, 트리+목록+상세 패턴) → G**\n"
-        "   - 자식 4개 3:3:3:3 → H\n"
-        "9. **⚠️ 폼 그리드 = Figma 자식 수 + w 비율 반영**:\n"
-        "   - 같은 FRAME 안 동일 레벨 INSTANCE 수 = 한 행의 필드 수. **절대 기본값 4 고정 금지. 실제 자식 수를 세세요.**\n"
-        "   - **w 비율이 다르면 균등 분할 금지**: 필드별 `w` 값을 비교해 가장 좁은 필드=1단위, 넓은 필드=비율만큼 colSpan 부여.\n"
-        "     예) w=[170,170,170,170,340,340] → 좁은=1, 넓은=2 → 총 8단위 → `grid-cols-8` + 좁은 `col-span-1`, 넓은 `col-span-2`\n"
-        "   - 필드 수 4 이하 & w 균등 → `<FormGrid columns={N}>` (colSpan으로 넓은 필드 처리)\n"
-        "   - 필드 수 5+ 또는 w 비균등 → `<div className=\"grid grid-cols-{총단위} gap-x-6 gap-y-4\">` + `col-span-{비율}`\n"
-        "10. **⚠️ 불필요한 prop 생략**: `showHelptext={false}`, `showStartIcon={false}`, `showEndIcon={false}` 등 false 기본값 prop은 쓰지 마세요. **단 `showLabel={true}`는 반드시 명시** (기본값이 false이므로 생략하면 라벨이 안 보임).\n"
-        "11. **⚠️ 컴포넌트 래핑 원칙**:\n"
-        "   - **TreeMenu**는 자체 border/배경 없음 → Figma에 box 테두리가 보일 때만 `border rounded` div로 외부 래핑. Figma에 박스 없는데 감싸면 불필요한 중복 박스.\n"
-        "   - **OptionGroup**은 자체 flex-col + 라벨/헬퍼텍스트 컨테이너 내장 → 외부에서 `<div className=\"flex flex-col gap-*\">` 로 감싸지 마세요 (이중 래핑 = 간격 중복).\n"
-        "   - **Alert**는 에러/경고/성공/정보 메시지 박스 전용. Figma의 일반 안내·가이드 bullet 텍스트를 Alert로 감싸지 마세요. 단순 텍스트는 `<ul><li>` 또는 `<p>` 사용.\n"
-        "\n### Figma 필드 → Tailwind 매핑 (px÷4)\n"
-        '- layout: "column"→flex-col, "row"→flex-row\n'
-        '- **justify** (주축 정렬): "center"→justify-center, "space-between"→justify-between, "end"→justify-end\n'
-        '- **align** (교차축 정렬): "center"→items-center, "end"→items-end, "baseline"→items-baseline\n'
-        '- **hSizing**: "fill"→w-full, "hug"→w-auto (생략 시 고정 w 값 사용)\n'
-        '- **vSizing**: "fill"→h-full, "hug"→h-auto (생략 시 고정 h 값 사용)\n'
-        '- **selfAlign**: "stretch"→self-stretch, "center"→self-center\n'
-        '- **wrap**: true→flex-wrap\n'
-        "- **gap/padding 변환표**: 4→1, 8→2, 12→3, 16→4, 20→5, 24→6, 32→8, 40→10, 48→12\n"
-        "- padding 단축형: `padding: '20 24'` → `py-5 px-6`, `padding: '24'` → `p-6`\n"
-        "- w/h: 고정→w-[Npx], FILL→w-full | borderRadius: 4→rounded, 8→rounded-lg, 9999→rounded-full\n"
-        "- fill: FRAME→bg-[hex] | stroke→border-[hex] | opacity: ×100 (0.5→opacity-50)\n"
+        "\n## ⚠️⚠️⚠️ CRITICAL — 이 3가지를 어기면 결과물 전체가 틀립니다\n"
+        "**C1. JSON `⚠️_RENDER` 필드 = 사용할 컴포넌트.** "
+        + ("스크린샷은 색상·간격 참고용일 뿐, 컴포넌트 종류는 반드시 JSON을 따르세요.\n" if screenshot_base64 else "Figma JSON이 절대적 기준.\n")
+        + "  - `⚠️_RENDER: \"<Field> 사용 필수\"` → 반드시 `<Field>` 사용. 스크린샷이 드롭다운처럼 보여도 Select 변환 **절대 금지**.\n"
+        "  - `⚠️_RENDER: \"<Select> 사용 필수\"` → 반드시 `<Select>` 사용.\n"
+        "**C2. gap/padding은 JSON 값 그대로.** gap:16→gap-4, gap:8→gap-2. 임의값(gap-6 등) 금지. JSON에 gap 없으면 gap 클래스 추가 금지.\n"
+        "**C3. 추가하지 말 것**: `bg-[#f4f6f8]` 배경 래퍼, `mt-5`/`mt-3` 임의 margin, `showHelptext={false}` false 기본값 prop, `h-screen` viewport 높이.\n"
+        "\n## Figma 모드 규칙\n"
+        "1. **Page wrapper 금지** (header, nav, GNB, sidebar, footer, breadcrumb). Body/Content 영역부터만.\n"
+        "2. **Mock Data**: Figma 텍스트·행 수 그대로. name/characters 정확 반영.\n"
+        "3. **GridLayout type = Figma `w` 비율**: 6:6→B, 3:9→C, 4:4:4→E, 3:3:3:3→H.\n"
+        "4. **폼 그리드 = Figma 자식 수**: 실제 INSTANCE 수 = 필드 수. 기본값 4 고정 금지.\n"
+        "5. **불필요한 prop 생략**: false 기본값 생략. 단 `showLabel={true}`는 반드시 명시.\n"
+        "6. **Card 패턴**: `_cardHint: true` FRAME → `<div className=\"bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6\">`.\n"
+        "7. **컴포넌트 래핑**: TreeMenu=자체 border 없음, OptionGroup=자체 flex-col 내장(이중 래핑 금지), Alert=메시지 박스 전용.\n"
+        "\n### Figma→Tailwind 변환표\n"
+        '- layout: "column"→flex-col, "row"→flex-row | justify: "center"→justify-center, "space-between"→justify-between\n'
+        '- align: "center"→items-center | hSizing: "fill"→w-full, "hug"→w-auto | vSizing: "fill"→h-full\n'
+        "- gap/padding: 4→1, 8→2, 12→3, 16→4, 20→5, 24→6, 32→8 | padding: '20 24'→py-5 px-6\n"
+        "- w/h: 고정→w-[Npx], FILL→w-full | borderRadius: 4→rounded, 8→rounded-lg | fill→bg-[hex] | stroke→border-[hex]\n"
     )
 
     # 컴포넌트 인벤토리 (recency bias 활용 — figma_context 맨 마지막에 배치)
@@ -418,6 +416,18 @@ async def run_figma_tool_calling_loop(
                 asyncio.create_task(_save_usage_map_background(usage_map, room_id))
         except (json.JSONDecodeError, TypeError):
             pass
+
+    # 최종 점검 리마인더 (recency bias — AI가 마지막에 읽은 내용을 가장 잘 따름)
+    figma_context += (
+        "\n## ⚠️⚠️⚠️ 코드 생성 전 최종 체크 (위반 시 결과물 불합격)\n"
+        "아래 중 하나라도 해당하면 코드를 수정하세요:\n"
+        "- [ ] JSON `⚠️_RENDER`가 `<Field>`인데 `<Select>`를 썼다 → **Field로 교체**\n"
+        "- [ ] JSON `⚠️_RENDER`가 `<Select>`인데 `<Field>`를 썼다 → **Select로 교체**\n"
+        "- [ ] `bg-[#f4f6f8]` 배경 래퍼를 추가했다 → **삭제**\n"
+        "- [ ] `showHelptext={false}` 등 false 기본값 prop을 썼다 → **삭제**\n"
+        "- [ ] `mt-5`, `mt-3` 등 JSON에 없는 margin을 추가했다 → **삭제**\n"
+        "- [ ] DataGrid cellRenderer에서 size-20-only 아이콘(`folder`, `image` 등)을 썼다 → **size=16 지원 아이콘으로 교체**\n"
+    )
 
     full_system_prompt = system_prompt + figma_context
 

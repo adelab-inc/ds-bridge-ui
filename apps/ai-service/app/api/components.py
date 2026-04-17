@@ -110,11 +110,11 @@ AVAILABLE_COMPONENTS_WHITELIST = {
 # 컴포넌트 + variant → 사용 가이드 (JSON에 없는 도메인 지식)
 _USAGE_GUIDELINES: dict[str, dict[str, str]] = {
     "button": {
-        "primary": "최종 CTA (가입완료, 신청) — 화면당 0~1개, 진한 파란색 배경 #0033a0 흰 글자",
-        "secondary": "주요 액션 (조회, 검색, 저장, 등록, 글쓰기) — 연한 하늘색 배경 #98b3ee",
-        "tertiary": "낮은 강조 (엑셀, 인쇄) — 회색 배경",
-        "ghost": "텍스트 전용 (초기화, 취소) — 투명 배경, 파란색 글자, 테두리 없음",
-        "destructive": "삭제/해지 등 위험 액션 — 빨간색 배경",
+        "primary": "최종 CTA — 화면당 0~1개, 진한 파란색 배경 #0033a0 흰 글자",
+        "secondary": "주요 액션 — 연한 하늘색 배경 #98b3ee, 가장 많이 사용",
+        "tertiary": "낮은 강조 — 회색 배경",
+        "ghost": "텍스트 전용 — 투명 배경, 파란색 글자, 테두리 없음",
+        "destructive": "위험 액션 — 빨간색 배경",
         "secondary-destructive": "위험 보조 버튼 — 빨간 배경 연한",
     },
     "iconButton": {
@@ -856,6 +856,18 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("- ❌ `cellRenderer: ButtonCellRenderer` — 사용 금지 (디자인 시스템 미적용, 파란색 하드코딩)")
     lines.append("- For simple text formatting, use `valueFormatter`: `valueFormatter: (params) => params.value ? '활성' : '비활성'`")
     lines.append("")
+    lines.append("**⚠️ cellRenderer 필수 패턴 (세로 정렬 + 아이콘 색상):**")
+    lines.append("cellRenderer에서 아이콘·Badge 등을 렌더링할 때:")
+    lines.append("1. `h-full flex items-center` — 세로 중앙 정렬 (빠뜨리면 셀 상단에 치우침)")
+    lines.append("2. Icon에 `className=\"text-[#495057]\"` — 아이콘 색상 지정 (빠뜨리면 흰색/투명으로 안 보임)")
+    lines.append("```")
+    lines.append("cellRenderer: (params) => (")
+    lines.append("  <div className=\"flex items-center justify-center h-full\">")
+    lines.append("    <Icon name=\"아이콘명\" size={20} className=\"text-[#495057]\" />")
+    lines.append("  </div>")
+    lines.append(")")
+    lines.append("```")
+    lines.append("")
     lines.append("**3. pinned 사용 금지:**")
     lines.append("- ❌ `pinned: 'left'`, `pinned: 'right'` — 틀 고정 사용하지 마세요")
     lines.append("")
@@ -1293,6 +1305,7 @@ Always respond in Korean.
 - Grid: 페이지→`<GridLayout type="A~H">` (Drawer/Dialog 내부 금지), 폼→`<FormGrid columns={N}>`+`<FormGridCell>`
 - 비율 요청 → 12-column 환산: 1:1→col-span-6+6, 1:2→4+8, 1:3→3+9, 1:1:1→4+4+4
 - Grid children: `className="w-full min-w-0"` 필수
+- **GridLayout은 `type` prop만 사용**. `gap`/`className` 등에 tailwind 클래스 전달 금지 — type이 컬럼 수·gap을 자동 결정. `<GridLayout type="C-2" gap="gap-5">` ❌ / `<GridLayout type="C-2">` ✅
 - DS 컴포넌트(Button, Badge 등)의 색상은 전용 prop으로 제어. className에 bg-/text- 색상 금지
 
 ### Mock Data
@@ -1315,8 +1328,12 @@ Always respond in Korean.
   - `<IconButton size="md" iconOnly={<Icon name="undo" size={20} />} />` ✅
   - `<IconButton size="sm" iconOnly={<Icon name="undo" size={20} />} />` ❌ CRASH (icon16에 undo 없음)
   - `<IconButton size="lg" iconOnly={<Icon name="undo" size={20} />} />` ❌ CRASH (icon24에 undo 없음)
+- **⚠️ DataGrid cellRenderer 안 아이콘**: `<Icon>` 직접 사용 OK. 반드시 `size={20}` 명시 + `className="text-[#495057]"` 색상 지정 (빠뜨리면 흰색/투명으로 안 보임)
 - 외부 아이콘 라이브러리(lucide-react, heroicons 등) import = CRASH. 이모지/SVG도 금지
 - Profile avatar: `<div className="w-10 h-10 rounded-full bg-[#0033a0] text-white flex items-center justify-center font-semibold text-sm">{name.charAt(0)}</div>`
+- **이미지 URL**: 외부 URL(`https://...`) 하드코딩 절대 금지 — AI가 만들어낸 URL은 깨진 이미지. Figma/사용자가 실제 자산을 제공하지 않으면 placeholder 박스로 대체:
+  `<div className="bg-[#f4f6f8] border border-dashed border-[#dee2e6] rounded-lg flex items-center justify-center text-[#6c757d] w-full h-[200px]">이미지 영역</div>`
+- **파일 첨부 표시**: 일반 `Button`으로 첨부파일 나열 금지. `Chip` 또는 `ChipGroup` 사용 (파일명 + 크기 + 아이콘 조합)
 
 ## Implementation Rules
 1. `import { Button, Field, Select, Icon } from '@/components'` — 사용하는 컴포넌트 전부 import. 미사용/누락 = CRASH
@@ -1343,31 +1360,43 @@ COMPONENT_QUICK_REFERENCE = """
 
 ### Button
 - `<Button buttonType="primary" size="md" label="저장" />`
-- buttonType: primary(CTA, 1-2/page) | secondary(조회,저장,보조 테두리) | tertiary(엑셀,인쇄) | ghost(취소,초기화) | destructive(삭제) | ghost-inverse(ActionBar 전용)
+- buttonType: primary(진한 파란 배경, 최종 CTA) | secondary(연한 파란 배경, 가장 많이 사용) | tertiary(회색 배경, 낮은 강조) | ghost(투명, 텍스트만) | destructive(빨간 배경) | ghost-inverse(ActionBar 전용). **Figma variant 우선 → 없으면 Figma 색상/시각으로 판단**
 - size: lg(폼 제출) | md(헤더,필터,Dialog) | sm(DataGrid 행, 컴팩트, 툴바)
+- **⚠️ 같은 그룹(연속/나란히 배치) 내 Button size 통일 필수**. 헤더 툴바에 "URL 복사 lg + 인쇄 md"처럼 섞으면 UI 깨짐 — 같은 행은 같은 size
 - 아이콘: `showStartIcon={true} startIcon={<Icon name="add" size={20} />}` (Button이 size 강제 변환하므로 size={16} 목록 아이콘만 안전)
 
 ### Field (self-closing — `</Field>` = CRASH)
 - `<Field type="text" label="이름" value={v} onChange={(e) => set(e.target.value)} />`
 - type: text | email | number | date | password | tel | url | search
 - interaction="display": 읽기 전용 표시 (Figma에서 display 모드일 때)
-- 날짜 입력(작성기간, 조회기간 등 calendar 아이콘)은 `<Field type="date">` 사용. Select 드롭다운 아님
+- 캘린더 아이콘(📅)이 보이는 입력란은 `<Field type="date">` 사용. Select 드롭다운 아님
+- **⚠️ Field에 `endIcon={<Icon name="calendar" />}` 등 수동 캘린더 아이콘 조합 금지** — 캘린더 아이콘이 보이면 **무조건** `<Field type="date">` (아이콘 자동 렌더링, 내장 DatePicker)
+- **기간 입력**: "2025.09.24 - 2025.09.30" 같은 range 표시는 `<Field type="date">` **2개** (시작/종료) 사용. 한 필드에 range 텍스트를 value로 하드코딩 금지
+- **⚠️ Field ≠ Select 혼동 금지**: 🔍 검색 아이콘이 달린 입력란은 **검색 팝업형 Field** (type="text" + endIcon). 이를 `<Select>` 드롭다운으로 바꾸면 UX가 완전히 달라짐. **Figma JSON의 component가 Field이면 반드시 Field 유지.**
 
 ### Select
 - `<Select label="상태" placeholder="전체" value={v} onChange={(v) => set(v)} options={opts} />`
 - onChange: value 직접 수신 (event 아님). className="w-full" 필수
 - options 최소 3개 (2개 이하면 Radio). defaultValue: option의 value 사용
 - calendar 아이콘이 달린 Select는 날짜 필드 → `<Field type="date">` 로 변환
+- **⚠️ Select vs Field 구분**: Select는 ▼ 화살표(chevron)가 있는 드롭다운. 🔍 돋보기가 있으면 Select 아님 → Field 사용
 
 ### Badge
-- `<Badge type="status" status="info" appearance="subtle" label="공지" />`
 - type="status" + status(info|success|warning|error), type="level" + level(primary|neutral)
 - type="count": label={숫자}, type="dot": 점 표시
 - appearance: solid(진한) | subtle(연한, 기본). prop 이름: status (NOT statusVariant)
+- **⚠️ 자주 쓰는 Badge 매핑:**
+  - 공지 (주황): `<Badge type="level" level="primary" appearance="subtle" label="공지" />`
+  - NEW (파란): `<Badge type="status" status="info" appearance="subtle" label="NEW" />`
+  - 완료/승인 (초록): `<Badge type="status" status="success" appearance="subtle" label="완료" />`
+  - 반려/오류 (빨강): `<Badge type="status" status="error" appearance="subtle" label="반려" />`
+- **⚠️ Badge 색상은 Figma 시각 기준**: 파란→`info`, 초록→`success`, 노란/주황→`warning`또는`level="primary"`, 빨간→`error`. 배지 텍스트가 아니라 **Figma에서 보이는 배경/텍스트 색상**으로 판단
 
 ### Checkbox / Radio
-- `<Option label="동의합니다"><Checkbox value="unchecked" onChange={() => toggle()} /></Option>`
-- Option 래핑 필수. onChange: 상태 토글 (DOM event 아님, e.target.checked 사용 금지)
+- `<Option label="동의합니다"><Checkbox value={isChecked ? 'checked' : 'unchecked'} onChange={() => toggle()} /></Option>`
+- **⚠️ Checkbox `value`는 문자열** `'unchecked' | 'checked' | 'indeterminate'` (boolean 아님, `checked` prop 없음). onChange는 토글 함수 (e.target.checked 사용 금지)
+- **⚠️ Option의 props는 `label` + children뿐** — `showLabel`/`helperText`/`description` prop **없음**. 라벨·설명문이 필요하면 **OptionGroup**으로 감싸기 (단일 체크박스여도 OK)
+- Option 외부에 수동 `<p className="ml-7">설명...</p>` 추가 금지 → OptionGroup의 `helptext` prop 사용
 
 ### IconButton (Button과 prop 다름)
 - `<IconButton iconOnly={<Icon name="search" size={20} />} iconButtonType="ghost" size="md" aria-label="검색" />`
@@ -1401,7 +1430,11 @@ COMPONENT_QUICK_REFERENCE = """
 
 ### TitleSection
 - `<TitleSection title="제목" menu2="메뉴" showBreadcrumb={true} showMenu2={true} mode="base"><Button .../></TitleSection>`
-- children에 신계약등록2/3·이미지시스템 버튼 금지 (매 페이지 반복되는 템플릿 기본 슬롯)
+- **⚠️ 배치 규칙**: TitleSection은 페이지 **전체 폭** 상단에 위치. 다중 패널 GridLayout(type=B~H)에서 특정 패널 안에 넣어 한 컬럼에 갇히게 하지 말 것
+  - **type="A" (1패널)**: GridLayout 첫 자식 `<div>` 안 최상단 (현재 정석)
+  - **type="B~H" (다중 패널)**: GridLayout **바깥** 상단에 배치 (GridLayout 앞 형제로). 페이지 breadcrumb/title이 한 패널만큼 좁아지는 현상 방지
+- **⚠️ TitleSection children 규칙**: children에는 **Figma의 TitleSection 영역 안에 실제로 있는 버튼만** 넣으세요. Figma에서 TitleSection 바깥(그리드 위, FilterBar 아래 등)에 있는 버튼을 TitleSection children으로 옮기지 마세요.
+- 신계약등록2/3·이미지시스템 버튼 금지 (매 페이지 반복되는 템플릿 기본 슬롯)
 
 ### Alert / Tag / LabelValue / Popover / Tab / Segment / OptionGroup / ActionBar / Tooltip / TreeMenu
 - Alert: `<Alert type="error" title="오류" body="설명" />` (type: error|info|success|warning). **⚠️ 에러/경고/성공/정보 메시지 박스 전용. 일반 안내·가이드 bullet 텍스트는 `<ul><li>` 또는 `<p>` 사용 (Alert 남용 금지)**
@@ -1410,7 +1443,7 @@ COMPONENT_QUICK_REFERENCE = """
 - Popover: `<Popover><Popover.Trigger>...</Popover.Trigger><Popover.Content>...</Popover.Content></Popover>`
 - Tab: `<Tab items={[{value:'home',label:'홈'}]} value={v} onChange={set} widthMode="content" />` — Figma에 Tab이 있으면 반드시 Tab 컴포넌트 사용. 수동 div 구현 금지
 - Segment: `<Segment items={[{value:'day',label:'일간'}]} value={v} onChange={set} size="md" widthMode="equal" />`
-- OptionGroup: `<OptionGroup label="그룹" orientation="horizontal" size="sm"><Option label="항목"><Checkbox .../></Option></OptionGroup>`. **⚠️ 자체 flex-col + 라벨/헬퍼텍스트 컨테이너 내장 → 외부에서 `<div className="flex flex-col gap-*">` 로 감싸지 마세요 (이중 래핑 = 간격 중복)**
+- OptionGroup: `<OptionGroup label="TFA 공유" showLabel={true} helptext="세일즈플러스 게시판에 공유합니다" showHelptext={true} orientation="horizontal" size="sm"><Option label="공유"><Checkbox .../></Option></OptionGroup>`. **⚠️ label/helptext/showLabel/showHelptext props 내장** — 설명문이 필요한 체크박스/라디오는 단일이어도 OptionGroup으로 감싸세요. Option 외부에 수동 `<p>`·`<div>` 설명문 금지. 자체 flex-col 내장 → 외부에서 `<div className="flex flex-col gap-*">` 래핑도 금지 (간격 중복)
 - TreeMenu: `<TreeMenu items={[{id, label, children: [...]}]} />`. **자체 border/배경 없음 (순수 컨테이너)**. Figma에 테두리·박스가 있을 때만 외부에서 `border border-[#dee2e6] rounded-lg` div로 감싸기. Figma에 박스가 없는데 감싸면 불필요한 박스 생성.
 - ActionBar: `<ActionBar count={N} visible={true} onClose={fn}><Button buttonType="ghost-inverse" label="삭제" /></ActionBar>`
 - Tooltip: `<Tooltip content="설명" side="top"><span>대상</span></Tooltip>`
@@ -1427,67 +1460,39 @@ COMPONENT_USAGE_CONVENTION = """
 **이 섹션은 "어떤 맥락에서 어떤 variant/prop을 써야 하는지" 정의합니다.**
 새로운 화면을 생성할 때 아래 규칙을 반드시 따르세요.
 
-### Badge 텍스트→variant 매핑 규칙
+### Badge variant 선택 규칙
 
-**⚠️ 우선순위: Figma 레이아웃 데이터의 variant 필드가 있으면 반드시 그 값을 사용하세요. 아래 테이블은 Figma variant가 없을 때만 폴백으로 참고합니다.**
-
-| 텍스트/맥락 | type | status/level | appearance |
-|-------------|------|--------------|------------|
-| 주의, 경고, 대기, 심사중, 보류, 임박 | status | warning | subtle |
-| 공지, 알림, 진행중, 접수, 처리중, 안내, 업데이트 | status | info | subtle |
-| NEW, 신규, 완료, 정상, 활성, 승인, 유효, 가입, 납입완료 | status | success | subtle |
-| 실패, 해지, 오류, 거절, 취소, 만기, 무효, 미납 | status | error | subtle |
-| VIP, 우수, 1등급, 주요 카테고리 | level | primary | solid |
-| 일반, 기타, 부가 정보 | level | neutral | subtle |
-| 숫자 (알림 건수, 미읽음 수) | count | - | solid |
-
-**판단 기준** (Figma variant 없을 때만 적용): 텍스트의 감정/긴급성으로 결정
-- 부정적/위험 → error, 주의/경고 → warning, 긍정적/완료 → success, 중립적 정보 → info
-- 목록 내 상태 표시 → appearance="subtle", 강조 필요 → appearance="solid"
+**⚠️ Figma variant 필드가 있으면 반드시 그 값 사용. 없으면 Figma에서 보이는 색상으로 판단:**
+- 파란 계열 → `status="info"`, 초록 → `success`, 노란/주황 → `warning`, 빨간 → `error`
+- 강조 카테고리 → `type="level" level="primary"`, 부가 정보 → `level="neutral"`
+- 숫자(건수, 미읽음) → `type="count"`
+- appearance: 목록 내 → `subtle`, 강조 필요 → `solid`
 
 ### Button buttonType 시각 가이드
 
-아래 색상/시각 정보를 기반으로 화면 맥락에 맞는 buttonType을 선택하세요.
+**⚠️ Figma variant 필드(buttonType, size)가 있으면 반드시 그 값 사용. 없으면 Figma에서 보이는 색상으로 판단:**
 
-| buttonType | 색상 | 시각적 느낌 | 사용 빈도 |
-|------------|------|-------------|-----------|
-| secondary | 연한 하늘색 배경 (#98b3ee) | 부드러운 파란색 배경 | 가장 많이 사용 |
-| primary | 진한 파란색 배경 (#0033a0) 흰 글자 | 강한 대비, 눈에 확 띔 | 드물게 (최종 CTA) |
-| tertiary | 연한 회색 배경 | 낮은 강조 | 유틸리티 |
-| ghost | 투명 배경, 파란 글자, 테두리 없음 | 텍스트만 보임 | 취소/리셋 |
-| destructive | 빨간색 배경 (#d32f2f) 흰 글자 | 위험 강조 | 삭제/해지 |
+| buttonType | Figma에서 이렇게 보이면 |
+|------------|----------------------|
+| primary | 진한 파란색 배경 (#0033a0) + 흰 글자 |
+| secondary | 연한 하늘색 배경 (#98b3ee) |
+| tertiary | 연한 회색 배경 또는 흰색 배경 + 테두리 |
+| ghost | 투명 배경, 파란 글자, 테두리 없음 |
+| destructive | 빨간색 배경 (#d32f2f) + 흰 글자 |
 
-**⚠️ 우선순위: Figma 레이아웃 데이터의 variant 필드(buttonType, size)가 있으면 반드시 그 값을 사용하세요. 아래는 Figma variant가 없을 때만 폴백으로 참고합니다.**
-- 배경 채움 버튼 (secondary/primary) → 핵심 액션
-- 텍스트 전용 (ghost) → 취소, 리셋
-- 위험 액션 → destructive
+**⚠️ secondary vs tertiary 혼동 주의:** 흰색/회색 배경 버튼 = tertiary. secondary는 확실히 연한 파란색(#98b3ee)일 때만
 
-### Alert 맥락→type 규칙
+### Alert type 규칙
 
-| 맥락 | type |
-|------|------|
-| 시스템 오류, 실패 알림 | error |
-| 성공 완료 알림 | success |
-| 주의사항, 데이터 손실 경고 | warning |
-| 도움말, 안내, 참고 정보 | info |
+**Figma variant 우선. 없으면 Alert 배경/아이콘 색상으로 판단:**
+빨간→`error`, 초록→`success`, 노란→`warning`, 파란→`info`
 
-### 화면 유형별 공통 패턴
+### 화면 유형별 구조 참고
 
-#### 목록 화면 (게시판, 관리 목록)
-- 상단: 페이지 제목 (h2) + 우측 등록/액션 버튼
-- 중간: 조회 필터 영역 (Select/Field + 조회 버튼)
-- 하단: DataGrid (status 컬럼 → Badge subtle, 행 액션 → Button ghost sm)
-- 검색 결과 건수: "총 N건" 텍스트
-
-#### 상세/등록 화면
-- 상단: 제목 + 뒤로가기
-- 본문: 폼 필드 그룹 (Field/Select w-full, 2~3열 grid)
-- 하단: 저장 + 취소 우측 정렬
-
-#### 대시보드
-- 카드 그리드로 요약 정보 표시
-- 각 카드 내 Badge로 상태 요약
-- 하단 DataGrid로 최근 항목 표시
+**Figma JSON의 구조를 그대로 따르세요. 아래는 일반적인 레이아웃 참고용입니다:**
+- 목록 화면: TitleSection → FilterBar → DataGrid
+- 상세/등록: TitleSection → 폼 필드 그룹 → 하단 버튼
+- 대시보드: 카드 그리드 → 요약 DataGrid
 """
 
 # ============================================================================
@@ -1877,10 +1882,11 @@ def extract_component_usage_summary(simplified_layout: dict) -> str:
 
     total = len(instances)
     lines = [
-        "## 컴포넌트 인벤토리 (Figma에서 추출한 DS 컴포넌트)",
+        "## ⚠️ 컴포넌트 인벤토리 (반드시 사용)",
         "",
-        f"이 디자인의 DS 컴포넌트 총 {total}개. props/variant 참고용.",
-        "- Figma에 보이는 UI 요소는 자유롭게 생성하세요. 이 목록은 props 참고용입니다.",
+        f"이 디자인의 DS 컴포넌트 총 {total}개. **반드시 아래 컴포넌트와 props를 그대로 사용하세요.**",
+        "- JSON의 `component` 필드가 Select이면 반드시 `<Select>`를 사용. 스크린샷 보고 Field로 바꾸지 마세요.",
+        "- 인벤토리에 없는 UI 요소(커스텀 레이아웃, 에디터 등)만 자유롭게 생성 가능.",
         "- **TitleSection children에 신계약등록2/3·이미지시스템 버튼 금지** (매 페이지 반복되는 템플릿 기본 슬롯).",
         "- FilterBar 내장 버튼(초기화, 조회하기)은 onReset/onSearch로 자동 렌더링됨. 별도 배치 금지.",
         "",

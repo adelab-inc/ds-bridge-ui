@@ -208,7 +208,7 @@ def parse_component_name(component_name: str) -> tuple[str | None, dict]:
 
         if key in _STATE_PROPS:
             continue
-        if val in _DEFAULT_VALUES:
+        if not val or val in _DEFAULT_VALUES:
             continue
 
         variant[key.lower()] = val
@@ -243,7 +243,7 @@ def simplify_component_props(props: dict) -> dict:
 
         if key in _STATE_PROPS:
             continue
-        if isinstance(value, str) and value in _DEFAULT_VALUES:
+        if isinstance(value, str) and (not value or value in _DEFAULT_VALUES):
             continue
         if isinstance(value, bool):
             continue
@@ -620,6 +620,32 @@ def simplify_node(
                 k: v.lower() if isinstance(v, str) else v
                 for k, v in out["variant"].items()
             }
+
+    # INSTANCE 노드에 렌더링 지시 삽입: AI가 component를 변경하지 못하도록 데이터 레벨 강제
+    if out.get("type") == "INSTANCE" and out.get("component"):
+        comp = out["component"]
+        out["⚠️_RENDER"] = f"<{comp}> 사용 필수 — 다른 컴포넌트로 변경 절대 금지"
+
+    # Card 패턴 감지: white fill + (stroke 또는 borderRadius) + children 있는 FRAME
+    if (
+        out.get("type") == "FRAME"
+        and "children" in out
+        and len(out.get("children", [])) > 0
+    ):
+        fill_val = out.get("fill", "")
+        has_white_fill = False
+        if isinstance(fill_val, str):
+            hex_clean = fill_val.lstrip("#").lower()
+            if len(hex_clean) == 6:
+                try:
+                    r, g, b = int(hex_clean[0:2], 16), int(hex_clean[2:4], 16), int(hex_clean[4:6], 16)
+                    has_white_fill = r >= 0xF0 and g >= 0xF0 and b >= 0xF0
+                except ValueError:
+                    pass
+        has_border = bool(out.get("stroke"))
+        has_radius = bool(out.get("borderRadius"))
+        if has_white_fill and (has_border or has_radius):
+            out["_cardHint"] = True
 
     # Row FRAME 그리드 힌트: INSTANCE 자식의 w 비율을 분석하여 인라인 힌트 추가
     if (
