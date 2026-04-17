@@ -53,30 +53,52 @@ from app.services.tool_calling_loop import run_figma_tool_calling_loop
 _CODE_CATALOG = ComponentCatalog.load_default()
 
 
-def _maybe_validate_parsed(parsed: ParsedResponse) -> None:
-    """ENABLE_VALIDATION이 켜져 있으면 parsed.files를 검증해 parsed.validation에 기록한다.
+async def _maybe_validate_and_repair(parsed: ParsedResponse, provider: object) -> None:
+    """ENABLE_VALIDATION이 켜져 있으면 parsed.files를 검증하고,
+    ENABLE_REPAIR까지 켜져 있으면 AI 수정을 시도한다.
 
     여러 파일이 있어도 모두 검증하며, errors/elapsed_ms는 합산한다.
+    repair 성공 시 parsed.files와 parsed.validation을 교체한다.
     """
     settings = get_settings()
     if not settings.enable_validation or not parsed.files:
         return
 
+    # 1. 검증
     merged_errors: list[ValidationError] = []
     merged_warnings: list[ValidationError] = []
     elapsed_total = 0
     for f in parsed.files:
         report = validate_code(f.content, _CODE_CATALOG)
+        for err in report.errors:
+            err.location = f"{f.path}: {err.location}"
+        for warn in report.warnings:
+            warn.location = f"{f.path}: {warn.location}"
         merged_errors.extend(report.errors)
         merged_warnings.extend(report.warnings)
         elapsed_total += report.elapsed_ms
 
-    parsed.validation = ValidationReport(
+    merged_report = ValidationReport(
         passed=not merged_errors,
         errors=merged_errors,
         warnings=merged_warnings,
         elapsed_ms=elapsed_total,
     )
+
+    # 2. 검증 통과 또는 repair 비활성 → 리포트만 설정
+    if merged_report.passed or not settings.enable_repair:
+        parsed.validation = merged_report
+        return
+
+    # 3. Repair 시도
+    from app.services.repair_loop import repair_code
+
+    result = await repair_code(parsed.files, merged_report, provider, _CODE_CATALOG)
+    if result.success:
+        parsed.files = result.files
+        parsed.validation = result.report
+    else:
+        parsed.validation = merged_report
 
 
 def _build_done_validation_payload(collected_files: list[dict]) -> dict:
@@ -734,7 +756,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
 
         response_message, usage = await provider.chat(messages)
         parsed = parse_ai_response(response_message.content)
-        _maybe_validate_parsed(parsed)
+        await _maybe_validate_and_repair(parsed, provider)
 
         # DB에 메시지 저장 (question + text + code 하나의 문서로)
         first_file = parsed.files[0] if parsed.files else None

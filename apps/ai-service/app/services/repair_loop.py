@@ -10,10 +10,21 @@ import time
 from collections import defaultdict
 from dataclasses import dataclass
 
-from app.schemas.chat import FileContent
+from app.schemas.chat import FileContent, Message
 from app.schemas.validation import ValidationError, ValidationReport
+from app.services.code_validator import ComponentCatalog, validate_code
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class RepairResult:
+    """repair_code() 반환 결과 (내부 전용, 직렬화 불필요)."""
+
+    success: bool
+    files: list[FileContent]
+    report: ValidationReport
+    elapsed_ms: int
 
 
 def format_errors_for_repair(errors: list[ValidationError]) -> str:
@@ -85,3 +96,92 @@ def build_repair_messages(
         {"role": "system", "content": system_content},
         {"role": "user", "content": user_content},
     ]
+
+
+async def repair_code(
+    files: list[FileContent],
+    report: ValidationReport,
+    provider: object,
+    catalog: ComponentCatalog,
+) -> RepairResult:
+    """검증 실패 코드를 AI에게 수정 요청. 최대 1회.
+
+    Args:
+        files: 1차 생성 파일 목록
+        report: 1차 검증 리포트
+        provider: AI 프로바이더 (chat 메서드 사용)
+        catalog: 컴포넌트 카탈로그
+
+    Returns:
+        RepairResult — success=True면 수정 성공
+    """
+    t0 = time.perf_counter()
+
+    try:
+        # 1. 메시지 조립
+        component_names = catalog.get_names()
+        messages_dicts = build_repair_messages(files, report.errors, component_names)
+
+        # 2. dict → Message 객체 변환
+        messages = [Message(role=m["role"], content=m["content"]) for m in messages_dicts]
+
+        # 3. AI 호출
+        response_message, _usage = await provider.chat(messages)
+
+        # 4. 응답 파싱 (순환 import 방지를 위해 지연 임포트)
+        from app.api.chat import parse_ai_response
+
+        parsed = parse_ai_response(response_message.content)
+        if not parsed.files:
+            logger.warning("repair: AI 응답에서 파일을 추출할 수 없음")
+            elapsed = int((time.perf_counter() - t0) * 1000)
+            return RepairResult(success=False, files=files, report=report, elapsed_ms=elapsed)
+
+        # 5. 누락 파일 backfill
+        repaired_paths = {f.path for f in parsed.files}
+        for original_file in files:
+            if original_file.path not in repaired_paths:
+                parsed.files.append(original_file)
+
+        # 6. 재검증 (에러 location에 파일 경로 접두사 추가)
+        merged_errors: list[ValidationError] = []
+        merged_warnings: list[ValidationError] = []
+        v_elapsed = 0
+        for f in parsed.files:
+            v_report = validate_code(f.content, catalog)
+            for err in v_report.errors:
+                err.location = f"{f.path}: {err.location}"
+            for warn in v_report.warnings:
+                warn.location = f"{f.path}: {warn.location}"
+            merged_errors.extend(v_report.errors)
+            merged_warnings.extend(v_report.warnings)
+            v_elapsed += v_report.elapsed_ms
+
+        new_report = ValidationReport(
+            passed=not merged_errors,
+            errors=merged_errors,
+            warnings=merged_warnings,
+            elapsed_ms=v_elapsed,
+        )
+
+        elapsed = int((time.perf_counter() - t0) * 1000)
+
+        if new_report.passed:
+            logger.info("repair success: %d errors → 0", len(report.errors))
+            return RepairResult(
+                success=True, files=parsed.files, report=new_report, elapsed_ms=elapsed
+            )
+        else:
+            logger.info(
+                "repair failed: %d errors → %d errors",
+                len(report.errors),
+                len(new_report.errors),
+            )
+            return RepairResult(
+                success=False, files=files, report=report, elapsed_ms=elapsed
+            )
+
+    except Exception as exc:  # noqa: BLE001
+        elapsed = int((time.perf_counter() - t0) * 1000)
+        logger.warning("repair crashed: %s: %s", type(exc).__name__, exc)
+        return RepairResult(success=False, files=files, report=report, elapsed_ms=elapsed)

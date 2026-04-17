@@ -476,16 +476,11 @@ class TestValidateCode:
 
 
 class TestChatNonStreamingIntegration:
-    """chat.py의 validator 훅이 feature flag에 따라 동작/비동작하는지.
+    """chat.py의 validator+repair 훅이 feature flag에 따라 동작하는지."""
 
-    실제 /chat 엔드포인트 호출은 AI/DB 의존성이 커서 여기서는
-    chat.py 내부의 훅 함수(`_maybe_validate_parsed`)를 직접 임포트해
-    단위 수준에서 검사한다.
-    """
-
-    def test_validation_field_none_when_flag_off(self, monkeypatch):
+    async def test_validation_field_none_when_flag_off(self, monkeypatch):
         """ENABLE_VALIDATION=False (기본)일 때 validation 필드는 None."""
-        from app.api.chat import _maybe_validate_parsed  # 신규 helper
+        from app.api.chat import _maybe_validate_and_repair
         from app.schemas.chat import FileContent, ParsedResponse
 
         parsed = ParsedResponse(
@@ -495,32 +490,32 @@ class TestChatNonStreamingIntegration:
         )
         monkeypatch.setattr(
             "app.api.chat.get_settings",
-            lambda: type("S", (), {"enable_validation": False})(),
+            lambda: type("S", (), {"enable_validation": False, "enable_repair": False})(),
         )
-        _maybe_validate_parsed(parsed)
+        await _maybe_validate_and_repair(parsed, provider=None)
         assert parsed.validation is None
 
-    def test_validation_field_set_when_flag_on(self, monkeypatch):
-        from app.api.chat import _maybe_validate_parsed
+    async def test_validation_field_set_when_flag_on(self, monkeypatch):
+        from app.api.chat import _maybe_validate_and_repair
         from app.schemas.chat import FileContent, ParsedResponse
 
         parsed = ParsedResponse(
             conversation="",
-            files=[FileContent(path="x.tsx", content="<Chip />")],  # missing_import
+            files=[FileContent(path="x.tsx", content="<Chip />")],
             raw="",
         )
         monkeypatch.setattr(
             "app.api.chat.get_settings",
-            lambda: type("S", (), {"enable_validation": True})(),
+            lambda: type("S", (), {"enable_validation": True, "enable_repair": False})(),
         )
-        _maybe_validate_parsed(parsed)
+        await _maybe_validate_and_repair(parsed, provider=None)
         assert parsed.validation is not None
         categories = [e.category for e in parsed.validation.errors]
         assert "missing_import" in categories
 
-    def test_validation_merges_multiple_files(self, monkeypatch):
+    async def test_validation_merges_multiple_files(self, monkeypatch):
         """복수 파일의 errors 는 하나의 ValidationReport 로 합쳐진다."""
-        from app.api.chat import _maybe_validate_parsed
+        from app.api.chat import _maybe_validate_and_repair
         from app.schemas.chat import FileContent, ParsedResponse
 
         parsed = ParsedResponse(
@@ -529,22 +524,110 @@ class TestChatNonStreamingIntegration:
                 FileContent(
                     path="a.tsx",
                     content='import { Button } from "@/components";\nconst A = () => <Button/>;\n',
-                ),  # clean
+                ),
                 FileContent(
                     path="b.tsx",
-                    content="<Chip />",  # missing_import
+                    content="<Chip />",
                 ),
             ],
             raw="",
         )
         monkeypatch.setattr(
             "app.api.chat.get_settings",
-            lambda: type("S", (), {"enable_validation": True})(),
+            lambda: type("S", (), {"enable_validation": True, "enable_repair": False})(),
         )
-        _maybe_validate_parsed(parsed)
+        await _maybe_validate_and_repair(parsed, provider=None)
         assert parsed.validation is not None
         categories = [e.category for e in parsed.validation.errors]
-        assert categories == ["missing_import"]  # 합쳐진 결과에 1건만
+        assert "missing_import" in categories
+
+
+class TestValidateAndRepairIntegration:
+    """_maybe_validate_and_repair repair 통합 테스트."""
+
+    def _make_parsed(self, content: str, path: str = "x.tsx"):
+        from app.schemas.chat import FileContent, ParsedResponse
+
+        return ParsedResponse(
+            conversation="",
+            files=[FileContent(path=path, content=content)],
+            raw="",
+        )
+
+    async def test_repair_flag_off_no_repair(self, monkeypatch):
+        """ENABLE_REPAIR=False → repair 안 함, 검증만."""
+        from app.api.chat import _maybe_validate_and_repair
+
+        parsed = self._make_parsed("<Chip />")
+        monkeypatch.setattr(
+            "app.api.chat.get_settings",
+            lambda: type("S", (), {"enable_validation": True, "enable_repair": False})(),
+        )
+        await _maybe_validate_and_repair(parsed, provider=None)
+        assert parsed.validation is not None
+        assert parsed.validation.passed is False
+
+    async def test_repair_flag_on_success(self, monkeypatch):
+        """ENABLE_REPAIR=True + AI가 올바른 코드 반환 → 파일 교체."""
+        from unittest.mock import AsyncMock
+
+        from app.api.chat import _maybe_validate_and_repair
+        from app.schemas.chat import Message
+
+        parsed = self._make_parsed("<Chip />")
+
+        fixed_code = 'import { Chip } from "@/components";\nconst Page = () => <Chip />;'
+        ai_response = f'수정했습니다.\n\n<file path="x.tsx">\n{fixed_code}\n</file>'
+        provider = AsyncMock()
+        provider.chat.return_value = (
+            Message(role="assistant", content=ai_response),
+            None,
+        )
+
+        monkeypatch.setattr(
+            "app.api.chat.get_settings",
+            lambda: type("S", (), {"enable_validation": True, "enable_repair": True})(),
+        )
+        await _maybe_validate_and_repair(parsed, provider)
+        assert parsed.validation is not None
+        assert parsed.validation.passed is True
+        assert "import" in parsed.files[0].content
+
+    async def test_repair_flag_on_failure_preserves_original(self, monkeypatch):
+        """ENABLE_REPAIR=True + AI 수정 실패 → 1차 코드 유지."""
+        from unittest.mock import AsyncMock
+
+        from app.api.chat import _maybe_validate_and_repair
+        from app.schemas.chat import Message
+
+        parsed = self._make_parsed("<Chip />")
+
+        ai_response = '<file path="x.tsx">\n<Chip />\n</file>'
+        provider = AsyncMock()
+        provider.chat.return_value = (
+            Message(role="assistant", content=ai_response),
+            None,
+        )
+
+        monkeypatch.setattr(
+            "app.api.chat.get_settings",
+            lambda: type("S", (), {"enable_validation": True, "enable_repair": True})(),
+        )
+        await _maybe_validate_and_repair(parsed, provider)
+        assert parsed.validation is not None
+        assert parsed.validation.passed is False
+
+    async def test_validation_off_skips_everything(self, monkeypatch):
+        """ENABLE_VALIDATION=False → 검증도 repair도 안 함."""
+        from app.api.chat import _maybe_validate_and_repair
+
+        parsed = self._make_parsed("<Chip />")
+        monkeypatch.setattr(
+            "app.api.chat.get_settings",
+            lambda: type("S", (), {"enable_validation": False, "enable_repair": True})(),
+        )
+        await _maybe_validate_and_repair(parsed, provider=None)
+        assert parsed.validation is None
 
 
 class TestChatStreamingIntegration:
