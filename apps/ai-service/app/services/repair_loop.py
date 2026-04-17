@@ -45,3 +45,43 @@ def format_errors_for_repair(errors: list[ValidationError]) -> str:
         lines.append("")
 
     return "\n".join(lines).strip()
+
+
+def build_file_blocks(files: list[FileContent]) -> str:
+    """FileContent 목록을 <file path="...">content</file> 형태로 합친다."""
+    if not files:
+        return ""
+    blocks: list[str] = []
+    for f in files:
+        blocks.append(f'<file path="{f.path}">\n{f.content}\n</file>')
+    return "\n\n".join(blocks)
+
+
+_REPAIR_SYSTEM_TEMPLATE = """\
+당신은 코드 수정 전문가입니다. 아래 TSX 코드에서 발견된 오류를 수정하세요.
+수정 시 기존 구조와 로직은 최대한 유지하고, 오류만 정확히 고치세요.
+수정 여부와 관계없이 모든 파일을 <file path="...">...</file> 형식으로 반환하세요.
+오류가 없는 파일도 원본 그대로 포함해야 합니다.
+
+## 사용 가능한 DS 컴포넌트
+{component_names}
+위 컴포넌트는 `import {{ ComponentName }} from "@/components"` 로 사용합니다."""
+
+
+def build_repair_messages(
+    files: list[FileContent],
+    errors: list[ValidationError],
+    component_names: set[str],
+) -> list[dict[str, str]]:
+    """Repair AI 호출용 system/user 메시지를 조립한다."""
+    system_content = _REPAIR_SYSTEM_TEMPLATE.format(
+        component_names=", ".join(sorted(component_names)),
+    )
+    file_blocks = build_file_blocks(files)
+    formatted_errors = format_errors_for_repair(errors)
+    user_content = f"## 원본 코드\n{file_blocks}\n\n## 검출된 오류\n{formatted_errors}"
+
+    return [
+        {"role": "system", "content": system_content},
+        {"role": "user", "content": user_content},
+    ]

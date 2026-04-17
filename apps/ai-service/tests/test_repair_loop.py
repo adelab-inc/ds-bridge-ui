@@ -71,3 +71,51 @@ class TestFormatErrorsForRepair:
         result = format_errors_for_repair(errors)
         assert "[missing_import]" in result
         assert "line 5" in result
+
+
+class TestBuildFileBlocks:
+    def test_single_file(self):
+        from app.services.repair_loop import build_file_blocks
+        files = [FileContent(path="src/pages/Login.tsx", content="const x = 1;")]
+        result = build_file_blocks(files)
+        assert '<file path="src/pages/Login.tsx">' in result
+        assert "const x = 1;" in result
+        assert "</file>" in result
+
+    def test_multi_file(self):
+        from app.services.repair_loop import build_file_blocks
+        files = [
+            FileContent(path="a.tsx", content="aaa"),
+            FileContent(path="b.tsx", content="bbb"),
+        ]
+        result = build_file_blocks(files)
+        assert '<file path="a.tsx">' in result
+        assert '<file path="b.tsx">' in result
+
+    def test_empty_files(self):
+        from app.services.repair_loop import build_file_blocks
+        assert build_file_blocks([]) == ""
+
+
+class TestBuildRepairMessages:
+    def test_message_structure(self):
+        from app.services.repair_loop import build_repair_messages
+        files = [FileContent(path="x.tsx", content="<Chip />")]
+        errors = [
+            ValidationError(
+                category="missing_import",
+                location="x.tsx: line 1, <Chip>",
+                message="Chip used but not imported",
+                suggested_fix='add `import { Chip } from "@/components"`',
+            ),
+        ]
+        component_names = {"Button", "Chip", "Field"}
+        messages = build_repair_messages(files, errors, component_names)
+        assert len(messages) == 2
+        assert messages[0]["role"] == "system"
+        assert messages[1]["role"] == "user"
+        assert "Button" in messages[0]["content"]
+        assert "Chip" in messages[0]["content"]
+        assert "모든 파일" in messages[0]["content"]
+        assert '<file path="x.tsx">' in messages[1]["content"]
+        assert "[missing_import]" in messages[1]["content"]
