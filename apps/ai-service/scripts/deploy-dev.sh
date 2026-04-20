@@ -150,6 +150,10 @@ deploy_simple() {
     [ -n "${SUPABASE_URL}" ] && ENV_VARS="${ENV_VARS}@SUPABASE_URL=${SUPABASE_URL}"
     [ -n "${SUPABASE_SERVICE_ROLE_KEY}" ] && ENV_VARS="${ENV_VARS}@SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}"
 
+    # Feature flags (기본값: false)
+    ENV_VARS="${ENV_VARS}@ENABLE_VALIDATION=${ENABLE_VALIDATION:-false}"
+    ENV_VARS="${ENV_VARS}@ENABLE_REPAIR=${ENABLE_REPAIR:-false}"
+
     # Storage bucket names (dev)
     ENV_VARS="${ENV_VARS}@STORAGE_BUCKET_UPLOADS=dev-user-uploads"
     ENV_VARS="${ENV_VARS}@STORAGE_BUCKET_EXPORTS=dev-exports"
