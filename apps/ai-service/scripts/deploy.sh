@@ -187,6 +187,10 @@ deploy_simple() {
     [ -n "${SUPABASE_URL}" ] && ENV_VARS="${ENV_VARS}@SUPABASE_URL=${SUPABASE_URL}"
     [ -n "${SUPABASE_SERVICE_ROLE_KEY}" ] && ENV_VARS="${ENV_VARS}@SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}"
 
+    # Feature flags (기본값: false)
+    ENV_VARS="${ENV_VARS}@ENABLE_VALIDATION=${ENABLE_VALIDATION:-false}"
+    ENV_VARS="${ENV_VARS}@ENABLE_REPAIR=${ENABLE_REPAIR:-false}"
+
     # Storage bucket names (prod)
     ENV_VARS="${ENV_VARS}@STORAGE_BUCKET_UPLOADS=user-uploads"
     ENV_VARS="${ENV_VARS}@STORAGE_BUCKET_EXPORTS=exports"
@@ -255,6 +259,8 @@ usage() {
     echo "  ANTHROPIC_API_KEY Anthropic API key"
     echo "  GEMINI_API_KEY   Gemini API key"
     echo "  CORS_ORIGINS     Allowed CORS origins"
+    echo "  ENABLE_VALIDATION Enable code validation (default: false)"
+    echo "  ENABLE_REPAIR    Enable auto repair (default: false)"
     echo ""
     echo "Example:"
     echo "  export GCP_PROJECT_ID=my-project"
