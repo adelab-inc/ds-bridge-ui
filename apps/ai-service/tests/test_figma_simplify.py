@@ -8,6 +8,8 @@ from pathlib import Path
 import pytest
 
 from app.services.figma_simplify import (
+    _dedup_repeated_rows,
+    _row_signature,
     padding_shorthand,
     parse_component_name,
     simplify_component_props,
@@ -64,8 +66,8 @@ class TestParseComponentName:
     def test_meaningful_values_kept(self):
         name, variant = parse_component_name("Size=lg, State=Active, Hover=True")
         assert name is None
-        # State is _STATE_PROPS → removed, Hover is _STATE_PROPS → removed
-        assert variant == {"size": "lg"}
+        # Hover is _STATE_PROPS → removed, State는 _STATE_PROPS 아님 → 유지
+        assert variant == {"size": "lg", "state": "Active"}
 
 
 # ---------------------------------------------------------------------------
@@ -197,6 +199,132 @@ class TestBadgeVariantPreservation:
 
 
 # ---------------------------------------------------------------------------
+# Badge 2중 INSTANCE variant 병합
+# ---------------------------------------------------------------------------
+
+class TestBadge2LevelMerge:
+    """부모 Badge + 자식 Badge → variant/label 병합."""
+
+    def test_merge_same_component(self):
+        """부모 Badge(type=level) + 자식 Badge(level=primary, appearance=subtle) → 단일 Badge."""
+        node = {
+            "name": "Badge",
+            "type": "INSTANCE",
+            "component": "Badge",
+            "variant": {"type": "level"},
+            "children": [
+                {
+                    "name": "Badge",
+                    "type": "INSTANCE",
+                    "component": "Badge",
+                    "variant": {"level": "primary", "appearance": "subtle"},
+                    "label": "공지",
+                }
+            ],
+        }
+        result = simplify_node(node, depth=1)
+        assert result["variant"]["type"] == "level"
+        assert result["variant"]["level"] == "primary"
+        assert result["variant"]["appearance"] == "subtle"
+        assert result["label"] == "공지"
+        assert "children" not in result
+
+    def test_no_merge_different_component(self):
+        """부모와 자식이 다른 컴포넌트면 병합하지 않음."""
+        node = {
+            "name": "Card",
+            "type": "INSTANCE",
+            "component": "Card",
+            "variant": {"size": "lg"},
+            "children": [
+                {
+                    "name": "Badge",
+                    "type": "INSTANCE",
+                    "component": "Badge",
+                    "variant": {"type": "status"},
+                }
+            ],
+        }
+        result = simplify_node(node, depth=1)
+        assert "children" in result
+        assert len(result["children"]) == 1
+
+    def test_merge_preserves_other_children(self):
+        """같은 컴포넌트 자식은 병합, 다른 자식은 유지."""
+        node = {
+            "name": "Badge",
+            "type": "INSTANCE",
+            "component": "Badge",
+            "variant": {"type": "level"},
+            "children": [
+                {
+                    "name": "Badge",
+                    "type": "INSTANCE",
+                    "component": "Badge",
+                    "variant": {"level": "primary"},
+                    "label": "공지",
+                },
+                {
+                    "name": "Icon",
+                    "type": "INSTANCE",
+                    "component": "Icon",
+                    "variant": {"name": "check"},
+                },
+            ],
+        }
+        result = simplify_node(node, depth=1)
+        assert result["variant"]["level"] == "primary"
+        assert result["label"] == "공지"
+        assert "children" in result
+        assert len(result["children"]) == 1
+        assert result["children"][0]["component"] == "Icon"
+
+
+# ---------------------------------------------------------------------------
+# 반복 행 중복 제거
+# ---------------------------------------------------------------------------
+
+class TestDedupRepeatedRows:
+    """_dedup_repeated_rows: 구조 동일한 형제 3개 이상이면 첫 번째만 유지."""
+
+    def test_no_dedup_under_threshold(self):
+        """2개 이하는 중복 제거 안 함."""
+        children = [
+            {"type": "FRAME", "component": "Row"},
+            {"type": "FRAME", "component": "Row"},
+        ]
+        result = _dedup_repeated_rows(children)
+        assert len(result) == 2
+
+    def test_dedup_three_identical(self):
+        """동일 구조 3개 → 첫 번째만 유지 + _repeatedRows=3."""
+        children = [
+            {"type": "FRAME", "children": [{"type": "INSTANCE", "component": "Badge"}]},
+            {"type": "FRAME", "children": [{"type": "INSTANCE", "component": "Badge"}]},
+            {"type": "FRAME", "children": [{"type": "INSTANCE", "component": "Badge"}]},
+        ]
+        result = _dedup_repeated_rows(children)
+        assert len(result) == 1
+        assert result[0]["_repeatedRows"] == 3
+
+    def test_dedup_preserves_header(self):
+        """헤더(다른 구조) + 데이터행(같은 구조 4개) → 헤더 + 첫 데이터행만."""
+        header = {"type": "FRAME", "children": [{"type": "TEXT", "component": ""}]}
+        data_row = {"type": "FRAME", "children": [{"type": "INSTANCE", "component": "Badge"}]}
+        children = [header, data_row, data_row.copy(), data_row.copy(), data_row.copy()]
+        result = _dedup_repeated_rows(children)
+        assert len(result) == 2
+        assert "_repeatedRows" not in result[0]
+        assert result[1]["_repeatedRows"] == 4
+
+    def test_signature_ignores_values(self):
+        """구조는 같지만 값이 다른 행도 동일 시그니처."""
+        sig1 = _row_signature({"type": "FRAME", "children": [{"type": "INSTANCE", "component": "Badge"}]})
+        sig2 = _row_signature({"type": "FRAME", "children": [{"type": "INSTANCE", "component": "Badge", "label": "다름"}]})
+        assert sig1 == sig2
+
+
+# ---------------------------------------------------------------------------
 # simplify_node
 # ---------------------------------------------------------------------------
 
@@ -274,14 +402,14 @@ class TestSimplifyNode:
     def test_size_child_only_fill(self):
         node = {"name": "child", "type": "FRAME", "size": {"width": 500, "height": "FILL"}}
         result = simplify_node(node, depth=1)
-        assert "w" not in result  # 고정 px 제거
+        assert result["w"] == 500  # 모든 깊이에서 w 보존 (col-span 계산용)
         assert result["h"] == "FILL"
 
     def test_size_child_fixed_removed(self):
         node = {"name": "child", "type": "FRAME", "size": {"width": 200, "height": 100}}
         result = simplify_node(node, depth=1)
-        assert "w" not in result
-        assert "h" not in result
+        assert result["w"] == 200  # 모든 깊이에서 w 보존
+        assert result["h"] == 100
 
     def test_component_name_parsed(self):
         node = {
@@ -303,7 +431,7 @@ class TestSimplifyNode:
         result = simplify_node(node, depth=1)
         assert result["name"] == "Button"
         assert result["type"] == "INSTANCE"
-        assert result["variant"] == {"size": "sm", "type": "tertiary"}
+        assert result["variant"] == {"size": "sm", "buttonType": "tertiary"}
         assert result["label"] == "신계약등록2"
         assert "componentName" not in result
         assert "componentProps" not in result

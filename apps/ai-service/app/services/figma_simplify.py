@@ -95,6 +95,7 @@ _VARIANT_PROP_REMAP: dict[str, dict[str, str]] = {
     "badge": {
         "status variant": "status",
         "level variant": "level",
+        "style": "appearance",
     },
     "chip": {},  # state, type 그대로 유지
     "alert": {"variant": "type"},
@@ -275,6 +276,55 @@ def _normalize_token_path(figma_name: str) -> str:
             figma_name = figma_name[len(prefix):]
             break
     return figma_name.replace("/", "-")
+
+def _row_signature(node: dict) -> str:
+    """노드의 구조적 시그니처 생성 (컴포넌트 종류/타입만, 값 무시)."""
+    parts: list[str] = []
+    ntype = node.get("type", "")
+    comp = node.get("component", "")
+    parts.append(f"{ntype}:{comp}")
+    for child in node.get("children", []):
+        if isinstance(child, dict):
+            parts.append(_row_signature(child))
+    return "|".join(parts)
+
+
+def _dedup_repeated_rows(children: list[dict]) -> list[dict]:
+    """구조가 동일한 형제 FRAME/INSTANCE가 3개 이상 반복되면 첫 번째만 유지.
+
+    AG Grid 등에서 데이터 행이 반복되어 토큰이 폭발하는 것을 방지.
+    반복이 발견되면 첫 행에 `_repeatedRows` 힌트를 추가.
+    """
+    if len(children) < 3:
+        return children
+
+    # 각 child의 구조 시그니처 계산
+    sigs = [_row_signature(c) if isinstance(c, dict) else "" for c in children]
+
+    # 연속으로 같은 시그니처가 3개 이상인 그룹 찾기
+    result: list[dict] = []
+    i = 0
+    while i < len(children):
+        sig = sigs[i]
+        # 연속 같은 시그니처 개수 세기
+        j = i + 1
+        while j < len(children) and sigs[j] == sig:
+            j += 1
+        count = j - i
+
+        if count >= 3 and sig:
+            # 반복 그룹: 첫 번째만 유지
+            first = children[i]
+            if isinstance(first, dict):
+                first["_repeatedRows"] = count
+            result.append(first)
+        else:
+            # 반복 아님: 전부 유지
+            result.extend(children[i:j])
+        i = j
+
+    return result
+
 
 def simplify_node(
     node: dict,
@@ -569,6 +619,8 @@ def simplify_node(
                     if c is not None:
                         children.append(c)
             if children:
+                # 반복 행 제거: 구조가 동일한 FRAME이 3개 이상이면 첫 번째만 유지
+                children = _dedup_repeated_rows(children)
                 out["children"] = children
             continue
 
@@ -661,7 +713,10 @@ def simplify_node(
             widths = []
             for inst in instances:
                 w = inst.get("w", 0)
-                widths.append(round(w) if isinstance(w, float) else (w or 0))
+                if isinstance(w, (int, float)):
+                    widths.append(round(w) if isinstance(w, float) else w)
+                else:
+                    widths.append(0)
             positive = [w for w in widths if w > 0]
             if positive:
                 min_w = min(positive)
@@ -705,16 +760,54 @@ def simplify_node(
                     out["children"].pop(i)
                     break
 
-        # INSTANCE children 제거: DS 컴포넌트 내부 구조는 AI에게 불필요한 노이즈
-        # component/variant 정보만 있으면 충분 (Button, Field, Badge 등)
-        # 단, children에 TEXT 노드가 있으면 텍스트 내용을 승격한 뒤 제거
+        # INSTANCE children 처리:
+        # - children에 INSTANCE가 포함된 복합 컴포넌트(AG Grid, Table 등) → children 유지
+        # - children이 SHAPE/TEXT뿐인 리프 컴포넌트(Button, Badge 등) → label 승격 후 제거
         if "children" in out:
-            for child in out["children"]:
-                if isinstance(child, dict) and child.get("type") == "TEXT":
-                    chars = child.get("characters") or child.get("text")
-                    if chars and "label" not in out and "title" not in out and "text" not in out:
-                        out["label"] = chars
-            del out["children"]
+            has_nested_instances = any(
+                isinstance(c, dict) and c.get("type") == "INSTANCE"
+                for c in out["children"]
+            )
+            if has_nested_instances:
+                # 2중 INSTANCE 병합: 부모/자식이 같은 컴포넌트(Badge 등)면
+                # 자식 variant/label을 부모로 올리고 자식 제거
+                parent_comp = (out.get("component") or "").lower()
+                merged_children = []
+                did_merge = False
+                for child in out["children"]:
+                    if (
+                        isinstance(child, dict)
+                        and child.get("type") == "INSTANCE"
+                        and (child.get("component") or "").lower() == parent_comp
+                        and parent_comp
+                    ):
+                        # 자식 variant → 부모 variant에 병합
+                        child_variant = child.get("variant", {})
+                        if child_variant:
+                            parent_variant = out.get("variant", {})
+                            parent_variant.update(child_variant)
+                            out["variant"] = parent_variant
+                        # 자식 label → 부모 승격
+                        for lbl_key in ("label", "title", "text"):
+                            if lbl_key in child and lbl_key not in out:
+                                out[lbl_key] = child[lbl_key]
+                        did_merge = True
+                    else:
+                        merged_children.append(child)
+
+                if did_merge:
+                    if merged_children:
+                        out["children"] = merged_children
+                    else:
+                        del out["children"]
+            else:
+                # 리프 INSTANCE: TEXT label 승격 후 children 제거
+                for child in out["children"]:
+                    if isinstance(child, dict) and child.get("type") == "TEXT":
+                        chars = child.get("characters") or child.get("text")
+                        if chars and "label" not in out and "title" not in out and "text" not in out:
+                            out["label"] = chars
+                del out["children"]
 
     return out
 

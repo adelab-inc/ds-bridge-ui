@@ -140,7 +140,7 @@ async def run_figma_tool_calling_loop(
                         "page_structure",
                     ),
                     _fetch_with_timeout(
-                        fetch_node_detail(file_key, node_id, max_retries=1),
+                        fetch_node_detail(file_key, node_id, max_depth=12, max_retries=1),
                         "node_detail",
                     ),
                     _fetch_with_timeout(
@@ -184,7 +184,7 @@ async def run_figma_tool_calling_loop(
                 if target_node_id:
                     detail_result, image_result = await asyncio.gather(
                         _fetch_with_timeout(
-                            fetch_node_detail(file_key, target_node_id, max_retries=1),
+                            fetch_node_detail(file_key, target_node_id, max_depth=12, max_retries=1),
                             "node_detail",
                         ),
                         _fetch_with_timeout(
@@ -376,27 +376,18 @@ async def run_figma_tool_calling_loop(
         except (json.JSONDecodeError, TypeError) as e:
             logger.warning("Grid hint analysis failed for node %s: %s", nid, e)
 
+    # Figma 모드 고유 규칙 (일반 규칙은 SYSTEM_PROMPT_HEADER/QUICK_REFERENCE 참조)
     figma_context += (
-        "\n## ⚠️⚠️⚠️ CRITICAL — 이 3가지를 어기면 결과물 전체가 틀립니다\n"
-        "**C1. JSON `⚠️_RENDER` 필드 = 사용할 컴포넌트.** "
-        + ("스크린샷은 색상·간격 참고용일 뿐, 컴포넌트 종류는 반드시 JSON을 따르세요.\n" if screenshot_base64 else "Figma JSON이 절대적 기준.\n")
-        + "  - `⚠️_RENDER: \"<Field> 사용 필수\"` → 반드시 `<Field>` 사용. 스크린샷이 드롭다운처럼 보여도 Select 변환 **절대 금지**.\n"
-        "  - `⚠️_RENDER: \"<Select> 사용 필수\"` → 반드시 `<Select>` 사용.\n"
-        "**C2. gap/padding은 JSON 값 그대로.** gap:16→gap-4, gap:8→gap-2. 임의값(gap-6 등) 금지. JSON에 gap 없으면 gap 클래스 추가 금지.\n"
-        "**C3. 추가하지 말 것**: `bg-[#f4f6f8]` 배경 래퍼, `mt-5`/`mt-3` 임의 margin, `showHelptext={false}` false 기본값 prop, `h-screen` viewport 높이.\n"
-        "\n## Figma 모드 규칙\n"
-        "1. **Page wrapper 금지** (header, nav, GNB, sidebar, footer, breadcrumb). Body/Content 영역부터만.\n"
-        "2. **Mock Data**: Figma 텍스트·행 수 그대로. name/characters 정확 반영.\n"
-        "3. **GridLayout type = Figma `w` 비율**: 6:6→B, 3:9→C, 4:4:4→E, 3:3:3:3→H.\n"
-        "4. **폼 그리드 = Figma 자식 수**: 실제 INSTANCE 수 = 필드 수. 기본값 4 고정 금지.\n"
-        "5. **불필요한 prop 생략**: false 기본값 생략. 단 `showLabel={true}`는 반드시 명시.\n"
-        "6. **Card 패턴**: `_cardHint: true` FRAME → `<div className=\"bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6\">`.\n"
-        "7. **컴포넌트 래핑**: TreeMenu=자체 border 없음, OptionGroup=자체 flex-col 내장(이중 래핑 금지), Alert=메시지 박스 전용.\n"
-        "\n### Figma→Tailwind 변환표\n"
-        '- layout: "column"→flex-col, "row"→flex-row | justify: "center"→justify-center, "space-between"→justify-between\n'
-        '- align: "center"→items-center | hSizing: "fill"→w-full, "hug"→w-auto | vSizing: "fill"→h-full\n'
-        "- gap/padding: 4→1, 8→2, 12→3, 16→4, 20→5, 24→6, 32→8 | padding: '20 24'→py-5 px-6\n"
-        "- w/h: 고정→w-[Npx], FILL→w-full | borderRadius: 4→rounded, 8→rounded-lg | fill→bg-[hex] | stroke→border-[hex]\n"
+        "\n## Figma 디자인 우선 규칙\n"
+        "1. INSTANCE `⚠️_RENDER` 필드를 그대로 매핑. "
+        + ("스크린샷은 색상·간격 참고용, 컴포넌트 종류는 JSON 기준.\n" if screenshot_base64 else "Figma JSON이 절대적 기준.\n")
+        + "2. Figma 노드의 name, characters(텍스트), 자식 수를 정확히 반영\n"
+        "3. gap/padding은 JSON 값 그대로 변환 (gap:16→gap-4, 8→2). JSON에 없으면 추가 금지\n"
+        "4. Figma에 없는 요소 추가 금지: 배경 래퍼, 임의 margin, Page wrapper(header/nav/footer)\n"
+        "\n### Figma→Tailwind 변환\n"
+        "- layout: column→flex-col, row→flex-row | justify: center→justify-center, space-between→justify-between\n"
+        "- hSizing: fill→w-full, hug→w-auto | gap/padding: 4→1, 8→2, 12→3, 16→4, 20→5, 24→6, 32→8\n"
+        "- GridLayout type: w 비율 기준 (6:6→B, 3:9→C, 4:4:4→E, 3:3:3:3→H)\n"
     )
 
     # 컴포넌트 인벤토리 (recency bias 활용 — figma_context 맨 마지막에 배치)
@@ -417,16 +408,11 @@ async def run_figma_tool_calling_loop(
         except (json.JSONDecodeError, TypeError):
             pass
 
-    # 최종 점검 리마인더 (recency bias — AI가 마지막에 읽은 내용을 가장 잘 따름)
+    # Figma 모드 최종 체크 (FINAL_REMINDER와 중복 제거)
     figma_context += (
-        "\n## ⚠️⚠️⚠️ 코드 생성 전 최종 체크 (위반 시 결과물 불합격)\n"
-        "아래 중 하나라도 해당하면 코드를 수정하세요:\n"
-        "- [ ] JSON `⚠️_RENDER`가 `<Field>`인데 `<Select>`를 썼다 → **Field로 교체**\n"
-        "- [ ] JSON `⚠️_RENDER`가 `<Select>`인데 `<Field>`를 썼다 → **Select로 교체**\n"
-        "- [ ] `bg-[#f4f6f8]` 배경 래퍼를 추가했다 → **삭제**\n"
-        "- [ ] `showHelptext={false}` 등 false 기본값 prop을 썼다 → **삭제**\n"
-        "- [ ] `mt-5`, `mt-3` 등 JSON에 없는 margin을 추가했다 → **삭제**\n"
-        "- [ ] DataGrid cellRenderer에서 size-20-only 아이콘(`folder`, `image` 등)을 썼다 → **size=16 지원 아이콘으로 교체**\n"
+        "\n## Figma 모드 최종 체크\n"
+        "- ⚠️_RENDER 필드 준수 (Field↔Select 혼동 금지)\n"
+        "- JSON에 없는 요소 제거 (배경 래퍼, 임의 margin, false 기본값 prop)\n"
     )
 
     full_system_prompt = system_prompt + figma_context

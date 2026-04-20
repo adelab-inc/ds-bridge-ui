@@ -1412,8 +1412,14 @@ COMPONENT_QUICK_REFERENCE = """
 - size: sm | md | lg (xl 없음). 내장 padding. 삭제 확인, 단순 알림, 필드 1~2개만
 
 ### FilterBar (12컬럼 CSS Grid, 버튼 내장)
-- `<FilterBar mode="compact" onReset={fn} onSearch={fn} actionSpan={2}>`
-- 각 필드: `<div className="col-span-N">` 래핑. 필드 col-span 합 + actionSpan = 12 (한 행). actionSpan 최소 2
+- `<FilterBar mode="compact" onReset={fn} onSearch={fn} actionSpan={3}>`
+- 각 필드: `<div className="col-span-N">` 래핑
+- **🚨 col-span + actionSpan 계산 규칙 (반드시 따르세요)**:
+  1. JSON 필드의 `w` 값을 합산하여 각 필드의 12칸 비율 계산
+  2. `actionSpan={3}` 고정 (초기화+조회 버튼 영역 3칸)
+  3. **마지막 행**: 필드 col-span 합 + actionSpan = 12. 예: `col-span-9` + `actionSpan={3}` = 12
+  4. **중간 행**: 12칸 전부 필드 OK
+  5. ❌ `col-span-10` + `actionSpan={2}` = 버튼 찌그러짐. 절대 사용 금지
 - FilterBar 자체가 배경(`bg-bg-subtle rounded-xl`)을 가짐 → 외부에 배경 div 래핑 금지
 - 초기화(tertiary)/조회(primary) 버튼은 FilterBar가 자동 렌더링 → 별도 Button 배치 금지
 
@@ -1430,6 +1436,7 @@ COMPONENT_QUICK_REFERENCE = """
 
 ### TitleSection
 - `<TitleSection title="제목" menu2="메뉴" showBreadcrumb={true} showMenu2={true} mode="base"><Button .../></TitleSection>`
+- **⚠️ 브레드크럼 값 규칙**: menu2/menu3/menu4 텍스트는 **Figma JSON에 있는 텍스트를 그대로 사용**. JSON에 없는 브레드크럼 텍스트를 임의로 지어내지 마세요. JSON에 브레드크럼 텍스트가 없으면 `showBreadcrumb={true} showMenu2={true} menu2="메뉴"` 정도만 사용 (menu3/menu4 생략)
 - **⚠️ 배치 규칙**: TitleSection은 페이지 **전체 폭** 상단에 위치. 다중 패널 GridLayout(type=B~H)에서 특정 패널 안에 넣어 한 컬럼에 갇히게 하지 말 것
   - **type="A" (1패널)**: GridLayout 첫 자식 `<div>` 안 최상단 (현재 정석)
   - **type="B~H" (다중 패널)**: GridLayout **바깥** 상단에 배치 (GridLayout 앞 형제로). 페이지 breadcrumb/title이 한 패널만큼 좁아지는 현상 방지
@@ -1513,7 +1520,7 @@ LAYOUT_GUIDE = """
   - ⚠️ **columns, colSpan은 반드시 숫자**: `columns={4}` (O) / `columns="4"` (X — 문자열이면 그리드 안 먹힘!)
   - **FormGrid title prop**: `<FormGrid columns={4} title="기본 정보">` → 섹션 제목 자동 생성. 수동 `<h2>` 금지
   - Figma에서 필드 너비가 다르면 colSpan으로 비율 반영 (좁은 필드 1, 넓은 필드 2 등)
-- FilterBar children은 `<div className="col-span-N">` 래퍼로 감쌈. Figma 레이아웃이 1행이면 1행 유지 (col-span-1~2). 필드 col-span 합 + actionSpan = 12
+- FilterBar: JSON 필드의 `w` 값으로 col-span 비율 계산. 마지막 행은 필드 col-span 합 + actionSpan(3 고정) = 12
 - 액션 버튼: 우측 정렬 (`flex justify-end gap-2`). 순서: Tertiary → Ghost → Secondary → Primary
 
 ### Grid Type (가로 분할)
@@ -1553,7 +1560,7 @@ RowSlot slot: `"filter"` | `"actions"` | `"grid"` | `"detail"` | `"form"` | `"su
 - FilterBar + ActionButtons + DataGrid = **하나의 Section Card** (`bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6`)
 - FilterBar와 Grid를 별도 카드로 분리 금지
 
-### RP-1 조회형 정석 코드
+### RP-1 조회형 정석 코드 (1행 필터)
 ```tsx
 import { GridLayout, RowPattern, RowSlot, TitleSection, FilterBar, Field, Select, Button, DataGrid } from '@/components';
 
@@ -1566,7 +1573,7 @@ import { GridLayout, RowPattern, RowSlot, TitleSection, FilterBar, Field, Select
       <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6 mt-5">
         <RowPattern pattern="RP-1">
           <RowSlot slot="filter">
-            <FilterBar mode="compact" onReset={() => {}} onSearch={() => {}}>
+            <FilterBar mode="compact" onReset={() => {}} onSearch={() => {}} actionSpan={3}>
               <div className="col-span-3">
                 <Field type="date" label="조회기간" />
               </div>
@@ -1585,6 +1592,20 @@ import { GridLayout, RowPattern, RowSlot, TitleSection, FilterBar, Field, Select
 </div>
 ```
 
+### RP-1 다행(multi-row) 필터 예시
+```tsx
+{/* JSON 예: 필드 w=300,300,300,300 → 각 3칸. 버튼 영역 w=300 → actionSpan={3} */}
+<FilterBar mode="compact" onReset={() => {}} onSearch={() => {}} actionSpan={3}>
+  {/* 1행: 3+3+3+3 = 12 (전부 사용 OK) */}
+  <div className="col-span-3"><Select label="유형" options={[]} /></div>
+  <div className="col-span-3"><Field type="date" label="기간" /></div>
+  <div className="col-span-3"><Field label="소속" /></div>
+  <div className="col-span-3"><Field label="작성자" /></div>
+  {/* 2행(마지막): 필드 9칸 + 버튼 3칸(actionSpan) = 12 */}
+  <div className="col-span-9"><Field label="제목" /></div>
+</FilterBar>
+```
+
 """
 
 # ============================================================================
@@ -1600,15 +1621,16 @@ FINAL_REMINDER = """
 1. import한 컴포넌트가 모두 JSX에서 사용되는가? (미사용 import = CRASH)
 2. JSX에서 사용한 컴포넌트가 모두 import에 있는가? (누락 import = CRASH)
 3. Field는 모두 self-closing(`/>`)인가? (`</Field>` = CRASH)
+4. **Mock 데이터 객체의 모든 필드에 키가 있는가?** (❌ `{ id: 1, name: 'x', y@z.com' }` → ✅ `{ id: 1, name: 'x', email: 'y@z.com' }`)
 
 ### 품질 검증:
-4. 코드 생략(`...`, `// 나머지`)이 없는가?
-5. Icon name+size 조합이 유효한가? (size 목록 확인)
-6. interaction prop 사용 (disabled/isDisabled/isReadOnly 아님)
-7. Button은 buttonType + label, IconButton은 iconButtonType + iconOnly + aria-label
-8. 드로어 요청 → Drawer, 다이얼로그/모달/팝업 → Dialog
-9. 날짜 필드: YYYY-MM-DD 형식
-10. Select options 3개 이상 (2개 이하면 Radio)
+5. 코드 생략(`...`, `// 나머지`)이 없는가?
+6. Icon name+size 조합이 유효한가? (size 목록 확인)
+7. interaction prop 사용 (disabled/isDisabled/isReadOnly 아님)
+8. Button은 buttonType + label, IconButton은 iconButtonType + iconOnly + aria-label
+9. 드로어 요청 → Drawer, 다이얼로그/모달/팝업 → Dialog
+10. 날짜 필드: YYYY-MM-DD 형식
+11. Select options 3개 이상 (2개 이하면 Radio)
 
 Create a premium, completed result.
 """
@@ -1693,14 +1715,15 @@ UI_PATTERN_EXAMPLES = """
 _schema, _error = load_component_schema()
 COMPONENT_DOCS = format_component_docs(_schema) if _schema else (_error or "Schema not loaded")
 AVAILABLE_COMPONENTS = get_available_components_note(_schema) if _schema else ""
+# 중요도 순서로 조립: 핵심 → 컴포넌트 → 레이아웃 → 예제 → 검증
 SYSTEM_PROMPT = (
     SYSTEM_PROMPT_HEADER
     + COMPONENT_QUICK_REFERENCE
     + COMPONENT_USAGE_CONVENTION
-    + LAYOUT_GUIDE
     + "\n## Available Components\n\n"
     + AVAILABLE_COMPONENTS
     + COMPONENT_DOCS
+    + LAYOUT_GUIDE
     + UI_PATTERN_EXAMPLES
     + RESPONSE_FORMAT_INSTRUCTIONS
     + FINAL_REMINDER
@@ -2031,18 +2054,19 @@ def generate_system_prompt(
     # 컴포넌트 사용 패턴 (Figma에서 추출, 텍스트 모드에서 참조)
     usage_map_section = format_component_usage_map(component_usage_map) if component_usage_map else ""
 
+    # 중요도 순서로 조립: 핵심 → 컴포넌트 → 레이아웃 → 예제 → 검증
     return (
         SYSTEM_PROMPT_HEADER.replace("{current_date}", current_date).replace(
             "{design_tokens_section}", design_tokens_section
         )
         + COMPONENT_QUICK_REFERENCE
         + COMPONENT_USAGE_CONVENTION
-        + LAYOUT_GUIDE
         + "\n## Available Components\n\n"
         + available_components
         + component_docs
         + ag_grid_section
         + component_visual_guide
+        + LAYOUT_GUIDE
         + usage_map_section
         + (UI_PATTERN_EXAMPLES if not skip_ui_patterns else "")
         + RESPONSE_FORMAT_INSTRUCTIONS

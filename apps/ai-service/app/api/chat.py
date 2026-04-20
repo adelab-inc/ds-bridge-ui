@@ -512,9 +512,30 @@ def _fix_viewport_height(content: str) -> str:
     return content
 
 
+def _normalize_multiline_imports(content: str) -> str:
+    """멀티라인 import를 단일 줄로 정규화.
+
+    프론트엔드 srcdoc 프리뷰가 import 문에서 컴포넌트 이름을 추출하여
+    전역 매핑(AplusUI.XXX)에 사용하므로, import 자체를 제거하면 안 됨.
+    대신 멀티라인 import를 단일 줄로 변환하여 프론트엔드 regex가 파싱 가능하게 함.
+    """
+    def _flatten(m: re.Match) -> str:
+        # 중괄호 내부의 개행/공백을 단일 공백으로
+        inner = re.sub(r'\s+', ' ', m.group(0))
+        return inner
+
+    return re.sub(
+        r'import\s+\{[^}]*\}\s+from\s+[\'"][^\'"]+[\'"];?',
+        _flatten,
+        content,
+        flags=re.DOTALL,
+    )
+
+
 def _postprocess_code(content: str) -> str:
     """AI 생성 코드의 Icon 관련 오류와 레이아웃 문제를 교정한다."""
-    result = _fix_icon_sizes(content)
+    result = _normalize_multiline_imports(content)
+    result = _fix_icon_sizes(result)
     result = _fix_button_icon_crash(result)
     result = _fix_viewport_height(result)
     return result
