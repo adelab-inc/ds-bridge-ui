@@ -176,6 +176,11 @@ class ChatRequest(BaseModel):
         description="사용자가 선택한 컴포넌트 인스턴스 ID (예: button-1)",
         json_schema_extra={"example": "button-1"},
     )
+    figma_url: str | None = Field(
+        default=None,
+        description="Figma 디자인 URL (제공 시 Figma 모드로 동작)",
+        json_schema_extra={"example": "https://www.figma.com/design/xxx/Design?node-id=123-456"},
+    )
     from_message_id: str | None = Field(
         default=None,
         description="특정 메시지의 코드를 기준으로 수정 (해당 메시지까지의 컨텍스트 + 코드 기반 수정)",
