@@ -350,14 +350,14 @@ async def build_conversation_history(
         # 첫 메시지 — 코드 없이 요청만
         final_message = current_message
 
-    # 완성도 리마인더: 사용자 메시지 끝에 추가 (recency bias 활용)
-    final_message += (
-        "\n\n⚠️ 완성도 필수: 위 요청에 명시된 그리드 컬럼, 드롭다운 옵션, "
-        "다이얼로그를 전부 구현하세요. 조건부 활성/비활성 컬럼이나 "
-        "단순 텍스트 입력 컬럼도 빠짐없이 columnDefs에 포함하세요. "
-        "코드 출력 전 요청된 컬럼 수와 columnDefs 항목 수가 일치하는지 "
-        "반드시 세어보고, 누락이 있으면 추가한 뒤 출력하세요."
-    )
+        # 완성도 리마인더: 첫 생성 시에만 추가 (수정 경로에서는 "요청 외 변경 금지"와 충돌)
+        final_message += (
+            "\n\n⚠️ 완성도 필수: 위 요청에 명시된 그리드 컬럼, 드롭다운 옵션, "
+            "다이얼로그를 전부 구현하세요. 조건부 활성/비활성 컬럼이나 "
+            "단순 텍스트 입력 컬럼도 빠짐없이 columnDefs에 포함하세요. "
+            "코드 출력 전 요청된 컬럼 수와 columnDefs 항목 수가 일치하는지 "
+            "반드시 세어보고, 누락이 있으면 추가한 뒤 출력하세요."
+        )
 
     messages.append(Message(role="user", content=final_message))
 
@@ -506,9 +506,12 @@ def _fix_viewport_height(content: str) -> str:
         '',
         content,
     )
-    # className="" 또는 className=" " 남은 경우 정리
-    content = re.sub(r'className="\s+', 'className="', content)
-    content = re.sub(r'\s+"', '"', content)
+    # className 내부 여분 공백 정리 (className scope 한정)
+    content = re.sub(
+        r'className="([^"]*)"',
+        lambda m: f'className="{re.sub(r"\s+", " ", m.group(1)).strip()}"',
+        content,
+    )
     return content
 
 
@@ -525,10 +528,10 @@ def _normalize_multiline_imports(content: str) -> str:
         return inner
 
     return re.sub(
-        r'import\s+\{[^}]*\}\s+from\s+[\'"][^\'"]+[\'"];?',
+        r'^[ \t]*import\s+\{[^}]*\}\s+from\s+[\'"][^\'"]+[\'"];?',
         _flatten,
         content,
-        flags=re.DOTALL,
+        flags=re.MULTILINE | re.DOTALL,
     )
 
 
@@ -1149,9 +1152,13 @@ async def _run_broadcast_generation(
             extra={"room_id": room_id, "message_id": message_id, "timeout_seconds": 300},
         )
         try:
+            # 타임아웃 시에도 이미 수신한 파일이 있으면 함께 저장 (유저 데이터 유실 방지)
+            first_file = collected_files[0] if collected_files else None
             await _save_message_with_retry(
                 message_id=message_id,
                 text=collected_text.strip() if collected_text else None,
+                content=first_file["content"] if first_file else None,
+                path=first_file["path"] if first_file else None,
                 status="ERROR",
             )
             await broadcast_event(
@@ -1175,7 +1182,14 @@ async def _run_broadcast_generation(
             extra={"room_id": room_id, "message_id": message_id, "error": str(e)},
         )
         try:
-            await _save_message_with_retry(message_id=message_id, status="ERROR")
+            first_file = collected_files[0] if collected_files else None
+            await _save_message_with_retry(
+                message_id=message_id,
+                text=collected_text.strip() if collected_text else None,
+                content=first_file["content"] if first_file else None,
+                path=first_file["path"] if first_file else None,
+                status="ERROR",
+            )
             await broadcast_event(
                 room_id,
                 "error",
