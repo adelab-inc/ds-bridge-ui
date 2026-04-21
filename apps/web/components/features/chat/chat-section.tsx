@@ -48,8 +48,10 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 
-/** 스트리밍 타임아웃 (120초) */
-const STREAM_TIMEOUT_MS = 120_000;
+/** 이벤트 간 무활동 허용 시간 (150초) — 마지막 broadcast 이벤트 이후 이만큼 조용하면 타임아웃 */
+const STREAM_INACTIVITY_TIMEOUT_MS = 150_000;
+/** 스트리밍 총 상한 (6분) — Cloud Run --timeout 300s + Supabase broadcast 유실 방어 60s */
+const STREAM_HARD_MAX_MS = 360_000;
 
 interface ChatSectionProps extends React.ComponentProps<'section'> {
   roomId: string;
@@ -108,7 +110,12 @@ function ChatSection({
   const setStreamingMessage = useStreamingStore((s) => s.setMessage);
   const updateStreamingMessage = useStreamingStore((s) => s.updateMessage);
 
-  const timeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inactivityTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const hardMaxTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
 
   // Broadcast 콜백에서 사용할 ref (state updater 밖에서 side effect 실행용)
   const pendingQuestionRef = React.useRef<string>('');
@@ -160,19 +167,59 @@ function ChatSection({
 
   const { sendMessage, isLoading: isSending, error } = useChatStream();
 
-  // 타임아웃 클리어 헬퍼
-  const clearStreamTimeout = React.useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
+  // 모든 타이머 클리어 헬퍼
+  const clearAllTimers = React.useCallback(() => {
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+      inactivityTimerRef.current = null;
+    }
+    if (hardMaxTimerRef.current) {
+      clearTimeout(hardMaxTimerRef.current);
+      hardMaxTimerRef.current = null;
     }
   }, []);
 
+  // 타임아웃 공통 핸들러 (inactivity / hard_max 구분)
+  const handleTimeout = React.useCallback(
+    (reason: 'inactivity' | 'hard_max') => {
+      activeMessageIdRef.current = null;
+      const now = Date.now();
+      updateStreamingMessage((prev) =>
+        prev
+          ? {
+              ...prev,
+              text:
+                prev.text ||
+                (reason === 'inactivity'
+                  ? 'Error: 응답 지연 (150초 동안 새 이벤트 없음)'
+                  : 'Error: 응답 시간 초과 (최대 6분)'),
+              status: 'ERROR' as const,
+              answer_created_at: now,
+            }
+          : prev
+      );
+      clearAllTimers();
+      onStreamEnd?.();
+    },
+    [clearAllTimers, onStreamEnd, updateStreamingMessage]
+  );
+
+  // 무활동 타이머만 리셋 (broadcast 이벤트 수신 시 호출)
+  const resetInactivityTimer = React.useCallback(() => {
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+    }
+    inactivityTimerRef.current = setTimeout(
+      () => handleTimeout('inactivity'),
+      STREAM_INACTIVITY_TIMEOUT_MS
+    );
+  }, [handleTimeout]);
+
   // 스트리밍 종료 헬퍼 (done/error 공통)
   const finishStreaming = React.useCallback(() => {
-    clearStreamTimeout();
+    clearAllTimers();
     onStreamEnd?.();
-  }, [clearStreamTimeout, onStreamEnd]);
+  }, [clearAllTimers, onStreamEnd]);
 
   // === Broadcast 채널 구독 ===
   useRoomChannel({
@@ -198,6 +245,7 @@ function ChatSection({
             status: 'GENERATING' as const,
           };
         });
+        resetInactivityTimer();
       },
       onChunk: (payload) => {
         // state updater는 순수 함수로 유지 (side effect 금지)
@@ -233,15 +281,15 @@ function ChatSection({
             path: payload.path ?? '',
           });
         }
+
+        // 이벤트 수신 시마다 무활동 타이머 리셋
+        resetInactivityTimer();
       },
       onDone: (payload) => {
         activeMessageIdRef.current = null;
 
-        // 타임아웃 즉시 클리어 (ref 직접 접근)
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
-          timeoutRef.current = null;
-        }
+        // 모든 타이머 즉시 클리어 (inactivity + hard_max)
+        clearAllTimers();
         onStreamEnd?.();
 
         // 스트리밍 메시지를 DONE 상태로 전환 (refetch 전까지 화면 유지)
@@ -328,23 +376,15 @@ function ChatSection({
     // 부모 컴포넌트에 스트리밍 시작 알림 (Zustand store 업데이트)
     onStreamStart?.();
 
-    // 타임아웃 설정 (120초)
-    clearStreamTimeout();
-    timeoutRef.current = setTimeout(() => {
-      activeMessageIdRef.current = null;
-      const now = Date.now();
-      updateStreamingMessage((prev) =>
-        prev
-          ? {
-              ...prev,
-              text: prev.text || 'Error: 응답 타임아웃 (120초)',
-              status: 'ERROR' as const,
-              answer_created_at: now,
-            }
-          : prev
-      );
-      onStreamEnd?.();
-    }, STREAM_TIMEOUT_MS);
+    // 타임아웃 설정
+    // - inactivity: broadcast 이벤트 간 150초 무음이면 타임아웃
+    // - hard_max: 총 6분 상한 (Cloud Run 300s + 방어 60s)
+    clearAllTimers();
+    resetInactivityTimer();
+    hardMaxTimerRef.current = setTimeout(
+      () => handleTimeout('hard_max'),
+      STREAM_HARD_MAX_MS
+    );
 
     // AI에게 메시지 전송
     const messageId = await sendMessage({
@@ -375,7 +415,7 @@ function ChatSection({
             }
           : prev
       );
-      clearStreamTimeout();
+      clearAllTimers();
       onStreamEnd?.();
     }
   };
@@ -443,8 +483,8 @@ function ChatSection({
 
   // 타임아웃 cleanup
   React.useEffect(() => {
-    return () => clearStreamTimeout();
-  }, [clearStreamTimeout]);
+    return () => clearAllTimers();
+  }, [clearAllTimers]);
 
   // ===== 북마크 기능 =====
   const { bookmarks, addBookmark, removeBookmark, isBookmarked } =
