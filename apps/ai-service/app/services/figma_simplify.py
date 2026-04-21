@@ -83,6 +83,9 @@ _DEFAULT_VALUES = {"False", "false", "default", "None", "none", "hover", "presse
 _STATE_PROPS = {"Focus", "Interaction", "Hover", "Pressed", "Active"}
 _TEXT_CONTENT_KEYS = {"label", "title", "text", "placeholder", "value"}
 
+# analyze_grid_hints에서 폼 필드로 인식할 컴포넌트 키워드
+_FORM_FIELD_COMPONENTS = {"field", "select", "searchfield", "datepicker", "daterange"}
+
 _FIGMA_ID_RE = re.compile(r"^\d+:\d+$")
 
 
@@ -278,11 +281,27 @@ def _normalize_token_path(figma_name: str) -> str:
     return figma_name.replace("/", "-")
 
 def _row_signature(node: dict) -> str:
-    """노드의 구조적 시그니처 생성 (컴포넌트 종류/타입만, 값 무시)."""
+    """노드의 구조적 시그니처 생성 (컴포넌트 종류/타입만, 값 무시).
+
+    TEXT 노드는 characters 값을 포함하여 서로 다른 텍스트가 dedup되지 않도록 함.
+    INSTANCE 리프 노드는 label/title/text를 포함하여 같은 컴포넌트라도
+    다른 텍스트를 가지면 dedup되지 않도록 함 (예: Select "게시글 유형" vs Select "작성기간").
+    """
     parts: list[str] = []
     ntype = node.get("type", "")
     comp = node.get("component", "")
-    parts.append(f"{ntype}:{comp}")
+    # TEXT 노드는 내용이 다르면 다른 시그니처를 생성 (컬럼 헤더 등 보존)
+    if ntype == "TEXT":
+        chars = node.get("characters") or node.get("text") or ""
+        parts.append(f"{ntype}:{chars}")
+    else:
+        parts.append(f"{ntype}:{comp}")
+        # INSTANCE 리프 노드(children 없음)는 label/title/text로 구분
+        # children이 제거된 후에도 서로 다른 폼 필드가 dedup되지 않도록 함
+        if ntype == "INSTANCE" and "children" not in node:
+            label = node.get("label") or node.get("title") or node.get("text") or ""
+            if label:
+                parts.append(f"label:{label}")
     for child in node.get("children", []):
         if isinstance(child, dict):
             parts.append(_row_signature(child))
@@ -324,6 +343,37 @@ def _dedup_repeated_rows(children: list[dict]) -> list[dict]:
         i = j
 
     return result
+
+
+def _extract_grid_columns(node: dict) -> list[str]:
+    """DataGrid/AG Grid INSTANCE에서 헤더 행의 컬럼 이름을 추출.
+
+    첫 번째 행(헤더)의 TEXT 노드 characters를 수집하여 리스트로 반환.
+    """
+    columns: list[str] = []
+
+    def _collect_texts(n: dict) -> None:
+        if not isinstance(n, dict):
+            return
+        if n.get("type") == "TEXT":
+            chars = n.get("characters") or n.get("text") or ""
+            if chars and chars.strip():
+                columns.append(chars.strip())
+            return
+        for child in n.get("children", []):
+            if isinstance(child, dict):
+                _collect_texts(child)
+
+    children = node.get("children", [])
+    if not children:
+        return []
+
+    # 첫 번째 자식(헤더 행)에서만 TEXT 수집
+    first_child = children[0] if isinstance(children[0], dict) else None
+    if first_child:
+        _collect_texts(first_child)
+
+    return columns
 
 
 def simplify_node(
@@ -678,6 +728,16 @@ def simplify_node(
         comp = out["component"]
         out["⚠️_RENDER"] = f"<{comp}> 사용 필수 — 다른 컴포넌트로 변경 절대 금지"
 
+    # FRAME 내부 텍스트 보존: 첫 번째 TEXT child의 characters를 label로 승격
+    # (작성기간/소속 같은 FRAME 기반 커스텀 필드의 label 텍스트)
+    if out.get("type") == "FRAME" and "children" in out and "label" not in out:
+        for child in out["children"]:
+            if isinstance(child, dict) and child.get("type") == "TEXT":
+                chars = child.get("characters") or child.get("text")
+                if chars:
+                    out["label"] = chars
+                    break
+
     # Card 패턴 감지: white fill + (stroke 또는 borderRadius) + children 있는 FRAME
     if (
         out.get("type") == "FRAME"
@@ -760,6 +820,12 @@ def simplify_node(
                     out["children"].pop(i)
                     break
 
+        # DataGrid/AG Grid: 헤더 행에서 컬럼 이름 추출 (dedup 전에 호출)
+        if comp_lower in ("datagrid", "ag grid", "ag grid (column based layout)") and "children" in out:
+            columns = _extract_grid_columns(out)
+            if columns:
+                out["_columns"] = columns
+
         # INSTANCE children 처리:
         # - children에 INSTANCE가 포함된 복합 컴포넌트(AG Grid, Table 등) → children 유지
         # - children이 SHAPE/TEXT뿐인 리프 컴포넌트(Button, Badge 등) → label 승격 후 제거
@@ -832,8 +898,8 @@ def analyze_grid_hints(root: dict) -> str:
         ntype = node.get("type", "")
         comp = (node.get("component") or node.get("name") or "").lower()
 
-        # Field INSTANCE 수집
-        if ntype == "INSTANCE" and "field" in comp:
+        # 폼 필드 INSTANCE 수집 (Field, Select, SearchField, DatePicker 등)
+        if ntype == "INSTANCE" and any(fc in comp for fc in _FORM_FIELD_COMPONENTS):
             label = (
                 node.get("label") or node.get("title") or node.get("text")
                 or node.get("name") or "?"

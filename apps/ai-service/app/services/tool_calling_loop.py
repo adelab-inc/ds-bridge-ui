@@ -133,19 +133,21 @@ async def run_figma_tool_calling_loop(
     try:
         async with asyncio.timeout(_PREFETCH_TIMEOUT):
             if node_id:
-                # Case A: node_id 있음 → 3개 모두 병렬
-                page_result, detail_result, image_result = await asyncio.gather(
+                # Case A: node_id 있음 → 구조 데이터 + 스크린샷 병렬, 스크린샷은 추가 대기 허용
+                screenshot_task = asyncio.create_task(
                     _fetch_with_timeout(
-                        fetch_page_structure(file_key, node_id, max_retries=1),
+                        export_node_image(file_key, node_id, scale=1, image_format="png", max_retries=2),
+                        "screenshot",
+                    )
+                )
+                page_result, detail_result = await asyncio.gather(
+                    _fetch_with_timeout(
+                        fetch_page_structure(file_key, node_id, max_retries=2),
                         "page_structure",
                     ),
                     _fetch_with_timeout(
-                        fetch_node_detail(file_key, node_id, max_depth=12, max_retries=1),
+                        fetch_node_detail(file_key, node_id, max_depth=12, max_retries=2),
                         "node_detail",
-                    ),
-                    _fetch_with_timeout(
-                        export_node_image(file_key, node_id, scale=1, image_format="png", max_retries=1),
-                        "screenshot",
                     ),
                     return_exceptions=True,
                 )
@@ -162,14 +164,18 @@ async def run_figma_tool_calling_loop(
                         detail_result, ensure_ascii=False, separators=(",", ":"),
                     )
 
-                # screenshot 결과 처리
-                if image_result and not isinstance(image_result, Exception):
-                    screenshot_base64, screenshot_media_type = image_result
+                # 스크린샷: 구조 데이터 완료 후 추가 대기 (전체 타임아웃 내)
+                try:
+                    image_result = await screenshot_task
+                    if image_result and not isinstance(image_result, Exception):
+                        screenshot_base64, screenshot_media_type = image_result
+                except Exception:
+                    logger.warning("Screenshot task failed after structure data ready")
 
             else:
                 # Case B: node_id 없음 → page_structure 먼저, 나머지 병렬
                 page_result = await _fetch_with_timeout(
-                    fetch_page_structure(file_key, node_id, max_retries=1),
+                    fetch_page_structure(file_key, node_id, max_retries=2),
                     "page_structure",
                 )
                 page_structure = page_result if page_result else {"frames": []}
@@ -182,16 +188,15 @@ async def run_figma_tool_calling_loop(
                 target_node_id = frames[0].get("node_id") if frames else None
 
                 if target_node_id:
-                    detail_result, image_result = await asyncio.gather(
+                    screenshot_task = asyncio.create_task(
                         _fetch_with_timeout(
-                            fetch_node_detail(file_key, target_node_id, max_depth=12, max_retries=1),
-                            "node_detail",
-                        ),
-                        _fetch_with_timeout(
-                            export_node_image(file_key, target_node_id, scale=1, image_format="png", max_retries=1),
+                            export_node_image(file_key, target_node_id, scale=1, image_format="png", max_retries=2),
                             "screenshot",
-                        ),
-                        return_exceptions=True,
+                        )
+                    )
+                    detail_result = await _fetch_with_timeout(
+                        fetch_node_detail(file_key, target_node_id, max_depth=12, max_retries=2),
+                        "node_detail",
                     )
 
                     if detail_result and not isinstance(detail_result, Exception):
@@ -199,8 +204,13 @@ async def run_figma_tool_calling_loop(
                             detail_result, ensure_ascii=False, separators=(",", ":"),
                         )
 
-                    if image_result and not isinstance(image_result, Exception):
-                        screenshot_base64, screenshot_media_type = image_result
+                    # 스크린샷: node_detail 완료 후 추가 대기
+                    try:
+                        image_result = await screenshot_task
+                        if image_result and not isinstance(image_result, Exception):
+                            screenshot_base64, screenshot_media_type = image_result
+                    except Exception:
+                        logger.warning("Screenshot task failed after structure data ready")
 
     except TimeoutError:
         logger.warning("Figma prefetch global timeout", extra={
@@ -384,6 +394,9 @@ async def run_figma_tool_calling_loop(
         + "2. Figma 노드의 name, characters(텍스트), 자식 수를 정확히 반영\n"
         "3. gap/padding은 JSON 값 그대로 변환 (gap:16→gap-4, 8→2). JSON에 없으면 추가 금지\n"
         "4. Figma에 없는 요소 추가 금지: 배경 래퍼, 임의 margin, Page wrapper(header/nav/footer)\n"
+        "5. **hex 색상 하드코딩 절대 금지**: Figma JSON의 fill/stroke 값(#495057, #212529 등)을 text-[#xxx]로 변환하지 마세요. "
+        "DS 컴포넌트는 자체 색상 토큰이 있으므로 className에 색상을 지정하지 않습니다. "
+        "커스텀 영역도 Tailwind 시맨틱 클래스(text-gray-600 등)를 사용하세요.\n"
         "\n### Figma→Tailwind 변환\n"
         "- layout: column→flex-col, row→flex-row | justify: center→justify-center, space-between→justify-between\n"
         "- hSizing: fill→w-full, hug→w-auto | gap/padding: 4→1, 8→2, 12→3, 16→4, 20→5, 24→6, 32→8\n"
@@ -413,6 +426,7 @@ async def run_figma_tool_calling_loop(
         "\n## Figma 모드 최종 체크\n"
         "- ⚠️_RENDER 필드 준수 (Field↔Select 혼동 금지)\n"
         "- JSON에 없는 요소 제거 (배경 래퍼, 임의 margin, false 기본값 prop)\n"
+        "- **text-[#xxx], bg-[#xxx] 등 hex 색상 임의값 사용 금지** — DS 토큰 또는 Tailwind 시맨틱 클래스 사용\n"
     )
 
     full_system_prompt = system_prompt + figma_context

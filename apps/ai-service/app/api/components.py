@@ -436,51 +436,6 @@ def format_design_tokens(tokens: dict | None) -> str:
     font_size = design_tokens.get("fontSize", {})
     font_weight = design_tokens.get("fontWeight", {})
 
-    # 주요 색상을 토큰에서 추출하여 ready-to-use Tailwind 클래스로 매핑
-    def c(token: str, fallback: str = "#000") -> str:
-        return colors.get(token, fallback)
-
-    # 시맨틱 색상 매핑 테이블 생성
-    color_table_lines = []
-    color_map = [
-        # (용도, Tailwind text class, Tailwind bg class, 토큰명)
-        ("Primary Text (제목, 라벨, 본문)", f"text-[{c('text-primary', '#212529')}]", f"—", "text-primary"),
-        ("Secondary Text (보조 텍스트)", f"text-[{c('text-secondary', '#495057')}]", f"—", "text-secondary"),
-        ("Tertiary Text (플레이스홀더)", f"text-[{c('text-tertiary', '#6c757d')}]", f"—", "text-tertiary"),
-        ("Brand/Accent (링크, 선택 상태)", f"text-[{c('text-accent', '#0033a0')}]", f"bg-[{c('bg-accent', '#0033a0')}]", "text-accent / bg-accent"),
-        ("Surface (카드, 패널)", f"—", f"bg-[{c('bg-surface', '#ffffff')}]", "bg-surface"),
-        ("Canvas (페이지 배경)", f"—", f"bg-[{c('bg-canvas', '#f4f6f8')}]", "bg-canvas"),
-        ("Selection (선택 배경)", f"—", f"bg-[{c('bg-selection', '#ecf0fa')}]", "bg-selection"),
-        ("Border Default", f"border-[{c('border-default', '#dee2e6')}]", f"—", "border-default"),
-        ("Border Strong", f"border-[{c('border-strong', '#ced4da')}]", f"—", "border-strong"),
-        ("Success (완료, 정상)", f"text-[{c('text-semantic-on-success', '#1e4620')}]", f"bg-[{c('bg-semantic-success-subtle', '#e6efe6')}]", "semantic-success"),
-        ("Error (실패, 오류)", f"text-[{c('text-semantic-on-error', '#5f2120')}]", f"bg-[{c('bg-semantic-error-subtle', '#fae6e6')}]", "semantic-error"),
-        ("Warning (대기, 주의)", f"text-[{c('text-semantic-on-warning', '#663c00')}]", f"bg-[{c('bg-semantic-warning-subtle', '#fdede1')}]", "semantic-warning"),
-        ("Info (진행중, 접수)", f"text-[{c('text-semantic-on-info', '#014361')}]", f"bg-[{c('bg-semantic-info-subtle', '#e1f1f9')}]", "semantic-info"),
-        ("Disabled", f"text-[{c('text-disabled', '#9da4ab')}]", f"bg-[{c('bg-disabled-on-light', '#eceff3')}]", "disabled"),
-        ("Subtle (구분선 배경)", f"—", f"bg-[{c('bg-subtle', '#eceff3')}]", "bg-subtle"),
-        ("Gray 50 (가장 연한 회색)", f"—", f"bg-[{c('neutral-gray-50', '#f9fafb')}]", "neutral-gray-50"),
-        ("Gray 100 (연한 회색)", f"—", f"bg-[{c('neutral-gray-100', '#f4f6f8')}]", "neutral-gray-100"),
-        ("Gray 200", f"—", f"bg-[{c('neutral-gray-200', '#e9ecef')}]", "neutral-gray-200"),
-        ("Gray 300", f"border-[{c('neutral-gray-300', '#dee2e6')}]", f"bg-[{c('neutral-gray-300', '#dee2e6')}]", "neutral-gray-300"),
-        ("Gray 700 (진한 텍스트)", f"text-[{c('neutral-gray-700', '#495057')}]", f"—", "neutral-gray-700"),
-        ("Gray 900 (가장 진한 텍스트)", f"text-[{c('neutral-gray-900', '#212529')}]", f"—", "neutral-gray-900"),
-    ]
-    for usage, text_cls, bg_cls, token in color_map:
-        color_table_lines.append(f"  | {usage} | `{text_cls}` | `{bg_cls}` | {token} |")
-    color_table = "\n".join(color_table_lines)
-
-    # 상태 배지/강조용 강한 시맨틱 색상 (배경이 진한 경우)
-    strong_semantic = f"""  - Success 강조: `text-white bg-[{c('bg-semantic-success', '#2e7d32')}]`
-  - Error 강조: `text-white bg-[{c('bg-semantic-error', '#d32f2f')}]`
-  - Warning 강조: `text-white bg-[{c('bg-semantic-warning', '#ed6c02')}]`
-  - Info 강조: `text-white bg-[{c('bg-semantic-info', '#0288d1')}]`"""
-
-    # brand 색상 팔레트
-    brand_colors = f"""  - Brand Primary: `bg-[{c('brand-primary', '#0033a0')}]` / `text-[{c('brand-primary', '#0033a0')}]`
-  - Brand Hover: `bg-[{c('brand-primary-hover', '#154cc1')}]`
-  - Brand Pressed: `bg-[{c('brand-primary-pressed', '#002480')}]`"""
-
     # 컴포넌트별 색상 토큰 → fill hex ↔ variant 매핑 테이블 동적 생성
     comp_color_section = _build_component_color_mapping(colors)
 
@@ -505,41 +460,37 @@ def format_design_tokens(tokens: dict | None) -> str:
     helper_text = font_size.get("typography-form-helper-text-md-regular", ["14px", {}])
 
     return f"""## 🎨 DESIGN STANDARDS (CRITICAL - USE TAILWIND CLASSES)
+
+**🚨 절대 규칙: `text-[#xxx]`, `bg-[#xxx]`, `border-[#xxx]` 등 hex 임의값 사용 금지!**
+**반드시 아래 토큰 클래스만 사용하세요. (Tailwind 4 @theme에 정의된 CSS 변수 기반)**
+
 - **Typography (MUST FOLLOW EXACT TOKENS)**:
   - Font Family: `font-['Pretendard',sans-serif]` (applied globally)
-  - **Page Title (h1)**: `className="text-2xl font-bold text-[#212529]"` ({heading_xl[0]}, {heading_xl_weight})
-  - **Section Title (h2)**: `className="text-xl font-semibold text-[#212529]"` ({heading_lg[0]}, {heading_lg_weight})
-  - **Subsection (h3)**: `className="text-lg font-medium text-[#212529]"` ({heading_md[0]}, {heading_md_weight})
-  - **Form Label**: `className="text-sm font-medium text-[#212529]"` ({form_label_md[0]}, {form_label_weight})
-  - **Body Text**: `className="text-base font-normal text-[#212529]"` ({body_md[0]}, 400)
-  - **Helper Text**: `className="text-sm font-normal text-[#495057]"` ({helper_text[0]}, 400)
-- **Colors (MUST use exact token hex values below — NEVER guess or invent hex codes)**:
+  - **Page Title (h1)**: `className="text-2xl font-bold text-primary"` ({heading_xl[0]}, {heading_xl_weight})
+  - **Section Title (h2)**: `className="text-xl font-semibold text-primary"` ({heading_lg[0]}, {heading_lg_weight})
+  - **Subsection (h3)**: `className="text-lg font-medium text-primary"` ({heading_md[0]}, {heading_md_weight})
+  - **Form Label**: `className="text-sm font-medium text-primary"` ({form_label_md[0]}, {form_label_weight})
+  - **Body Text**: `className="text-base font-normal text-primary"` ({body_md[0]}, 400)
+  - **Helper Text**: `className="text-sm font-normal text-secondary"` ({helper_text[0]}, 400)
+- **Colors (CSS 변수 기반 토큰 — hex 직접 사용 절대 금지)**:
 
-  | 용도 | Text Class | BG Class | Token |
-  |------|-----------|----------|-------|
-{color_table}
-
-  **⚠️ 위 테이블에 없는 hex 코드를 절대 사용하지 마세요. 연한 회색이 필요하면 neutral-gray-50/100 토큰을 쓰세요.**
-  **🚨 Text Class 컬럼의 hex는 텍스트 전용, BG Class 컬럼의 hex는 배경 전용. 교차 사용 절대 금지!**
-  **흔한 실수: `text-[#2e7d32]` ❌ → `text-[#1e4620]` ✅ | `text-[#d32f2f]` ❌ → `text-[#5f2120]` ✅ | `text-[#ed6c02]` ❌ → `text-[#663c00]` ✅**
-
-  **시맨틱 텍스트 색상 빠른 참조** (초록/빨강/주황 텍스트가 필요할 때):
-  - 성공/양수/정상 텍스트 → `text-[#1e4620]` ✅ (❌ `text-[#2e7d32]` 절대 금지)
-  - 실패/음수/오류 텍스트 → `text-[#5f2120]` ✅ (❌ `text-[#d32f2f]` 절대 금지)
-  - 경고/보류 텍스트 → `text-[#663c00]` ✅ (❌ `text-[#ed6c02]` 절대 금지)
-
-  **상태 강조 (진한 배경 + 흰 텍스트)**:
-{strong_semantic}
-
-  **브랜드 색상**:
-{brand_colors}
+  | 용도 | Class |
+  |------|-------|
+  | Primary Text (제목, 라벨, 본문, 아이콘) | `text-primary` |
+  | Secondary Text (보조 텍스트) | `text-secondary` |
+  | Brand/Accent (링크, 강조) | `text-accent` |
+  | Card/Panel 배경 (흰색) | `bg-surface` |
+  | Page 배경 (연회색) | `bg-canvas` |
+  | Default Border | `border-default` |
+  | Input Border | `border-default` |
+  | Destructive (오류, 삭제) | `text-semantic-error` |
 
   **🚨 컴포넌트 fill→variant 매핑** (레이아웃 JSON의 fill hex 값으로 컴포넌트 variant를 결정할 때 이 테이블 참조):
 {comp_color_section}
 
 - **Visuals**:
   - **Shadows**: `shadow-sm`
-  - **Borders**: `border border-[#dee2e6]`
+  - **Borders**: `border border-default`
   - **Radius**: `rounded-lg` (inputs, buttons), `rounded-xl` (cards)
 - **Gap/Spacing (Tailwind Classes)**:
   - **xs**: `gap-1` (4px) - 태그 그룹, 아이콘-라벨 (xs)
@@ -856,17 +807,11 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("- ❌ `cellRenderer: ButtonCellRenderer` — 사용 금지 (디자인 시스템 미적용, 파란색 하드코딩)")
     lines.append("- For simple text formatting, use `valueFormatter`: `valueFormatter: (params) => params.value ? '활성' : '비활성'`")
     lines.append("")
-    lines.append("**⚠️ cellRenderer 필수 패턴 (세로 정렬 + 아이콘 색상):**")
-    lines.append("cellRenderer에서 아이콘·Badge 등을 렌더링할 때:")
+    lines.append("**⚠️ cellRenderer 필수 패턴:**")
     lines.append("1. `h-full flex items-center` — 세로 중앙 정렬 (빠뜨리면 셀 상단에 치우침)")
-    lines.append("2. Icon에 `className=\"text-[#495057]\"` — 아이콘 색상 지정 (빠뜨리면 흰색/투명으로 안 보임)")
-    lines.append("```")
-    lines.append("cellRenderer: (params) => (")
-    lines.append("  <div className=\"flex items-center justify-center h-full\">")
-    lines.append("    <Icon name=\"아이콘명\" size={20} className=\"text-[#495057]\" />")
-    lines.append("  </div>")
-    lines.append(")")
-    lines.append("```")
+    lines.append("2. Icon에 `className=\"text-primary\"` — 아이콘 색상 (빠뜨리면 흰색/투명으로 안 보임)")
+    lines.append("3. ❌ `{condition && <Element />}` 금지 → ✅ `{condition ? <Element /> : null}` 삼항 연산자 필수. Figma 디자인에 dash/placeholder가 있으면 표시, 없으면 null")
+    lines.append("4. **Icon name은 Figma JSON에 나온 이름 그대로 사용** — 예: Figma에 `icon-folder-fill-20`이면 `<Icon name=\"folder-fill\" size={20} />`. 임의로 축약/변경 금지 (folder-fill → folder ❌)")
     lines.append("")
     lines.append("**3. pinned 사용 금지:**")
     lines.append("- ❌ `pinned: 'left'`, `pinned: 'right'` — 틀 고정 사용하지 마세요")
@@ -1211,63 +1156,36 @@ def format_component_visual_guide(
 
 
 # 디자인 토큰을 로드하지 못했을 때 사용할 기본값
+# ⚠️ 웹 앱은 Tailwind 4 + shadcn CSS 변수 시스템 사용 (globals.css @theme inline)
 DEFAULT_DESIGN_TOKENS_SECTION = """## 🎨 DESIGN STANDARDS (CRITICAL - USE TAILWIND CLASSES)
+
+**🚨 절대 규칙: `text-[#xxx]`, `bg-[#xxx]`, `border-[#xxx]` 등 hex 임의값 사용 금지!**
+**반드시 아래 토큰 클래스만 사용하세요. (Tailwind 4 @theme에 정의된 CSS 변수 기반)**
+
 - **Typography (MUST FOLLOW EXACT TOKENS)**:
   - Font Family: `font-['Pretendard',sans-serif]` (applied globally)
-  - **Page Title (h1)**: `className="text-2xl font-bold text-[#212529]"` (28px, 700)
-  - **Section Title (h2)**: `className="text-xl font-semibold text-[#212529]"` (24px, 700)
-  - **Subsection (h3)**: `className="text-lg font-medium text-[#212529]"` (18px, 600)
-  - **Form Label**: `className="text-sm font-medium text-[#212529]"` (14px, 500)
-  - **Body Text**: `className="text-base font-normal text-[#212529]"` (16px, 400)
-  - **Helper Text**: `className="text-sm font-normal text-[#495057]"` (14px, 400)
-- **Colors (MUST use exact token hex values below — NEVER guess or invent hex codes)**:
+  - **Page Title (h1)**: `className="text-2xl font-bold text-primary"` (28px, 700)
+  - **Section Title (h2)**: `className="text-xl font-semibold text-primary"` (24px, 700)
+  - **Subsection (h3)**: `className="text-lg font-medium text-primary"` (18px, 600)
+  - **Form Label**: `className="text-sm font-medium text-primary"` (14px, 500)
+  - **Body Text**: `className="text-base font-normal text-primary"` (16px, 400)
+  - **Helper Text**: `className="text-sm font-normal text-secondary"` (14px, 400)
+- **Colors (CSS 변수 기반 토큰 — hex 직접 사용 절대 금지)**:
 
-  | 용도 | Text Class | BG Class | Token |
-  |------|-----------|----------|-------|
-  | Primary Text (제목, 라벨, 본문) | `text-[#212529]` | — | text-primary |
-  | Secondary Text (보조 텍스트) | `text-[#495057]` | — | text-secondary |
-  | Tertiary Text (플레이스홀더) | `text-[#6c757d]` | — | text-tertiary |
-  | Brand/Accent (링크, 선택 상태) | `text-[#0033a0]` | `bg-[#0033a0]` | text-accent / bg-accent |
-  | Surface (카드, 패널) | — | `bg-[#ffffff]` | bg-surface |
-  | Canvas (페이지 배경) | — | `bg-[#f4f6f8]` | bg-canvas |
-  | Selection (선택 배경) | — | `bg-[#ecf0fa]` | bg-selection |
-  | Border Default | `border-[#dee2e6]` | — | border-default |
-  | Border Strong | `border-[#ced4da]` | — | border-strong |
-  | Success (완료, 정상) | `text-[#1e4620]` | `bg-[#e6efe6]` | semantic-success |
-  | Error (실패, 오류) | `text-[#5f2120]` | `bg-[#fae6e6]` | semantic-error |
-  | Warning (대기, 주의) | `text-[#663c00]` | `bg-[#fdede1]` | semantic-warning |
-  | Info (진행중, 접수) | `text-[#014361]` | `bg-[#e1f1f9]` | semantic-info |
-  | Disabled | `text-[#9da4ab]` | `bg-[#eceff3]` | disabled |
-  | Subtle (구분선 배경) | — | `bg-[#eceff3]` | bg-subtle |
-  | Gray 50 (가장 연한 회색) | — | `bg-[#f9fafb]` | neutral-gray-50 |
-  | Gray 100 (연한 회색) | — | `bg-[#f4f6f8]` | neutral-gray-100 |
-  | Gray 200 | — | `bg-[#e9ecef]` | neutral-gray-200 |
-  | Gray 300 | `border-[#dee2e6]` | `bg-[#dee2e6]` | neutral-gray-300 |
-  | Gray 700 (진한 텍스트) | `text-[#495057]` | — | neutral-gray-700 |
-  | Gray 900 (가장 진한 텍스트) | `text-[#212529]` | — | neutral-gray-900 |
+  | 용도 | Class |
+  |------|-------|
+  | Primary Text (제목, 라벨, 본문, 아이콘) | `text-primary` |
+  | Secondary Text (보조 텍스트) | `text-secondary` |
+  | Brand/Accent (링크, 강조) | `text-accent` |
+  | Card/Panel 배경 (흰색) | `bg-surface` |
+  | Page 배경 (연회색) | `bg-canvas` |
+  | Default Border | `border-default` |
+  | Input Border | `border-default` |
+  | Destructive (오류, 삭제) | `text-semantic-error` |
 
-  **⚠️ 위 테이블에 없는 hex 코드를 절대 사용하지 마세요. 연한 회색이 필요하면 `bg-[#f9fafb]` (gray-50) 또는 `bg-[#f4f6f8]` (gray-100/canvas)를 쓰세요.**
-  **🚨 Text Class 컬럼의 hex는 텍스트 전용, BG Class 컬럼의 hex는 배경 전용. 교차 사용 절대 금지!**
-  **흔한 실수: `text-[#2e7d32]` ❌ → `text-[#1e4620]` ✅ | `text-[#d32f2f]` ❌ → `text-[#5f2120]` ✅ | `text-[#ed6c02]` ❌ → `text-[#663c00]` ✅**
-
-  **시맨틱 텍스트 색상 빠른 참조** (초록/빨강/주황 텍스트가 필요할 때):
-  - 성공/양수/정상 텍스트 → `text-[#1e4620]` ✅ (❌ `text-[#2e7d32]` 절대 금지)
-  - 실패/음수/오류 텍스트 → `text-[#5f2120]` ✅ (❌ `text-[#d32f2f]` 절대 금지)
-  - 경고/보류 텍스트 → `text-[#663c00]` ✅ (❌ `text-[#ed6c02]` 절대 금지)
-
-  **상태 강조 (진한 배경 + 흰 텍스트)**:
-  - Success 강조: `text-white bg-[#2e7d32]`
-  - Error 강조: `text-white bg-[#d32f2f]`
-  - Warning 강조: `text-white bg-[#ed6c02]`
-  - Info 강조: `text-white bg-[#0288d1]`
-
-  **브랜드 색상**:
-  - Brand Primary: `bg-[#0033a0]` / `text-[#0033a0]`
-  - Brand Hover: `bg-[#154cc1]`
-  - Brand Pressed: `bg-[#002480]`
 - **Visuals**:
   - **Shadows**: `shadow-sm`
-  - **Borders**: `border border-[#dee2e6]`
+  - **Borders**: `border border-default`
   - **Radius**: `rounded-lg` (inputs, buttons), `rounded-xl` (cards)
 - **Gap/Spacing (Tailwind Classes)**:
   - **xs**: `gap-1` (4px) - 태그 그룹, 아이콘-라벨 (xs)
@@ -1296,11 +1214,11 @@ Always respond in Korean.
 - UI 패턴 선택: Forms(로그인,설정), Cards(상품,프로필), Tables(관리,리포트), Detail(상세), Dashboard(대시보드)
 
 {design_tokens_section}## Visual Standards
-- Page: `min-h-screen bg-[#f4f6f8] p-8`, Container: `max-w-[1920px] mx-auto`
-- Card: `bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6` (TitleSection만 Card 바깥)
+- Page: `min-h-screen bg-canvas p-8`, Container: `max-w-[1920px] mx-auto`
+- Card: `bg-surface rounded-xl border border-default shadow-sm p-6` (TitleSection만 Card 바깥)
 - FilterBar + Grid = 같은 Card 안에 배치
 - Spacing: mb-8(섹션), mb-5(필드), mb-3~4(관련 항목), gap-4(Dialog/Drawer body)
-- Shadow: `shadow-sm` only. Border: `border border-[#dee2e6]` only
+- Shadow: `shadow-sm` only. Border: `border border-default` only
 - 날짜: YYYY-MM-DD 형식만. Z-Index: Dropdown/Modal = z-50+
 - Grid: 페이지→`<GridLayout type="A~H">` (Drawer/Dialog 내부 금지), 폼→`<FormGrid columns={N}>`+`<FormGridCell>`
 - 비율 요청 → 12-column 환산: 1:1→col-span-6+6, 1:2→4+8, 1:3→3+9, 1:1:1→4+4+4
@@ -1328,11 +1246,12 @@ Always respond in Korean.
   - `<IconButton size="md" iconOnly={<Icon name="undo" size={20} />} />` ✅
   - `<IconButton size="sm" iconOnly={<Icon name="undo" size={20} />} />` ❌ CRASH (icon16에 undo 없음)
   - `<IconButton size="lg" iconOnly={<Icon name="undo" size={20} />} />` ❌ CRASH (icon24에 undo 없음)
-- **⚠️ DataGrid cellRenderer 안 아이콘**: `<Icon>` 직접 사용 OK. 반드시 `size={20}` 명시 + `className="text-[#495057]"` 색상 지정 (빠뜨리면 흰색/투명으로 안 보임)
+- **⚠️ DataGrid cellRenderer**: `<Icon>` 직접 사용 OK. `size={20}` + `className="text-primary"` 필수. cellRenderer 안에서 `{cond && <X/>}` 금지 → `{cond ? <X/> : null}` 삼항 필수. Figma에 dash가 있으면 dash, 없으면 null
+- **⚠️ Icon name은 Figma JSON에 나온 이름 그대로 사용** — `icon-folder-fill-20` → `<Icon name="folder-fill" size={20} />`. 임의로 축약/변경 금지 (예: folder-fill → folder ❌)
 - 외부 아이콘 라이브러리(lucide-react, heroicons 등) import = CRASH. 이모지/SVG도 금지
-- Profile avatar: `<div className="w-10 h-10 rounded-full bg-[#0033a0] text-white flex items-center justify-center font-semibold text-sm">{name.charAt(0)}</div>`
+- Profile avatar: `<div className="w-10 h-10 rounded-full bg-brand-primary text-inverse flex items-center justify-center font-semibold text-sm">{name.charAt(0)}</div>`
 - **이미지 URL**: 외부 URL(`https://...`) 하드코딩 절대 금지 — AI가 만들어낸 URL은 깨진 이미지. Figma/사용자가 실제 자산을 제공하지 않으면 placeholder 박스로 대체:
-  `<div className="bg-[#f4f6f8] border border-dashed border-[#dee2e6] rounded-lg flex items-center justify-center text-[#6c757d] w-full h-[200px]">이미지 영역</div>`
+  `<div className="bg-canvas border border-dashed border-default rounded-lg flex items-center justify-center text-tertiary w-full h-[200px]">이미지 영역</div>`
 - **파일 첨부 표시**: 일반 `Button`으로 첨부파일 나열 금지. `Chip` 또는 `ChipGroup` 사용 (파일명 + 크기 + 아이콘 조합)
 
 ## Implementation Rules
@@ -1435,12 +1354,13 @@ COMPONENT_QUICK_REFERENCE = """
 - ⚠️ **columns 최대 4**. 한 줄에 5~6개 필드면 → `<div className="grid grid-cols-N gap-x-6 gap-y-4">` 직접 사용
 
 ### TitleSection
-- `<TitleSection title="제목" menu2="메뉴" showBreadcrumb={true} showMenu2={true} mode="base"><Button .../></TitleSection>`
+- `<TitleSection title="제목" menu2="메뉴" showBreadcrumb={true} showMenu2={true} mode="base" favorite={false} onFavoriteChange={() => {}}><Button .../></TitleSection>`
 - **⚠️ 브레드크럼 값 규칙**: menu2/menu3/menu4 텍스트는 **Figma JSON에 있는 텍스트를 그대로 사용**. JSON에 없는 브레드크럼 텍스트를 임의로 지어내지 마세요. JSON에 브레드크럼 텍스트가 없으면 `showBreadcrumb={true} showMenu2={true} menu2="메뉴"` 정도만 사용 (menu3/menu4 생략)
 - **⚠️ 배치 규칙**: TitleSection은 페이지 **전체 폭** 상단에 위치. 다중 패널 GridLayout(type=B~H)에서 특정 패널 안에 넣어 한 컬럼에 갇히게 하지 말 것
   - **type="A" (1패널)**: GridLayout 첫 자식 `<div>` 안 최상단 (현재 정석)
   - **type="B~H" (다중 패널)**: GridLayout **바깥** 상단에 배치 (GridLayout 앞 형제로). 페이지 breadcrumb/title이 한 패널만큼 좁아지는 현상 방지
-- **⚠️ TitleSection children 규칙**: children에는 **Figma의 TitleSection 영역 안에 실제로 있는 버튼만** 넣으세요. Figma에서 TitleSection 바깥(그리드 위, FilterBar 아래 등)에 있는 버튼을 TitleSection children으로 옮기지 마세요.
+- **⚠️ TitleSection children 규칙**: children에는 **Figma의 TitleSection 영역 안에 실제로 있는 버튼/아이콘만** 넣으세요. Figma에서 TitleSection 바깥(그리드 위, FilterBar 아래 등)에 있는 버튼을 TitleSection children으로 옮기지 마세요.
+- **⚠️ 즐겨찾기 (필수)**: TitleSection에는 **항상 `favorite` prop을 추가**하세요 (실제 앱에서 모든 페이지에 표시됨). `<TitleSection title="일반게시판" favorite={false} onFavoriteChange={() => {}} ...>` — 타이틀 바로 옆에 ☆ 아이콘이 자동 렌더링됨. ❌ IconButton으로 별도 추가하지 마세요
 - 신계약등록2/3·이미지시스템 버튼 금지 (매 페이지 반복되는 템플릿 기본 슬롯)
 
 ### Alert / Tag / LabelValue / Popover / Tab / Segment / OptionGroup / ActionBar / Tooltip / TreeMenu
@@ -1451,7 +1371,7 @@ COMPONENT_QUICK_REFERENCE = """
 - Tab: `<Tab items={[{value:'home',label:'홈'}]} value={v} onChange={set} widthMode="content" />` — Figma에 Tab이 있으면 반드시 Tab 컴포넌트 사용. 수동 div 구현 금지
 - Segment: `<Segment items={[{value:'day',label:'일간'}]} value={v} onChange={set} size="md" widthMode="equal" />`
 - OptionGroup: `<OptionGroup label="TFA 공유" showLabel={true} helptext="세일즈플러스 게시판에 공유합니다" showHelptext={true} orientation="horizontal" size="sm"><Option label="공유"><Checkbox .../></Option></OptionGroup>`. **⚠️ label/helptext/showLabel/showHelptext props 내장** — 설명문이 필요한 체크박스/라디오는 단일이어도 OptionGroup으로 감싸세요. Option 외부에 수동 `<p>`·`<div>` 설명문 금지. 자체 flex-col 내장 → 외부에서 `<div className="flex flex-col gap-*">` 래핑도 금지 (간격 중복)
-- TreeMenu: `<TreeMenu items={[{id, label, children: [...]}]} />`. **자체 border/배경 없음 (순수 컨테이너)**. Figma에 테두리·박스가 있을 때만 외부에서 `border border-[#dee2e6] rounded-lg` div로 감싸기. Figma에 박스가 없는데 감싸면 불필요한 박스 생성.
+- TreeMenu: `<TreeMenu items={[{id, label, children: [...]}]} />`. **자체 border/배경 없음 (순수 컨테이너)**. Figma에 테두리·박스가 있을 때만 외부에서 `border border-default rounded-lg` div로 감싸기. Figma에 박스가 없는데 감싸면 불필요한 박스 생성.
 - ActionBar: `<ActionBar count={N} visible={true} onClose={fn}><Button buttonType="ghost-inverse" label="삭제" /></ActionBar>`
 - Tooltip: `<Tooltip content="설명" side="top"><span>대상</span></Tooltip>`
 """
@@ -1557,20 +1477,20 @@ RowSlot slot: `"filter"` | `"actions"` | `"grid"` | `"detail"` | `"form"` | `"su
 
 ### Section Card 규칙 (RP-1 필수)
 - TitleSection은 Section Card **바깥** 상단
-- FilterBar + ActionButtons + DataGrid = **하나의 Section Card** (`bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6`)
+- FilterBar + ActionButtons + DataGrid = **하나의 Section Card** (`bg-surface rounded-xl border border-default shadow-sm p-6`)
 - FilterBar와 Grid를 별도 카드로 분리 금지
 
 ### RP-1 조회형 정석 코드 (1행 필터)
 ```tsx
 import { GridLayout, RowPattern, RowSlot, TitleSection, FilterBar, Field, Select, Button, DataGrid } from '@/components';
 
-<div className="min-h-screen bg-[#f4f6f8] p-8">
+<div className="min-h-screen bg-canvas p-8">
   <GridLayout type="A">
     <div>
-      <TitleSection title="계약 관리" menu2="계약" showBreadcrumb={true} showMenu2={true} mode="base">
+      <TitleSection title="계약 관리" menu2="계약" showBreadcrumb={true} showMenu2={true} mode="base" favorite={false} onFavoriteChange={() => {}}>
         <Button buttonType="primary" size="sm" label="신규 등록" />
       </TitleSection>
-      <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6 mt-5">
+      <div className="bg-surface rounded-xl border border-default shadow-sm p-6 mt-5">
         <RowPattern pattern="RP-1">
           <RowSlot slot="filter">
             <FilterBar mode="compact" onReset={() => {}} onSearch={() => {}} actionSpan={3}>
@@ -1657,9 +1577,9 @@ const Login = () => {
   const [password, setPassword] = React.useState('');
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f4f6f8] p-6">
-      <div className="w-full max-w-[420px] bg-white rounded-xl border border-[#dee2e6] shadow-sm p-8">
-        <h1 className="text-2xl font-bold text-[#212529] mb-6">로그인</h1>
+    <div className="min-h-screen flex items-center justify-center bg-canvas p-6">
+      <div className="w-full max-w-[420px] bg-surface rounded-xl border border-default shadow-sm p-8">
+        <h1 className="text-2xl font-bold text-primary mb-6">로그인</h1>
         <div className="mb-5">
           <Field type="email" label="이메일" value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
@@ -1844,8 +1764,12 @@ def _instance_to_jsx(inst: dict, comp_name: str) -> str:
     props_str = " ".join(props)
     jsx = f"<{comp_name} {props_str} />" if props_str else f"<{comp_name} />"
 
+    # DataGrid 컬럼 정보 추가
+    columns = inst.get("_columns")
+    if columns and isinstance(columns, list):
+        jsx += f"  {{/* columns: {', '.join(columns)} */}}"
     # 너비 힌트 추가 (FilterBar col-span 계산용)
-    if w and isinstance(w, (int, float)):
+    elif w and isinstance(w, (int, float)):
         jsx += f"  {{/* w:{int(w)} */}}"
 
     return jsx
