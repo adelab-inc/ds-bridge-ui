@@ -21,6 +21,14 @@ logger = logging.getLogger(__name__)
 
 _BASE_URL = "https://api.figma.com/v1"
 
+
+class FigmaRateLimitError(Exception):
+    """Figma REST API 429 한도 소진 (재시도 이후에도 지속).
+
+    프론트엔드에 전용 모달을 띄우기 위해 broadcast payload에
+    `error_code: "figma_rate_limit"`로 전달하는 신호로 사용된다.
+    """
+
 # 재시도 설정
 _MAX_RETRIES = 3
 _BASE_DELAY = 1.0
@@ -140,6 +148,15 @@ async def _figma_get(path: str, params: dict | None = None, *, max_retries: int 
                 })
 
                 if resp.status_code == 429:
+                    # 마지막 attempt에서 429면 더 기다리지 말고 rate limit 예외로 종료
+                    if attempt >= retries - 1:
+                        logger.error(
+                            "Figma rate limit exhausted",
+                            extra={"path": path, "attempts": retries},
+                        )
+                        raise FigmaRateLimitError(
+                            f"Figma rate limit exhausted after {retries} attempts: {path}"
+                        )
                     retry_after = float(resp.headers.get("Retry-After", _BASE_DELAY * (2 ** attempt)))
                     logger.warning("Figma rate limited, retrying", extra={"retry_after": retry_after, "attempt": attempt + 1})
                     await asyncio.sleep(retry_after)
