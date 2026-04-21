@@ -436,7 +436,7 @@ async def run_figma_tool_calling_loop(
         images = [ImageContent(media_type=screenshot_media_type, data=screenshot_base64)]
         supports_vision = type(provider).chat_vision_stream is not AIProvider.chat_vision_stream
         if supports_vision:
-            async for chunk in provider.chat_vision_stream(messages, images, disable_thinking=True):
+            async for chunk in provider.chat_vision_stream(messages, images):
                 if first_chunk:
                     logger.info("First chunk received", extra={
                         "room_id": room_id,
@@ -447,7 +447,7 @@ async def run_figma_tool_calling_loop(
             return
 
     # 스크린샷 없거나 vision 미지원 → 텍스트 전용
-    async for chunk in provider.chat_stream(messages, disable_thinking=True):
+    async for chunk in provider.chat_stream(messages):
         if first_chunk:
             logger.info("First chunk received", extra={
                 "room_id": room_id,
