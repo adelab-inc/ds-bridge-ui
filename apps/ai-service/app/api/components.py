@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import re
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -9,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from app.core.auth import verify_api_key
+from app.services.figma_simplify import simplify_node
 from app.services.supabase_storage import (
     DEFAULT_AG_GRID_SCHEMA_KEY,
     DEFAULT_AG_GRID_TOKENS_KEY,
@@ -101,6 +103,61 @@ AVAILABLE_COMPONENTS_WHITELIST = {
     "ToastProvider",
 }
 
+# --------------------------------------------------------------------------- #
+# Component Visual Guide — 사용 가이드 룩업 테이블
+# --------------------------------------------------------------------------- #
+
+# 컴포넌트 + variant → 사용 가이드 (JSON에 없는 도메인 지식)
+_USAGE_GUIDELINES: dict[str, dict[str, str]] = {
+    "button": {
+        "primary": "최종 CTA — 화면당 0~1개, 진한 파란색 배경 #0033a0 흰 글자",
+        "secondary": "주요 액션 — 연한 하늘색 배경 #98b3ee, 가장 많이 사용",
+        "tertiary": "낮은 강조 — 회색 배경",
+        "ghost": "텍스트 전용 — 투명 배경, 파란색 글자, 테두리 없음",
+        "destructive": "위험 액션 — 빨간색 배경",
+        "secondary-destructive": "위험 보조 버튼 — 빨간 배경 연한",
+    },
+    "iconButton": {
+        "ghost": "투명 배경 아이콘",
+        "secondary": "연한 배경",
+        "tertiary": "회색 배경",
+    },
+    "alert": {
+        "default": "일반 안내",
+        "info": "정보",
+        "success": "성공",
+        "warning": "주의",
+        "error": "오류",
+    },
+}
+
+# Badge/Chip처럼 compoundVariants로 색상이 결정되는 컴포넌트의 명시적 가이드
+# format_component_visual_guide()의 variant 단일 클래스 파싱으로는 못 잡으므로 별도 정의
+_COMPOUND_VARIANT_GUIDES: dict[str, str] = {
+    "badge": (
+        "### Badge\n"
+        "Props: `type` + `status`/`level` + `appearance` + `label`\n"
+        "- type=\"level\": level=\"primary\" | \"neutral\"\n"
+        "- type=\"status\": status=\"info\" | \"success\" | \"warning\" | \"error\"\n"
+        "- type=\"count\": label={숫자}\n"
+        "- type=\"dot\": 점 표시용 (label 없음)\n"
+        "- appearance: \"solid\" (진한 배경, 기본) | \"subtle\" (연한 배경)\n"
+        "- label: 텍스트 내용 (React.ReactNode)\n"
+        "- **색상은 status/level prop이 자동 결정. className으로 색상 지정 금지.**\n"
+        "- **prop 이름: `status` (NOT statusVariant), `level` (NOT levelVariant)**\n"
+        "- **fill→variant 결정: 레이아웃 JSON의 fill 값 또는 variant 필드를 아래 '컴포넌트 fill→variant 매핑' 섹션과 대조**\n"
+    ),
+    "chip": (
+        "### Chip\n"
+        "Props: `variant` + `state` + `size`\n"
+        "- variant: \"default\" (배경 있음) | \"ghost\" (배경 없음)\n"
+        "- state: \"default\" | \"selected\" (선택됨, 파란 배경) | \"disabled\"\n"
+        "- size: \"md\" | \"sm\"\n"
+        "- **색상은 state/variant prop이 자동 결정합니다. className에 색상을 직접 지정하지 마세요.**\n"
+        "- Figma에서 selected 상태이면 state=\"selected\" 사용\n"
+    ),
+}
+
 
 def format_prop_type(prop_type: list | str) -> str:
     """
@@ -142,11 +199,58 @@ _SCHEMA_SUPPLEMENTS: dict[str, dict[str, dict]] = {
 
 
 def _supplement_schema(schema: dict) -> dict:
-    """Schema에 누락된 HTML 기반 props를 보충 (스키마에 있는 컴포넌트만)"""
+    """Schema에 누락/변경된 props를 실제 소스 기준으로 교정 (스키마에 있는 컴포넌트만)"""
     components = schema.get("components", {})
 
+    # Badge: 스키마의 statusVariant/levelVariant → 실제 소스는 status/level
+    badge_props = components.get("Badge", {}).get("props", {})
+    for old, new in [("statusVariant", "status"), ("levelVariant", "level")]:
+        if old in badge_props and new not in badge_props:
+            badge_props[new] = badge_props.pop(old)
+        elif old in badge_props:
+            del badge_props[old]
+    # Badge: label prop 추가 (스키마에 누락됨)
+    if "Badge" in components and "label" not in badge_props:
+        badge_props["label"] = {"type": "React.ReactNode", "required": False}
+
+    # Button: 스키마의 variant → 실제 소스는 buttonType, 값 목록도 다름
+    btn_props = components.get("Button", {}).get("props", {})
+    if "variant" in btn_props:
+        del btn_props["variant"]
+    btn_props["buttonType"] = {
+        "type": ["primary", "secondary", "tertiary", "ghost", "destructive", "ghost-inverse", "secondary-destructive"],
+        "required": False,
+    }
+    # Button: 구버전 icon props 제거 → showStartIcon/startIcon 패턴
+    for old_prop in ("leftIcon", "rightIcon", "isLoading", "isDisabled"):
+        btn_props.pop(old_prop, None)
+    btn_props["label"] = {"type": "React.ReactNode", "required": True}
+    btn_props["showStartIcon"] = {"type": "boolean", "required": False}
+    btn_props["startIcon"] = {"type": "React.ReactNode", "required": False}
+    btn_props["showEndIcon"] = {"type": "boolean", "required": False}
+    btn_props["endIcon"] = {"type": "React.ReactNode", "required": False}
+    btn_props["interaction"] = {
+        "type": ["default", "disabled", "loading"],
+        "required": False,
+    }
+
+    # IconButton: 스키마에 variant → iconButtonType
+    ibtn_props = components.get("IconButton", {}).get("props", {})
+    if "variant" in ibtn_props:
+        del ibtn_props["variant"]
+    ibtn_props["iconButtonType"] = {
+        "type": ["primary", "secondary", "tertiary", "ghost", "destructive", "ghost-inverse"],
+        "required": False,
+    }
+    for old_prop in ("leftIcon", "rightIcon", "isLoading", "isDisabled"):
+        ibtn_props.pop(old_prop, None)
+    ibtn_props["iconOnly"] = {"type": "React.ReactNode", "required": True}
+    ibtn_props["interaction"] = {
+        "type": ["default", "disabled", "loading"],
+        "required": False,
+    }
+
     # DEPRECATED: isDisabled/isReadOnly → interaction prop으로 통합됨 (d537869)
-    # 스키마 JSON이 아직 구버전이면 disabled/readOnly로 교정 유지
     _PROP_RENAMES = {"isDisabled": "disabled", "isReadOnly": "readOnly"}
     for comp_data in components.values():
         props = comp_data.get("props", {})
@@ -257,6 +361,62 @@ def get_available_components_note(schema: dict) -> str:
     return f"**Available Components ({len(names)}):** {', '.join(names)}\n\n"
 
 
+def _build_component_color_mapping(colors: dict[str, str]) -> str:
+    """디자인 토큰의 컴포넌트 색상에서 fill hex → variant 매핑 테이블을 동적 생성.
+
+    토큰 키 패턴: {component}-{variant_info}-{property}
+    예: badge-status-warning-subtle-bg → component=Badge, status=warning, appearance=subtle
+
+    Returns:
+        프롬프트에 포함할 매핑 테이블 문자열
+    """
+    import re
+
+    # 매핑 대상 컴포넌트 접두사
+    _COMP_PREFIXES = ("badge-", "chip-", "tag-", "alert-")
+
+    # bg 토큰만 수집 (fill 매칭용 — text 토큰은 제외)
+    # {hex_value: {component, variant_props}} 형태로 정리
+    mapping_lines: list[str] = []
+    # 컴포넌트별 그룹핑
+    comp_groups: dict[str, list[str]] = {}
+
+    for token_name in sorted(colors.keys()):
+        if not any(token_name.startswith(p) for p in _COMP_PREFIXES):
+            continue
+
+        hex_val = colors[token_name]
+
+        # bg 토큰에서 variant 정보 추출
+        # 예: badge-status-warning-subtle-bg → parts: [badge, status, warning, subtle, bg]
+        # 예: badge-primary-solid-bg → parts: [badge, primary, solid, bg]
+        # 예: chip-status-info-subtle-bg → parts: [chip, status, info, subtle, bg]
+        parts = token_name.split("-")
+        if len(parts) < 3:
+            continue
+
+        comp = parts[0]  # badge, chip, tag, alert
+        prop_suffix = parts[-1]  # bg, text
+
+        # bg 토큰 → fill 매핑, text 토큰 → 참고용
+        middle = parts[1:-1]  # status/warning/subtle 등
+
+        if comp not in comp_groups:
+            comp_groups[comp] = []
+        comp_groups[comp].append(f"    `{hex_val}` ({token_name}) → {'/'.join(middle)}")
+
+    if not comp_groups:
+        return ""
+
+    lines: list[str] = []
+    for comp, entries in sorted(comp_groups.items()):
+        lines.append(f"  **{comp.capitalize()}**:")
+        for entry in entries:
+            lines.append(entry)
+
+    return "\n".join(lines)
+
+
 def format_design_tokens(tokens: dict | None) -> str:
     """
     디자인 토큰을 시스템 프롬프트용 문자열로 포맷팅
@@ -276,50 +436,8 @@ def format_design_tokens(tokens: dict | None) -> str:
     font_size = design_tokens.get("fontSize", {})
     font_weight = design_tokens.get("fontWeight", {})
 
-    # 주요 색상을 토큰에서 추출하여 ready-to-use Tailwind 클래스로 매핑
-    def c(token: str, fallback: str = "#000") -> str:
-        return colors.get(token, fallback)
-
-    # 시맨틱 색상 매핑 테이블 생성
-    color_table_lines = []
-    color_map = [
-        # (용도, Tailwind text class, Tailwind bg class, 토큰명)
-        ("Primary Text (제목, 라벨, 본문)", f"text-[{c('text-primary', '#212529')}]", f"—", "text-primary"),
-        ("Secondary Text (보조 텍스트)", f"text-[{c('text-secondary', '#495057')}]", f"—", "text-secondary"),
-        ("Tertiary Text (플레이스홀더)", f"text-[{c('text-tertiary', '#6c757d')}]", f"—", "text-tertiary"),
-        ("Brand/Accent (링크, 선택 상태)", f"text-[{c('text-accent', '#0033a0')}]", f"bg-[{c('bg-accent', '#0033a0')}]", "text-accent / bg-accent"),
-        ("Surface (카드, 패널)", f"—", f"bg-[{c('bg-surface', '#ffffff')}]", "bg-surface"),
-        ("Canvas (페이지 배경)", f"—", f"bg-[{c('bg-canvas', '#f4f6f8')}]", "bg-canvas"),
-        ("Selection (선택 배경)", f"—", f"bg-[{c('bg-selection', '#ecf0fa')}]", "bg-selection"),
-        ("Border Default", f"border-[{c('border-default', '#dee2e6')}]", f"—", "border-default"),
-        ("Border Strong", f"border-[{c('border-strong', '#ced4da')}]", f"—", "border-strong"),
-        ("Success (완료, 정상)", f"text-[{c('text-semantic-on-success', '#1e4620')}]", f"bg-[{c('bg-semantic-success-subtle', '#e6efe6')}]", "semantic-success"),
-        ("Error (실패, 오류)", f"text-[{c('text-semantic-on-error', '#5f2120')}]", f"bg-[{c('bg-semantic-error-subtle', '#fae6e6')}]", "semantic-error"),
-        ("Warning (대기, 주의)", f"text-[{c('text-semantic-on-warning', '#663c00')}]", f"bg-[{c('bg-semantic-warning-subtle', '#fdede1')}]", "semantic-warning"),
-        ("Info (진행중, 접수)", f"text-[{c('text-semantic-on-info', '#014361')}]", f"bg-[{c('bg-semantic-info-subtle', '#e1f1f9')}]", "semantic-info"),
-        ("Disabled", f"text-[{c('text-disabled', '#9da4ab')}]", f"bg-[{c('bg-disabled-on-light', '#eceff3')}]", "disabled"),
-        ("Subtle (구분선 배경)", f"—", f"bg-[{c('bg-subtle', '#eceff3')}]", "bg-subtle"),
-        ("Gray 50 (가장 연한 회색)", f"—", f"bg-[{c('neutral-gray-50', '#f9fafb')}]", "neutral-gray-50"),
-        ("Gray 100 (연한 회색)", f"—", f"bg-[{c('neutral-gray-100', '#f4f6f8')}]", "neutral-gray-100"),
-        ("Gray 200", f"—", f"bg-[{c('neutral-gray-200', '#e9ecef')}]", "neutral-gray-200"),
-        ("Gray 300", f"border-[{c('neutral-gray-300', '#dee2e6')}]", f"bg-[{c('neutral-gray-300', '#dee2e6')}]", "neutral-gray-300"),
-        ("Gray 700 (진한 텍스트)", f"text-[{c('neutral-gray-700', '#495057')}]", f"—", "neutral-gray-700"),
-        ("Gray 900 (가장 진한 텍스트)", f"text-[{c('neutral-gray-900', '#212529')}]", f"—", "neutral-gray-900"),
-    ]
-    for usage, text_cls, bg_cls, token in color_map:
-        color_table_lines.append(f"  | {usage} | `{text_cls}` | `{bg_cls}` | {token} |")
-    color_table = "\n".join(color_table_lines)
-
-    # 상태 배지/강조용 강한 시맨틱 색상 (배경이 진한 경우)
-    strong_semantic = f"""  - Success 강조: `text-white bg-[{c('bg-semantic-success', '#2e7d32')}]`
-  - Error 강조: `text-white bg-[{c('bg-semantic-error', '#d32f2f')}]`
-  - Warning 강조: `text-white bg-[{c('bg-semantic-warning', '#ed6c02')}]`
-  - Info 강조: `text-white bg-[{c('bg-semantic-info', '#0288d1')}]`"""
-
-    # brand 색상 팔레트
-    brand_colors = f"""  - Brand Primary: `bg-[{c('brand-primary', '#0033a0')}]` / `text-[{c('brand-primary', '#0033a0')}]`
-  - Brand Hover: `bg-[{c('brand-primary-hover', '#154cc1')}]`
-  - Brand Pressed: `bg-[{c('brand-primary-pressed', '#002480')}]`"""
+    # 컴포넌트별 색상 토큰 → fill hex ↔ variant 매핑 테이블 동적 생성
+    comp_color_section = _build_component_color_mapping(colors)
 
     # 폰트 크기/두께 추출 (Mapping to smaller tokens for better density)
     # Page Title (h1) -> Use Heading LG token
@@ -342,37 +460,37 @@ def format_design_tokens(tokens: dict | None) -> str:
     helper_text = font_size.get("typography-form-helper-text-md-regular", ["14px", {}])
 
     return f"""## 🎨 DESIGN STANDARDS (CRITICAL - USE TAILWIND CLASSES)
+
+**🚨 절대 규칙: `text-[#xxx]`, `bg-[#xxx]`, `border-[#xxx]` 등 hex 임의값 사용 금지!**
+**반드시 아래 토큰 클래스만 사용하세요. (Tailwind 4 @theme에 정의된 CSS 변수 기반)**
+
 - **Typography (MUST FOLLOW EXACT TOKENS)**:
   - Font Family: `font-['Pretendard',sans-serif]` (applied globally)
-  - **Page Title (h1)**: `className="text-2xl font-bold text-[#212529]"` ({heading_xl[0]}, {heading_xl_weight})
-  - **Section Title (h2)**: `className="text-xl font-semibold text-[#212529]"` ({heading_lg[0]}, {heading_lg_weight})
-  - **Subsection (h3)**: `className="text-lg font-medium text-[#212529]"` ({heading_md[0]}, {heading_md_weight})
-  - **Form Label**: `className="text-sm font-medium text-[#212529]"` ({form_label_md[0]}, {form_label_weight})
-  - **Body Text**: `className="text-base font-normal text-[#212529]"` ({body_md[0]}, 400)
-  - **Helper Text**: `className="text-sm font-normal text-[#495057]"` ({helper_text[0]}, 400)
-- **Colors (MUST use exact token hex values below — NEVER guess or invent hex codes)**:
+  - **Page Title (h1)**: `className="text-2xl font-bold text-primary"` ({heading_xl[0]}, {heading_xl_weight})
+  - **Section Title (h2)**: `className="text-xl font-semibold text-primary"` ({heading_lg[0]}, {heading_lg_weight})
+  - **Subsection (h3)**: `className="text-lg font-medium text-primary"` ({heading_md[0]}, {heading_md_weight})
+  - **Form Label**: `className="text-sm font-medium text-primary"` ({form_label_md[0]}, {form_label_weight})
+  - **Body Text**: `className="text-base font-normal text-primary"` ({body_md[0]}, 400)
+  - **Helper Text**: `className="text-sm font-normal text-secondary"` ({helper_text[0]}, 400)
+- **Colors (CSS 변수 기반 토큰 — hex 직접 사용 절대 금지)**:
 
-  | 용도 | Text Class | BG Class | Token |
-  |------|-----------|----------|-------|
-{color_table}
+  | 용도 | Class |
+  |------|-------|
+  | Primary Text (제목, 라벨, 본문, 아이콘) | `text-primary` |
+  | Secondary Text (보조 텍스트) | `text-secondary` |
+  | Brand/Accent (링크, 강조) | `text-accent` |
+  | Card/Panel 배경 (흰색) | `bg-surface` |
+  | Page 배경 (연회색) | `bg-canvas` |
+  | Default Border | `border-default` |
+  | Input Border | `border-default` |
+  | Destructive (오류, 삭제) | `text-semantic-error` |
 
-  **⚠️ 위 테이블에 없는 hex 코드를 절대 사용하지 마세요. 연한 회색이 필요하면 neutral-gray-50/100 토큰을 쓰세요.**
-  **🚨 Text Class 컬럼의 hex는 텍스트 전용, BG Class 컬럼의 hex는 배경 전용. 교차 사용 절대 금지!**
-  **흔한 실수: `text-[#2e7d32]` ❌ → `text-[#1e4620]` ✅ | `text-[#d32f2f]` ❌ → `text-[#5f2120]` ✅ | `text-[#ed6c02]` ❌ → `text-[#663c00]` ✅**
+  **🚨 컴포넌트 fill→variant 매핑** (레이아웃 JSON의 fill hex 값으로 컴포넌트 variant를 결정할 때 이 테이블 참조):
+{comp_color_section}
 
-  **시맨틱 텍스트 색상 빠른 참조** (초록/빨강/주황 텍스트가 필요할 때):
-  - 성공/양수/정상 텍스트 → `text-[#1e4620]` ✅ (❌ `text-[#2e7d32]` 절대 금지)
-  - 실패/음수/오류 텍스트 → `text-[#5f2120]` ✅ (❌ `text-[#d32f2f]` 절대 금지)
-  - 경고/보류 텍스트 → `text-[#663c00]` ✅ (❌ `text-[#ed6c02]` 절대 금지)
-
-  **상태 강조 (진한 배경 + 흰 텍스트)**:
-{strong_semantic}
-
-  **브랜드 색상**:
-{brand_colors}
 - **Visuals**:
   - **Shadows**: `shadow-sm`
-  - **Borders**: `border border-[#dee2e6]`
+  - **Borders**: `border border-default`
   - **Radius**: `rounded-lg` (inputs, buttons), `rounded-xl` (cards)
 - **Gap/Spacing (Tailwind Classes)**:
   - **xs**: `gap-1` (4px) - 태그 그룹, 아이콘-라벨 (xs)
@@ -506,7 +624,7 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("  headerName: '상세',  // 버튼 용도에 따라 '수정', '삭제', '보기' 등으로 변경")
     lines.append("  width: 100,")
     lines.append("  cellRenderer: (params: any) => (")
-    lines.append("    <Button buttonType=\"ghost\" size=\"sm\" label=\"상세\" showStartIcon={false} showEndIcon={false} onClick={() => {")
+    lines.append("    <Button buttonType=\"ghost\" size=\"sm\" label=\"상세\" onClick={() => {")
     lines.append("      setSelectedItem(params.data);")
     lines.append("      setIsDetailOpen(true);")
     lines.append("    }} />")
@@ -574,7 +692,7 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("import { DataGrid, COLUMN_TYPES } from '@aplus/ui';")
     lines.append("import { Button } from '@/components';")
     lines.append("")
-    lines.append("// For grouped headers, use headerName prefix instead of column groups")
+    lines.append("// [prefix] 방식: 단순 시각적 그룹핑용 (1-depth 헤더 유지). 2-depth+ 다단 헤더는 ColGroupDef 사용")
     lines.append("const columnDefs: ColDef[] = [")
     lines.append("  { field: 'empNo', headerName: '사번', width: 100 },")
     lines.append("  { field: 'name', headerName: '성명', width: 120 },")
@@ -588,7 +706,7 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("  // Action button — Button 컴포넌트를 cellRenderer로 직접 사용")
     lines.append("  { headerName: '상세', width: 100,")
     lines.append("    cellRenderer: (params: any) => (")
-    lines.append("      <Button buttonType=\"ghost\" size=\"sm\" label=\"상세\" showStartIcon={false} showEndIcon={false} onClick={() => { setSelectedItem(params.data); setIsDetailOpen(true); }} />")
+    lines.append("      <Button buttonType=\"ghost\" size=\"sm\" label=\"상세\" onClick={() => { setSelectedItem(params.data); setIsDetailOpen(true); }} />")
     lines.append("    ) },")
     lines.append("];")
     lines.append("")
@@ -596,22 +714,104 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("```")
     lines.append("")
 
-    # columnDefs 안전 규칙
-    lines.append("### ⚠️ CRITICAL: columnDefs Rules (VIOLATION = SILENT GRID FAILURE)")
-    lines.append("AG Grid will **silently fail to render** (empty container, no error) if columnDefs are invalid.")
+    # 다단 헤더 Usage Example (2-depth)
+    lines.append("### Usage Example (Multi-Level Header — 2-depth)")
+    lines.append("사용자가 **그룹 헤더 / 다단 헤더 / 2단 헤더**를 요청하면 `ColGroupDef`의 `children`을 사용하세요.")
+    lines.append("```tsx")
+    lines.append("import { DataGrid, COLUMN_TYPES } from '@aplus/ui';")
+    lines.append("import { ColDef, ColGroupDef } from 'ag-grid-community';")
     lines.append("")
-    lines.append("**1. FLAT columnDefs ONLY — NO column groups:**")
-    lines.append("- ❌ `{ headerName: '인사정보', children: [{ field: 'name' }, { field: 'dept' }] }` — GRID DIES SILENTLY")
-    lines.append("- ❌ `marryChildren: true` — NOT SUPPORTED")
-    lines.append("- ✅ Use flat columns: `{ field: 'name', headerName: '이름' }, { field: 'dept', headerName: '부서' }`")
-    lines.append("- To visually group headers, use `headerName` prefix: `'[인사] 이름'`, `'[인사] 부서'`")
+    lines.append("const columnDefs: (ColDef | ColGroupDef)[] = [")
+    lines.append("  { field: 'empNo', headerName: '사번', width: 100 },")
+    lines.append("  { field: 'name', headerName: '성명', width: 120 },")
+    lines.append("  {")
+    lines.append("    headerName: '인사정보',")
+    lines.append("    marryChildren: true,  // 그룹 내 컬럼 순서 고정")
+    lines.append("    children: [")
+    lines.append("      { field: 'dept', headerName: '부서', flex: 1 },")
+    lines.append("      { field: 'position', headerName: '직급', width: 100 },")
+    lines.append("      { field: 'joinDate', headerName: '입사일', ...COLUMN_TYPES.dateColumn },")
+    lines.append("    ],")
+    lines.append("  },")
+    lines.append("  {")
+    lines.append("    headerName: '급여정보',")
+    lines.append("    children: [")
+    lines.append("      { field: 'baseSalary', headerName: '기본급', ...COLUMN_TYPES.currencyColumn },")
+    lines.append("      { field: 'bonus', headerName: '상여금', ...COLUMN_TYPES.currencyColumn },")
+    lines.append("    ],")
+    lines.append("  },")
+    lines.append("];")
+    lines.append("")
+    lines.append("<DataGrid rowData={rowData} columnDefs={columnDefs} height={400} />")
+    lines.append("```")
+    lines.append("")
+
+    # 다단 헤더 Usage Example (3-depth)
+    lines.append("### Usage Example (Multi-Level Header — 3-depth)")
+    lines.append("**3단 헤더 / 3Depth / CrossTab Grid** 요청 시 `children` 내부에 `children`을 중첩하세요.")
+    lines.append("```tsx")
+    lines.append("import { DataGrid, COLUMN_TYPES } from '@aplus/ui';")
+    lines.append("import { ColDef, ColGroupDef } from 'ag-grid-community';")
+    lines.append("")
+    lines.append("const columnDefs: (ColDef | ColGroupDef)[] = [")
+    lines.append("  // 독립 컬럼 — AG Grid가 자동으로 모든 헤더 row를 span 처리")
+    lines.append("  { field: 'orgName', headerName: '사업단', width: 160 },")
+    lines.append("  {")
+    lines.append("    headerName: '합계',")
+    lines.append("    children: [")
+    lines.append("      { field: 'totalQty', headerName: '총수량', ...COLUMN_TYPES.numberColumn, width: 100 },")
+    lines.append("      { field: 'totalCount', headerName: '총배분건수', ...COLUMN_TYPES.numberColumn, width: 100 },")
+    lines.append("      { field: 'totalRate', headerName: '총진도율', width: 100 },")
+    lines.append("    ],")
+    lines.append("  },")
+    lines.append("  {")
+    lines.append("    headerName: '권역별',")
+    lines.append("    children: [")
+    lines.append("      {")
+    lines.append("        headerName: '수도권',")
+    lines.append("        children: [")
+    lines.append("          { field: 'seoulQty', headerName: '수량', ...COLUMN_TYPES.numberColumn, width: 80 },")
+    lines.append("          { field: 'seoulCount', headerName: '배분건수', ...COLUMN_TYPES.numberColumn, width: 80 },")
+    lines.append("          { field: 'seoulRate', headerName: '진도율', width: 80 },")
+    lines.append("        ],")
+    lines.append("      },")
+    lines.append("      {")
+    lines.append("        headerName: '강원권',")
+    lines.append("        children: [")
+    lines.append("          { field: 'gwQty', headerName: '수량', ...COLUMN_TYPES.numberColumn, width: 80 },")
+    lines.append("          { field: 'gwCount', headerName: '배분건수', ...COLUMN_TYPES.numberColumn, width: 80 },")
+    lines.append("          { field: 'gwRate', headerName: '진도율', width: 80 },")
+    lines.append("        ],")
+    lines.append("      },")
+    lines.append("    ],")
+    lines.append("  },")
+    lines.append("];")
+    lines.append("```")
+    lines.append("")
+
+    # columnDefs 안전 규칙
+    lines.append("### ⚠️ columnDefs Rules (위반 시 그리드 렌더 실패 또는 동작 이상)")
+    lines.append("")
+    lines.append("**1. columnDefs — flat 기본, ColGroupDef로 다단 헤더 지원:**")
+    lines.append("- ✅ flat 기본: `{ field: 'name', headerName: '이름' }, { field: 'dept', headerName: '부서' }`")
+    lines.append("- ✅ 단순 시각적 그룹핑은 headerName prefix: `'[인사] 이름'`, `'[인사] 부서'` (1-depth 헤더 유지)")
+    lines.append("- ✅ 다단 헤더(2-depth+)는 `ColGroupDef` 사용: `{ headerName: '인사정보', children: [{ field: 'name' }, { field: 'dept' }] }`")
+    lines.append("- ✅ 그룹 내 컬럼 순서 고정·분리 방지: `marryChildren: true` 지원")
+    lines.append("- ⚠️ `children` 배열 내 leaf 컬럼에는 반드시 `field` 필수")
+    lines.append("- ⚠️ column group 사용 시 pinned는 group 레벨에서만 적용 (leaf에 pinned 금지)")
     lines.append("")
     lines.append("**2. cellRenderer — 화살표 함수 또는 named component 사용:**")
-    lines.append("- ✅ `cellRenderer: (params) => <Button buttonType=\"ghost\" size=\"sm\" label=\"상세\" showStartIcon={false} showEndIcon={false} />` — 디자인 시스템 Button 직접 사용")
+    lines.append("- ✅ `cellRenderer: (params) => <Button buttonType=\"ghost\" size=\"sm\" label=\"상세\" />` — 디자인 시스템 Button 직접 사용")
     lines.append("- ✅ `cellRenderer: CheckboxCellRenderer` — Named component from @aplus/ui")
     lines.append("- ✅ `cellRenderer: ImageCellRenderer` — Named component from @aplus/ui")
     lines.append("- ❌ `cellRenderer: ButtonCellRenderer` — 사용 금지 (디자인 시스템 미적용, 파란색 하드코딩)")
     lines.append("- For simple text formatting, use `valueFormatter`: `valueFormatter: (params) => params.value ? '활성' : '비활성'`")
+    lines.append("")
+    lines.append("**⚠️ cellRenderer 필수 패턴:**")
+    lines.append("1. `h-full flex items-center` — 세로 중앙 정렬 (빠뜨리면 셀 상단에 치우침)")
+    lines.append("2. Icon에 `className=\"text-primary\"` — 아이콘 색상 (빠뜨리면 흰색/투명으로 안 보임)")
+    lines.append("3. ❌ `{condition && <Element />}` 금지 → ✅ `{condition ? <Element /> : null}` 삼항 연산자 필수. Figma 디자인에 dash/placeholder가 있으면 표시, 없으면 null")
+    lines.append("4. **Icon name은 Figma JSON에 나온 이름 그대로 사용** — 예: Figma에 `icon-folder-fill-20`이면 `<Icon name=\"folder-fill\" size={20} />`. 임의로 축약/변경 금지 (folder-fill → folder ❌)")
     lines.append("")
     lines.append("**3. pinned 사용 금지:**")
     lines.append("- ❌ `pinned: 'left'`, `pinned: 'right'` — 틀 고정 사용하지 마세요")
@@ -765,64 +965,227 @@ def format_component_definitions(definitions: dict | None) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _extract_color_info(classes: str) -> tuple[str, str, str] | None:
+    """
+    Tailwind 클래스 문자열에서 (색상 유형, 토큰명, 설명 접미사) 추출.
+
+    반환:
+      ("배경", "bg-accent", "accent 배경")         ← bg-bg-accent
+      ("배경", "alert-info-bg", "alert-info 배경")  ← bg-alert-info-bg
+      ("테두리", "border-accent", "accent 테두리")  ← outline-border-accent
+    """
+    for cls in classes.split():
+        if cls.startswith("bg-"):
+            token = cls[3:]  # "bg-bg-accent" → "bg-accent"
+            # 토큰명에서 readable 이름 추출
+            name = token
+            if name.startswith("bg-"):
+                name = name[3:]  # "bg-accent" → "accent"
+            elif name.startswith("semantic-"):
+                parts = name.split("-")
+                name = parts[1] if len(parts) > 1 else name  # "semantic-info-subtle" → "info"
+            elif name.endswith("-bg"):
+                name = name[:-3]  # "alert-info-bg" → "alert-info"
+            return ("배경", token, f"{name} 배경")
+        if cls.startswith("outline-border-"):
+            token = cls[8:]  # "outline-border-accent" → "border-accent"
+            name = token[7:] if token.startswith("border-") else token
+            return ("테두리", token, f"{name} 테두리")
+    return None
+
+
+
+
+
+def format_component_visual_guide(
+    definitions: dict | None,
+    design_tokens: dict | None,
+) -> str:
+    """
+    컴포넌트 정의 + 디자인 토큰에서 variant별 시각 설명을 자동 생성.
+    토큰명 → hex는 design-tokens.json, 시각 설명은 토큰명 구조에서 자동 파싱.
+
+    Args:
+        definitions: 컴포넌트 정의 dict (Supabase에서 로드) 또는 None
+        design_tokens: 디자인 토큰 dict (Supabase에서 로드) 또는 None
+
+    Returns:
+        포맷팅된 Component Visual Guide 문자열
+    """
+    if not definitions:
+        return ""
+
+    # 디자인 토큰에서 colors 조회
+    dt = design_tokens or {}
+    dt_inner = dt.get("designTokens", dt)
+    colors: dict[str, str] = dt_inner.get("colors", {})
+
+    lines: list[str] = ["## Component Visual Guide", ""]
+
+    # 시각 표현에 관련 없는 variant 키 (스킵 대상)
+    _SKIP_VARIANT_KEYS = {
+        "size", "mode", "interaction", "isLoading", "isDisabled",
+        "disabled", "isOpen", "orientation", "showIcon", "showClose",
+        "iconOnly", "value", "hasError", "selected", "truncation",
+        "widthMode", "position", "labelWidth", "isToast", "layout",
+    }
+
+    # definitions의 outdated variant 값 보정 (현재 모두 유효하므로 빈 dict)
+    _DEF_VARIANT_VALUE_REMAP: dict[str, dict[str, dict[str, str]]] = {}
+
+    for def_name, d in definitions.items():
+        if "." in def_name:
+            continue  # sub-component 스킵
+        pascal_name = def_name[0].upper() + def_name[1:]
+        if pascal_name not in AVAILABLE_COMPONENTS_WHITELIST:
+            continue
+
+        variants_block = d.get("variants", {})
+        size_map: dict[str, str] = variants_block.get("size", {})
+        defaults = d.get("defaultVariants", {})
+
+        # compound variant 가이드가 별도로 있는 컴포넌트는 메인 루프에서 스킵
+        if def_name in _COMPOUND_VARIANT_GUIDES:
+            continue
+
+        # 시각적 variant 키 수집 (skip 대상 제외)
+        visual_variant_keys = [
+            k for k in variants_block
+            if k not in _SKIP_VARIANT_KEYS
+        ]
+
+        # variant 또는 size가 없으면 스킵
+        if not visual_variant_keys and not size_map:
+            continue
+
+        lines.append(f"### {pascal_name}")
+
+        # --- Variants 섹션 (모든 시각적 variant 키 처리) ---
+        for var_key in visual_variant_keys:
+            variant_map: dict[str, str] = variants_block[var_key]
+            if not variant_map:
+                continue
+
+            # compoundVariants에서 이 키 기반 색상 보완
+            compound_by_value: dict[str, str] = {}
+            for cv in d.get("compoundVariants", []):
+                cv_keys = {k for k in cv if k != "class"}
+                if cv_keys == {var_key}:
+                    compound_by_value[cv[var_key]] = cv.get("class", "")
+
+            # variant 키 이름을 표시 (variant 가 1개면 생략, 여러 개면 키 이름 표시)
+            if len(visual_variant_keys) > 1:
+                lines.append(f"{var_key}:")
+            else:
+                lines.append("Variants:")
+
+            guidelines = _USAGE_GUIDELINES.get(def_name, {})
+            value_remap = _DEF_VARIANT_VALUE_REMAP.get(def_name, {}).get(var_key, {})
+
+            for vname, vclasses in variant_map.items():
+                # boolean/내부 전용 variant 제외
+                if vname in ("true", "false"):
+                    continue
+
+                # outdated variant 값 보정
+                display_name = value_remap.get(vname, vname)
+
+                # 클래스가 비어있으면 compoundVariants에서 보완
+                effective_classes = vclasses or compound_by_value.get(vname, "")
+                color_info = _extract_color_info(effective_classes) if effective_classes else None
+
+                # 사용 가이드 조회 (보정된 이름으로)
+                guideline = guidelines.get(display_name, "")
+
+                # 출력 조합
+                parts: list[str] = []
+                if color_info:
+                    _type, token, desc = color_info
+                    hex_val = colors.get(token, "")
+                    if hex_val:
+                        parts.append(f"{desc} ({token} {hex_val})")
+                    else:
+                        parts.append(desc)
+                if guideline:
+                    parts.append(guideline)
+
+                detail = " — ".join(parts)
+                if detail:
+                    lines.append(f"- {display_name}: {detail}")
+                else:
+                    lines.append(f"- {display_name}")
+
+        # --- Sizes 섹션 ---
+        if size_map:
+            size_parts: list[str] = []
+            for sname, sclasses in size_map.items():
+                # min-w-[NNpx] 파싱
+                px = ""
+                for cls in sclasses.split():
+                    if cls.startswith("min-w-[") and cls.endswith("]"):
+                        px = cls[7:-1]  # "min-w-[56px]" → "56px"
+                        break
+                if px:
+                    size_parts.append(f"{sname} ({px})")
+                else:
+                    size_parts.append(sname)
+            lines.append("Sizes: " + " | ".join(size_parts))
+
+        # --- Default 섹션 ---
+        useful_defaults = {
+            k: v for k, v in defaults.items()
+            if k != "mode" and not isinstance(v, bool)
+        }
+        if useful_defaults:
+            default_str = ", ".join(f'{k}="{v}"' for k, v in useful_defaults.items())
+            lines.append(f"Default: {default_str}")
+
+        lines.append("")  # 컴포넌트 간 빈 줄
+
+    # compound variant 기반 컴포넌트 가이드 추가 (Badge, Chip 등)
+    for def_name, guide_text in _COMPOUND_VARIANT_GUIDES.items():
+        pascal_name = def_name[0].upper() + def_name[1:]
+        if pascal_name in AVAILABLE_COMPONENTS_WHITELIST and def_name in definitions:
+            lines.append(guide_text)
+            logger.info(f"Compound variant guide added: {pascal_name}")
+
+    if len(lines) <= 2:
+        return ""
+
+    return "\n".join(lines) + "\n"
+
+
 # 디자인 토큰을 로드하지 못했을 때 사용할 기본값
+# ⚠️ 웹 앱은 Tailwind 4 + shadcn CSS 변수 시스템 사용 (globals.css @theme inline)
 DEFAULT_DESIGN_TOKENS_SECTION = """## 🎨 DESIGN STANDARDS (CRITICAL - USE TAILWIND CLASSES)
+
+**🚨 절대 규칙: `text-[#xxx]`, `bg-[#xxx]`, `border-[#xxx]` 등 hex 임의값 사용 금지!**
+**반드시 아래 토큰 클래스만 사용하세요. (Tailwind 4 @theme에 정의된 CSS 변수 기반)**
+
 - **Typography (MUST FOLLOW EXACT TOKENS)**:
   - Font Family: `font-['Pretendard',sans-serif]` (applied globally)
-  - **Page Title (h1)**: `className="text-2xl font-bold text-[#212529]"` (28px, 700)
-  - **Section Title (h2)**: `className="text-xl font-semibold text-[#212529]"` (24px, 700)
-  - **Subsection (h3)**: `className="text-lg font-medium text-[#212529]"` (18px, 600)
-  - **Form Label**: `className="text-sm font-medium text-[#212529]"` (14px, 500)
-  - **Body Text**: `className="text-base font-normal text-[#212529]"` (16px, 400)
-  - **Helper Text**: `className="text-sm font-normal text-[#495057]"` (14px, 400)
-- **Colors (MUST use exact token hex values below — NEVER guess or invent hex codes)**:
+  - **Page Title (h1)**: `className="text-2xl font-bold text-primary"` (28px, 700)
+  - **Section Title (h2)**: `className="text-xl font-semibold text-primary"` (24px, 700)
+  - **Subsection (h3)**: `className="text-lg font-medium text-primary"` (18px, 600)
+  - **Form Label**: `className="text-sm font-medium text-primary"` (14px, 500)
+  - **Body Text**: `className="text-base font-normal text-primary"` (16px, 400)
+  - **Helper Text**: `className="text-sm font-normal text-secondary"` (14px, 400)
+- **Colors (CSS 변수 기반 토큰 — hex 직접 사용 절대 금지)**:
 
-  | 용도 | Text Class | BG Class | Token |
-  |------|-----------|----------|-------|
-  | Primary Text (제목, 라벨, 본문) | `text-[#212529]` | — | text-primary |
-  | Secondary Text (보조 텍스트) | `text-[#495057]` | — | text-secondary |
-  | Tertiary Text (플레이스홀더) | `text-[#6c757d]` | — | text-tertiary |
-  | Brand/Accent (링크, 선택 상태) | `text-[#0033a0]` | `bg-[#0033a0]` | text-accent / bg-accent |
-  | Surface (카드, 패널) | — | `bg-[#ffffff]` | bg-surface |
-  | Canvas (페이지 배경) | — | `bg-[#f4f6f8]` | bg-canvas |
-  | Selection (선택 배경) | — | `bg-[#ecf0fa]` | bg-selection |
-  | Border Default | `border-[#dee2e6]` | — | border-default |
-  | Border Strong | `border-[#ced4da]` | — | border-strong |
-  | Success (완료, 정상) | `text-[#1e4620]` | `bg-[#e6efe6]` | semantic-success |
-  | Error (실패, 오류) | `text-[#5f2120]` | `bg-[#fae6e6]` | semantic-error |
-  | Warning (대기, 주의) | `text-[#663c00]` | `bg-[#fdede1]` | semantic-warning |
-  | Info (진행중, 접수) | `text-[#014361]` | `bg-[#e1f1f9]` | semantic-info |
-  | Disabled | `text-[#9da4ab]` | `bg-[#eceff3]` | disabled |
-  | Subtle (구분선 배경) | — | `bg-[#eceff3]` | bg-subtle |
-  | Gray 50 (가장 연한 회색) | — | `bg-[#f9fafb]` | neutral-gray-50 |
-  | Gray 100 (연한 회색) | — | `bg-[#f4f6f8]` | neutral-gray-100 |
-  | Gray 200 | — | `bg-[#e9ecef]` | neutral-gray-200 |
-  | Gray 300 | `border-[#dee2e6]` | `bg-[#dee2e6]` | neutral-gray-300 |
-  | Gray 700 (진한 텍스트) | `text-[#495057]` | — | neutral-gray-700 |
-  | Gray 900 (가장 진한 텍스트) | `text-[#212529]` | — | neutral-gray-900 |
+  | 용도 | Class |
+  |------|-------|
+  | Primary Text (제목, 라벨, 본문, 아이콘) | `text-primary` |
+  | Secondary Text (보조 텍스트) | `text-secondary` |
+  | Brand/Accent (링크, 강조) | `text-accent` |
+  | Card/Panel 배경 (흰색) | `bg-surface` |
+  | Page 배경 (연회색) | `bg-canvas` |
+  | Default Border | `border-default` |
+  | Input Border | `border-default` |
+  | Destructive (오류, 삭제) | `text-semantic-error` |
 
-  **⚠️ 위 테이블에 없는 hex 코드를 절대 사용하지 마세요. 연한 회색이 필요하면 `bg-[#f9fafb]` (gray-50) 또는 `bg-[#f4f6f8]` (gray-100/canvas)를 쓰세요.**
-  **🚨 Text Class 컬럼의 hex는 텍스트 전용, BG Class 컬럼의 hex는 배경 전용. 교차 사용 절대 금지!**
-  **흔한 실수: `text-[#2e7d32]` ❌ → `text-[#1e4620]` ✅ | `text-[#d32f2f]` ❌ → `text-[#5f2120]` ✅ | `text-[#ed6c02]` ❌ → `text-[#663c00]` ✅**
-
-  **시맨틱 텍스트 색상 빠른 참조** (초록/빨강/주황 텍스트가 필요할 때):
-  - 성공/양수/정상 텍스트 → `text-[#1e4620]` ✅ (❌ `text-[#2e7d32]` 절대 금지)
-  - 실패/음수/오류 텍스트 → `text-[#5f2120]` ✅ (❌ `text-[#d32f2f]` 절대 금지)
-  - 경고/보류 텍스트 → `text-[#663c00]` ✅ (❌ `text-[#ed6c02]` 절대 금지)
-
-  **상태 강조 (진한 배경 + 흰 텍스트)**:
-  - Success 강조: `text-white bg-[#2e7d32]`
-  - Error 강조: `text-white bg-[#d32f2f]`
-  - Warning 강조: `text-white bg-[#ed6c02]`
-  - Info 강조: `text-white bg-[#0288d1]`
-
-  **브랜드 색상**:
-  - Brand Primary: `bg-[#0033a0]` / `text-[#0033a0]`
-  - Brand Hover: `bg-[#154cc1]`
-  - Brand Pressed: `bg-[#002480]`
 - **Visuals**:
   - **Shadows**: `shadow-sm`
-  - **Borders**: `border border-[#dee2e6]`
+  - **Borders**: `border border-default`
   - **Radius**: `rounded-lg` (inputs, buttons), `rounded-xl` (cards)
 - **Gap/Spacing (Tailwind Classes)**:
   - **xs**: `gap-1` (4px) - 태그 그룹, 아이콘-라벨 (xs)
@@ -844,457 +1207,219 @@ Always respond in Korean.
 
 **Current Date: {current_date}**
 
-## 🎯 UI GENERATION PRINCIPLE
+## Generation Scope
+- 사용자가 요청한 UI만 생성. 임의로 조회바, 타이틀, 안내문구 등 추가 금지
+- 요청한 모든 요소를 빠짐없이 구현 (그리드 컬럼, 옵션, 다이얼로그 등). 길어도 생략/축약 금지
+- 수정 요청 시 기존 코드 전부 유지한 채 요청 부분만 변경. `// ... 나머지 동일` 같은 생략 절대 금지
+- UI 패턴 선택: Forms(로그인,설정), Cards(상품,프로필), Tables(관리,리포트), Detail(상세), Dashboard(대시보드)
 
-**Generate UI that EXACTLY matches the user's request.** Do NOT default to dashboard/table layouts.
+{design_tokens_section}## Visual Standards
+- Page: `min-h-screen bg-canvas p-8`, Container: `max-w-[1920px] mx-auto`
+- Card: `bg-surface rounded-xl border border-default shadow-sm p-6` (TitleSection만 Card 바깥)
+- FilterBar + Grid = 같은 Card 안에 배치
+- Spacing: mb-8(섹션), mb-5(필드), mb-3~4(관련 항목), gap-4(Dialog/Drawer body)
+- Shadow: `shadow-sm` only. Border: `border border-default` only
+- 날짜: YYYY-MM-DD 형식만. Z-Index: Dropdown/Modal = z-50+
+- Grid: 페이지→`<GridLayout type="A~H">` (Drawer/Dialog 내부 금지), 폼→`<FormGrid columns={N}>`+`<FormGridCell>`
+- 비율 요청 → 12-column 환산: 1:1→col-span-6+6, 1:2→4+8, 1:3→3+9, 1:1:1→4+4+4
+- Grid children: `className="w-full min-w-0"` 필수
+- **GridLayout은 `type` prop만 사용**. `gap`/`className` 등에 tailwind 클래스 전달 금지 — type이 컬럼 수·gap을 자동 결정. `<GridLayout type="C-2" gap="gap-5">` ❌ / `<GridLayout type="C-2">` ✅
+- DS 컴포넌트(Button, Badge 등)의 색상은 전용 prop으로 제어. className에 bg-/text- 색상 금지
 
-- User asks for "로그인 페이지" → Generate a login form (centered, inputs, button)
-- User asks for "상품 목록" → Generate product cards or list
-- User asks for "설정 페이지" → Generate settings form with sections
-- User asks for "프로필 페이지" → Generate profile view with user info
-- User asks for "대시보드" → ONLY THEN generate dashboard with tables/charts
+### Mock Data
+- 리스트/테이블: 10건 이상. 현실적인 한국어 데이터 (김민준, 이서연 / 토스, 당근)
+- Select options: 4-6개 이상. 필터 Select: `placeholder="전체"` + "전체" 옵션 포함
+- `showLabel={true}` 필수 명시 (기본값 false). `showHelptext={false}`, `showStartIcon={false}` 등 false 기본값은 생략
 
-**Choose the right UI pattern for the request:**
-- **Forms**: Login, signup, settings, profile edit, data entry
-- **Cards**: Products, articles, team members, projects
-- **Lists**: Simple item lists, menus, navigation
-- **Tables**: Data management, admin panels, reports (ONLY for managing multiple records)
-- **Detail views**: Single item display, profile, article detail
+### Icon ⚠️ size 불일치 = CRASH
+- **항상 `size={20}` 사용.** `<Icon name="search" size={20} />`
+- size={16}은 21개 기본 아이콘만 지원: add, announcement, blank, calendar, check, chevron-down, chevron-left, chevron-right, chevron-up, close, delete, dot, edit, external, loading, minus, more-vert, reset, search, star-fill, star-line
+- **size={16}에 없는 아이콘을 size={16}으로 쓰면 CRASH**: image, video, link, table, folder, undo, redo, format-bold, format-italic, format-underlined, format-align-*, format-list-*, format-color-* 등 → 반드시 size={20}
+- **⚠️ Button/IconButton는 size에 따라 icon size를 강제 변환** → 아이콘이 해당 size에 없으면 CRASH
+  - Button: sm→icon16, md→icon16, **lg→icon20**
+  - IconButton: sm→icon16, **md→icon20**, lg→icon24
+  - size-20-only 아이콘(image, video, link, table, folder, undo, redo, format-* 등) 사용 시:
+    - **Button은 `size="lg"`** 사용 → icon20 ✅
+    - **IconButton은 `size="md"`** 사용 → icon20 ✅
+  - `<Button size="lg" startIcon={<Icon name="image" size={20} />} />` ✅
+  - `<Button size="sm" startIcon={<Icon name="image" size={20} />} />` ❌ CRASH (icon16에 image 없음)
+  - `<IconButton size="md" iconOnly={<Icon name="undo" size={20} />} />` ✅
+  - `<IconButton size="sm" iconOnly={<Icon name="undo" size={20} />} />` ❌ CRASH (icon16에 undo 없음)
+  - `<IconButton size="lg" iconOnly={<Icon name="undo" size={20} />} />` ❌ CRASH (icon24에 undo 없음)
+- **⚠️ DataGrid cellRenderer**: `<Icon>` 직접 사용 OK. `size={20}` + `className="text-primary"` 필수. cellRenderer 안에서 `{cond && <X/>}` 금지 → `{cond ? <X/> : null}` 삼항 필수. Figma에 dash가 있으면 dash, 없으면 null
+- **⚠️ Icon name은 Figma JSON에 나온 이름 그대로 사용** — `icon-folder-fill-20` → `<Icon name="folder-fill" size={20} />`. 임의로 축약/변경 금지 (예: folder-fill → folder ❌)
+- 외부 아이콘 라이브러리(lucide-react, heroicons 등) import = CRASH. 이모지/SVG도 금지
+- Profile avatar: `<div className="w-10 h-10 rounded-full bg-brand-primary text-inverse flex items-center justify-center font-semibold text-sm">{name.charAt(0)}</div>`
+- **이미지 URL**: 외부 URL(`https://...`) 하드코딩 절대 금지 — AI가 만들어낸 URL은 깨진 이미지. Figma/사용자가 실제 자산을 제공하지 않으면 placeholder 박스로 대체:
+  `<div className="bg-canvas border border-dashed border-default rounded-lg flex items-center justify-center text-tertiary w-full h-[200px]">이미지 영역</div>`
+- **파일 첨부 표시**: 일반 `Button`으로 첨부파일 나열 금지. `Chip` 또는 `ChipGroup` 사용 (파일명 + 크기 + 아이콘 조합)
 
-### ⚠️ 요청하지 않은 요소 생성 금지
-- **사용자가 명시적으로 요청한 UI만 생성할 것**
-- 조회 옵션, 필터, 타이틀, 안내문구 등을 AI가 임의로 추가하지 말 것
-- 예: "그리드 그려줘" → DataGrid만 생성. 조회바, 타이틀, 안내 영역 등 붙이지 말 것
-- 예: "레이아웃 잡아줘" → 레이아웃 골격만 생성. 내부 컴포넌트 임의 추가 금지
-- 사용자가 단계적으로 하나씩 추가 요청하면 그때 추가할 것
+## Implementation Rules
+1. `import { Button, Field, Select, Icon } from '@/components'` — 사용하는 컴포넌트 전부 import. 미사용/누락 = CRASH
+2. import 양방향 점검: import→JSX, JSX→import 모두 1:1 매칭. 커스텀 컴포넌트 정의 금지(import 사용)
+3. `React.useState`, `React.useEffect` 직접 사용 (import 불필요)
+4. Tailwind CSS only. `style={{}}` = 동적 JS 값만. 외부 라이브러리 import 금지 (예외: DataGrid 컬럼 타입은 `import { ColDef } from 'ag-grid-community'` 허용. 다단 헤더 사용 시 `import { ColDef, ColGroupDef } from 'ag-grid-community'` 허용)
+5. 테이블 = `<DataGrid>` only (HTML table 태그 금지). 10건+ mock data. 페이지네이션이 보이면 `pagination paginationPageSize={20}` prop 추가 (별도 Pagination 컴포넌트 없음)
+6. 코드 생략(`...`, `// 나머지 동일`) 절대 금지. 전체 코드 출력. 모든 button→onClick, input→value+onChange
+7. 수정 요청 시 기존 코드 전부 유지 + 대상만 변경
+8. interaction prop: disabled/loading/readonly/error → `interaction="..."` 사용
+   - 조건부 disabled 초기 상태 = false(편집 가능). 데모 확인용
+9. Component Whitelist: Available Components만 사용. DatePicker→`<Field type="date" />`, Input→`<Field type="text" />`
+10. HTML Void Elements(`<input>`, `<br>`, `<hr>`, `<img>`) = `/>` self-closing 필수
 
-### 🚨 요청한 요소 누락 금지 (코드 완성도)
-- **사용자가 요청한 모든 UI 요소를 빠짐없이 구현할 것. 일부만 구현하고 나머지를 생략하는 것은 금지**
-- 그리드 컬럼: 사용자가 요청하거나 이미지에 보이는 컬럼을 전부 columnDefs에 포함할 것. 19개 컬럼이면 19개 모두 구현
-- 드롭다운 옵션: options 배열에 모든 선택지를 포함할 것. 은행 목록 38개면 38개 전부 나열
-- 다이얼로그/드로어: 사용자가 언급한 팝업, 드로어는 state + 컴포넌트까지 모두 구현할 것. state만 선언하고 컴포넌트를 빠뜨리지 말 것
-- 조건부 로직: 사용구분에 따른 필드 활성/비활성 등 연동 로직이 요청되면 반드시 구현할 것
-- ❌ 코드가 길어진다는 이유로 항목을 줄이거나 대표 몇 개만 구현하는 것은 절대 금지
-- ❌ `// ... 나머지 동일` 같은 주석으로 대체하는 것은 절대 금지
-- 🔍 **셀프 검증**: 코드 작성 완료 후, 사용자가 명시한 그리드 컬럼 수와 columnDefs 배열 항목 수가 일치하는지 반드시 확인하라. 불일치하면 누락 컬럼을 추가한 뒤 최종 출력하라. 조건부 활성/비활성 컬럼(예: 사용구분에 따라 enabled/disabled 되는 컬럼)이나 단순 텍스트 입력 컬럼도 중요도가 동일하므로 절대 생략하지 말 것
+"""
 
-## 📋 COMPONENT USAGE GUIDE
+
+# ============================================================================
+# Component Quick Reference (압축된 컴포넌트 사용 가이드)
+# ============================================================================
+
+COMPONENT_QUICK_REFERENCE = """
+## Component Quick Reference
 
 ### Button
-- buttonType="primary": 메인 CTA (저장, 생성, 로그인). 페이지당 1-2개
-- buttonType="secondary": 보조 액션 (취소, 뒤로가기)
-- buttonType="tertiary": Excel 다운로드 등 보조 링크형 액션
-- buttonType="ghost": 테이블 내 액션, 필터 버튼
-- buttonType="destructive": 삭제, 해지 등 위험한 액션
-- buttonType="ghost-inverse": ActionBar 내부 전용 (어두운 배경)
-- ⚠️ label prop 사용: `<Button label="확인" />` (children 아님)
-- ⚠️ 아이콘: `showStartIcon={true} startIcon={<Icon name="..." size={N} />}`
-- ⚠️ **size는 배치 위치에 따라 자동 결정** (SM 일괄 적용 절대 금지):
-  - `size="lg"`: 단독 폼 제출 버튼
-  - `size="md"`: 페이지 헤더, Dialog 푸터, 필터 버튼
-  - `size="sm"`: DataGrid 행 내부, 툴바, 컴팩트 UI
-- `showStartIcon={false} showEndIcon={false}` — 아이콘 불필요 시 명시
-- ❌ `variant=` — 사용 금지! `buttonType=`으로 대체됨
-- ❌ `<Button>텍스트</Button>` — children 금지! `label=` prop 사용
+- `<Button buttonType="primary" size="md" label="저장" />`
+- buttonType: primary(진한 파란 배경, 최종 CTA) | secondary(연한 파란 배경, 가장 많이 사용) | tertiary(회색 배경, 낮은 강조) | ghost(투명, 텍스트만) | destructive(빨간 배경) | ghost-inverse(ActionBar 전용). **Figma variant 우선 → 없으면 Figma 색상/시각으로 판단**
+- size: lg(폼 제출) | md(헤더,필터,Dialog) | sm(DataGrid 행, 컴팩트, 툴바)
+- **⚠️ 같은 그룹(연속/나란히 배치) 내 Button size 통일 필수**. 헤더 툴바에 "URL 복사 lg + 인쇄 md"처럼 섞으면 UI 깨짐 — 같은 행은 같은 size
+- 아이콘: `showStartIcon={true} startIcon={<Icon name="add" size={20} />}` (Button이 size 강제 변환하므로 size={16} 목록 아이콘만 안전)
 
-### Field (⚠️ MUST be self-closing)
-- Discriminated Union: `showLabel={true} label="이름"` (showLabel 없이 label만 전달 금지)
-- `showHelptext={true} helptext="설명"` (showHelptext 없이 helptext만 전달 금지)
-- type="text"/"email"/"number"/"date"/"password"/"tel"/"url"/"search"
-- showStartIcon/showEndIcon: 아이콘 표시 제어
-- isDisplay={true}: 읽기 전용 표시 모드 (LabelValue 대신 간단한 표시용)
-- ✅ `<Field showLabel={true} label="이름" showHelptext={false} showStartIcon={false} showEndIcon={false} />`
-- ❌ `<Field>children</Field>` — CRASHES (React Error #137)
-- ❌ `multiline` — 제거됨, 사용 금지
-- ❌ `rowsVariant` — 제거됨, 사용 금지 (multiline과 함께 삭제된 prop)
-
-### 🚨 interaction Prop (상태 제어 — 통합 enum)
-Button, Field, Select, IconButton, Checkbox, Radio 등 대부분의 컴포넌트는 `interaction` prop으로 상태를 제어합니다:
-- interaction="default": 기본 (생략 가능)
-- interaction="disabled": 비활성
-- interaction="loading": 로딩 (Button, IconButton)
-- interaction="readonly": 읽기전용 (Field)
-- interaction="error": 에러 (Select)
-- ❌ `isDisabled` — 사용 금지!
-- ❌ `isLoading` — 사용 금지!
-- ❌ `isReadOnly` — 사용 금지!
-- ❌ `disabled` (HTML attr) — `interaction="disabled"` 사용
-- ❌ `error={true}` (Select) — `interaction="error"` 사용
-
-```tsx
-// ✅ 올바른 interaction 사용법
-<Button buttonType="primary" interaction="disabled" label="비활성" showStartIcon={false} showEndIcon={false} />
-<Field showLabel={true} label="이름" interaction="readonly" showHelptext={false} showStartIcon={false} showEndIcon={false} />
-<Select interaction="error" showLabel={true} label="보험사" showHelptext={true} helptext="필수 항목" options={options} showStartIcon={false} />
-
-// ❌ 잘못된 사용법
-<Button disabled>비활성</Button>
-<Field isDisabled label="이름" />
-<Select error={true} label="보험사" />
-```
-
-#### 🚨 조건부 disabled 초기 상태값 (CRITICAL — 위반 시 UI 확인 불가)
-조건부 disabled 로직이 있을 때, **초기 상태는 반드시 false(편집 가능)**로 설정해야 합니다.
-데모 화면은 사용자가 UI를 확인하는 용도이므로, 초기에 모든 편집 가능한 필드가 활성화되어 있어야 합니다.
-- ✅ `const [isApproved] = React.useState(false);` → 편집 필드 활성화
-- ✅ `const [status] = React.useState('pending');` → 편집 필드 활성화
-- ❌ `const [isApproved] = React.useState(true);` → **금지! 편집 필드가 전부 disabled됨**
-- ❌ `const [status] = React.useState('approved');` → **금지! 편집 필드가 전부 disabled됨**
-
-#### ⚠️ readonly/disabled 필드에 불필요한 helptext 금지
-- ❌ `helptext="사번은 수정할 수 없습니다."` — readonly 상태면 시각적으로 이미 구분됨, 중복 설명 금지
-- readonly/disabled 필드에는 helptext를 넣지 마세요. helptext는 **편집 가능한 필드의 입력 가이드**에만 사용합니다.
+### Field (self-closing — `</Field>` = CRASH)
+- `<Field type="text" label="이름" value={v} onChange={(e) => set(e.target.value)} />`
+- type: text | email | number | date | password | tel | url | search
+- interaction="display": 읽기 전용 표시 (Figma에서 display 모드일 때)
+- 캘린더 아이콘(📅)이 보이는 입력란은 `<Field type="date">` 사용. Select 드롭다운 아님
+- **⚠️ Field에 `endIcon={<Icon name="calendar" />}` 등 수동 캘린더 아이콘 조합 금지** — 캘린더 아이콘이 보이면 **무조건** `<Field type="date">` (아이콘 자동 렌더링, 내장 DatePicker)
+- **기간 입력**: "2025.09.24 - 2025.09.30" 같은 range 표시는 `<Field type="date">` **2개** (시작/종료) 사용. 한 필드에 range 텍스트를 value로 하드코딩 금지
+- **⚠️ Field ≠ Select 혼동 금지**: 🔍 검색 아이콘이 달린 입력란은 **검색 팝업형 Field** (type="text" + endIcon). 이를 `<Select>` 드롭다운으로 바꾸면 UX가 완전히 달라짐. **Figma JSON의 component가 Field이면 반드시 Field 유지.**
 
 ### Select
-- showLabel={true} label="보험사" (Discriminated Union — showLabel 없이 label만 전달 금지)
-- showHelptext/showStartIcon 제어
-- interaction="error" + showHelptext={true} helptext="필수" (에러 표시)
-- 필터용: placeholder="전체" + options에 "전체" 포함
-- 폼 입력용: placeholder="선택하세요" + className="w-full"
-- options는 최소 3개 이상 (필터용은 4-6개 권장). ❌ 2개 이하 options 금지 — 2개면 Radio 사용
-- ⚠️ className="w-full" 필수 (기본 240px 고정폭 → 오버플로우 방지)
-- defaultValue는 option의 value 사용 (label 아님): ✅ `defaultValue="all"` ❌ `defaultValue="전체"`
-- ⚠️ onChange 시그니처: `onChange={(value) => setValue(value)}` — value를 직접 받음 (event 아님)
-  - ✅ `<Select onChange={(v) => setStatus(v)} />`
-  - ❌ `<Select onChange={(e) => setStatus(e.target.value)} />` — e.target.value 없음
-
-### Alert
-- type="error"/"info"/"success"/"warning" (❌ `variant` 아님!)
-- `<Alert type="error" title="오류" body="설명" />`
+- `<Select label="상태" placeholder="전체" value={v} onChange={(v) => set(v)} options={opts} />`
+- onChange: value 직접 수신 (event 아님). className="w-full" 필수
+- options 최소 3개 (2개 이하면 Radio). defaultValue: option의 value 사용
+- calendar 아이콘이 달린 Select는 날짜 필드 → `<Field type="date">` 로 변환
+- **⚠️ Select vs Field 구분**: Select는 ▼ 화살표(chevron)가 있는 드롭다운. 🔍 돋보기가 있으면 Select 아님 → Field 사용
 
 ### Badge
-- type="status" + statusVariant: 상태 표시 전용
-  - "success": 정상, 완료, 활성
-  - "error": 실패, 해지, 오류
-  - "warning": 대기, 심사중, 주의
-  - "info": 진행중, 접수
-- ❌ NEVER invent hex colors — only use exact values from the COLOR TOKEN TABLE above
+- type="status" + status(info|success|warning|error), type="level" + level(primary|neutral)
+- type="count": label={숫자}, type="dot": 점 표시
+- appearance: solid(진한) | subtle(연한, 기본). prop 이름: status (NOT statusVariant)
+- **⚠️ 자주 쓰는 Badge 매핑:**
+  - 공지 (주황): `<Badge type="level" level="primary" appearance="subtle" label="공지" />`
+  - NEW (파란): `<Badge type="status" status="info" appearance="subtle" label="NEW" />`
+  - 완료/승인 (초록): `<Badge type="status" status="success" appearance="subtle" label="완료" />`
+  - 반려/오류 (빨강): `<Badge type="status" status="error" appearance="subtle" label="반려" />`
+- **⚠️ Badge 색상은 Figma 시각 기준**: 파란→`info`, 초록→`success`, 노란/주황→`warning`또는`level="primary"`, 빨간→`error`. 배지 텍스트가 아니라 **Figma에서 보이는 배경/텍스트 색상**으로 판단
 
-### ⚠️ DS 컴포넌트 className 규칙
-- DS 컴포넌트(Button, Field, Select, Badge 등)에 `className`으로 배경색/텍스트색을 오버라이드하지 마세요
-- ❌ `<Button className="bg-[#0033a0]" .../>` — DS 컴포넌트의 색상은 buttonType/variant로 제어
-- ❌ `<Badge className="bg-red-500 text-white" .../>` — DS 컴포넌트의 색상은 statusVariant로 제어
-- ✅ className은 **레이아웃 제어에만** 사용: `className="w-full"`, `className="mt-4"`, `className="col-span-3"`
-- ✅ DS 컴포넌트의 색상/스타일은 해당 컴포넌트의 전용 prop(buttonType, statusVariant 등)으로 제어
+### Checkbox / Radio
+- `<Option label="동의합니다"><Checkbox value={isChecked ? 'checked' : 'unchecked'} onChange={() => toggle()} /></Option>`
+- **⚠️ Checkbox `value`는 문자열** `'unchecked' | 'checked' | 'indeterminate'` (boolean 아님, `checked` prop 없음). onChange는 토글 함수 (e.target.checked 사용 금지)
+- **⚠️ Option의 props는 `label` + children뿐** — `showLabel`/`helperText`/`description` prop **없음**. 라벨·설명문이 필요하면 **OptionGroup**으로 감싸기 (단일 체크박스여도 OK)
+- Option 외부에 수동 `<p className="ml-7">설명...</p>` 추가 금지 → OptionGroup의 `helptext` prop 사용
 
-### Tag
-- label prop 사용: `<Tag label="카테고리" />` (❌ children 아님!)
-- tagType="swatch" color="red": 색상 스와치
-- tagType="closable" onClose={fn}: 닫기 가능
-- ❌ `<Tag>텍스트</Tag>` — label prop 사용
+### IconButton (Button과 prop 다름)
+- `<IconButton iconOnly={<Icon name="search" size={20} />} iconButtonType="ghost" size="md" aria-label="검색" />`
+- iconButtonType: ghost | secondary | tertiary | ghost-destructive. aria-label 필수
 
-### 🚨🚨 Drawer vs Dialog 구분 (절대 혼동 금지)
+### Drawer (상세/등록/수정/편집 폼) — "드로어" 요청 시 필수
+- `<Drawer open={v} onClose={fn} size="md"><Drawer.Header title="제목" showSubtitle={false} /><Drawer.Body>...</Drawer.Body><Drawer.Footer>...</Drawer.Footer></Drawer>`
+- size: sm(352) | md(552) | lg(752) | xl(1152). 내장 padding — 내부 padding wrapper 불필요
+- 행 클릭→상세 = Drawer, 등록/수정 폼 = Drawer, 필드 3개+ = Drawer
 
-**Drawer와 Dialog는 완전히 다른 별개의 컴포넌트입니다. 절대 혼동하지 마세요.**
+### Dialog (확인/알림/간단입력 전용) — "다이얼로그/모달/팝업" 요청 시
+- `<Dialog open={v} onClose={fn} size="md"><Dialog.Header title="제목" /><Dialog.Body>...</Dialog.Body><Dialog.Footer>...</Dialog.Footer></Dialog>`
+- size: sm | md | lg (xl 없음). 내장 padding. 삭제 확인, 단순 알림, 필드 1~2개만
 
-#### 한국어 용어 → 컴포넌트 매핑:
-- 사용자가 "**드로어**"라고 하면 → 반드시 `Drawer` 컴포넌트 사용
-- 사용자가 "**다이얼로그**" 또는 "**모달**" 또는 "**팝업**"이라고 하면 → `Dialog` 컴포넌트 사용
-- ❌ **"드로어"를 요청했는데 `Dialog`를 사용하는 것은 절대 금지**
-- ❌ **"드로어(Dialog)"처럼 잘못된 매핑 절대 금지** — 드로어 = Drawer, 다이얼로그 = Dialog
+### FilterBar (12컬럼 CSS Grid, 버튼 내장)
+- `<FilterBar mode="compact" onReset={fn} onSearch={fn} actionSpan={3}>`
+- 각 필드: `<div className="col-span-N">` 래핑
+- **🚨 col-span + actionSpan 계산 규칙 (반드시 따르세요)**:
+  1. JSON 필드의 `w` 값을 합산하여 각 필드의 12칸 비율 계산
+  2. `actionSpan={3}` 고정 (초기화+조회 버튼 영역 3칸)
+  3. **마지막 행**: 필드 col-span 합 + actionSpan = 12. 예: `col-span-9` + `actionSpan={3}` = 12
+  4. **중간 행**: 12칸 전부 필드 OK
+  5. ❌ `col-span-10` + `actionSpan={2}` = 버튼 찌그러짐. 절대 사용 금지
+- FilterBar 자체가 배경(`bg-bg-subtle rounded-xl`)을 가짐 → 외부에 배경 div 래핑 금지
+- 초기화(tertiary)/조회(primary) 버튼은 FilterBar가 자동 렌더링 → 별도 Button 배치 금지
 
-#### 용도 구분:
-| 구분 | Drawer | Dialog |
-|------|--------|--------|
-| 위치 | 화면 우측에서 슬라이드 | 화면 중앙에 오버레이 |
-| 높이 | 전체 화면 높이 | 최대 80vh |
-| 용도 | 상세보기, 등록/수정 폼, 관리 패널 | 확인/취소 알림, 삭제 확인창 |
-| 키워드 | 드로어, 사이드패널, 관리, 상세 | 다이얼로그, 모달, 팝업, 확인창 |
+### Pagination (DataGrid 내장)
+- **별도 `<Pagination>` 컴포넌트 없음.** DataGrid의 `pagination` prop 사용
+- `<DataGrid rowData={data} columnDefs={cols} pagination paginationPageSize={20} />`
+- "총 N개 중 X-Y행" 텍스트 + 페이지 네비게이션이 자동 렌더링됨
 
-#### 🚨 기본값 규칙 (키워드 없어도 적용):
-- **행 클릭 → 상세보기** = `Drawer` (Dialog 아님!)
-- **등록/수정/편집 폼** = `Drawer` (Dialog 아님!)
-- **필드가 3개 이상인 폼** = `Drawer` (Dialog 사용 시 size="xl"로 키우지 말고 Drawer로 변경!)
-- **Dialog는 오직**: 삭제 확인, 단순 알림, 필드 1~2개 간단 입력에만 사용 (등록/수정 폼은 반드시 Drawer)
-- 확신이 없으면 **Drawer를 기본값으로 선택**
-
-- 사용자가 "드로어"라는 단어를 사용했으면 **무조건 `Drawer`**. 예외 없음.
-
-### 🚨 Dialog (Compound Pattern)
-Dialog는 Compound 패턴입니다. 반드시 `Dialog.Header`, `Dialog.Body`, `Dialog.Footer`를 사용하세요.
-- 🚨 **Dialog는 "다이얼로그/모달/팝업"에만 사용. "드로어" 요청 시 Dialog가 아닌 Drawer를 사용할 것!**
-- size="sm": 확인/취소 간단 알림
-- size="md": 폼 입력 (기본)
-- size="lg": 복잡한 폼, 상세 정보
-- ❌ size="xl" — Dialog에서 사용 금지! Dialog는 sm/md/lg만 허용. 대형 콘텐츠는 Drawer 사용
-- ⚠️ **Dialog 자체에 padding이 내장되어 있음. 절대로 Dialog 내부에 추가 padding/margin wrapper div를 넣지 마세요!**
-- ❌ `<Dialog><div className="p-5">...</div></Dialog>` — 이중 패딩 발생, 금지
-- ❌ `<Dialog><div className="p-6">...</div></Dialog>` — 이중 패딩 발생, 금지
-- ❌ `<Dialog.Body><div className="p-4">...</div></Dialog.Body>` — raw div wrapper 금지, Dialog.Body 직속 자식으로 레이아웃 요소 사용
-- ✅ `<Dialog><Dialog.Header title="제목" /><Dialog.Body>내용</Dialog.Body><Dialog.Footer>...</Dialog.Footer></Dialog>`
-- Dialog/Drawer body 내 폼 필드 간격: `gap-4` 또는 `mb-4` 만 사용. ❌ gap-5, gap-6, mb-5, mb-6 이상 금지 (Dialog와 Drawer 모두 동일)
-
-```tsx
-// ✅ 올바른 Dialog 사용법
-<Dialog open={isOpen} onClose={() => setIsOpen(false)} size="md">
-  <Dialog.Header title="계약 상세" />
-  <Dialog.Body>
-    <div className="flex flex-col gap-4">
-      <Field showLabel={true} label="계약번호" value="CNT-001" interaction="readonly" showHelptext={false} showStartIcon={false} showEndIcon={false} />
-      <Field showLabel={true} label="고객명" value="김민준" interaction="readonly" showHelptext={false} showStartIcon={false} showEndIcon={false} />
-    </div>
-  </Dialog.Body>
-  <Dialog.Footer>
-    <div className="flex gap-component-gap-control-group">
-      <Button buttonType="ghost" size="md" label="취소" onClick={() => setIsOpen(false)} showStartIcon={false} showEndIcon={false} />
-      <Button buttonType="primary" size="md" label="확인" onClick={() => setIsOpen(false)} showStartIcon={false} showEndIcon={false} />
-    </div>
-  </Dialog.Footer>
-</Dialog>
-```
-
-### 🚨 Drawer (Compound Pattern)
-Drawer는 Compound 패턴입니다. 반드시 `Drawer.Header`, `Drawer.Body`, `Drawer.Footer`를 사용하세요.
-- 🚨 **"드로어" 요청 시 반드시 이 Drawer 컴포넌트를 사용. Dialog로 대체 금지!**
-- size="sm": 간단한 정보 표시 (352px)
-- size="md": 기본 폼/상세 (552px, 기본값)
-- size="lg": 복잡한 폼, 상세 정보 (752px)
-- size="xl": 대형 콘텐츠, 테이블 포함 (1152px)
-- ⚠️ **Drawer 자체에 padding이 내장되어 있음. 절대로 Drawer 내부에 추가 padding/margin wrapper div를 넣지 마세요!**
-- ❌ `<Drawer><div className="p-5">...</div></Drawer>` — 이중 패딩 발생, 금지
-- ❌ `<Drawer><div className="p-6">...</div></Drawer>` — 이중 패딩 발생, 금지
-- ❌ `<Drawer.Body><div className="p-4">...</div></Drawer.Body>` — raw div wrapper 금지, Drawer.Body 직속 자식으로 레이아웃 요소 사용
-- ✅ `<Drawer><Drawer.Header title="제목" /><Drawer.Body>내용</Drawer.Body><Drawer.Footer>...</Drawer.Footer></Drawer>`
-- Drawer body 내 폼 필드 간격: `gap-4` 또는 `mb-4` 만 사용. ❌ gap-5, gap-6, mb-5, mb-6 이상 금지
-
-```tsx
-// ✅ 올바른 Drawer 사용법 (⚠️ gap-4 필수, gap-5/gap-6 금지)
-<Drawer open={isOpen} onClose={() => setIsOpen(false)} size="md">
-  <Drawer.Header title="계약 상세" showSubtitle={false} />
-  <Drawer.Body>
-    <div className="flex flex-col gap-4"> {/* ⚠️ gap-4만 사용! gap-5 금지 */}
-      <Field showLabel={true} label="계약번호" value="CNT-001" interaction="readonly" showHelptext={false} showStartIcon={false} showEndIcon={false} />
-      <Field showLabel={true} label="고객명" value="김민준" interaction="readonly" showHelptext={false} showStartIcon={false} showEndIcon={false} />
-    </div>
-  </Drawer.Body>
-  <Drawer.Footer>
-    <Button buttonType="ghost" size="md" label="닫기" onClick={() => setIsOpen(false)} showStartIcon={false} showEndIcon={false} />
-    <Button buttonType="primary" size="md" label="저장" onClick={() => setIsOpen(false)} showStartIcon={false} showEndIcon={false} />
-  </Drawer.Footer>
-</Drawer>
-```
-
-### Tooltip (롤오버 메시지)
-- 아이콘이나 텍스트에 마우스 오버 시 설명 표시용
-- ✅ `<Tooltip content="설명 텍스트" side="top"><span>호버 대상</span></Tooltip>`
-- ⚠️ 토스트/알림을 요청받으면 Tooltip과 혼동하지 말 것
-- ⚠️ Tooltip만 요청 시 별도 박스/카드 UI를 추가로 생성하지 말 것. Tooltip 컴포넌트만 적용
-
-### Checkbox / Radio / ToggleSwitch
-- Checkbox: value="unchecked"|"checked" + onChange
-- Radio: value="unchecked"|"checked" + onChange
-- interaction="disabled": 비활성
-- ⚠️ NO label prop. **Checkbox와 Radio 모두** `<Option label="텍스트"><Checkbox .../></Option>` 패턴 필수
-- ⚠️ onChange는 DOM event(e.target.checked) 아님! 상태 토글 패턴 사용:
-  - ✅ `<Checkbox value={v} onChange={() => setValue(prev => !prev)} />`
-  - ❌ `<Checkbox value={v} onChange={(e) => setValue(e.target.checked)} />` — DS 컴포넌트는 DOM event 아님
-- ✅ `<Option label="동의합니다"><Checkbox value="unchecked" onChange={fn} /></Option>`
-- ✅ `<Option label="남성"><Radio value="unchecked" onChange={fn} /></Option>` — Radio도 반드시 Option으로 감싸기
-- ❌ `<Checkbox label="동의합니다" />` — label prop 없음
-- ❌ `<Radio label="남성" />` — label prop 없음
-- ❌ `<label><Radio /><span>남성</span></label>` — 수동 label 래핑 금지, Option 패턴 사용
-- ❌ Radio에 onChange 누락 금지 — 반드시 onChange 핸들러 연결
-
-### IconButton (⚠️ Button과 prop이 다름!)
-- **iconOnly={<Icon name="..." size={20} />}** ← 필수! 아이콘 전달 prop
-- **iconButtonType="ghost"|"ghost-destructive"|"secondary"|"tertiary"**
-- size="lg"|"md"|"sm"
-- interaction="disabled"|"loading"
-- aria-label="설명" ← 필수! 접근성 라벨
-- tooltip="툴팁 텍스트" ← 선택
-- ✅ `<IconButton iconOnly={<Icon name="search" size={20} />} iconButtonType="ghost" size="md" aria-label="검색" />`
-- ✅ `<IconButton iconOnly={<Icon name="more-vert" size={20} />} iconButtonType="tertiary" size="md" aria-label="더보기" />`
-
-### ActionBar
-- DataGrid/리스트 선택 시 플로팅 액션바
-- `<ActionBar count={3} visible={true} onClose={fn}>`
-    `<Button buttonType="ghost-inverse" label="삭제" showStartIcon={false} showEndIcon={false} />`
-  `</ActionBar>`
-
-### FilterBar
-- 12컬럼 CSS Grid 필터 패널, 초기화/조회 버튼 내장
-- `<FilterBar mode="compact" onReset={fn} onSearch={fn}>`
-    `<div className="col-span-2"><Select .../></div>`
-    `<div className="col-span-2"><Field .../></div>`
-  `</FilterBar>`
-- actionSpan: 버튼 영역 컬럼 수 (기본 2)
-
-### LabelValue (읽기 전용 표시)
-- Field의 display 대응, 수평 레이아웃 (라벨 좌, 값 우)
-- showLabel={true} label="이름" text="홍길동"
-- labelWidth="compact"|"default"|"wide"
-- ✅ `<LabelValue showLabel={true} label="이름" text="홍길동" showHelptext={false} showPrefix={false} showStartIcon={false} showEndIcon={false} />`
-
-### Popover (Compound Pattern)
-- `<Popover><Popover.Trigger>...</Popover.Trigger><Popover.Content>...</Popover.Content></Popover>`
+### FormGrid / FormGridCell (폼 레이아웃)
+- **columns는 숫자만** (1|2|3|4). `columns={4}` (O) / `columns="4"` (X — 문자열이면 그리드 깨짐!)
+- **colSpan도 숫자만** (1|2|3|4). 기본값 1
+- **title prop으로 섹션 제목 자동 생성** → 수동 `<h2>`, `<Heading>` 불필요
+- ⚠️ **columns 최대 4**. 한 줄에 5~6개 필드면 → `<div className="grid grid-cols-N gap-x-6 gap-y-4">` 직접 사용
 
 ### TitleSection
-- 페이지 상단: Breadcrumb + h1 + 액션 버튼
-- ⚠️ `showMenu2`~`showMenu4`의 show* boolean prop을 **모두 명시**할 것 (사용하지 않는 메뉴도 `={false}` 명시)
-- `<TitleSection title="제목" menu2="상위" showBreadcrumb={true} showMenu2={true} showMenu3={false} showMenu4={false} mode="base"><Button ... /></TitleSection>`
-- ❌ Dialog/Drawer 내부에서 수동 Breadcrumb(홈 > 메뉴 > ...) 생성 금지 — Breadcrumb은 페이지 TitleSection 전용, Dialog/Drawer 내부는 Header title만 사용
+- `<TitleSection title="제목" menu2="메뉴" showBreadcrumb={true} showMenu2={true} mode="base" favorite={false} onFavoriteChange={() => {}}><Button .../></TitleSection>`
+- **⚠️ 브레드크럼 값 규칙**: menu2/menu3/menu4 텍스트는 **Figma JSON에 있는 텍스트를 그대로 사용**. JSON에 없는 브레드크럼 텍스트를 임의로 지어내지 마세요. JSON에 브레드크럼 텍스트가 없으면 `showBreadcrumb={true} showMenu2={true} menu2="메뉴"` 정도만 사용 (menu3/menu4 생략)
+- **⚠️ 배치 규칙**: TitleSection은 페이지 **전체 폭** 상단에 위치. 다중 패널 GridLayout(type=B~H)에서 특정 패널 안에 넣어 한 컬럼에 갇히게 하지 말 것
+  - **type="A" (1패널)**: GridLayout 첫 자식 `<div>` 안 최상단 (현재 정석)
+  - **type="B~H" (다중 패널)**: GridLayout **바깥** 상단에 배치 (GridLayout 앞 형제로). 페이지 breadcrumb/title이 한 패널만큼 좁아지는 현상 방지
+- **⚠️ TitleSection children 규칙**: children에는 **Figma의 TitleSection 영역 안에 실제로 있는 버튼/아이콘만** 넣으세요. Figma에서 TitleSection 바깥(그리드 위, FilterBar 아래 등)에 있는 버튼을 TitleSection children으로 옮기지 마세요.
+- **⚠️ 즐겨찾기 (필수)**: TitleSection에는 **항상 `favorite` prop을 추가**하세요 (실제 앱에서 모든 페이지에 표시됨). `<TitleSection title="일반게시판" favorite={false} onFavoriteChange={() => {}} ...>` — 타이틀 바로 옆에 ☆ 아이콘이 자동 렌더링됨. ❌ IconButton으로 별도 추가하지 마세요
+- 신계약등록2/3·이미지시스템 버튼 금지 (매 페이지 반복되는 템플릿 기본 슬롯)
 
-### Tab
-- `<Tab items={[{value:'home',label:'홈'}, ...]} value={value} onChange={setValue} widthMode="content" />`
+### Alert / Tag / LabelValue / Popover / Tab / Segment / OptionGroup / ActionBar / Tooltip / TreeMenu
+- Alert: `<Alert type="error" title="오류" body="설명" />` (type: error|info|success|warning). **⚠️ 에러/경고/성공/정보 메시지 박스 전용. 일반 안내·가이드 bullet 텍스트는 `<ul><li>` 또는 `<p>` 사용 (Alert 남용 금지)**
+- Tag: `<Tag label="카테고리" />` (tagType: closable+onClose, swatch+color)
+- LabelValue: `<LabelValue label="이름" text="홍길동" />`
+- Popover: `<Popover><Popover.Trigger>...</Popover.Trigger><Popover.Content>...</Popover.Content></Popover>`
+- Tab: `<Tab items={[{value:'home',label:'홈'}]} value={v} onChange={set} widthMode="content" />` — Figma에 Tab이 있으면 반드시 Tab 컴포넌트 사용. 수동 div 구현 금지
+- Segment: `<Segment items={[{value:'day',label:'일간'}]} value={v} onChange={set} size="md" widthMode="equal" />`
+- OptionGroup: `<OptionGroup label="TFA 공유" showLabel={true} helptext="세일즈플러스 게시판에 공유합니다" showHelptext={true} orientation="horizontal" size="sm"><Option label="공유"><Checkbox .../></Option></OptionGroup>`. **⚠️ label/helptext/showLabel/showHelptext props 내장** — 설명문이 필요한 체크박스/라디오는 단일이어도 OptionGroup으로 감싸세요. Option 외부에 수동 `<p>`·`<div>` 설명문 금지. 자체 flex-col 내장 → 외부에서 `<div className="flex flex-col gap-*">` 래핑도 금지 (간격 중복)
+- TreeMenu: `<TreeMenu items={[{id, label, children: [...]}]} />`. **자체 border/배경 없음 (순수 컨테이너)**. Figma에 테두리·박스가 있을 때만 외부에서 `border border-default rounded-lg` div로 감싸기. Figma에 박스가 없는데 감싸면 불필요한 박스 생성.
+- ActionBar: `<ActionBar count={N} visible={true} onClose={fn}><Button buttonType="ghost-inverse" label="삭제" /></ActionBar>`
+- Tooltip: `<Tooltip content="설명" side="top"><span>대상</span></Tooltip>`
+"""
 
-### Segment
-- `<Segment items={[{value:'day',label:'일간'}, ...]} value={value} onChange={setValue} size="md" widthMode="equal" />`
+# ============================================================================
+# Component Usage Convention (도메인 사용 컨벤션)
+# 디자인 토큰 + 컴포넌트 정의에서 추출한 "언제 무엇을 써야 하는지" 규칙
+# ============================================================================
 
-### OptionGroup
-- `<OptionGroup label="그룹" showLabel={true} orientation="horizontal" size="sm">`
-    `<Option label="항목"><Checkbox value="unchecked" onChange={fn} /></Option>`
-  `</OptionGroup>`
+COMPONENT_USAGE_CONVENTION = """
+## 🎨 컴포넌트 사용 컨벤션 (Domain Usage Convention)
 
-{design_tokens_section}## 💎 VISUAL DESIGN STANDARDS
+**이 섹션은 "어떤 맥락에서 어떤 variant/prop을 써야 하는지" 정의합니다.**
+새로운 화면을 생성할 때 아래 규칙을 반드시 따르세요.
 
-### Layout
-- **Page Background**: `min-h-screen bg-[#f4f6f8] p-8`
-- **White Card Container**: `bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6` — ALL content inside cards
-  - Exception: Page Titles (h1) can be outside
-- **Container**: `w-full max-w-[1920px] mx-auto` (1920x1080 기준)
-- 🚨 **Filter + Table = 하나의 Card**: FilterBar, ActionButtons, Grid는 **반드시 하나의 Section Card** 안에 포함. 절대 별도 카드로 분리 금지!
-- **Grid System** (레이아웃 컴포넌트 우선 사용):
-  - 🚨 **페이지 레이아웃**: `<GridLayout type="A~H">` 사용 (수동 grid-cols-12 대신). **페이지 전용** — Drawer/Dialog/Popover 내부에서 사용 금지! 오버레이 내부 멀티컬럼은 Tailwind `grid grid-cols-N` 직접 사용. GridLayout의 유일한 prop은 `type`이며 `gap` 등 임의 prop 전달 금지.
-  - 🚨 **폼 레이아웃**: `<FormGrid columns={2}>` + `<FormGridCell>` 사용 (수동 grid-cols-2 대신)
-  - Fallback 12-column: `grid-cols-12` + `col-span-N` (GridLayout이 부적합한 경우에만)
-  - Form filters: `grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4`
-  - Grid children: MUST have `className="w-full min-w-0"` to prevent blowout
-  - Alignment: `items-end` to align buttons with inputs
-  - `col-span-X` must use INTEGER values only (✅ `col-span-2` | ❌ `col-span-1.5`)
-  - **비율 요청 → 12-column 매핑 (MUST use grid-cols-12)**:
-    - 1:1 → `col-span-6` + `col-span-6`
-    - 1:2 → `col-span-4` + `col-span-8`
-    - 2:1 → `col-span-8` + `col-span-4`
-    - 1:3 → `col-span-3` + `col-span-9`
-    - 3:1 → `col-span-9` + `col-span-3`
-    - 1:1:1 → `col-span-4` + `col-span-4` + `col-span-4`
-    - 1:2:1 → `col-span-3` + `col-span-6` + `col-span-3`
-    - 규칙: 비율의 합 → 12로 환산. 예) 2:3 → (2/5×12):(3/5×12) ≈ `col-span-5` + `col-span-7`
-- **Z-Index**: Dropdowns/Modals must have `z-50` or higher
-- **필터 영역 버튼 배치 규칙**:
-  - 필터 입력 필드들과 조회/초기화 버튼을 같은 grid row에 넣을 때, 버튼 영역은 최소 `col-span-3` 이상 확보
-  - 필드 4개 이상이면 버튼을 별도 행으로 분리: `<div className="col-span-12 flex justify-end gap-2">`
-  - 버튼은 반드시 `size="md"` 지정. 필터 버튼에 size 생략 또는 sm 사용 금지
-  - ❌ `col-span-2`에 버튼 2개 → 텍스트 줄바꿈, 찌그러짐 발생
-  - ✅ `col-span-12 flex justify-end gap-2` + `size="md"` 버튼
+### Badge variant 선택 규칙
 
-### Spacing
-- **Section gap**: `mb-8` (32px)
-- **Form field gap**: `mb-5` (20px)
-- **Related items**: `mb-4` or `mb-3` (tight grouping)
-- **Grid gaps**: Filters `gap-3`/`gap-4`, Cards `gap-6`, Grid `gap-x-4 gap-y-6`
-- **Padding**: `p-2` (8px), `p-3` (12px), `p-4` (16px), `p-6` (24px), `p-8` (32px)
+**⚠️ Figma variant 필드가 있으면 반드시 그 값 사용. 없으면 Figma에서 보이는 색상으로 판단:**
+- 파란 계열 → `status="info"`, 초록 → `success`, 노란/주황 → `warning`, 빨간 → `error`
+- 강조 카테고리 → `type="level" level="primary"`, 부가 정보 → `level="neutral"`
+- 숫자(건수, 미읽음) → `type="count"`
+- appearance: 목록 내 → `subtle`, 강조 필요 → `solid`
 
-### Content & Mock Data
-- **Rich Volume**: Always **at least 10 items** for lists/tables to show scrolling behavior
-- **Diverse Data**: Realistic Korean data (이름: 김민준, 이서연 / 회사: 토스, 당근, 쿠팡). NO "Item 1, Item 2"
-- **Select Options**: Always **4-6+ realistic choices** matching field context
-  - ❌ `options={{[{{label:'전체',value:'all'}}]}}` (only 1 option)
-  - ✅ 상태 → `전체, 정상, 심사중, 해지, 미납` / 지역 → `전체, 서울, 경기, 인천, 부산`
-- **Filter Select Pattern**: ALL filter dropdowns MUST use `placeholder="전체"` + include "전체" as first option
-- **Filter-Table Consistency**: Filter options MUST match table data
-- **NO EMPTY STATES**: NEVER generate empty tables, lists, or selects
+### Button buttonType 시각 가이드
 
-### 날짜 형식 통일
-- `type="date"` Field의 value/defaultValue는 반드시 `YYYY-MM-DD` 형식 사용
-  - ✅ `value="2024-03-15"` / `defaultValue="2024-01-01"`
-  - ❌ `value="2024/03/15"` / `value="20240315"` / `value="03-15-2024"`
+**⚠️ Figma variant 필드(buttonType, size)가 있으면 반드시 그 값 사용. 없으면 Figma에서 보이는 색상으로 판단:**
 
-### show* Prop 완전성 (Dialog/Drawer 포함)
-- Dialog/Drawer 내부 Field, Select 등에서도 show* prop(showLabel, showHelptext, showStartIcon, showEndIcon)을 **모두 명시**
-- ❌ Dialog/Drawer 내부라고 show* prop 생략 금지 — 메인 화면과 동일한 규칙 적용
-- ✅ `<Field showLabel={true} label="이름" showHelptext={false} showStartIcon={false} showEndIcon={false} />`
+| buttonType | Figma에서 이렇게 보이면 |
+|------------|----------------------|
+| primary | 진한 파란색 배경 (#0033a0) + 흰 글자 |
+| secondary | 연한 하늘색 배경 (#98b3ee) |
+| tertiary | 연한 회색 배경 또는 흰색 배경 + 테두리 |
+| ghost | 투명 배경, 파란 글자, 테두리 없음 |
+| destructive | 빨간색 배경 (#d32f2f) + 흰 글자 |
 
-### Images & Icons
-- **⛔ ABSOLUTELY NO icon library imports** — lucide-react, material-icons, heroicons, react-icons 등 모두 설치되어 있지 않음. import 시 앱이 크래시남
-- **⛔ NEVER `import {{ ... }} from 'lucide-react'`** — THIS WILL CRASH THE APP
-- **⛔ NEVER use emoji as icons** (🔍, ⭐, 📁, 👤) — unprofessional
-- **⛔ NEVER use inline SVG** (`<svg>`) — 코드가 불필요하게 길어짐
-- **✅ Icon 컴포넌트 사용**: `<Icon name="search" size={20} />` — `@aplus/ui`의 내장 아이콘만 사용
-  - ⚠️ **size별 사용 가능한 아이콘이 다름!** 존재하지 않는 조합은 "Icon not found" 에러 발생
-  - **size={20} (기본, 58개)**: add, all, arrow-drop-down, arrow-drop-up, arrow-right, blank, calendar, check, chevron-down, chevron-left, chevron-right, chevron-up, close, delete, dot, edit, error, external, filter-list, folder, folder-fill, format-align-center, format-align-left, format-align-right, format-bold, format-color-text, format-color-text-bg, format-italic, format-list-bulleted, format-list-numbered, format-underlined, help, image, info, keyboard-arrow-left, keyboard-arrow-right, keyboard-double-arrow-left, keyboard-double-arrow-right, link, loading, menu, minus, more-vert, person, post, redo, reset, search, star-fill, star-line, success, table, undo, video, warning, widgets
-  - **size={16} (23개)**: add, announcement, blank, calendar, check, chevron-down, chevron-left, chevron-right, chevron-up, close, delete, dot, edit, external, loading, minus, more-vert, reset, search, star-fill, star-line
-  - **size={24} (21개)**: add, all, arrow-drop-down, arrow-drop-up, blank, chevron-down, chevron-left, chevron-right, close, dehaze, delete, edit, filter-list, loading, menu, more-vert, person, post, search, star-fill, star-line, widgets
-  - **size={18} (6개만!)**: add, chevron-down, chevron-left, chevron-right, chevron-up, dummy — ⚠️ 거의 사용하지 말 것!
-  - 🔑 **규칙**: `<Icon name="X" size={N} />`을 쓰기 전에 반드시 위 size={N} 목록에 "X"가 있는지 교차검증! 목록에 없으면 "Icon not found" 에러.
-  - 🔑 **확실하지 않으면 size={20}** (58개, 가장 많음). size={16}은 23개뿐이므로 특히 주의.
-- **✅ IconButton**: 아이콘만 있는 버튼 — `iconOnly` prop과 `iconButtonType` prop 사용:
-  - `<IconButton iconOnly={<Icon name="search" size={20} />} iconButtonType="ghost" aria-label="검색" />`
-  - `<IconButton iconOnly={<Icon name="more-vert" size={20} />} iconButtonType="tertiary" size="md" aria-label="더보기" />`
-  - ⚠️ IconButton prop은 Button과 다름: `iconOnly=`, `iconButtonType=`, `aria-label=` 필수
-- **✅ Button 아이콘**: `<Button buttonType="ghost" label="다운로드" showStartIcon={{true}} startIcon={{<Icon name="external" size={{16}} />}} showEndIcon={{false}} />`
-- **Profile images**: Initial Avatar — colored circle with first character
-  - `<div className="w-10 h-10 rounded-full bg-[#0033a0] text-white flex items-center justify-center font-semibold text-sm">{{name.charAt(0)}}</div>`
-  - Color by `name.charCodeAt(0) % 6` from design tokens: `['#0033a0','#8b5cf6','#ec4899','#ed6c02','#2e7d32','#0288d1']`
-- **Product images**: Use placeholder div, NEVER `<img>` with placeholder URLs
-  - `<div className="w-20 h-20 rounded-lg bg-[#eceff3] text-[#9da4ab] flex items-center justify-center text-xs">이미지</div>`
-- **Exception**: Only use `<img>` if user explicitly provides a real image URL
+**⚠️ secondary vs tertiary 혼동 주의:** 흰색/회색 배경 버튼 = tertiary. secondary는 확실히 연한 파란색(#98b3ee)일 때만
 
-## 🔨 IMPLEMENTATION RULES
+### Alert type 규칙
 
-1. **IMPORT**: `import {{ Button, Field, Select, Icon }} from '@/components'`
-   - JSX에서 사용하는 컴포넌트는 **반드시 전부** import — 누락 시 ReferenceError CRASH
-   - ❌ NEVER import types (HTMLInputElement, ChangeEvent, MouseEvent) — define inline
-   - ✅ `import { ColDef } from 'ag-grid-community'` — DataGrid 컬럼 정의 타입만 허용
-   - ❌ 외부 패키지에서 필수 타입(ColDef) 외 import 금지
-   - Unused imports = CRASH, Missing imports = CRASH
-   - 🚨 **import한 컴포넌트는 반드시 JSX에서 사용해야 함!** 코드 완성 후 import 문의 모든 컴포넌트가 `<Name` 또는 `<Name.`으로 사용되는지 1:1 대조 점검. 미사용 import 1개라도 있으면 CRASH! (예: IconButton import 후 JSX에서 미사용 → ❌)
-   - ✅ 확인 방법: JSX에서 `<ComponentName`으로 사용한 모든 컴포넌트가 import 문에 있는지, import 문의 모든 컴포넌트가 JSX에서 사용되는지 양방향 점검
-   - ⛔ NEVER define custom components (`const Divider = ...`, `const Card = ...`) when same-name component exists in Available Components — import해서 사용! 직접 정의 시 런타임 충돌(SyntaxError: Identifier already declared)
-2. **REACT**: `React.useState`, `React.useEffect` directly (no import needed)
-3. **STYLING**: Tailwind CSS only (`className="..."`). `style={{{{}}}}` ONLY for dynamic JS variable values. No custom CSS.
-4. **NO EXTERNAL LIBS**: ⛔ NEVER import lucide-react, heroicons, material-icons, react-icons, framer-motion — NOT INSTALLED, WILL CRASH. No icons — use text only.
-5. **ENUM PROPS**: Match context — NEVER use the same size/variant for every component on a page
-   - 페이지 헤더 버튼: `size="md"`, 필터 조회 버튼: `size="md"`, DataGrid 내부: `size="sm"`, 폼 제출: `size="lg"`
-   - Button: `buttonType` prop 사용 (❌ `variant` 금지). IconButton: `iconButtonType` prop 사용 (❌ `buttonType` 금지), `iconOnly` prop 사용, `aria-label` 필수. Button은 `label` prop (❌ `children` 금지)
-   - Badge 상태: 성공="success", 실패="error", 대기="warning"
-   - ❌ 모든 Button에 동일한 size 적용 금지 — 위치마다 다르게 설정
-7. **ZERO OMISSION**: If user asks for 5 fields, implement ALL 5. Missing features = FAILURE.
-   - 사용자가 필드를 그룹으로 정의해도 **각 필드를 개별적으로 모두 생성**
-   - 예: "직원할인, 해피콜여부, 보험금수령확인 : 라디오(예, 아니오)" → Radio 3개 각각 생성
-8. **FILE COMPLETENESS**: NEVER truncate code (no `// ...` or `// rest of code`). All buttons need `onClick`, all inputs need `value` + `onChange`.
+**Figma variant 우선. 없으면 Alert 배경/아이콘 색상으로 판단:**
+빨간→`error`, 초록→`success`, 노란→`warning`, 파란→`info`
 
-### Data Tables (⚠️ MUST use DataGrid)
-- **테이블/목록 데이터 → 항상 `<DataGrid>` 사용. HTML `<table>` 절대 금지. 행 수 무관 — 1행이라도 DataGrid 사용.**
-- ❌ `<table>`, `<thead>`, `<tbody>`, `<tr>`, `<td>`, `<th>` — 사용 금지
-- ✅ `<DataGrid rowData={{data}} columnDefs={{cols}} height={{400}} />` — 유일한 테이블 구현 방법
-- Use `Badge` for status columns, always 10+ rows of mock data
+### 화면 유형별 구조 참고
 
-## ⚠️ PRESERVE PREVIOUS CODE (수정 요청 시)
-
-When updating existing code:
-1. **KEEP ALL existing features** — filters, buttons, state, handlers. DO NOT remove anything.
-2. **KEEP ALL existing text/labels** — Do not change unless explicitly asked.
-3. **ADD new features ON TOP** — Never start from scratch.
-4. If unsure, include MORE code rather than less.
-
-### Instance Edit Mode
-When user asks to modify specific elements (e.g., "버튼 색상 바꿔줘"):
-1. Find target by component name or context
-2. **MODIFY ONLY THE TARGET** — Change only the specified property
-3. Preserve everything else — DO NOT reformat or "improve" other parts
-4. **ALWAYS OUTPUT COMPLETE CODE** — 절대 `...` 이나 `// 나머지 동일` 생략 금지 (빈 화면 원인)
-
-### 점진적 빌드 모드 (레이아웃 → 세부 요소 순차 추가)
-사용자가 단계별로 UI를 구축하는 경우 (예: 레이아웃 선언 → 필터 추가 → 그리드 추가):
-1. **이전 코드를 반드시 전부 유지**한 채로 요청된 부분만 추가/수정
-2. 코드가 길어져도 **절대 truncation 금지** — 전체 코드를 빠짐없이 출력
-3. 이전에 없던 요소를 임의로 추가하거나, 기존 요소를 재배치하지 말 것
-4. 빈 화면(백지)이 나오는 주요 원인: 코드 생략(`...`), import 누락, 문법 에러
-5. **코드가 매우 길어도 생략 없이 전체 출력이 최우선 규칙**
-
-## ⚠️ TECHNICAL CONSTRAINTS
-
-### Component Whitelist
-ONLY use components from the Available Components list below. DO NOT create or import custom ones.
-- ❌ `<Card />`, `<Input />`, `<DatePicker />`, `<Member />`, `<User />`, `<Heading />` — don't exist
-- ✅ If needed, use native HTML + Tailwind CSS: `<div>`, `<h1>`, `<span>`
-- Substitutions: DatePicker → `<Field type="date" />`, Input → `<Field type="text" />`
-
-### HTML Void Elements
-`<input>`, `<br>`, `<hr>`, `<img>` MUST end with `/>` and NEVER have children.
-- ❌ `<input>text</input>` — CRASH (React Error #137)
-
+**Figma JSON의 구조를 그대로 따르세요. 아래는 일반적인 레이아웃 참고용입니다:**
+- 목록 화면: TitleSection → FilterBar → DataGrid
+- 상세/등록: TitleSection → 폼 필드 그룹 → 하단 버튼
+- 대시보드: 카드 그리드 → 요약 DataGrid
 """
 
 # ============================================================================
@@ -1302,144 +1427,83 @@ ONLY use components from the Available Components list below. DO NOT create or i
 # ============================================================================
 
 LAYOUT_GUIDE = """
-## 📐 레이아웃 가이드 (Grid Type × Row Pattern)
+## 레이아웃 가이드
 
-유저가 "Type C", "RP-1" 등 레이아웃 용어를 사용하면 아래 정의에 따라 코드를 생성하세요.
+### 기본 구조
+- 기준: 1920px, 콘텐츠 1872px (좌우 24px), 12-column grid (gutter 24px)
+- `<GridLayout type="X">` 필수 (수동 `grid-cols-12` 금지). children이 column에 자동 배치됨
+- `<RowPattern pattern="RP-X">` + `<RowSlot slot="...">` 필수 (수동 간격 대신). 간격 자동 적용
+- RowSlot 내부에 `mt-*`/`mb-*` 금지 (이중 간격 발생)
+- 폼 레이아웃:
+  - **1~4열**: `<FormGrid columns={N}>` + `<FormGridCell colSpan={N}>` 사용
+  - **5~6열**: FormGrid 미지원 → `<div className="grid grid-cols-5 gap-x-6 gap-y-4">` 또는 `grid-cols-6` 직접 사용
+  - ⚠️ **columns, colSpan은 반드시 숫자**: `columns={4}` (O) / `columns="4"` (X — 문자열이면 그리드 안 먹힘!)
+  - **FormGrid title prop**: `<FormGrid columns={4} title="기본 정보">` → 섹션 제목 자동 생성. 수동 `<h2>` 금지
+  - Figma에서 필드 너비가 다르면 colSpan으로 비율 반영 (좁은 필드 1, 넓은 필드 2 등)
+- FilterBar: JSON 필드의 `w` 값으로 col-span 비율 계산. 마지막 행은 필드 col-span 합 + actionSpan(3 고정) = 12
+- 액션 버튼: 우측 정렬 (`flex justify-end gap-2`). 순서: Tertiary → Ghost → Secondary → Primary
 
-### 기본 구조 원칙
+### Grid Type (가로 분할)
 
-- 기준 해상도: **1920px**
-- 콘텐츠 최대 영역: **1872px** (좌우 Margin 24px씩)
-- 좌우 Margin: **24px** (`px-6`)
-- 헤더 ↔ 메인 섹션 간 Gap: **20px** (`gap-5`)
-- 12 Column Grid: Gutter **24px** (`gap-6`), col-1 = 134px
-- 🚨 **`<GridLayout type="A">` 컴포넌트 사용 권장** (수동 `grid grid-cols-12` 대신)
-  - GridLayout은 `type` prop으로 12-column 자동 분할: 각 child가 해당 col-span에 자동 배치됨
-  - 예: `type="C"` → child[0]=col-3, child[1]=col-9
+| Type | 구성 | 용도 |
+|------|------|------|
+| A | col-12 | 리스트, 상세, 입력 폼 |
+| B | 6+6 | 비교/병렬 |
+| C-1 | 3+9 | 목록+상세 (탐색형) |
+| C-2 | 9+3 | C-1 반전 |
+| D-1 | 4+8 | 필터 고정형 |
+| D-2 | 8+4 | D-1 반전 |
+| E | 4+4+4 | 3열 동일 위계 |
+| F | 2+8+2 | 검토/승인 |
+| G | 2+2+8 | 트리+목록+상세 |
+| H | 3+3+3+3 | 4열 동일 위계 |
 
-### 필터/검색 영역 그리드 규칙
+**⚠️ Figma 자식 `w` 값 비율 → type 매핑**: Figma JSON의 최상위 자식들의 `w` 값을 합산 후 12 기준으로 환산해 가장 가까운 type 선택. 예: 자식 3개가 240/240/960이면 2:2:8 비율 → **type="G"** (트리+목록+상세 패턴). 균등 3분할(400/400/400)이면 type="E". **임의로 `<div className="grid grid-cols-2/3">` 로 균등 분할하지 마세요** — Figma 비율을 무시하면 레이아웃이 틀어집니다.
 
-- 필터 영역은 col-12 내부에서 독립 그리드 사용
-- 내부 Gutter: **12px** (`gap-3`), Padding: **16px** (`p-4`)
-- 6그리드 기반: 1컬럼당 col-1 또는 col-2 폭
-- 우측 최하단 2컬럼 = 검색/초기화 버튼 위치
+### Row Pattern (세로 흐름)
 
-### 액션 버튼 정렬 규칙
+| RP | 이름 | 구조 | 용도 |
+|----|------|------|------|
+| 1 | 조회형 | Title → [Section Card: FilterBar → Grid] | 대량 데이터 조회 |
+| 2 | 단일 상세 | Title → 상세 정보 | 단일 객체 조회 |
+| 3 | 입력/수정 | Title → Form → 저장/취소 | 데이터 CRUD |
+| 4 | 요약+Grid | Title → 요약 → Grid | 기본정보 + 관련데이터 |
+| 5 | 다중 Grid | Title → Grid A → Grid B | 병렬 데이터 |
+| 6 | 탐색형 | Title → Nav + Detail | 코드/조직 관리 |
+| 7 | 병렬형 | Title → A | B | 전후 비교 |
+| 8 | 상세+탭 | Title → 기본정보 → Tab → Grid | 탭별 관련 데이터 |
 
-- 항상 **우측 정렬** (`flex justify-end gap-2`)
-- 좌→우 순서: 중립 텍스트(Tertiary) → 중립 보조(Ghost) → 보조(Secondary) → 주요(Primary)
+RowSlot slot: `"filter"` | `"actions"` | `"grid"` | `"detail"` | `"form"` | `"summary"` | `"navigation"` | `"section"` | `"info"` | `"tab"`
 
-### Grid Type (가로 분할 구조)
+### Section Card 규칙 (RP-1 필수)
+- TitleSection은 Section Card **바깥** 상단
+- FilterBar + ActionButtons + DataGrid = **하나의 Section Card** (`bg-surface rounded-xl border border-default shadow-sm p-6`)
+- FilterBar와 Grid를 별도 카드로 분리 금지
 
-| Type | 컬럼 구성 | Tailwind 구조 | 대표 RP | 용도 |
-|------|----------|---------------|---------|------|
-| TYPE-A | col-12 (단일) | 전체 `col-span-12` | RP-1, RP-2, RP-3 | 리스트, 단일 상세, 입력 폼, 리포트 |
-| TYPE-B | col-6 + col-6 | `col-span-6` + `col-span-6` | RP-7 | 비교 화면, 병렬 입력 |
-| TYPE-C (C-1) | col-3 + col-9 | `col-span-3` + `col-span-9` | RP-6 | 목록+상세, 코드/조직/설정 관리 |
-| TYPE-C (C-2) | col-9 + col-3 | `col-span-9` + `col-span-3` | RP-6 | C-1 좌우 반전 |
-| TYPE-D (D-1) | col-4 + col-8 | `col-span-4` + `col-span-8` | RP-1, RP-4 | 고급 검색, 필터 고정형 리포트 |
-| TYPE-D (D-2) | col-8 + col-4 | `col-span-8` + `col-span-4` | RP-4 | D-1 좌우 반전 |
-| TYPE-E | col-4 × 3 | `col-span-4` × 3 | — | 동일 위계 정보 병렬 배치 |
-| TYPE-F | col-2 + col-8 + col-2 | `col-span-2` + `col-span-8` + `col-span-2` | RP-2, RP-4 | 검토/승인 프로세스 |
-| TYPE-G | col-2 + col-2 + col-8 | `col-span-2` + `col-span-2` + `col-span-8` | RP-6 | 트리+목록+상세 (2단계 탐색) |
-| TYPE-H | col-3 × 4 | `col-span-3` × 4 | — | 동일 위계 정보 4열 배치 |
-
-- 🚨 **`<GridLayout type="X">` 컴포넌트를 사용하세요** (수동 grid-cols-12 대신).
-  - children 순서대로 각 column에 자동 배치됨
-  - 예: `<GridLayout type="C"><NavPanel /><DetailPanel /></GridLayout>` → col-3 + col-9
-  - Type A는 child 1개, Type B는 2개, Type E는 3개, Type H는 4개
-
-### Row Pattern (세로 흐름 구조)
-
-| 패턴 | 이름 | 구조 | 스크롤 정책 | 용도 |
-|------|------|------|------------|------|
-| RP-1 | 조회형(기본형) | Title → **[Section Card: FilterBar → ActionButtons → Grid]** | 전체 스크롤 + Grid 내부 스크롤 | 대량 데이터 조회 (계약 리스트, 승인 목록) |
-| RP-2 | 단일 상세형 | Title → 상세 정보 영역 | 전체 스크롤 | 단일 객체 조회 (계약 상세, 고객 상세) |
-| RP-3 | 입력/수정형 | Title → Form Section → Action(저장/취소) | 전체 스크롤, Form 자동 확장 | 데이터 생성/수정 |
-| RP-4 | 요약+Grid형 | Title → 상단 요약 → 하단 Grid | 전체 스크롤, 하단 Grid 내부 스크롤 | 기본 정보 + 관련 데이터 |
-| RP-5 | 다중 Grid형 | Title → Grid A → Grid B | 전체 스크롤, 각 Grid 독립 가능 | 성격 다른 데이터 병렬 (승인대기/완료) |
-| RP-6 | 탐색형 | Title → Navigation Area + Detail Area | 좌측 독립 스크롤, 우측 전체 스크롤 | 관리성 화면 (코드 관리, 조직 관리) |
-| RP-7 | 병렬형 | Title → Section A \\| Section B | 좌우 독립 스크롤 | 변경 전/후 비교, A/B 비교 |
-| RP-8 | 상세+탭형 | Title → 상단 기본정보 → Tab → 하단 Grid/Content | 전체 스크롤, 탭 콘텐츠 내부 스크롤 | 상세 + 탭별 관련 데이터 |
-
-- 🚨 **`<RowPattern pattern="RP-X">` + `<RowSlot slot="...">` 컴포넌트를 사용하세요** (수동 간격 대신).
-  - RowSlot 간 간격이 자동 적용됨 (filter→grid: 20px, filter→summary: 12px, actions→grid: 12px 등)
-  - slot 값: `"filter"` | `"actions"` | `"grid"` | `"detail"` | `"form"` | `"summary"` | `"navigation"` | `"section"` | `"info"` | `"tab"`
-
-### FormGrid / FormGridCell (폼 레이아웃)
-
-- `<FormGrid columns={2}>` — 2열 폼 그리드 (1~4열 지원), 자동 gap 적용
-- `<FormGrid columns={2} title="기본 정보">` — 제목 + 그리드
-- `<FormGridCell>` — 기본 1칸 차지
-- `<FormGridCell colSpan={2}>` — 2칸 차지 (전체 너비 등)
-- `<FormGridCell align="end">` — 수직 정렬 (start/center/end)
-- 🚨 **폼 입력 영역은 `<FormGrid>` + `<FormGridCell>` 필수** (수동 `grid-cols-12` + `col-span-N` 금지). "N단 구조" 요청 → `<FormGrid columns={N}>` 사용
-
-### Grid Type × Row Pattern 적용 범위
-
-| Type \\ RP | RP-1 | RP-2 | RP-3 | RP-4 | RP-5 | RP-6 | RP-7 | RP-8 |
-|-----------|------|------|------|------|------|------|------|------|
-| TYPE-A | O | O | O | O | O | X | X | O |
-| TYPE-B | X | △ | △ | △ | △ | X | O | X |
-| TYPE-C | △ | △ | △ | O | △ | O | X | O |
-| TYPE-D | O | △ | X | O | △ | △ | X | △ |
-| TYPE-E | X | X | X | △ | △ | X | △ | X |
-| TYPE-F | X | O | △ | O | X | X | X | O |
-| TYPE-G | △ | △ | △ | △ | X | O | X | △ |
-| TYPE-H | X | X | X | △ | △ | X | △ | X |
-
-(O=권장, △=가능, X=부적합)
-
-### 레이아웃 간격 규칙
-
-| 구간 | 간격 | Tailwind |
-|------|------|----------|
-| 헤더 ↔ 메인 섹션 | 20px | `mb-5` |
-| 타이틀 ↔ 콘텐츠 | 20px | `mb-5` |
-| 탭 ↔ 타이틀 | 24px | `mb-6` |
-| 필터바 ↔ 그리드 | 20px | `mb-5` |
-| 필터바 ↔ 세그먼트 | 20px | `mb-5` |
-| 필터바 ↔ 서머리바 | 12px | `mb-3` |
-| 서머리바 ↔ 액션버튼 | 12px | `mb-3` |
-| 액션버튼 ↔ 그리드 | 12px | `mb-3` |
-| 탭 ↔ 필터바 | 20px | `mb-5` |
-| 탭 섹션: 타이틀 ↔ 폼 | 12px | `mb-3` |
-
-💡 **RowPattern + RowSlot 사용 시 위 간격이 자동 적용됩니다.**
-🚨 **RowSlot 내부에 `mt-*`/`mb-*` 절대 사용 금지!**
-  - ❌ `<RowSlot slot="grid"><div className="mt-4">...</div></RowSlot>` ← 이중 간격 발생!
-  - ❌ `<RowSlot slot="filter"><div className="mb-2">...</div></RowSlot>` ← 이중 간격 발생!
-  - ✅ `<RowSlot slot="grid"><div>...</div></RowSlot>` ← RowSlot이 간격 자동 관리
-
-### 레이아웃 컴포넌트 코드 예제
-
-#### RP-1 조회형 (GridLayout type="A" + RowPattern)
+### RP-1 조회형 정석 코드 (1행 필터)
 ```tsx
 import { GridLayout, RowPattern, RowSlot, TitleSection, FilterBar, Field, Select, Button, DataGrid } from '@/components';
 
-<div className="min-h-screen bg-[#f4f6f8] p-8">
+<div className="min-h-screen bg-canvas p-8">
   <GridLayout type="A">
     <div>
-      {/* TitleSection — Section Card 바깥 */}
-      <TitleSection title="계약 관리" menu2="계약" showBreadcrumb={true} showMenu2={true} showMenu3={false} showMenu4={false} mode="base">
-        <Button buttonType="primary" size="sm" label="신규 등록" showStartIcon={false} showEndIcon={false} />
+      <TitleSection title="계약 관리" menu2="계약" showBreadcrumb={true} showMenu2={true} mode="base" favorite={false} onFavoriteChange={() => {}}>
+        <Button buttonType="primary" size="sm" label="신규 등록" />
       </TitleSection>
-
-      {/* Section Card */}
-      <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6 mt-5">
+      <div className="bg-surface rounded-xl border border-default shadow-sm p-6 mt-5">
         <RowPattern pattern="RP-1">
           <RowSlot slot="filter">
-            <FilterBar mode="compact" onReset={() => {}} onSearch={() => {}}>
+            <FilterBar mode="compact" onReset={() => {}} onSearch={() => {}} actionSpan={3}>
               <div className="col-span-3">
-                <Field type="date" showLabel={true} label="조회기간" showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
+                <Field type="date" label="조회기간" />
               </div>
               <div className="col-span-3">
-                <Select showLabel={true} label="상태" placeholder="전체" showHelptext={false} showStartIcon={false} className="w-full" options={[]} />
+                <Select label="상태" placeholder="전체" options={[]} />
               </div>
             </FilterBar>
           </RowSlot>
-          <RowSlot slot="grid">{/* ⚠️ RowSlot 안에 mt-*/mb-* 금지! 간격은 RowSlot이 자동 관리 */}
-            <DataGrid rowData={[]} columnDefs={[]} domLayout="autoHeight" />
+          <RowSlot slot="grid">
+            <DataGrid rowData={[]} columnDefs={[]} domLayout="autoHeight" pagination paginationPageSize={20} />
           </RowSlot>
         </RowPattern>
       </div>
@@ -1448,108 +1512,18 @@ import { GridLayout, RowPattern, RowSlot, TitleSection, FilterBar, Field, Select
 </div>
 ```
 
-#### RP-6 탐색형 (GridLayout type="C" — col-3 + col-9)
+### RP-1 다행(multi-row) 필터 예시
 ```tsx
-import { GridLayout, RowPattern, RowSlot, TitleSection, TreeMenu } from '@/components';
-
-<div className="min-h-screen bg-[#f4f6f8] p-8">
-  <TitleSection title="코드 관리" menu2="시스템" showBreadcrumb={true} showMenu2={true} showMenu3={false} showMenu4={false} mode="base" />
-  <div className="mt-5">
-    <GridLayout type="C">
-      {/* col-3: Navigation */}
-      <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-4">
-        <TreeMenu items={treeData} />
-      </div>
-      {/* col-9: Detail */}
-      <RowPattern pattern="RP-6">
-        <RowSlot slot="detail">
-          <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6">
-            {/* 상세 내용 */}
-          </div>
-        </RowSlot>
-      </RowPattern>
-    </GridLayout>
-  </div>
-</div>
-```
-
-#### RP-3 입력/수정형 (FormGrid 사용)
-```tsx
-import { GridLayout, FormGrid, FormGridCell, TitleSection, Field, Select, Button } from '@/components';
-
-<div className="min-h-screen bg-[#f4f6f8] p-8">
-  <GridLayout type="A">
-    <div>
-      <TitleSection title="계약 등록" menu2="계약" showBreadcrumb={true} showMenu2={true} showMenu3={false} showMenu4={false} mode="base" />
-      <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6 mt-5">
-        <FormGrid columns={2} title="기본 정보">
-          <FormGridCell>
-            <Field type="text" showLabel={true} label="계약명" showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
-          </FormGridCell>
-          <FormGridCell>
-            <Select showLabel={true} label="계약유형" showHelptext={false} showStartIcon={false} className="w-full" options={[]} />
-          </FormGridCell>
-          <FormGridCell colSpan={2}>
-            <Field type="text" showLabel={true} label="비고" showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
-          </FormGridCell>
-        </FormGrid>
-        <div className="flex justify-end gap-3 mt-6">
-          <Button buttonType="ghost" label="취소" showStartIcon={false} showEndIcon={false} />
-          <Button buttonType="primary" label="저장" showStartIcon={false} showEndIcon={false} />
-        </div>
-      </div>
-    </div>
-  </GridLayout>
-</div>
-```
-
-### 🚨 RP-1 Section Card 규칙 (CRITICAL)
-
-**RP-1(조회형) 레이아웃에서 FilterBar, ActionButtons, Grid는 반드시 하나의 Section Card 안에 포함되어야 합니다.**
-
-- Title Bar(브레드크럼 + 버튼)는 Section Card **바깥** 상단에 위치
-- FilterBar, ActionButtons, DataGrid/Table은 모두 **같은 하나의 `bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6`** 안에 배치
-- ❌ FilterBar와 Grid를 **별도 카드**로 분리 금지
-- ❌ FilterBar, ActionButtons, Grid를 카드 없이 **직접 나열** 금지
-
-#### RP-1 올바른 구조:
-```tsx
-<div className="min-h-screen bg-[#f4f6f8] p-8">
-  {/* TitleSection — Section Card 바깥 */}
-  <TitleSection title="계약 관리" menu2="계약" showBreadcrumb={true} showMenu2={true} showMenu3={false} showMenu4={false} mode="base">
-    <Button buttonType="tertiary" size="sm" label="엑셀 다운로드" showStartIcon={false} showEndIcon={false} />
-    <Button buttonType="primary" size="sm" label="신규 등록" showStartIcon={false} showEndIcon={false} />
-  </TitleSection>
-
-  {/* 🚨 하나의 Section Card 안에 FilterBar + Grid 모두 포함 */}
-  <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6 mt-5">
-    {/* FilterBar 컴포넌트 — 초기화/조회 버튼 내장 */}
-    <FilterBar mode="compact" onReset={() => handleReset()} onSearch={() => handleSearch()}>
-      <div className="col-span-3">
-        <Field type="date" showLabel={true} label="조회기간(시작)" showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
-      </div>
-      <div className="col-span-3">
-        <Field type="date" showLabel={true} label="조회기간(종료)" showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
-      </div>
-      <div className="col-span-3">
-        <Select showLabel={true} label="상태" placeholder="전체" showHelptext={false} showStartIcon={false} className="w-full" options={statusOptions} />
-      </div>
-    </FilterBar>
-    {/* Grid — 같은 카드 안 */}
-    <div className="mt-5">
-      <DataGrid rowData={rowData} columnDefs={columnDefs} domLayout="autoHeight" />
-    </div>
-  </div>
-</div>
-```
-
-#### ❌ 잘못된 구조 (FilterBar와 Grid가 분리됨):
-```tsx
-{/* ❌ 이렇게 하면 안 됨 */}
-<nav>홈 / 계약 / 계약 관리</nav>
-<h1>계약 관리</h1>  {/* ❌ 브레드크럼과 별도 행 금지! TitleSection 사용 */}
-<div className="bg-white ...">FilterBar + Buttons</div>  {/* 카드 1 */}
-<div className="bg-white ...">Grid</div>                  {/* 카드 2 — 분리됨! */}
+{/* JSON 예: 필드 w=300,300,300,300 → 각 3칸. 버튼 영역 w=300 → actionSpan={3} */}
+<FilterBar mode="compact" onReset={() => {}} onSearch={() => {}} actionSpan={3}>
+  {/* 1행: 3+3+3+3 = 12 (전부 사용 OK) */}
+  <div className="col-span-3"><Select label="유형" options={[]} /></div>
+  <div className="col-span-3"><Field type="date" label="기간" /></div>
+  <div className="col-span-3"><Field label="소속" /></div>
+  <div className="col-span-3"><Field label="작성자" /></div>
+  {/* 2행(마지막): 필드 9칸 + 버튼 3칸(actionSpan) = 12 */}
+  <div className="col-span-9"><Field label="제목" /></div>
+</FilterBar>
 ```
 
 """
@@ -1558,40 +1532,27 @@ import { GridLayout, FormGrid, FormGridCell, TitleSection, Field, Select, Button
 # PRE-GENERATION CHECKLIST (최종 경고)
 # ============================================================================
 
-PRE_GENERATION_CHECKLIST = """
+FINAL_REMINDER = """
 
----
+## Final Verification
+코드 완성 후 반드시 확인:
 
-## ⚠️ FINAL CHECKLIST (코드 생성 전 확인)
+### CRASH 방지 (필수):
+1. import한 컴포넌트가 모두 JSX에서 사용되는가? (미사용 import = CRASH)
+2. JSX에서 사용한 컴포넌트가 모두 import에 있는가? (누락 import = CRASH)
+3. Field는 모두 self-closing(`/>`)인가? (`</Field>` = CRASH)
+4. **Mock 데이터 객체의 모든 필드에 키가 있는가?** (❌ `{ id: 1, name: 'x', y@z.com' }` → ✅ `{ id: 1, name: 'x', email: 'y@z.com' }`)
 
-1. **Field**: 모든 `<Field`는 `/>` 로 끝나는가? `</Field>` 가 0개인가?
-2. **Whitelist**: 사용한 컴포넌트가 모두 Available Components에 있는가?
-3. **Import 완전성**: JSX에서 `<ComponentName`으로 사용한 모든 컴포넌트가 import에 포함되어 있는가? (Icon 포함) 누락된 import = ReferenceError CRASH.
-4. **Complete output**: `...` 이나 `// 나머지 동일` 같은 생략이 없는가?
-5. **Button/IconButton prop 확인**: Button에 `variant=` 사용 → `buttonType=`으로 교체. IconButton은 `iconButtonType=`과 `iconOnly=`와 `aria-label=`이 올바른 prop. `<Button>children</Button>` → `<Button label="..." />`로 교체.
-6. **interaction 확인**: `disabled`, `isDisabled`, `isLoading`, `isReadOnly` prop을 사용하지 않았는가? → `interaction="disabled"` / `"loading"` / `"readonly"` 로 교체.
-7. **Discriminated Union**: `showLabel` 없이 `label`만 전달하거나, `showHelptext` 없이 `helptext`만 전달하지 않았는가?
-8. **Section Card**: 조회형(RP-1) 화면에서 FilterBar + Grid가 **하나의 Section Card** 안에 있는가?
-9. **Drawer vs Dialog 검증**: 코드에 `<Dialog`가 있으면 다시 확인! 상세보기·등록·수정·편집 폼이면 → `<Drawer`로 교체!
-10. **⛔ 외부 아이콘 import 금지**: `lucide-react`, `heroicons`, `react-icons` import가 코드에 있는가? → **즉시 삭제!** 내장 `<Icon name="..." />` 만 사용.
-11. **⛔ 커스텀 컴포넌트 재정의 금지**: `const Divider = ...`, `const Card = ...` 등 Available Components에 이미 존재하는 이름으로 컴포넌트를 직접 정의했는가? → 삭제하고 `@/components`에서 import!
-12. **레이아웃 컴포넌트**: 페이지 레이아웃에 `GridLayout`, 세로 흐름에 `RowPattern`+`RowSlot`, 폼 그리드에 `FormGrid`+`FormGridCell`을 사용했는가? 수동 `grid-cols-12 col-span-N` 대신 `<GridLayout type="C">` 사용 권장.
-13. **Icon name+size 교차검증**: `<Icon name="..." size={N} />`에서 해당 name이 해당 size 목록에 존재하는가? 목록에 없는 조합 = "Icon not found" 에러.
-14. **색상 토큰 교차검증**: 텍스트에 사용한 hex가 토큰 테이블의 Text Class 컬럼에 있는가? bg- 전용 토큰을 text-에 사용하지 않았는가?
-15. **🚨 RowSlot 수동 간격**: `<RowSlot>` 안에 `mt-*`/`mb-*`가 있으면 즉시 제거! ❌ `<RowSlot slot="grid"><div className="mt-2">` → ✅ `<RowSlot slot="grid"><div>`
-16. **GridLayout 사용 범위**: GridLayout이 페이지 최상위에서만 사용되었는가? Drawer/Dialog/Popover 내부에서 사용하지 않았는가?
-17. **Checkbox/Radio onChange**: `e.target.checked` DOM 패턴이 아닌 상태 토글 패턴을 사용했는가?
-18. **🚨 import 양방향 점검**: import한 모든 컴포넌트가 JSX에서 `<Name` 또는 `<Name.`으로 사용되는가? 하나라도 미사용 시 CRASH! 특히 IconButton — import했으면 반드시 JSX에서 사용, 사용하지 않으면 import에서 제거!
-19. **폼 영역 FormGrid**: 폼/필터 입력 영역에 수동 `grid-cols-12` + `col-span-N` 대신 `<FormGrid columns={N}>` + `<FormGridCell>`을 사용했는가?
-20. **Dialog size="xl" 금지**: `<Dialog` 태그에 `size="xl"`이 있는가? → Dialog는 sm/md/lg만 허용. 대형 콘텐츠는 Drawer로 변경!
-21. **HTML table 태그 검증**: `<table>`, `<thead>`, `<tbody>`, `<tr>`, `<td>`, `<th>` 태그가 코드에 있는가? → DataGrid로 교체!
-22. **엑셀 버튼 tertiary 확인**: "엑셀 다운로드" 버튼의 buttonType이 `"tertiary"`인가? → ghost/secondary 사용 시 tertiary로 교체!
-23. **Radio Option 패턴 확인**: `<Radio`가 `<Option label="...">` 안에 감싸져 있는가? `<label><Radio/><span>` 수동 패턴은 없는가? onChange가 누락되지 않았는가?
-24. **DS 컴포넌트 bg 오버라이드 확인**: Button, Badge 등 DS 컴포넌트에 `className="bg-[#...]"` 배경색 오버라이드가 있는가? → 제거하고 전용 prop 사용!
-25. **날짜 형식 통일 확인**: `type="date"` Field의 value가 `YYYY-MM-DD` 형식인가? 다른 형식(YYYY/MM/DD 등) 사용 시 교체!
+### 품질 검증:
+5. 코드 생략(`...`, `// 나머지`)이 없는가?
+6. Icon name+size 조합이 유효한가? (size 목록 확인)
+7. interaction prop 사용 (disabled/isDisabled/isReadOnly 아님)
+8. Button은 buttonType + label, IconButton은 iconButtonType + iconOnly + aria-label
+9. 드로어 요청 → Drawer, 다이얼로그/모달/팝업 → Dialog
+10. 날짜 필드: YYYY-MM-DD 형식
+11. Select options 3개 이상 (2개 이하면 Radio)
 
----
-
+Create a premium, completed result.
 """
 
 RESPONSE_FORMAT_INSTRUCTIONS = """
@@ -1599,6 +1560,11 @@ RESPONSE_FORMAT_INSTRUCTIONS = """
 ## FORMAT
 1. 간단한 한글 설명 (1-2문장)
 2. `<file path="src/...">코드</file>` 태그
+
+### ⚠️ Props 간결성 규칙
+- `showHelptext={false}`, `showStartIcon={false}`, `showEndIcon={false}` 등 false 기본값 prop은 생략하세요.
+- **`showLabel={true}`는 반드시 명시하세요** (기본값이 false이므로 생략하면 라벨이 사라짐).
+- **변경이 필요한 prop만** 명시하세요. 코드가 짧을수록 유지보수가 쉽습니다.
 
 ### Example:
 로그인 폼입니다.
@@ -1611,16 +1577,16 @@ const Login = () => {
   const [password, setPassword] = React.useState('');
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f4f6f8] p-6">
-      <div className="w-full max-w-[420px] bg-white rounded-xl border border-[#dee2e6] shadow-sm p-8">
-        <h1 className="text-2xl font-bold text-[#212529] mb-6">로그인</h1>
+    <div className="min-h-screen flex items-center justify-center bg-canvas p-6">
+      <div className="w-full max-w-[420px] bg-surface rounded-xl border border-default shadow-sm p-8">
+        <h1 className="text-2xl font-bold text-primary mb-6">로그인</h1>
         <div className="mb-5">
-          <Field type="email" showLabel={true} label="이메일" value={email} onChange={(e) => setEmail(e.target.value)} showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
+          <Field type="email" label="이메일" value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
         <div className="mb-6">
-          <Field type="password" showLabel={true} label="비밀번호" value={password} onChange={(e) => setPassword(e.target.value)} showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
+          <Field type="password" label="비밀번호" value={password} onChange={(e) => setPassword(e.target.value)} />
         </div>
-        <Button buttonType="primary" label="로그인" showStartIcon={false} showEndIcon={false} className="w-full" />
+        <Button buttonType="primary" label="로그인" className="w-full" />
       </div>
     </div>
   );
@@ -1630,161 +1596,35 @@ export default Login;
 </file>
 """
 
-SYSTEM_PROMPT_FOOTER = """## 🎯 DESIGN CONSISTENCY CHECKLIST
-
-- **Same element types = same styling**: All form fields → same spacing, all cards → same shadow
-- **Page background**: ALWAYS `min-h-screen bg-[#f4f6f8] p-8`
-- **White card**: ALWAYS `bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6`
-- **Spacing**: Major sections `mb-6`~`mb-8`, form fields `mb-5`, related items `mb-3`~`mb-4`
-- **Colors**: Use ONLY hex values from the color token table. NEVER invent hex codes.
-- **Shadows**: `shadow-sm` only. Never `shadow`, `shadow-md`, `shadow-lg`.
-- **Borders**: `border border-[#dee2e6]` only. Never other gray shades.
-- **PROPS VALIDATION**: Button은 `buttonType=` 사용 (NOT `variant=`). IconButton은 `iconButtonType=` + `iconOnly=` + `aria-label=` 사용. Don't hallucinate props.
-- **interaction PROP**: disabled/readOnly/loading → `interaction` prop 사용. ❌ `isDisabled`, `disabled`, `isReadOnly` 금지.
-- **DISCRIMINATED UNION**: showLabel + label, showHelptext + helptext는 반드시 짝으로 사용.
-- **DRAWER vs DIALOG**: "드로어" 요청 → `Drawer` 컴포넌트 사용 (Dialog 금지). "다이얼로그/모달/팝업" → `Dialog`.
-- **TITLE BAR**: `<TitleSection>` 컴포넌트 사용 또는 직접 구성. 브레드크럼 + h1 제목 + 액션 버튼은 반드시 **한 줄**에 배치.
-- **⛔ NO EXTERNAL ICONS**: `lucide-react`, `heroicons`, `react-icons` import 절대 금지 — 미설치, 앱 크래시. 내장 `<Icon name="..." size={N} />` 만 사용.
-- **LAYOUT COMPONENTS**: 페이지 레이아웃 → `<GridLayout type="A~H">`, 세로 흐름 → `<RowPattern pattern="RP-1~8">` + `<RowSlot slot="...">`, 폼 → `<FormGrid columns={N}>` + `<FormGridCell>`. 수동 grid-cols-12 대신 사용 권장.
-
-🚨 **FINAL STEP — import 정리**: 코드 완성 후, import 문을 다시 읽고 JSX에서 `<Name` 또는 `<Name.`으로 **실제 사용하지 않는 컴포넌트를 import에서 제거**하세요. 미사용 import 1개 = CRASH. 특히 IconButton — import했지만 JSX에서 `<IconButton`이 없으면 반드시 삭제!
-🚨 **Select options 최종 확인**: 모든 `<Select`의 options 배열에 항목이 3개 이상인지 확인하세요. 2개 이하면 Radio로 변경하세요.
-🚨 **Dialog/Drawer body gap 확인**: `<Dialog.Body>` 또는 `<Drawer.Body>` 내부에 `gap-5`, `gap-6`, `mb-5`, `mb-6`이 있으면 `gap-4`/`mb-4`로 교체하세요. 페이지 레벨 gap-6은 허용되지만 Dialog/Drawer 내부는 gap-4가 최대입니다.
-
-Create a premium, completed result."""
+# SYSTEM_PROMPT_FOOTER removed — consolidated into FINAL_REMINDER
 
 UI_PATTERN_EXAMPLES = """
-## 📐 UI PATTERN REFERENCE
+## UI Pattern Reference
 
-### Form Page (폼 + 다양한 컴포넌트 조합 — FormGrid 사용)
+### ActionBar (DataGrid 선택 액션)
 ```tsx
-import { Button, Field, Select, Radio, Option, OptionGroup, TitleSection, GridLayout, FormGrid, FormGridCell, Icon } from '@/components';
-
-const MemberDetail = () => {
-  const [name, setName] = React.useState('김민준');
-  const [email, setEmail] = React.useState('minjun@example.com');
-  const [dept, setDept] = React.useState('개발팀');
-  const [gender, setGender] = React.useState('male');
-
-  return (
-    <div className="min-h-screen bg-[#f4f6f8] p-8">
-      <GridLayout type="A">
-        <div>
-          {/* TitleSection — 브레드크럼 + 제목 + 액션 */}
-          <TitleSection title="회원 상세" menu2="회원관리" showBreadcrumb={true} showMenu2={true} showMenu3={false} showMenu4={false} mode="base" />
-          <div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6 mt-5">
-            {/* Section: 기본 정보 — FormGrid 2열 */}
-            <FormGrid columns={2} title="기본 정보">
-              <FormGridCell>
-                <Field type="text" showLabel={true} label="이름" value={name} onChange={(e) => setName(e.target.value)} showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
-              </FormGridCell>
-              <FormGridCell>
-                <Field type="email" showLabel={true} label="이메일" value={email} onChange={(e) => setEmail(e.target.value)} showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
-              </FormGridCell>
-              <FormGridCell>
-                <Select showLabel={true} label="부서" className="w-full" value={dept} onChange={(v) => setDept(v)} showHelptext={false} showStartIcon={false}
-                  options={[{label:'개발팀',value:'개발팀'},{label:'디자인팀',value:'디자인팀'},{label:'마케팅팀',value:'마케팅팀'},{label:'경영지원',value:'경영지원'}]} />
-              </FormGridCell>
-              <FormGridCell>
-                <OptionGroup label="성별" showLabel={true} orientation="horizontal" size="sm">
-                  <Option label="남성"><Radio value={gender==='male' ? 'checked' : 'unchecked'} onChange={() => setGender('male')} /></Option>
-                  <Option label="여성"><Radio value={gender==='female' ? 'checked' : 'unchecked'} onChange={() => setGender('female')} /></Option>
-                </OptionGroup>
-              </FormGridCell>
-            </FormGrid>
-            {/* Action buttons */}
-            <div className="flex justify-end gap-3 mt-6">
-              <Button buttonType="ghost" label="취소" showStartIcon={false} showEndIcon={false} />
-              <Button buttonType="primary" size="lg" label="저장" showStartIcon={false} showEndIcon={false} />
-            </div>
-          </div>
-        </div>
-      </GridLayout>
-    </div>
-  );
-};
-export default MemberDetail;
-```
-
-### Filter + Button + Grid Layout (조회 영역 = 하나의 Section Card)
-🚨 **FilterBar 컴포넌트 또는 수동 Grid 레이아웃으로 필터 + Grid를 하나의 Section Card에 포함!**
-```tsx
-{/* ✅ FilterBar 컴포넌트 사용 */}
-<div className="bg-white rounded-xl border border-[#dee2e6] shadow-sm p-6">
-  <FilterBar mode="compact" onReset={() => handleReset()} onSearch={() => handleSearch()}>
-    <div className="col-span-3">
-      <Field type="date" showLabel={true} label="조회기간(시작)" value={startDate} onChange={(e) => setStartDate(e.target.value)} showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
-    </div>
-    <div className="col-span-3">
-      <Field type="date" showLabel={true} label="조회기간(종료)" value={endDate} onChange={(e) => setEndDate(e.target.value)} showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
-    </div>
-    <div className="col-span-3">
-      <Select showLabel={true} label="상태" placeholder="전체" value={status} onChange={(v) => setStatus(v)} showHelptext={false} showStartIcon={false}
-        options={[{label:'전체',value:'all'},{label:'정상',value:'active'},{label:'해지',value:'inactive'}]} className="w-full" />
-    </div>
-    <div className="col-span-3">
-      <Field type="text" showLabel={true} label="검색어" placeholder="이름 또는 코드" value={keyword} onChange={(e) => setKeyword(e.target.value)} showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
-    </div>
-  </FilterBar>
-  {/* Grid — 같은 Section Card 안! 절대 별도 카드로 분리 금지 */}
-  <div className="mt-5">
-    <DataGrid rowData={rowData} columnDefs={columnDefs} domLayout="autoHeight" />
-  </div>
-</div>
-```
-- ⚠️ FilterBar 내부 필드는 `<div className="col-span-N">` 으로 감싸서 12컬럼 그리드 배치
-- FilterBar의 onReset/onSearch로 초기화/조회 버튼 자동 생성
-- 🚨 **Grid는 FilterBar와 같은 Section Card 안에 배치. 별도 카드 금지!**
-
-### Title Bar (TitleSection 컴포넌트 사용)
-```tsx
-{/* TitleSection — 브레드크럼 + 제목 + 액션 버튼 자동 배치 */}
-<TitleSection title="발령등록" menu2="인사관리" showBreadcrumb={true} showMenu2={true} showMenu3={false} showMenu4={false} mode="base">
-  <div className="flex items-center gap-2">
-    <Button buttonType="tertiary" size="md" label="엑셀 다운로드" showStartIcon={true} startIcon={<Icon name="external" size={18} />} showEndIcon={false} />
-    <Button buttonType="primary" size="md" label="신규 등록" showStartIcon={true} startIcon={<Icon name="add" size={18} />} showEndIcon={false} />
-  </div>
-</TitleSection>
-```
-- ✅ TitleSection children에 액션 버튼 배치 → 우측 자동 정렬
-- 액션 버튼이 없으면 children 생략
-
-### DataGrid 선택 액션 바 (ActionBar 컴포넌트)
-```tsx
-{/* ActionBar — 체크된 항목이 있을 때 표시 */}
 <ActionBar count={selectedRows.length} visible={selectedRows.length > 0} onClose={() => clearSelection()}>
-  <Button buttonType="ghost-inverse" size="md" label="일괄 승인" showStartIcon={false} showEndIcon={false} />
-  <Button buttonType="ghost-inverse" size="md" label="일괄 삭제" showStartIcon={false} showEndIcon={false} />
+  <Button buttonType="ghost-inverse" size="md" label="일괄 승인" />
 </ActionBar>
 ```
-- ActionBar는 플로팅 바 (fixed position 기본)
-- buttonType="ghost-inverse" 사용 (어두운 배경)
 
-### 드로어(Drawer) 패턴 — "드로어" 요청 시 반드시 이 패턴 사용
-🚨 **사용자가 "드로어"라고 하면 Dialog가 아닌 반드시 Drawer를 사용!**
+### Drawer (사이드 패널 — "드로어" 요청 시 필수)
+"드로어" = Drawer, "다이얼로그/모달/팝업" = Dialog. 혼동 금지.
 ```tsx
-import { Button, Field, Select, Drawer } from '@/components';
-
-{/* ✅ 드로어 = Drawer 컴포넌트. ❌ Dialog 절대 사용 금지 */}
-<Drawer open={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} size="md">
-  <Drawer.Header title="조직원 등록" showSubtitle={false} />
+<Drawer open={isOpen} onClose={() => setIsOpen(false)} size="md">
+  <Drawer.Header title="등록" />
   <Drawer.Body>
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-2 gap-4">
-        <Field showLabel={true} label="성명" placeholder="이름 입력" showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
-        <Field showLabel={true} label="사번" placeholder="자동 부여" interaction="disabled" showHelptext={false} showStartIcon={false} showEndIcon={false} className="w-full" />
-      </div>
-      <Select showLabel={true} label="소속 부서" placeholder="부서 선택" showHelptext={false} showStartIcon={false} options={[{label:'개발팀',value:'dev'},{label:'디자인팀',value:'design'}]} className="w-full" />
+      <Field label="이름" />
+      <Select label="부서" options={deptOptions} />
     </div>
   </Drawer.Body>
   <Drawer.Footer>
-    <Button buttonType="ghost" label="취소" onClick={() => setIsDrawerOpen(false)} showStartIcon={false} showEndIcon={false} />
-    <Button buttonType="primary" label="등록" showStartIcon={false} showEndIcon={false} />
+    <Button buttonType="ghost" label="취소" onClick={() => setIsOpen(false)} />
+    <Button buttonType="primary" label="등록" />
   </Drawer.Footer>
 </Drawer>
 ```
-- ⚠️ "드로어" = `Drawer` | "다이얼로그/모달/팝업" = `Dialog`
-- ❌ 드로어 요청에 Dialog 사용은 **컴포넌트 오용** — 반드시 Drawer 사용
 """
 
 
@@ -1795,16 +1635,18 @@ import { Button, Field, Select, Drawer } from '@/components';
 _schema, _error = load_component_schema()
 COMPONENT_DOCS = format_component_docs(_schema) if _schema else (_error or "Schema not loaded")
 AVAILABLE_COMPONENTS = get_available_components_note(_schema) if _schema else ""
+# 중요도 순서로 조립: 핵심 → 컴포넌트 → 레이아웃 → 예제 → 검증
 SYSTEM_PROMPT = (
     SYSTEM_PROMPT_HEADER
-    + LAYOUT_GUIDE
+    + COMPONENT_QUICK_REFERENCE
+    + COMPONENT_USAGE_CONVENTION
     + "\n## Available Components\n\n"
     + AVAILABLE_COMPONENTS
     + COMPONENT_DOCS
+    + LAYOUT_GUIDE
     + UI_PATTERN_EXAMPLES
-    + PRE_GENERATION_CHECKLIST
     + RESPONSE_FORMAT_INSTRUCTIONS
-    + SYSTEM_PROMPT_FOOTER
+    + FINAL_REMINDER
 )
 
 
@@ -1816,77 +1658,280 @@ def get_system_prompt() -> str:
     )
 
 
-def format_layouts(layouts: list[dict]) -> str:
-    """
-    레이아웃 JSON 리스트를 프롬프트용 문자열로 포맷팅
-    extractedComponents, styles 등 노이즈를 제거하고 layout 트리만 전달
-    componentProps 내 Figma 내부 ID(# 포함 키)를 정리
 
-    Args:
-        layouts: Figma에서 추출한 레이아웃 JSON 리스트
 
-    Returns:
-        포맷팅된 레이아웃 섹션 문자열
+# DS 컴포넌트 화이트리스트 — 이 목록에 있는 INSTANCE만 인벤토리에 포함
+_DS_COMPONENT_NAMES = frozenset({
+    "Button", "Field", "Select", "SearchField", "Badge", "Checkbox", "Radio",
+    "Toggle", "IconButton", "Drawer", "Dialog", "FilterBar",
+    "TitleSection", "Alert", "Tag", "LabelValue", "Popover", "Tab", "Segment",
+    "OptionGroup", "ActionBar", "Tooltip", "Divider", "DataGrid",
+    "GridLayout", "RowPattern", "RowSlot", "FormGrid", "FormGridCell",
+    "Option", "Chip",
+})
+
+# Figma 컴포넌트 이름 → DS 컴포넌트 이름 매핑
+_FIGMA_NAME_REMAP: dict[str, str] = {
+    "ag grid": "DataGrid",
+    "ag grid (column based layout)": "DataGrid",
+}
+
+# FilterBar 내장 버튼 라벨 (인벤토리에서 제외)
+_FILTERBAR_BUILTIN_LABELS = frozenset({"초기화", "조회", "조회하기"})
+
+_ICON_NAME_RE = re.compile(r"icon-(.+)-(\d+)$")
+
+
+def _resolve_component_name(inst: dict) -> str | None:
+    """INSTANCE 노드에서 DS 컴포넌트 이름 추출. DS 컴포넌트가 아니면 None."""
+    comp = inst.get("component") or inst.get("name") or ""
+    # Figma 이름 → DS 이름 매핑
+    remapped = _FIGMA_NAME_REMAP.get(comp.lower())
+    if remapped:
+        return remapped
+    if comp in _DS_COMPONENT_NAMES:
+        return comp
+    return None
+
+
+def _extract_child_icon(inst: dict) -> dict | None:
+    """INSTANCE 노드의 하위 트리에서 leading Icon 인스턴스를 찾아 {name, size} 반환.
+
+    chevron-down 등 trailing(드롭다운 화살표) 아이콘은 제외.
     """
-    if not layouts:
+    _trailing = {"chevron-down", "chevron-up", "arrow-drop-down", "arrow-drop-up"}
+
+    def _search(node: dict) -> dict | None:
+        for child in node.get("children", []):
+            if not isinstance(child, dict):
+                continue
+            if child.get("type") == "INSTANCE":
+                child_comp = (child.get("component") or child.get("name") or "")
+                child_comp_lower = child_comp.lower()
+                if child_comp_lower == "icon" or child_comp_lower.startswith("icon-"):
+                    for candidate in [child_comp, child.get("name", "")]:
+                        match = _ICON_NAME_RE.match(candidate.lower())
+                        if match:
+                            icon_name = match.group(1)
+                            if icon_name not in _trailing:
+                                return {"name": icon_name, "size": int(match.group(2))}
+            # FRAME 등 비-INSTANCE 노드 안에도 Icon이 있을 수 있음
+            result = _search(child)
+            if result:
+                return result
+        return None
+
+    return _search(inst)
+
+
+def _instance_to_jsx(inst: dict, comp_name: str) -> str:
+    """INSTANCE 노드를 JSX 스니펫 문자열로 변환."""
+    variant = inst.get("variant", {})
+    label = inst.get("label") or ""
+    placeholder = inst.get("placeholder") or ""
+    title = inst.get("title") or ""
+    text = inst.get("text") or ""
+    value = inst.get("value") or ""
+    w = inst.get("w")  # Figma 너비 (col-span 계산용)
+
+    # simplify_node이 승격한 icon 또는 자식 Icon INSTANCE에서 추출
+    icon = inst.get("icon")
+    if not icon:
+        icon = _extract_child_icon(inst)
+
+    props: list[str] = []
+    for k, v in sorted(variant.items()):
+        if isinstance(v, bool):
+            props.append(f'{k}={{{str(v).lower()}}}')
+        elif isinstance(v, (int, float)):
+            props.append(f'{k}={{{v}}}')
+        else:
+            props.append(f'{k}="{v}"')
+
+    if label:
+        props.append(f'label="{label}"')
+    if placeholder:
+        props.append(f'placeholder="{placeholder}"')
+    if title:
+        props.append(f'title="{title}"')
+    if text:
+        props.append(f'text="{text}"')
+    if value:
+        props.append(f'value="{value}"')
+    if icon and isinstance(icon, dict):
+        props.append(f'icon="{icon.get("name", "")}"')
+
+    props_str = " ".join(props)
+    jsx = f"<{comp_name} {props_str} />" if props_str else f"<{comp_name} />"
+
+    # DataGrid 컬럼 정보 추가
+    columns = inst.get("_columns")
+    if columns and isinstance(columns, list):
+        jsx += f"  {{/* columns: {', '.join(columns)} */}}"
+    # 너비 힌트 추가 (FilterBar col-span 계산용)
+    elif w and isinstance(w, (int, float)):
+        jsx += f"  {{/* w:{int(w)} */}}"
+
+    return jsx
+
+
+def extract_component_usage_summary(simplified_layout: dict) -> str:
+    """Simplified layout 트리에서 DS 컴포넌트 INSTANCE만 수집하여 JSX 인벤토리 생성.
+
+    - DS 컴포넌트 화이트리스트로 필터링 (header, icon-* 등 Figma 내부 요소 제외)
+    - Icon 자식 노드를 부모의 startIcon prop으로 승격
+    - FilterBar 내장 버튼(초기화, 조회하기) 제외
+    - Title FRAME 내부 버튼 제외 (페이지 템플릿 기본 슬롯 콘텐츠)
+    """
+    instances: list[tuple[str, dict]] = []  # (ds_comp_name, node)
+
+    def _collect(node: dict, inside_title: bool = False) -> None:
+        ntype = node.get("type", "")
+        name = node.get("name", "")
+
+        if ntype == "INSTANCE":
+            ds_name = _resolve_component_name(node)
+            if ds_name:
+                # Title FRAME 내부의 Button은 페이지 템플릿 기본 버튼이므로 제외
+                if inside_title and ds_name == "Button":
+                    return
+                # FilterBar 내장 버튼 제외
+                if ds_name == "Button":
+                    btn_label = node.get("label") or ""
+                    if btn_label in _FILTERBAR_BUILTIN_LABELS:
+                        for child in node.get("children", []):
+                            if isinstance(child, dict):
+                                _collect(child, inside_title)
+                        return
+                instances.append((ds_name, node))
+
+        # Title FRAME 진입 감지
+        is_title = ntype == "FRAME" and name.lower() == "title"
+
+        for child in node.get("children", []):
+            if isinstance(child, dict):
+                _collect(child, inside_title=inside_title or is_title)
+
+    _collect(simplified_layout)
+
+    if not instances:
         return ""
 
-    def _clean_component_props(props: dict) -> dict:
-        """componentProps에서 Figma 내부 ID를 정리하고 유용한 값만 남김"""
-        cleaned = {}
-        for key, value in props.items():
-            if "#" not in key:
-                # Size, Type, Disabled 등 유용한 props → 그대로 유지
-                cleaned[key] = value
+    # 컴포넌트별 그룹핑 (순서 보존)
+    from collections import OrderedDict
+
+    groups: OrderedDict[str, list[str]] = OrderedDict()
+    for ds_name, inst in instances:
+        jsx = _instance_to_jsx(inst, ds_name)
+        if ds_name not in groups:
+            groups[ds_name] = []
+        groups[ds_name].append(jsx)
+
+    total = len(instances)
+    lines = [
+        "## ⚠️ 컴포넌트 인벤토리 (반드시 사용)",
+        "",
+        f"이 디자인의 DS 컴포넌트 총 {total}개. **반드시 아래 컴포넌트와 props를 그대로 사용하세요.**",
+        "- JSON의 `component` 필드가 Select이면 반드시 `<Select>`를 사용. 스크린샷 보고 Field로 바꾸지 마세요.",
+        "- 인벤토리에 없는 UI 요소(커스텀 레이아웃, 에디터 등)만 자유롭게 생성 가능.",
+        "- **TitleSection children에 신계약등록2/3·이미지시스템 버튼 금지** (매 페이지 반복되는 템플릿 기본 슬롯).",
+        "- FilterBar 내장 버튼(초기화, 조회하기)은 onReset/onSearch로 자동 렌더링됨. 별도 배치 금지.",
+        "",
+    ]
+
+    for comp, snippets in groups.items():
+        lines.append(f"### {comp} ({len(snippets)}개)")
+        for i, jsx in enumerate(snippets, 1):
+            lines.append(f"{i}. `{jsx}`")
+        lines.append("")
+
+    return "\n".join(lines)
+
+
+def extract_component_usage_map(simplified_layout: dict) -> dict:
+    """Simplified layout에서 INSTANCE 노드의 label→variant 매핑을 추출.
+
+    Figma 모드에서 추출한 데이터를 component-usage-map.json에 누적 저장용으로 사용.
+
+    Returns:
+        {ComponentName: {label: {prop: value, ...}, ...}, ...}
+        label이 없는 INSTANCE는 스킵.
+    """
+    instances: list[dict] = []
+
+    def _collect(node: dict) -> None:
+        if node.get("type") == "INSTANCE":
+            instances.append(node)
+        for child in node.get("children", []):
+            if isinstance(child, dict):
+                _collect(child)
+
+    _collect(simplified_layout)
+
+    usage_map: dict[str, dict] = {}
+    for inst in instances:
+        comp = inst.get("component") or inst.get("name") or ""
+        if not comp or comp.lower() in ("header", "unknown"):
+            continue
+
+        label = inst.get("label") or ""
+        if not label:
+            continue
+
+        variant = inst.get("variant", {})
+        fill = inst.get("fill", "")
+
+        props: dict = {}
+        if variant:
+            props.update(variant)
+        if fill:
+            props["_fill"] = fill  # fill도 보존 (역매핑용)
+
+        if comp not in usage_map:
+            usage_map[comp] = {}
+        # 같은 label이면 덮어쓰기 (최신 데이터 우선)
+        usage_map[comp][label] = props
+
+    return usage_map
+
+
+def format_component_usage_map(usage_map: dict) -> str:
+    """컴포넌트 사용 맵을 프롬프트용 문자열로 포맷팅.
+
+    Args:
+        usage_map: {ComponentName: {label: {prop: value}, ...}, ...}
+
+    Returns:
+        프롬프트에 포함할 마크다운 문자열
+    """
+    if not usage_map:
+        return ""
+
+    lines = [
+        "\n## Component Usage Patterns (디자인 시스템 컨벤션)",
+        "아래는 Figma 디자인에서 추출한 컴포넌트 사용 패턴입니다. "
+        "동일한 label/텍스트를 사용할 때 반드시 이 패턴을 따르세요.",
+        "",
+    ]
+
+    for comp in sorted(usage_map.keys()):
+        entries = usage_map[comp]
+        if not entries:
+            continue
+        lines.append(f"### {comp}")
+        for label, props in sorted(entries.items()):
+            # _fill은 프롬프트에 노출하지 않음
+            visible_props = {k: v for k, v in props.items() if not k.startswith("_")}
+            if visible_props:
+                prop_str = " ".join(f'{k}="{v}"' for k, v in sorted(visible_props.items()))
+                lines.append(f'- label="{label}" → `<{comp} {prop_str} label="{label}" />`')
             else:
-                # Label#307:254 → "Label" 키로 값 보존 (버튼 텍스트 등)
-                base_key = key.split("#")[0].strip()
-                if base_key.lower() in ("label", "title", "text", "placeholder"):
-                    cleaned[base_key] = value
-                # icon, show 관련은 제거 (아이콘 사용 금지 규칙과 일치)
-        return cleaned
+                lines.append(f'- label="{label}"')
+        lines.append("")
 
-    def _clean_node(node: dict) -> dict:
-        """layout 트리 노드에서 불필요한 필드를 제거"""
-        cleaned = {}
-        for key, value in node.items():
-            if key == "componentProps":
-                props = _clean_component_props(value)
-                if props:
-                    cleaned["componentProps"] = props
-            elif key == "children":
-                cleaned["children"] = [_clean_node(child) for child in value]
-            else:
-                cleaned[key] = value
-        return cleaned
+    return "\n".join(lines)
 
-    section = """
 
-## Reference Layouts (Figma Extracted)
-
-Below are reference layouts extracted from Figma. Use these as structural guides when generating similar pages.
-- Follow the layout hierarchy (FRAME, INSTANCE, etc.)
-- Respect the layoutMode (VERTICAL, HORIZONTAL)
-
-**CRITICAL - Figma State to React Props Mapping:**
-- Figma `Selected=True`, `State=Selected` in Select → React `defaultValue` (NOT `value` or `selected`)
-- Figma placeholder text like "선택하세요", "전체 지역" in Select → React `placeholder` prop
-- Figma `Checked=True` in Checkbox/Radio/ToggleSwitch → React `checked` with `onChange` handler
-- Use similar spacing (itemSpacing, padding)
-- Match the component structure
-
-"""
-    for i, layout in enumerate(layouts, 1):
-        name = layout.get("layout", {}).get("name", f"Layout {i}")
-        # layout 트리만 추출 + 노드 정리
-        raw_layout = layout.get("layout", {})
-        clean_layout = _clean_node(raw_layout)
-        layout_json = json.dumps(
-            {"layout": clean_layout}, ensure_ascii=False, separators=(",", ":")
-        )
-        section += f"### {name}\n```json\n{layout_json}\n```\n\n"
-
-    return section
 
 
 def generate_system_prompt(
@@ -1894,8 +1939,9 @@ def generate_system_prompt(
     design_tokens: dict | None = None,
     ag_grid_schema: dict | None = None,
     ag_grid_tokens: dict | None = None,
-    layouts: list[dict] | None = None,
     component_definitions: dict | None = None,
+    skip_ui_patterns: bool = False,
+    component_usage_map: dict | None = None,
 ) -> str:
     """
     주어진 스키마로 시스템 프롬프트 동적 생성
@@ -1905,8 +1951,9 @@ def generate_system_prompt(
         design_tokens: 디자인 토큰 dict (Firebase에서 로드, None이면 기본값 사용)
         ag_grid_schema: AG Grid 컴포넌트 스키마 dict (Firebase에서 로드, None이면 미포함)
         ag_grid_tokens: AG Grid 토큰 dict (Firebase에서 로드, None이면 미포함)
-        layouts: Figma 레이아웃 JSON 리스트 (Firebase에서 로드, None이면 미포함)
         component_definitions: 컴포넌트 정의 dict (Firebase에서 로드, None이면 미포함)
+        skip_ui_patterns: True이면 UI_PATTERN_EXAMPLES 제외 (Figma 모드 등 도메인 예시 오염 방지)
+        component_usage_map: Figma에서 추출한 컴포넌트 사용 패턴 (label→variant 매핑)
 
     Returns:
         생성된 시스템 프롬프트 문자열 (현재 날짜 포함)
@@ -1923,27 +1970,31 @@ def generate_system_prompt(
     if ag_grid_tokens:
         ag_grid_section += format_ag_grid_tokens(ag_grid_tokens)
 
-    # 컴포넌트 정의 섹션
-    component_definitions_section = format_component_definitions(component_definitions)
+    # 컴포넌트 비주얼 가이드 (variant별 시각 설명 + 사용 가이드)
+    component_visual_guide = format_component_visual_guide(
+        component_definitions, design_tokens
+    )
 
-    # 레이아웃 섹션
-    layouts_section = format_layouts(layouts) if layouts else ""
+    # 컴포넌트 사용 패턴 (Figma에서 추출, 텍스트 모드에서 참조)
+    usage_map_section = format_component_usage_map(component_usage_map) if component_usage_map else ""
 
+    # 중요도 순서로 조립: 핵심 → 컴포넌트 → 레이아웃 → 예제 → 검증
     return (
         SYSTEM_PROMPT_HEADER.replace("{current_date}", current_date).replace(
             "{design_tokens_section}", design_tokens_section
         )
-        + LAYOUT_GUIDE
+        + COMPONENT_QUICK_REFERENCE
+        + COMPONENT_USAGE_CONVENTION
         + "\n## Available Components\n\n"
         + available_components
         + component_docs
         + ag_grid_section
-        + component_definitions_section
-        + layouts_section
-        + UI_PATTERN_EXAMPLES
-        + PRE_GENERATION_CHECKLIST
+        + component_visual_guide
+        + LAYOUT_GUIDE
+        + usage_map_section
+        + (UI_PATTERN_EXAMPLES if not skip_ui_patterns else "")
         + RESPONSE_FORMAT_INSTRUCTIONS
-        + SYSTEM_PROMPT_FOOTER
+        + FINAL_REMINDER
     )
 
 
@@ -2051,7 +2102,7 @@ async def get_vision_system_prompt(
         + "\n"
         + RESPONSE_FORMAT_INSTRUCTIONS
         + "\n"
-        + SYSTEM_PROMPT_FOOTER
+        + FINAL_REMINDER
     )
 
 
@@ -2234,9 +2285,34 @@ DESCRIPTION_SYSTEM_PROMPT = """\
 
 ### ■ 목록 컬럼 정의
 
+**단순 컬럼(그룹 헤더 없음)인 경우:**
+
 | No | 표시명 | 정렬 | 너비 | 비고 |
 |----|-------|------|------|------|
 | 1 | (헤더 텍스트) | 좌/중/우 | (넓음/보통/좁음) | (클릭 동작, 포맷 등) |
+
+**다단 헤더(그룹 컬럼, ColGroupDef)가 있는 경우:**
+
+컬럼 그룹 구조를 표현하기 위해 "그룹 경로" 열을 추가합니다.
+그룹 경로는 " > "로 계층을 구분하며, 그룹에 속하지 않는 독립 컬럼은 "-"로 표기합니다.
+
+| No | 그룹 경로 | 표시명 | 정렬 | 너비 | 비고 |
+|----|----------|-------|------|------|------|
+| 1 | - | (독립 컬럼) | 좌/중/우 | (넓음/보통/좁음) | (비고) |
+| 2 | (1depth 그룹명) | (leaf 컬럼) | 좌/중/우 | (넓음/보통/좁음) | (비고) |
+| 3 | (1depth) > (2depth) | (leaf 컬럼) | 좌/중/우 | (넓음/보통/좁음) | (비고) |
+
+> 예시 (3-depth 헤더):
+>
+> | No | 그룹 경로 | 표시명 | 정렬 | 너비 | 비고 |
+> |----|----------|-------|------|------|------|
+> | 1 | - | 사업단 | 좌 | 보통 | - |
+> | 2 | 합계 | 총수량 | 우 | 좁음 | 천단위 콤마 |
+> | 3 | 합계 | 총배분건수 | 우 | 좁음 | 천단위 콤마 |
+> | 4 | 합계 | 총진도율 | 우 | 좁음 | 소수점 1자리 + % |
+> | 5 | 권역별 > 수도권 | 수량 | 우 | 좁음 | 천단위 콤마 |
+> | 6 | 권역별 > 수도권 | 배분건수 | 우 | 좁음 | 천단위 콤마 |
+> | 7 | 권역별 > 수도권 | 진도율 | 우 | 좁음 | 소수점 1자리 + % |
 
 > ⚠️ 너비는 픽셀값(120px, 200px)이나 코드 값(width: 150) 대신 자연어(넓음/보통/좁음)로 표현하세요.
 
@@ -2547,7 +2623,7 @@ DESCRIPTION_SYSTEM_PROMPT = """\
 2. 코드에 실제로 존재하는 UI 요소만 기술 (추측 금지)
 3. 컴포넌트 props, state, 이벤트 핸들러, JSX 구조를 근거로 작성하되, 코드 함수명/변수명/CSS 클래스명은 출력에 포함하지 마세요
 4. 조건부 렌더링(권한, 상태 등)이 있으면 조건과 함께 명시
-5. 테이블 컬럼은 코드에서 정의된 것만 나열하고 정렬/포맷 정보 포함
+5. 테이블 컬럼은 코드에서 정의된 것만 나열하고 정렬/포맷 정보 포함. 코드에 `ColGroupDef`(children으로 그룹 헤더 구성)가 사용된 경우 반드시 "다단 헤더" 테이블 형식(그룹 경로 열 포함)을 사용하고, 그룹 경로는 " > "로 계층 구분, 독립 컬럼은 "-"로 표기
 6. 입력 항목은 타입, 포맷, 필수 여부, 제약조건을 명시
 7. 버튼은 클릭 시 동작을 구체적으로 기술 (페이지 전환, 다이얼로그 오픈 등)
 8. 유효성 검증은 성공/실패 시 동작을 구분하여 기술하고, 토스트 메시지가 있으면 원문 포함
