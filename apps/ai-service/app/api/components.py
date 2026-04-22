@@ -1339,13 +1339,27 @@ COMPONENT_QUICK_REFERENCE = """
   - 반려/오류 (빨강): `<Badge type="status" status="error" appearance="subtle" label="반려" />`
 - **⚠️ Badge 색상은 Figma 시각 기준**: 파란→`info`, 초록→`success`, 노란/주황→`warning`또는`level="primary"`, 빨간→`error`. 배지 텍스트가 아니라 **Figma에서 보이는 배경/텍스트 색상**으로 판단
 
-### Checkbox / Radio
+### Checkbox
 - `<Option label="동의합니다"><Checkbox value={isChecked ? 'checked' : 'unchecked'} onChange={() => toggle()} /></Option>`
-- **⚠️ Checkbox `value`는 문자열** `'unchecked' | 'checked' | 'indeterminate'` (boolean 아님, `checked` prop 없음). onChange는 토글 함수 (e.target.checked 사용 금지)
-- **⚠️ Radio `value`는 실제 데이터 값** — `'checked'`/`'unchecked'` 사용 금지. 반드시 의미 있는 값 사용:
-  - ✅ `<Radio value="Y" />`, `<Radio value="N" />`, `<Radio value="all" />`
-  - ❌ `<Radio value="checked" />`, `<Radio value="unchecked" />` — Checkbox 전용 값, Radio에 쓰지 마세요
-- **⚠️ Option의 props는 `label` + children뿐** — `showLabel`/`helperText`/`description` prop **없음**. 라벨·설명문이 필요하면 **OptionGroup**으로 감싸기 (단일 체크박스여도 OK)
+- **Checkbox `value`는 문자열** `'unchecked' | 'checked' | 'indeterminate'` (boolean 아님). onChange는 토글 함수
+
+### Radio (⚠️ Checkbox와 완전히 다른 패턴!)
+- 🚨 **Radio `value`는 실제 데이터 값만 사용** — `"checked"`/`"unchecked"` 절대 금지! (이건 Checkbox 전용)
+- Radio에는 `value` prop이 1개만 있어야 함. **2개 쓰면 React 에러**
+- ✅ 올바른 패턴 (FilterBar 안 Radio):
+```tsx
+<OptionGroup label="전자청약(보험사)" showLabel={true} orientation="horizontal">
+  <Option label="N"><Radio value="N" onChange={() => setFilter('N')} /></Option>
+  <Option label="Y"><Radio value="Y" onChange={() => setFilter('Y')} /></Option>
+</OptionGroup>
+```
+- ❌ 잘못된 패턴 (CRASH):
+```tsx
+<Radio value="N" value={state === 'N' ? 'checked' : 'unchecked'} />  /* value 2개 + checked/unchecked 사용 */
+```
+
+### Option 공통
+- **Option의 props는 `label` + children뿐** — `showLabel`/`helperText`/`description` prop **없음**. 라벨·설명문이 필요하면 **OptionGroup**으로 감싸기 (단일 체크박스여도 OK)
 - Option 외부에 수동 `<p className="ml-7">설명...</p>` 추가 금지 → OptionGroup의 `helptext` prop 사용
 
 ### IconButton (Button과 prop 다름)
@@ -1373,8 +1387,10 @@ COMPONENT_QUICK_REFERENCE = """
   5. 🚨 **코드 작성 전 행별 col-span 검산 필수**: 1행: X+X+X=12 ✅, 마지막행: X+X+...+actionSpan=12 ✅. 12 초과 시 우측 overflow!
   6. **Figma에서 좁은 필터는 col-span-1 허용**하되, 라벨이 긴 필드(예: "전자서명(A+에셋)")는 col-span-2 이상
   7. 🚨 **복합 필터(컨트롤 2개 이상)는 col-span-3 이상**: 하나의 필터 슬롯에 Select+DatePicker, Select+Field 등 입력 컨트롤이 2개 이상 나란히 들어가면 col-span-1~2로는 내용물이 옆 필드와 겹침. 복합 필터는 **col-span-3 이상** 할당
+- **복합 필터 라벨**: Select+Field가 한 슬롯에 있으면 첫 번째 컴포넌트에 `label` + `showLabel={true}` 사용, 나머지는 `showLabel={false}`. ❌ `<span className="text-sm">라벨</span>` 커스텀 라벨 금지
 - FilterBar 자체가 배경(`bg-bg-subtle rounded-xl`)을 가짐 → 외부에 배경 div 래핑 금지
 - 초기화(tertiary)/조회(primary) 버튼은 FilterBar가 자동 렌더링 → 별도 Button 배치 금지
+- 🚨 **Figma 필터 완전성**: Figma에 있는 필터는 **하나도 빠뜨리지 마세요**. 필터 수가 많으면 행을 늘려서 전부 포함
 
 ### Pagination (DataGrid 내장)
 - **별도 `<Pagination>` 컴포넌트 없음.** DataGrid의 `pagination` prop 사용
@@ -1582,7 +1598,7 @@ import { GridLayout, RowPattern, RowSlot, TitleSection, FilterBar, Field, Select
 |------|----------|------------------------|
 | TitleSection 버튼 | **최대 5개** | 주요 3개 노출 + 나머지는 `flex-wrap`으로 2행 배치. 절대 한 줄에 6개 이상 금지 |
 | DataGrid 컬럼 | **최대 12개** | 핵심 12개만 코드에 작성. 나머지는 `// 추가 컬럼: (컬럼명 나열)` 주석 1줄로 안내 |
-| FilterBar 필터 | **최대 6개** | 주요 필터만 노출. "상세검색" 토글 구현이 불가하면 6개로 축소 |
+| FilterBar 필터 | **Figma 기준 전부** | Figma에 있는 필터는 **하나도 빠뜨리지 말고 전부 생성**. Figma 없는 텍스트 모드에서만 최대 6개 |
 | Select/드롭다운 옵션 | **최대 5~7개** | Mock 데이터는 대표값만. `generateOptions(50)` 같은 대량 생성 절대 금지 |
 | TreeMenu 노드 | **최대 2depth × 5개** | 10~15개면 구조 전달 충분. 100개 노드 생성 금지 |
 | Drawer/Dialog 폼 필드 | **최대 20개** | 초과 시 FormGrid 섹션별 분리. 40개 필드를 한 Drawer에 나열 금지 |
