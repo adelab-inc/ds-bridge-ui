@@ -12,6 +12,7 @@ class ValidationError(BaseModel):
         - "unknown_component": JSX에 등장한 컴포넌트가 DS 카탈로그에도 로컬 선언에도 없음
         - "missing_import": DS 카탈로그에는 있지만 import 선언이 없음
         - "external_url": `src`/`href`/`url()` 리터럴에 외부 https?:// 포함
+        - "invalid_prop_value": schema에 enum이 정의된 prop의 리터럴 값이 enum에 없음
         - "validator_internal_error": Validator 자체 예외/타임아웃
     """
 
