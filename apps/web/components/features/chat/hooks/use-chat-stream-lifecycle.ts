@@ -5,6 +5,7 @@ import * as React from 'react';
 import { useChatStream } from '@/hooks/useChatStream';
 import { useRoomChannel } from '@/hooks/supabase/useRoomChannel';
 import { useStreamingStore } from '@/stores/useStreamingStore';
+import { sendDebugLog } from '@/lib/debug-log';
 import type { CodeEvent } from '@/types/chat';
 import { FIGMA_RATE_LIMIT_CODE } from '@/types/chat';
 import type { ChatMessage } from '@packages/shared-types/typescript/database/types';
@@ -67,9 +68,18 @@ export function useChatStreamLifecycle({
   const pendingQuestionRef = React.useRef<string>('');
   const activeMessageIdRef = React.useRef<string | null>(null);
 
+  // handleSend 이후 onStart가 도착할 때까지 chunk를 drop하기 위한 gate.
+  // 이전 응답의 잔여 chunk가 새 streamingMessage에 섞이는 것을 방지한다.
+  // (BroadcastChunkPayload에 message_id가 없어 프론트에서 구분 불가능한 한계를 가림)
+  const expectingStartRef = React.useRef(false);
+
   const [figmaRateLimitOpen, setFigmaRateLimitOpen] = React.useState(false);
 
-  const { sendMessage, isLoading: isSending, error: sendError } = useChatStream();
+  const {
+    sendMessage,
+    isLoading: isSending,
+    error: sendError,
+  } = useChatStream();
 
   const clearAllTimers = React.useCallback(() => {
     if (inactivityTimerRef.current) {
@@ -84,6 +94,7 @@ export function useChatStreamLifecycle({
 
   const handleTimeout = React.useCallback(
     (reason: 'inactivity' | 'hard_max') => {
+      expectingStartRef.current = false;
       activeMessageIdRef.current = null;
       const now = Date.now();
       updateStreamingMessage((prev) =>
@@ -126,10 +137,19 @@ export function useChatStreamLifecycle({
     enabled: !!roomId,
     callbacks: {
       onStart: (payload) => {
+        // start 도착 → 해당 응답이 실제로 시작됨. 이전 누수 chunk를 제거하기 위해
+        // text/content/path를 리셋하고 chunk gate를 연다.
+        expectingStartRef.current = false;
         activeMessageIdRef.current = payload.message_id;
         updateStreamingMessage((prev) => {
           if (prev) {
-            return { ...prev, id: payload.message_id };
+            return {
+              ...prev,
+              id: payload.message_id,
+              text: '',
+              content: '',
+              path: '',
+            };
           }
           // handleSend의 state가 아직 반영되지 않은 경우 ref에서 질문 복원
           return {
@@ -147,10 +167,39 @@ export function useChatStreamLifecycle({
         resetInactivityTimer();
       },
       onChunk: (payload) => {
+        // start 이전에 도착한 chunk는 이전 응답의 잔여분일 가능성이 높아 drop.
+        // BroadcastChunkPayload에 message_id가 없어 달리 구분할 방법이 없음.
+        if (expectingStartRef.current) {
+          console.warn(
+            '[ChatSection] onChunk: pre-start, dropping (likely leaked from previous response)',
+            { type: payload.type, len: payload.text?.length }
+          );
+          sendDebugLog('pre_start_drop', {
+            roomId,
+            type: payload.type,
+            len: payload.text?.length,
+            head: payload.text?.slice(0, 30),
+          });
+          return;
+        }
+
+        console.log('[onChunk]', {
+          ts: Date.now(),
+          len: payload.text?.length,
+          head: payload.text?.slice(0, 30),
+          tail: payload.text?.slice(-30),
+          type: payload.type,
+        });
         // state updater는 순수 함수로 유지 (side effect 금지)
         updateStreamingMessage((prev) => {
           if (!prev) {
             console.warn('[ChatSection] onChunk: prev is NULL, dropping chunk');
+            sendDebugLog('null_prev_drop', {
+              roomId,
+              type: payload.type,
+              len: payload.text?.length,
+              head: payload.text?.slice(0, 30),
+            });
             return prev;
           }
 
@@ -184,6 +233,7 @@ export function useChatStreamLifecycle({
         resetInactivityTimer();
       },
       onDone: (payload) => {
+        expectingStartRef.current = false;
         activeMessageIdRef.current = null;
 
         clearAllTimers();
@@ -205,6 +255,7 @@ export function useChatStreamLifecycle({
           .catch(() => setStreamingMessage(null));
       },
       onError: (payload) => {
+        expectingStartRef.current = false;
         activeMessageIdRef.current = null;
         const now = Date.now();
         const isFigmaRateLimit = payload.error_code === FIGMA_RATE_LIMIT_CODE;
@@ -252,6 +303,10 @@ export function useChatStreamLifecycle({
       pendingQuestionRef.current = newMessage.question;
       activeMessageIdRef.current = tempId;
 
+      // 새 세션 시작 → onStart 수신 전까지 chunk를 drop하여
+      // 이전 응답 잔여 broadcast가 새 streamingMessage에 섞이지 않도록 한다.
+      expectingStartRef.current = true;
+
       // Zustand store에 직접 설정 (React 배칭 영향 없음)
       setStreamingMessage(newMessage);
 
@@ -288,6 +343,7 @@ export function useChatStreamLifecycle({
         );
       } else {
         // POST 실패 시 에러 처리
+        expectingStartRef.current = false;
         activeMessageIdRef.current = null;
         const now = Date.now();
         updateStreamingMessage((prev) =>

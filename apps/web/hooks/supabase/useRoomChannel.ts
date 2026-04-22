@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
+import { sendDebugLog } from '@/lib/debug-log';
 import type {
   BroadcastStartPayload,
   BroadcastChunkPayload,
@@ -70,7 +71,11 @@ export function useRoomChannel({
       const oldChannel = channelRef.current;
       channelRef.current = null;
       if (oldChannel) {
-        try { await oldChannel.unsubscribe(); } catch { /* ignore */ }
+        try {
+          await oldChannel.unsubscribe();
+        } catch {
+          /* ignore */
+        }
         supabase.removeChannel(oldChannel);
       }
 
@@ -80,15 +85,31 @@ export function useRoomChannel({
 
       channel
         .on('broadcast', { event: 'start' }, (msg: { payload: unknown }) => {
+          const isStale = channelRef.current !== channel;
+          console.log('[channel-event] start', { isStale, roomId });
+          if (isStale)
+            sendDebugLog('stale_channel_event', { roomId, event: 'start' });
           callbacksRef.current.onStart?.(msg.payload as BroadcastStartPayload);
         })
         .on('broadcast', { event: 'chunk' }, (msg: { payload: unknown }) => {
+          const isStale = channelRef.current !== channel;
+          console.log('[channel-event] chunk', { isStale, roomId });
+          if (isStale)
+            sendDebugLog('stale_channel_event', { roomId, event: 'chunk' });
           callbacksRef.current.onChunk?.(msg.payload as BroadcastChunkPayload);
         })
         .on('broadcast', { event: 'done' }, (msg: { payload: unknown }) => {
+          const isStale = channelRef.current !== channel;
+          console.log('[channel-event] done', { isStale, roomId });
+          if (isStale)
+            sendDebugLog('stale_channel_event', { roomId, event: 'done' });
           callbacksRef.current.onDone?.(msg.payload as BroadcastDonePayload);
         })
         .on('broadcast', { event: 'error' }, (msg: { payload: unknown }) => {
+          const isStale = channelRef.current !== channel;
+          console.log('[channel-event] error', { isStale, roomId });
+          if (isStale)
+            sendDebugLog('stale_channel_event', { roomId, event: 'error' });
           callbacksRef.current.onError?.(msg.payload as BroadcastErrorPayload);
         })
         .subscribe((status: string) => {
