@@ -150,7 +150,7 @@ async def run_figma_tool_calling_loop(
                 )
                 detail_task = asyncio.create_task(
                     _fetch_with_timeout(
-                        fetch_node_detail(file_key, node_id, max_depth=12, max_retries=2),
+                        fetch_node_detail(file_key, node_id, max_depth=8, max_retries=2),
                         "node_detail",
                     )
                 )
@@ -200,7 +200,7 @@ async def run_figma_tool_calling_loop(
                         )
                     )
                     detail_result = await _fetch_with_timeout(
-                        fetch_node_detail(file_key, target_node_id, max_depth=12, max_retries=2),
+                        fetch_node_detail(file_key, target_node_id, max_depth=8, max_retries=2),
                         "node_detail",
                     )
 
