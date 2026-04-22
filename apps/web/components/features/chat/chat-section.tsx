@@ -21,6 +21,7 @@ import { useGetPaginatedMessages } from '@/hooks/supabase/useGetPaginatedMessage
 import { useStreamingStore } from '@/stores/useStreamingStore';
 import { useDescriptionStore } from '@/stores/useDescriptionStore';
 import type { CodeEvent } from '@/types/chat';
+import { FIGMA_RATE_LIMIT_CODE } from '@/types/chat';
 import { useDeleteMessage } from '@/hooks/api/useDeleteMessage';
 import type { ChatMessage } from '@packages/shared-types/typescript/database/types';
 import { Button } from '@/components/ui/button';
@@ -90,6 +91,8 @@ function ChatSection({
 
   // 편집 중 탭 전환 시 미저장 확인용
   const [pendingTab, setPendingTab] = React.useState<string | null>(null);
+  // Figma API 호출 한도 소진 시 사용자에게 안내하는 모달 오픈 상태
+  const [figmaRateLimitOpen, setFigmaRateLimitOpen] = React.useState(false);
 
   const handleTabChange = React.useCallback(
     (value: string | number | null) => {
@@ -313,11 +316,16 @@ function ChatSection({
       onError: (payload) => {
         activeMessageIdRef.current = null;
         const now = Date.now();
+        const isFigmaRateLimit = payload.error_code === FIGMA_RATE_LIMIT_CODE;
+        if (isFigmaRateLimit) {
+          setFigmaRateLimitOpen(true);
+        }
         updateStreamingMessage((prev) =>
           prev
             ? {
                 ...prev,
-                text: `Error: ${payload.error}`,
+                // rate limit은 모달로 안내하므로 채팅 버블 본문은 간결하게
+                text: isFigmaRateLimit ? '' : `Error: ${payload.error}`,
                 status: 'ERROR' as const,
                 answer_created_at: now,
               }
@@ -808,6 +816,27 @@ function ChatSection({
               disabled={deleteMessageMutation.isPending}
             >
               삭제
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Figma 이용 한도 초과 안내 다이얼로그 */}
+      <AlertDialog
+        open={figmaRateLimitOpen}
+        onOpenChange={setFigmaRateLimitOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Figma 이용 한도 초과</AlertDialogTitle>
+            <AlertDialogDescription>
+              피그마 이용 횟수를 모두 소진했습니다. 런타임허브 담당자에게 문의
+              부탁드립니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setFigmaRateLimitOpen(false)}>
+              확인
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

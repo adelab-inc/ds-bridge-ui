@@ -26,7 +26,7 @@ from app.schemas.validation import ValidationError, ValidationReport
 from app.services.ai_provider import AIProvider, get_ai_provider
 from app.services.broadcast import broadcast_event, track_broadcast_task
 from app.services.code_validator import ComponentCatalog, validate_code
-from app.services.figma_api import extract_figma_url
+from app.services.figma_api import FigmaRateLimitError, extract_figma_url
 from app.services.supabase_db import (
     DatabaseError,
     RoomNotFoundError,
@@ -1176,6 +1176,26 @@ async def _run_broadcast_generation(
             "error",
             {"error": "현재 AI 프로바이더는 Vision 기능을 지원하지 않습니다."},
         )
+    except FigmaRateLimitError:
+        logger.warning(
+            "Figma rate limit exhausted",
+            extra={"room_id": room_id, "message_id": message_id},
+        )
+        try:
+            await _save_message_with_retry(message_id=message_id, status="ERROR")
+            await broadcast_event(
+                room_id,
+                "error",
+                {
+                    "error": "피그마 이용 횟수를 모두 소진했습니다. 런타임허브 담당자에게 문의 부탁드립니다.",
+                    "error_code": "figma_rate_limit",
+                },
+            )
+        except Exception:
+            logger.exception(
+                "Failed to send figma rate limit broadcast",
+                extra={"room_id": room_id, "message_id": message_id},
+            )
     except Exception as e:
         logger.error(
             "Broadcast generation error",
