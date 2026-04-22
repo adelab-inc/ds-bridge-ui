@@ -537,14 +537,17 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     # Import 가이드 (가이드 문서 기준으로 고정)
     lines.append("### Required Imports")
     lines.append("```tsx")
-    lines.append("// 기본 사용")
-    lines.append("import { DataGrid } from '@aplus/ui';")
+    lines.append("// ✅ 기본 사용 (COLUMN_TYPES는 항상 함께 import)")
+    lines.append("import { DataGrid, COLUMN_TYPES } from '@aplus/ui';")
     lines.append("import { ColDef } from 'ag-grid-community';")
     lines.append("")
-    lines.append("// 셀 렌더러가 필요한 경우")
-    lines.append("import { DataGrid, CheckboxCellRenderer, ImageCellRenderer } from '@aplus/ui';")
+    lines.append("// ❌ COLUMN_TYPES 없이 DataGrid만 import 금지")
+    lines.append("// import { DataGrid } from '@aplus/ui';  ← 이렇게 하지 마세요")
     lines.append("")
-    lines.append("// 컬럼 타입 또는 유틸리티가 필요한 경우")
+    lines.append("// 셀 렌더러가 필요한 경우")
+    lines.append("import { DataGrid, COLUMN_TYPES, CheckboxCellRenderer, ImageCellRenderer } from '@aplus/ui';")
+    lines.append("")
+    lines.append("// 유틸리티가 필요한 경우")
     lines.append("import { DataGrid, COLUMN_TYPES, AgGridUtils } from '@aplus/ui';")
     lines.append("```")
     lines.append("")
@@ -607,6 +610,14 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("  { field: 'rate', headerName: '달성률', ...COLUMN_TYPES.percentColumn },")
     lines.append("];")
     lines.append("```")
+    lines.append("")
+    lines.append("**⚠️ COLUMN_TYPES 자동 적용 규칙 (필수):**")
+    lines.append("headerName이나 field명으로 데이터 성격을 판단하여 반드시 적용하세요:")
+    lines.append("- 날짜/일자/일시/Date → `...COLUMN_TYPES.dateColumn`")
+    lines.append("- 금액/수수료/급여/합계/보험료/원 → `...COLUMN_TYPES.currencyColumn`")
+    lines.append("- 수량/건수/횟수/개수 → `...COLUMN_TYPES.numberColumn`")
+    lines.append("- 비율/달성률/%/율 → `...COLUMN_TYPES.percentColumn`")
+    lines.append("COLUMN_TYPES를 import했으면 반드시 사용하세요. import만 하고 미사용은 금지.")
     lines.append("")
 
     # 셀 렌더러
@@ -690,7 +701,7 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("### Usage Example (Complex - Many Columns + Action Button)")
     lines.append("```tsx")
     lines.append("import { DataGrid, COLUMN_TYPES } from '@aplus/ui';")
-    lines.append("import { Button } from '@/components';")
+    lines.append("import { Button, Badge } from '@/components';")
     lines.append("")
     lines.append("// [prefix] 방식: 단순 시각적 그룹핑용 (1-depth 헤더 유지). 2-depth+ 다단 헤더는 ColGroupDef 사용")
     lines.append("const columnDefs: ColDef[] = [")
@@ -701,8 +712,12 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("  { field: 'joinDate', headerName: '[인사] 입사일', ...COLUMN_TYPES.dateColumn },")
     lines.append("  { field: 'baseSalary', headerName: '[급여] 기본급', ...COLUMN_TYPES.currencyColumn },")
     lines.append("  { field: 'bonus', headerName: '[급여] 상여금', ...COLUMN_TYPES.currencyColumn },")
-    lines.append("  { field: 'status', headerName: '상태', width: 100,")
-    lines.append("    valueFormatter: (params) => params.value === 'active' ? '재직' : '퇴직' },")
+    lines.append("  { field: 'status', headerName: '상태', width: 120,")
+    lines.append("    cellRenderer: (params: any) => (")
+    lines.append("      <Badge type=\"status\" status={params.value === 'active' ? 'success' : 'error'}")
+    lines.append("        appearance=\"subtle\" label={params.value === 'active' ? '재직' : '퇴직'} />")
+    lines.append("    ) },")
+    lines.append("  // ⚠️ 상태/구분 컬럼은 반드시 Badge cellRenderer 사용 (valueFormatter로 텍스트만 표시 금지)")
     lines.append("  // Action button — Button 컴포넌트를 cellRenderer로 직접 사용")
     lines.append("  { headerName: '상세', width: 100,")
     lines.append("    cellRenderer: (params: any) => (")
@@ -807,7 +822,17 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("- ❌ `cellRenderer: ButtonCellRenderer` — 사용 금지 (디자인 시스템 미적용, 파란색 하드코딩)")
     lines.append("- For simple text formatting, use `valueFormatter`: `valueFormatter: (params) => params.value ? '활성' : '비활성'`")
     lines.append("")
-    lines.append("**⚠️ cellRenderer 필수 패턴:**")
+    lines.append("**⚠️ cellRenderer 사용 기준 (필수):**")
+    lines.append("cellRenderer는 **시각적 가공이 필요한 컬럼에만** 사용하세요:")
+    lines.append("- ✅ **상태/구분/유형/등급 컬럼 → Badge cellRenderer 필수** — `<Badge type=\"status\" status=\"success\" label=\"완료\" />` 등. valueFormatter로 단순 텍스트만 표시 금지")
+    lines.append("- ✅ Badge, 진행률 바, 아바타, 아이콘 버튼 등 **DS 컴포넌트가 필요한 경우**")
+    lines.append("- ✅ 금액에 toLocaleString() + 색상 분기 등 **복합 포맷팅**")
+    lines.append("- ❌ `(p) => <div className=\"h-full flex items-center\">{p.value}</div>` — 기본 렌더링과 동일. 쓰지 마세요")
+    lines.append("- ❌ `(p) => <div className=\"h-full flex items-center text-secondary\">{p.value}</div>` — 단순 색상은 `cellClass` 사용")
+    lines.append("- ❌ `(p) => <div className=\"...\">{p.value}년</div>` — 접미사는 `valueFormatter` 사용: `(p) => p.value + '년'`")
+    lines.append("단순 텍스트 표시에 cellRenderer를 쓰면 렌더링 성능이 저하되고 코드가 불필요하게 길어집니다.")
+    lines.append("")
+    lines.append("**⚠️ cellRenderer 작성 시 필수 패턴:**")
     lines.append("1. `h-full flex items-center` — 세로 중앙 정렬 (빠뜨리면 셀 상단에 치우침)")
     lines.append("2. Icon에 `className=\"text-primary\"` — 아이콘 색상 (빠뜨리면 흰색/투명으로 안 보임)")
     lines.append("3. ❌ `{condition && <Element />}` 금지 → ✅ `{condition ? <Element /> : null}` 삼항 연산자 필수. Figma 디자인에 dash/placeholder가 있으면 표시, 없으면 null")
@@ -832,18 +857,21 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("- `headerCheckboxSelection: true` in columnDefs — v34에서 **삭제됨**, rowSelection.headerCheckbox로 대체")
     lines.append("")
     lines.append("#### ✅ 유일한 올바른 방법:")
+    lines.append("")
+    lines.append("🚨 **체크박스 중복 금지**: `rowSelection.checkboxes: true`와 columnDefs의 `checkboxSelection: true`를 **동시에 사용하면 체크박스가 2열** 생김. 반드시 하나만 사용!")
+    lines.append("")
     lines.append("```tsx")
-    lines.append("// ⚠️ rowData는 반드시 useState로")
+    lines.append("// ⚠️ rowData는 반드시 useState로 (일반 const 변수 금지 — 리렌더 시 선택 해제됨)")
     lines.append("const [rowData] = useState([...initialData]);")
     lines.append("")
-    lines.append("// ✅ 체크박스를 원하는 컬럼 위치에 배치 가능 (checkboxSelection: true)")
+    lines.append("// columnDefs에 checkboxSelection 넣지 마세요 (rowSelection.checkboxes가 자동 생성)")
     lines.append("const columnDefs: ColDef[] = [")
     lines.append("  { field: 'name', headerName: '이름' },")
-    lines.append("  { field: 'dept', headerName: '부서', checkboxSelection: true },  // 체크박스가 부서 컬럼에 표시")
+    lines.append("  { field: 'dept', headerName: '부서' },")
     lines.append("  { field: 'age', headerName: '나이' },")
     lines.append("];")
     lines.append("")
-    lines.append("// ✅ 다중 선택 + 체크박스로만 선택 (행 클릭으로 선택 안 됨)")
+    lines.append("// ✅ 다중 선택 + 자동 체크박스 열 (가장 일반적)")
     lines.append("<DataGrid")
     lines.append("  rowData={rowData}")
     lines.append("  columnDefs={columnDefs}")
@@ -851,7 +879,7 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("  onSelectionChanged={handleSelectionChanged}")
     lines.append("/>")
     lines.append("")
-    lines.append("// ✅ 단일 선택 + 체크박스로만 선택")
+    lines.append("// ✅ 단일 선택 + 자동 체크박스 열")
     lines.append("<DataGrid")
     lines.append("  rowData={rowData}")
     lines.append("  columnDefs={columnDefs}")
@@ -866,7 +894,7 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("/>")
     lines.append("```")
     lines.append("")
-    lines.append("**요약: rowSelection은 반드시 객체 `{{ }}` 형태로 작성. 문자열 금지. suppressRowClickSelection 금지. 체크박스 위치는 columnDefs에서 checkboxSelection: true로 원하는 컬럼에 배치 가능. pinned 사용 금지.**")
+    lines.append("**요약: rowSelection은 반드시 객체 `{{ }}` 형태로 작성. 문자열 금지. suppressRowClickSelection 금지. `rowSelection.checkboxes: true` 사용 시 columnDefs에 `checkboxSelection: true` 넣지 마세요 (체크박스 2열 버그). pinned 사용 금지.**")
     lines.append("")
 
     # 이벤트 핸들러
@@ -1224,7 +1252,7 @@ Always respond in Korean.
 - 비율 요청 → 12-column 환산: 1:1→col-span-6+6, 1:2→4+8, 1:3→3+9, 1:1:1→4+4+4
 - Grid children: `className="w-full min-w-0"` 필수
 - **GridLayout은 `type` prop만 사용**. `gap`/`className` 등에 tailwind 클래스 전달 금지 — type이 컬럼 수·gap을 자동 결정. `<GridLayout type="C-2" gap="gap-5">` ❌ / `<GridLayout type="C-2">` ✅
-- DS 컴포넌트(Button, Badge 등)의 색상은 전용 prop으로 제어. className에 bg-/text- 색상 금지
+- **DS 컴포넌트에 `className` prop 전달 금지** — Button, Badge, Select, Field, Checkbox, Radio 등 DS 컴포넌트는 자체 prop(variant, status, buttonType 등)으로 스타일 제어. `className="text-semantic-error"` 같은 직접 스타일링 금지. 래퍼 `<div>`에만 className 허용
 
 ### Mock Data
 - 리스트/테이블: 10건 이상. 현실적인 한국어 데이터 (김민준, 이서연 / 토스, 당근)
@@ -1258,7 +1286,7 @@ Always respond in Korean.
 1. `import { Button, Field, Select, Icon } from '@/components'` — 사용하는 컴포넌트 전부 import. 미사용/누락 = CRASH
 2. import 양방향 점검: import→JSX, JSX→import 모두 1:1 매칭. 커스텀 컴포넌트 정의 금지(import 사용)
 3. `React.useState`, `React.useEffect` 직접 사용 (import 불필요)
-4. Tailwind CSS only. `style={{}}` = 동적 JS 값만. 외부 라이브러리 import 금지 (예외: DataGrid 컬럼 타입은 `import { ColDef } from 'ag-grid-community'` 허용. 다단 헤더 사용 시 `import { ColDef, ColGroupDef } from 'ag-grid-community'` 허용)
+4. Tailwind CSS only. `style={{}}` = 동적 JS 값만. 외부 라이브러리 import 금지 (예외: DataGrid 컬럼 타입은 `import { ColDef } from 'ag-grid-community'` 허용. 다단 헤더 사용 시 `import { ColDef, ColGroupDef } from 'ag-grid-community'` 허용). **DataGrid 사용 시 `import { DataGrid, COLUMN_TYPES } from '@aplus/ui'` 필수** — COLUMN_TYPES 없이 DataGrid만 import 금지
 5. 테이블 = `<DataGrid>` only (HTML table 태그 금지). 10건+ mock data. 페이지네이션이 보이면 `pagination paginationPageSize={20}` prop 추가 (별도 Pagination 컴포넌트 없음)
 6. 코드 생략(`...`, `// 나머지 동일`) 절대 금지. 전체 코드 출력. 모든 button→onClick, input→value+onChange
 7. 수정 요청 시 기존 코드 전부 유지 + 대상만 변경
@@ -1311,10 +1339,27 @@ COMPONENT_QUICK_REFERENCE = """
   - 반려/오류 (빨강): `<Badge type="status" status="error" appearance="subtle" label="반려" />`
 - **⚠️ Badge 색상은 Figma 시각 기준**: 파란→`info`, 초록→`success`, 노란/주황→`warning`또는`level="primary"`, 빨간→`error`. 배지 텍스트가 아니라 **Figma에서 보이는 배경/텍스트 색상**으로 판단
 
-### Checkbox / Radio
+### Checkbox
 - `<Option label="동의합니다"><Checkbox value={isChecked ? 'checked' : 'unchecked'} onChange={() => toggle()} /></Option>`
-- **⚠️ Checkbox `value`는 문자열** `'unchecked' | 'checked' | 'indeterminate'` (boolean 아님, `checked` prop 없음). onChange는 토글 함수 (e.target.checked 사용 금지)
-- **⚠️ Option의 props는 `label` + children뿐** — `showLabel`/`helperText`/`description` prop **없음**. 라벨·설명문이 필요하면 **OptionGroup**으로 감싸기 (단일 체크박스여도 OK)
+- **Checkbox `value`는 문자열** `'unchecked' | 'checked' | 'indeterminate'` (boolean 아님). onChange는 토글 함수
+
+### Radio (⚠️ Checkbox와 완전히 다른 패턴!)
+- 🚨 **Radio `value`는 실제 데이터 값만 사용** — `"checked"`/`"unchecked"` 절대 금지! (이건 Checkbox 전용)
+- Radio에는 `value` prop이 1개만 있어야 함. **2개 쓰면 React 에러**
+- ✅ 올바른 패턴 (FilterBar 안 Radio):
+```tsx
+<OptionGroup label="전자청약(보험사)" showLabel={true} orientation="horizontal">
+  <Option label="N"><Radio value="N" onChange={() => setFilter('N')} /></Option>
+  <Option label="Y"><Radio value="Y" onChange={() => setFilter('Y')} /></Option>
+</OptionGroup>
+```
+- ❌ 잘못된 패턴 (CRASH):
+```tsx
+<Radio value="N" value={state === 'N' ? 'checked' : 'unchecked'} />  /* value 2개 + checked/unchecked 사용 */
+```
+
+### Option 공통
+- **Option의 props는 `label` + children뿐** — `showLabel`/`helperText`/`description` prop **없음**. 라벨·설명문이 필요하면 **OptionGroup**으로 감싸기 (단일 체크박스여도 OK)
 - Option 외부에 수동 `<p className="ml-7">설명...</p>` 추가 금지 → OptionGroup의 `helptext` prop 사용
 
 ### IconButton (Button과 prop 다름)
@@ -1331,16 +1376,21 @@ COMPONENT_QUICK_REFERENCE = """
 - size: sm | md | lg (xl 없음). 내장 padding. 삭제 확인, 단순 알림, 필드 1~2개만
 
 ### FilterBar (12컬럼 CSS Grid, 버튼 내장)
+- **import 필수**: `import { FilterBar } from '@/components'` — 누락 시 `FilterBar is not defined` CRASH
 - `<FilterBar mode="compact" onReset={fn} onSearch={fn} actionSpan={3}>`
 - 각 필드: `<div className="col-span-N">` 래핑
 - **🚨 col-span + actionSpan 계산 규칙 (반드시 따르세요)**:
-  1. JSON 필드의 `w` 값을 합산하여 각 필드의 12칸 비율 계산
-  2. `actionSpan={3}` 고정 (초기화+조회 버튼 영역 3칸)
-  3. **마지막 행**: 필드 col-span 합 + actionSpan = 12. 예: `col-span-9` + `actionSpan={3}` = 12
-  4. **중간 행**: 12칸 전부 필드 OK
-  5. ❌ `col-span-10` + `actionSpan={2}` = 버튼 찌그러짐. 절대 사용 금지
+  1. Figma 필터 필드의 `w` 값 비율로 각 필드의 col-span 계산
+  2. **actionSpan은 마지막 행 여유에 맞춰 결정**: 필드 합이 9면 `actionSpan={3}`, 10이면 `actionSpan={2}`. 공식: **actionSpan = 12 - 마지막행 필드 col-span 합**
+  3. **마지막 행**: 필드 col-span 합 + actionSpan = **정확히 12**
+  4. **중간 행**: col-span 합 = **정확히 12** (초과 절대 금지)
+  5. 🚨 **코드 작성 전 행별 col-span 검산 필수**: 1행: X+X+X=12 ✅, 마지막행: X+X+...+actionSpan=12 ✅. 12 초과 시 우측 overflow!
+  6. **Figma에서 좁은 필터는 col-span-1 허용**하되, 라벨이 긴 필드(예: "전자서명(A+에셋)")는 col-span-2 이상
+  7. 🚨 **복합 필터(컨트롤 2개 이상)는 col-span-3 이상**: 하나의 필터 슬롯에 Select+DatePicker, Select+Field 등 입력 컨트롤이 2개 이상 나란히 들어가면 col-span-1~2로는 내용물이 옆 필드와 겹침. 복합 필터는 **col-span-3 이상** 할당
+- **복합 필터 라벨**: Select+Field가 한 슬롯에 있으면 첫 번째 컴포넌트에 `label` + `showLabel={true}` 사용, 나머지는 `showLabel={false}`. ❌ `<span className="text-sm">라벨</span>` 커스텀 라벨 금지
 - FilterBar 자체가 배경(`bg-bg-subtle rounded-xl`)을 가짐 → 외부에 배경 div 래핑 금지
 - 초기화(tertiary)/조회(primary) 버튼은 FilterBar가 자동 렌더링 → 별도 Button 배치 금지
+- 🚨 **Figma 필터 완전성**: Figma에 있는 필터는 **하나도 빠뜨리지 마세요**. 필터 수가 많으면 행을 늘려서 전부 포함
 
 ### Pagination (DataGrid 내장)
 - **별도 `<Pagination>` 컴포넌트 없음.** DataGrid의 `pagination` prop 사용
@@ -1359,9 +1409,10 @@ COMPONENT_QUICK_REFERENCE = """
 - **⚠️ 배치 규칙**: TitleSection은 페이지 **전체 폭** 상단에 위치. 다중 패널 GridLayout(type=B~H)에서 특정 패널 안에 넣어 한 컬럼에 갇히게 하지 말 것
   - **type="A" (1패널)**: GridLayout 첫 자식 `<div>` 안 최상단 (현재 정석)
   - **type="B~H" (다중 패널)**: GridLayout **바깥** 상단에 배치 (GridLayout 앞 형제로). 페이지 breadcrumb/title이 한 패널만큼 좁아지는 현상 방지
-- **⚠️ TitleSection children 규칙**: children에는 **Figma의 TitleSection 영역 안에 실제로 있는 버튼/아이콘만** 넣으세요. Figma에서 TitleSection 바깥(그리드 위, FilterBar 아래 등)에 있는 버튼을 TitleSection children으로 옮기지 마세요.
+- **⚠️ TitleSection children 규칙**: children에는 **Figma의 TitleSection 영역(타이틀 행) 안에 실제로 있는 버튼만** 넣으세요. Figma에서 그리드 위·FilterBar 아래에 있는 버튼(엑셀다운 등)은 `RowSlot slot="actions"`에 배치하세요.
 - **⚠️ 즐겨찾기 (필수)**: TitleSection에는 **항상 `favorite` prop을 추가**하세요 (실제 앱에서 모든 페이지에 표시됨). `<TitleSection title="일반게시판" favorite={false} onFavoriteChange={() => {}} ...>` — 타이틀 바로 옆에 ☆ 아이콘이 자동 렌더링됨. ❌ IconButton으로 별도 추가하지 마세요
-- 신계약등록2/3·이미지시스템 버튼 금지 (매 페이지 반복되는 템플릿 기본 슬롯)
+- 🚨 **신계약등록2/3 버튼 생성 금지**: Figma JSON에 이 텍스트가 보여도 무시. 앱 셸(템플릿)이 자동 렌더링하는 요소
+- **이미지시스템 버튼**: Figma에 있으면 TitleSection children에 포함. `<Button buttonType="tertiary" size="sm" label="이미지시스템" showEndIcon={true} endIcon={<Icon name="external" size={16} />} />`
 
 ### Alert / Tag / LabelValue / Popover / Tab / Segment / OptionGroup / ActionBar / Tooltip / TreeMenu
 - Alert: `<Alert type="error" title="오류" body="설명" />` (type: error|info|success|warning). **⚠️ 에러/경고/성공/정보 메시지 박스 전용. 일반 안내·가이드 bullet 텍스트는 `<ul><li>` 또는 `<p>` 사용 (Alert 남용 금지)**
@@ -1449,10 +1500,10 @@ LAYOUT_GUIDE = """
 |------|------|------|
 | A | col-12 | 리스트, 상세, 입력 폼 |
 | B | 6+6 | 비교/병렬 |
-| C-1 | 3+9 | 목록+상세 (탐색형) |
-| C-2 | 9+3 | C-1 반전 |
-| D-1 | 4+8 | 필터 고정형 |
-| D-2 | 8+4 | D-1 반전 |
+| C   | 3+9 | 목록+상세 (탐색형) |
+| C-2 | 9+3 | C 반전 |
+| D   | 4+8 | 필터 고정형 |
+| D-2 | 8+4 | D 반전 |
 | E | 4+4+4 | 3열 동일 위계 |
 | F | 2+8+2 | 검토/승인 |
 | G | 2+2+8 | 트리+목록+상세 |
@@ -1480,6 +1531,11 @@ RowSlot slot: `"filter"` | `"actions"` | `"grid"` | `"detail"` | `"form"` | `"su
 - FilterBar + ActionButtons + DataGrid = **하나의 Section Card** (`bg-surface rounded-xl border border-default shadow-sm p-6`)
 - FilterBar와 Grid를 별도 카드로 분리 금지
 
+### 🚨 버튼 배치 규칙 (TitleSection vs 그리드 액션)
+- **TitleSection children**: Figma에서 타이틀 행(브레드크럼 옆)에 있는 버튼만. "신규 등록", "계약원부 보기" 등 페이지 수준 버튼 1~2개
+- **그리드 액션 버튼** (FilterBar 아래, DataGrid 위): "엑셀다운", "전자서명", "삭제" 등 데이터 조작 버튼 → `RowSlot slot="actions"` 안에 `<div className="flex justify-end gap-2">` 배치
+- 🚨 **버튼 위치는 Figma 기준**: Figma에서 타이틀 행에 있으면 TitleSection children, 그리드 위에 있으면 `RowSlot slot="actions"`. 위치를 임의로 바꾸지 마세요
+
 ### RP-1 조회형 정석 코드 (1행 필터)
 ```tsx
 import { GridLayout, RowPattern, RowSlot, TitleSection, FilterBar, Field, Select, Button, DataGrid } from '@/components';
@@ -1501,6 +1557,12 @@ import { GridLayout, RowPattern, RowSlot, TitleSection, FilterBar, Field, Select
                 <Select label="상태" placeholder="전체" options={[]} />
               </div>
             </FilterBar>
+          </RowSlot>
+          <RowSlot slot="actions">
+            <div className="flex justify-end gap-2">
+              <Button buttonType="tertiary" size="sm" label="엑셀다운" />
+              <Button buttonType="primary" size="sm" label="계약원부 보기" />
+            </div>
           </RowSlot>
           <RowSlot slot="grid">
             <DataGrid rowData={[]} columnDefs={[]} domLayout="autoHeight" pagination paginationPageSize={20} />
@@ -1536,7 +1598,7 @@ import { GridLayout, RowPattern, RowSlot, TitleSection, FilterBar, Field, Select
 |------|----------|------------------------|
 | TitleSection 버튼 | **최대 5개** | 주요 3개 노출 + 나머지는 `flex-wrap`으로 2행 배치. 절대 한 줄에 6개 이상 금지 |
 | DataGrid 컬럼 | **최대 12개** | 핵심 12개만 코드에 작성. 나머지는 `// 추가 컬럼: (컬럼명 나열)` 주석 1줄로 안내 |
-| FilterBar 필터 | **최대 6개** | 주요 필터만 노출. "상세검색" 토글 구현이 불가하면 6개로 축소 |
+| FilterBar 필터 | **Figma 기준 전부** | Figma에 있는 필터는 **하나도 빠뜨리지 말고 전부 생성**. Figma 없는 텍스트 모드에서만 최대 6개 |
 | Select/드롭다운 옵션 | **최대 5~7개** | Mock 데이터는 대표값만. `generateOptions(50)` 같은 대량 생성 절대 금지 |
 | TreeMenu 노드 | **최대 2depth × 5개** | 10~15개면 구조 전달 충분. 100개 노드 생성 금지 |
 | Drawer/Dialog 폼 필드 | **최대 20개** | 초과 시 FormGrid 섹션별 분리. 40개 필드를 한 Drawer에 나열 금지 |
@@ -1571,6 +1633,25 @@ FINAL_REMINDER = """
 10. 드로어 요청 → Drawer, 다이얼로그/모달/팝업 → Dialog
 11. 날짜 필드: YYYY-MM-DD 형식
 12. Select options 3개 이상 (2개 이하면 Radio)
+
+### 🚨 AG Grid 필수 검증 (DataGrid 사용 시):
+13. **COLUMN_TYPES import 여부**: DataGrid가 있으면 `import { DataGrid, COLUMN_TYPES } from '@aplus/ui'` 필수. `COLUMN_TYPES` 없이 `DataGrid`만 import하면 안 됨
+14. **COLUMN_TYPES 적용 여부**: 날짜/일자 → `...COLUMN_TYPES.dateColumn`, 금액/수수료/급여 → `...COLUMN_TYPES.currencyColumn`, 수량/건수 → `...COLUMN_TYPES.numberColumn`, 비율/% → `...COLUMN_TYPES.percentColumn` 적용했는가?
+15. **상태/구분 컬럼 Badge**: '상태', '구분', '유형', '등급' 컬럼에 Badge cellRenderer를 사용했는가? 상태값을 단순 텍스트(valueFormatter)로 표시하면 안 됨 — 반드시 `<Badge type="status" status="..." label="..." />` 사용
+16. **체크박스 중복 금지**: `rowSelection={{ checkboxes: true }}`와 columnDefs의 `checkboxSelection: true`를 동시 사용하지 않았는가? → 체크박스 2열 버그. 하나만 사용
+17. **rowData는 useState**: `const rowData = [...]` 일반 변수 금지. 반드시 `const [rowData] = useState([...])` — 일반 변수면 리렌더 시 체크박스 선택 해제됨
+
+### 🚨 FilterBar 필수 검증:
+18. **FilterBar import 확인**: `<FilterBar>`를 JSX에서 사용하면 반드시 `import { FilterBar } from '@/components'`에 포함. 누락 시 `FilterBar is not defined` CRASH
+19. **행별 col-span 합 = 12**: 각 행의 col-span 합이 정확히 12인가? (마지막 행은 필드 합 + actionSpan = 12). 12 초과 시 우측 overflow 발생
+20. **복합 필터 col-span ≥ 3**: 하나의 필터 슬롯에 컨트롤이 2개 이상(Select+DatePicker 등) 들어가는 복합 필터에 col-span-1~2를 사용하지 않았는가? → 내용물이 옆 필드와 겹침. 복합 필터는 col-span-3 이상
+
+### 🚨 컴포넌트 사용 필수 검증:
+21. **Radio value**: Radio에 `value="checked"` 또는 `value="unchecked"` 쓰지 않았는가? → 이것은 Checkbox 전용. Radio는 `value="Y"`, `value="N"`, `value="all"` 등 실제 데이터 값만 사용
+22. **DS 컴포넌트 className**: Button, Badge, Select, Field, Radio, Checkbox에 `className="..."` 직접 전달하지 않았는가? → DS 컴포넌트는 자체 prop(buttonType, status 등)으로 스타일링. className은 래퍼 `<div>`에만 허용
+
+### 🚨 템플릿 요소 금지:
+23. **신계약등록2/3·마이메뉴·전체 메뉴 버튼 금지**: 코드에 "신계약등록", "마이메뉴", "전체 메뉴" 등 앱 셸 요소가 있으면 **삭제하세요**. Figma JSON에 보여도 이들은 템플릿이 자동 렌더링 → 코드에 넣으면 중복
 
 Create a premium, completed result.
 """
@@ -1854,7 +1935,7 @@ def extract_component_usage_summary(simplified_layout: dict) -> str:
         f"이 디자인의 DS 컴포넌트 총 {total}개. **반드시 아래 컴포넌트와 props를 그대로 사용하세요.**",
         "- JSON의 `component` 필드가 Select이면 반드시 `<Select>`를 사용. 스크린샷 보고 Field로 바꾸지 마세요.",
         "- 인벤토리에 없는 UI 요소(커스텀 레이아웃, 에디터 등)만 자유롭게 생성 가능.",
-        "- **TitleSection children에 신계약등록2/3·이미지시스템 버튼 금지** (매 페이지 반복되는 템플릿 기본 슬롯).",
+        "- **TitleSection children에 신계약등록2/3 버튼 금지** (매 페이지 반복되는 템플릿 기본 슬롯).",
         "- FilterBar 내장 버튼(초기화, 조회하기)은 onReset/onSearch로 자동 렌더링됨. 별도 배치 금지.",
         "",
     ]

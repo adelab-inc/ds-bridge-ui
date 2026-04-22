@@ -31,16 +31,26 @@ LAYOUT_COMPONENTS_V1: frozenset[str] = frozenset(
 # React 기본 식별자 (JSX에서 PascalCase로 등장 가능)
 REACT_BUILTINS: frozenset[str] = frozenset({"Fragment", "React"})
 
-# 기본 스키마 위치
-_DEFAULT_SCHEMA_PATH = Path(__file__).resolve().parents[2] / "component-schema.json"
+# 기본 스키마 위치 (우선순위 순서대로 탐색)
+_AI_SERVICE_ROOT = Path(__file__).resolve().parents[2]
+_DEFAULT_SCHEMA_CANDIDATES: tuple[Path, ...] = (
+    _AI_SERVICE_ROOT / "component-schema.json",
+)
+# 로컬 개발 환경에서만 존재하는 storybook 경로 (Docker에서는 parents 부족으로 IndexError)
+try:
+    _STORYBOOK_SCHEMA = _AI_SERVICE_ROOT.parents[1] / "storybook-standalone" / "dist" / "component-schema.json"
+    _DEFAULT_SCHEMA_CANDIDATES = _DEFAULT_SCHEMA_CANDIDATES + (_STORYBOOK_SCHEMA,)
+except IndexError:
+    pass
 
 
 class ComponentCatalog:
-    """허용된 컴포넌트 이름 화이트리스트."""
+    """허용된 컴포넌트 이름 및 prop enum 화이트리스트."""
 
     def __init__(
         self,
         schema_components: set[str],
+        prop_enums: dict[str, dict[str, frozenset[str]]] | None = None,
         extra: set[str] | None = None,
     ) -> None:
         self._known: set[str] = set(schema_components)
@@ -48,6 +58,8 @@ class ComponentCatalog:
         self._known.update(REACT_BUILTINS)
         if extra:
             self._known.update(extra)
+        # {component_name: {prop_name: {valid literal values}}}
+        self._prop_enums: dict[str, dict[str, frozenset[str]]] = prop_enums or {}
 
     def is_known(self, name: str) -> bool:
         return name in self._known
@@ -59,17 +71,58 @@ class ComponentCatalog:
         """DS 컴포넌트 이름 반환 (REACT_BUILTINS 제외)."""
         return self._known - REACT_BUILTINS
 
+    def get_prop_enum(self, component: str, prop: str) -> frozenset[str] | None:
+        """컴포넌트의 prop에 허용된 리터럴 enum 값 반환. 없으면 None."""
+        return self._prop_enums.get(component, {}).get(prop)
+
     @classmethod
     def load_default(cls, schema_path: Path | None = None) -> ComponentCatalog:
-        """`component-schema.json`에서 컴포넌트 이름을 로드한다."""
-        path = schema_path or _DEFAULT_SCHEMA_PATH
-        try:
-            with path.open("r", encoding="utf-8") as f:
-                data = json.load(f)
-            components = set((data.get("components") or {}).keys())
-        except (OSError, json.JSONDecodeError):
-            components = set()
-        return cls(schema_components=components)
+        """`component-schema.json`에서 컴포넌트 이름 + prop enum을 로드한다.
+
+        `schema_path`가 지정되지 않으면 `_DEFAULT_SCHEMA_CANDIDATES`를 순서대로 탐색.
+        """
+        candidates: tuple[Path, ...]
+        if schema_path is not None:
+            candidates = (schema_path,)
+        else:
+            candidates = _DEFAULT_SCHEMA_CANDIDATES
+
+        data: dict[str, object] | None = None
+        for path in candidates:
+            try:
+                with path.open("r", encoding="utf-8") as f:
+                    data = json.load(f)
+                break
+            except (OSError, json.JSONDecodeError):
+                continue
+
+        if data is None:
+            return cls(schema_components=set(), prop_enums={})
+
+        raw_components = data.get("components") or {}
+        components_dict: dict[str, object] = (
+            raw_components if isinstance(raw_components, dict) else {}
+        )
+        components = set(components_dict.keys())
+        prop_enums: dict[str, dict[str, frozenset[str]]] = {}
+        for comp_name, comp_def in components_dict.items():
+            if not isinstance(comp_def, dict):
+                continue
+            props = comp_def.get("props") or {}
+            if not isinstance(props, dict):
+                continue
+            comp_enums: dict[str, frozenset[str]] = {}
+            for prop_name, prop_def in props.items():
+                if not isinstance(prop_def, dict):
+                    continue
+                ptype = prop_def.get("type")
+                # enum 판정: type이 문자열 리스트인 경우만
+                if isinstance(ptype, list) and ptype and all(isinstance(v, str) for v in ptype):
+                    comp_enums[prop_name] = frozenset(ptype)
+            if comp_enums:
+                prop_enums[comp_name] = comp_enums
+
+        return cls(schema_components=components, prop_enums=prop_enums)
 
 
 # <PascalCase ...> 또는 <PascalCase/>
@@ -120,6 +173,70 @@ def scan_jsx_components(source: str) -> list[JSXUsage]:
         line = cleaned.count("\n", 0, match.start()) + 1
         usages.append(JSXUsage(name=name, line=line))
     return usages
+
+
+@dataclass(frozen=True)
+class JSXPropLiteral:
+    component: str
+    prop: str
+    value: str
+    line: int  # 1-based (JSX 여는 태그 시작 라인)
+
+
+# JSX 여는 태그 전체 (속성 본문 캡처). `<Name ... >` 또는 `<Name ... />`
+_JSX_TAG_OPEN_RE = re.compile(
+    r"""
+    <(?P<name>[A-Z][A-Za-z0-9_]*)     # 컴포넌트 이름
+    (?P<attrs>(?:
+        [^<>{}'"]                       # 일반 문자
+      | \{(?:[^{}]|\{[^{}]*\})*\}       # JSX expression (1-depth 중첩 허용)
+      | "(?:\\.|[^"\\])*"               # 큰따옴표 문자열
+      | '(?:\\.|[^'\\])*'               # 작은따옴표 문자열
+    )*)
+    /?>
+    """,
+    re.VERBOSE | re.DOTALL,
+)
+
+# 속성 본문 안의 `key="literal"` (단순 문자열 값만)
+_PROP_STRING_ATTR_RE = re.compile(
+    r"""
+    (?<![A-Za-z0-9_])            # 식별자 경계
+    (?P<k>[a-zA-Z_][\w-]*)
+    \s*=\s*
+    "(?P<v>[^"\\]*(?:\\.[^"\\]*)*)"   # 큰따옴표 문자열 리터럴
+    """,
+    re.VERBOSE,
+)
+
+
+def scan_jsx_prop_string_literals(source: str) -> list[JSXPropLiteral]:
+    """`<Comp prop="literal">` 형태의 **정적 문자열** prop만 수집한다.
+
+    `prop={...}` 동적 표현은 제외. 주석/문자열 안의 JSX는 `scan_jsx_components`와
+    동일한 방식으로 사전 마스킹 후 탐색한다.
+    """
+    cleaned = _strip_comments_and_strings(source)
+    # _strip_comments_and_strings는 '문자열 리터럴' 내용을 blank로 날리므로
+    # cleaned에는 prop 값 리터럴이 남지 않는다. 원문에서 태그 위치만 쓰고 속성은 원문으로 읽는다.
+    results: list[JSXPropLiteral] = []
+    for match in _JSX_TAG_OPEN_RE.finditer(source):
+        # 이 태그가 주석/문자열 안에 있으면 skip
+        if match.start() < len(cleaned) and cleaned[match.start()] == ' ':
+            continue
+        name = match.group("name")
+        attrs = match.group("attrs") or ""
+        tag_line = source.count("\n", 0, match.start()) + 1
+        for attr in _PROP_STRING_ATTR_RE.finditer(attrs):
+            results.append(
+                JSXPropLiteral(
+                    component=name,
+                    prop=attr.group("k"),
+                    value=attr.group("v"),
+                    line=tag_line,
+                )
+            )
+    return results
 
 
 # import { A, B as BB } from "..."  또는  import Default from "..."  또는  import type { ... } from "..."
@@ -262,6 +379,31 @@ def validate_code(source: str, catalog: ComponentCatalog) -> ValidationReport:
                     location=_format_location(hit.line),
                     message=f"external URL hardcoded: {hit.snippet}",
                     suggested_fix="외부 URL 대신 placeholder box 또는 실제 자산 경로 사용",
+                )
+            )
+
+        # Prop enum 값 검증: 스키마에 enum이 정의된 prop에 대해 리터럴 값이 목록에 있는지 확인
+        seen_props: set[tuple[str, str, str, int]] = set()
+        for lit in scan_jsx_prop_string_literals(source):
+            enum = catalog.get_prop_enum(lit.component, lit.prop)
+            if enum is None:
+                continue
+            if lit.value in enum:
+                continue
+            key = (lit.component, lit.prop, lit.value, lit.line)
+            if key in seen_props:
+                continue
+            seen_props.add(key)
+            sorted_values = sorted(enum)
+            errors.append(
+                ValidationError(
+                    category="invalid_prop_value",
+                    location=f"line {lit.line}, <{lit.component} {lit.prop}=\"{lit.value}\">",
+                    message=(
+                        f"{lit.component}.{lit.prop}={lit.value!r} is not in schema enum "
+                        f"{sorted_values}"
+                    ),
+                    suggested_fix=f"use one of: {', '.join(sorted_values)}",
                 )
             )
     except Exception as exc:  # noqa: BLE001 — validator 자체 장애는 삼킴

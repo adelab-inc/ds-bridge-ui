@@ -27,10 +27,10 @@ from app.schemas.chat import ImageContent, Message
 logger = logging.getLogger(__name__)
 
 # Figma prefetch 전체 타임아웃 (초) — 이 시간 안에 못 가져오면 가진 데이터로 진행
-_PREFETCH_TIMEOUT = 60
+_PREFETCH_TIMEOUT = 90
 
 
-async def _fetch_with_timeout(coro, label: str, timeout: float = 55.0):
+async def _fetch_with_timeout(coro, label: str, timeout: float = 80.0):
     """개별 Figma 호출에 타임아웃 적용. 실패 시 None 반환.
 
     예외: FigmaRateLimitError는 swallow하지 않고 상위로 전파해
@@ -140,44 +140,49 @@ async def run_figma_tool_calling_loop(
     try:
         async with asyncio.timeout(_PREFETCH_TIMEOUT):
             if node_id:
-                # Case A: node_id 있음 → 구조 데이터 + 스크린샷 병렬, 스크린샷은 추가 대기 허용
+                # Case A: node_id 있음 → 3개 태스크 동시 시작, 빠른 것부터 결과 저장
+                # ⚠️ gather를 쓰면 느린 태스크(node_detail)가 글로벌 타임아웃을
+                # 유발해 이미 완료된 page_structure 결과까지 유실됨
                 screenshot_task = asyncio.create_task(
                     _fetch_with_timeout(
                         export_node_image(file_key, node_id, scale=1, image_format="png", max_retries=2),
                         "screenshot",
                     )
                 )
-                page_result, detail_result = await asyncio.gather(
+                page_task = asyncio.create_task(
                     _fetch_with_timeout(
                         fetch_page_structure(file_key, node_id, max_retries=2),
                         "page_structure",
-                    ),
+                    )
+                )
+                detail_task = asyncio.create_task(
                     _fetch_with_timeout(
-                        fetch_node_detail(file_key, node_id, max_depth=12, max_retries=2),
+                        fetch_node_detail(file_key, node_id, max_depth=8, max_retries=2),
                         "node_detail",
-                    ),
-                    return_exceptions=True,
+                    )
                 )
 
-                # page_structure 결과 처리
+                # page_structure 먼저 대기 (depth=2, 보통 빠름) → 즉시 저장
+                page_result = await page_task
                 if page_result and not isinstance(page_result, Exception):
                     prefetch_info = json.dumps(
                         page_result, ensure_ascii=False, separators=(",", ":"),
                     )
 
-                # node_detail 결과 처리
-                if detail_result and not isinstance(detail_result, Exception):
-                    node_details[node_id] = json.dumps(
-                        detail_result, ensure_ascii=False, separators=(",", ":"),
-                    )
-
-                # 스크린샷: 구조 데이터 완료 후 추가 대기 (전체 타임아웃 내)
+                # 스크린샷: page_structure보다 빠르거나 비슷 → 즉시 대기
                 try:
                     image_result = await screenshot_task
                     if image_result and not isinstance(image_result, Exception):
                         screenshot_base64, screenshot_media_type = image_result
                 except Exception:
                     logger.warning("Screenshot task failed after structure data ready")
+
+                # node_detail 대기 (depth=12, 느릴 수 있음) → 글로벌 타임아웃 시 스킵
+                detail_result = await detail_task
+                if detail_result and not isinstance(detail_result, Exception):
+                    node_details[node_id] = json.dumps(
+                        detail_result, ensure_ascii=False, separators=(",", ":"),
+                    )
 
             else:
                 # Case B: node_id 없음 → page_structure 먼저, 나머지 병렬
@@ -202,7 +207,7 @@ async def run_figma_tool_calling_loop(
                         )
                     )
                     detail_result = await _fetch_with_timeout(
-                        fetch_node_detail(file_key, target_node_id, max_depth=12, max_retries=2),
+                        fetch_node_detail(file_key, target_node_id, max_depth=8, max_retries=2),
                         "node_detail",
                     )
 
