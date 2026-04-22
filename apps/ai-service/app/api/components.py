@@ -608,6 +608,14 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("];")
     lines.append("```")
     lines.append("")
+    lines.append("**⚠️ COLUMN_TYPES 자동 적용 규칙 (필수):**")
+    lines.append("headerName이나 field명으로 데이터 성격을 판단하여 반드시 적용하세요:")
+    lines.append("- 날짜/일자/일시/Date → `...COLUMN_TYPES.dateColumn`")
+    lines.append("- 금액/수수료/급여/합계/보험료/원 → `...COLUMN_TYPES.currencyColumn`")
+    lines.append("- 수량/건수/횟수/개수 → `...COLUMN_TYPES.numberColumn`")
+    lines.append("- 비율/달성률/%/율 → `...COLUMN_TYPES.percentColumn`")
+    lines.append("COLUMN_TYPES를 import했으면 반드시 사용하세요. import만 하고 미사용은 금지.")
+    lines.append("")
 
     # 셀 렌더러
     lines.append("### Cell Renderers")
@@ -1233,7 +1241,7 @@ Always respond in Korean.
 - 비율 요청 → 12-column 환산: 1:1→col-span-6+6, 1:2→4+8, 1:3→3+9, 1:1:1→4+4+4
 - Grid children: `className="w-full min-w-0"` 필수
 - **GridLayout은 `type` prop만 사용**. `gap`/`className` 등에 tailwind 클래스 전달 금지 — type이 컬럼 수·gap을 자동 결정. `<GridLayout type="C-2" gap="gap-5">` ❌ / `<GridLayout type="C-2">` ✅
-- DS 컴포넌트(Button, Badge 등)의 색상은 전용 prop으로 제어. className에 bg-/text- 색상 금지
+- **DS 컴포넌트에 `className` prop 전달 금지** — Button, Badge, Select, Field, Checkbox, Radio 등 DS 컴포넌트는 자체 prop(variant, status, buttonType 등)으로 스타일 제어. `className="text-semantic-error"` 같은 직접 스타일링 금지. 래퍼 `<div>`에만 className 허용
 
 ### Mock Data
 - 리스트/테이블: 10건 이상. 현실적인 한국어 데이터 (김민준, 이서연 / 토스, 당근)
@@ -1323,6 +1331,9 @@ COMPONENT_QUICK_REFERENCE = """
 ### Checkbox / Radio
 - `<Option label="동의합니다"><Checkbox value={isChecked ? 'checked' : 'unchecked'} onChange={() => toggle()} /></Option>`
 - **⚠️ Checkbox `value`는 문자열** `'unchecked' | 'checked' | 'indeterminate'` (boolean 아님, `checked` prop 없음). onChange는 토글 함수 (e.target.checked 사용 금지)
+- **⚠️ Radio `value`는 실제 데이터 값** — `'checked'`/`'unchecked'` 사용 금지. 반드시 의미 있는 값 사용:
+  - ✅ `<Radio value="Y" />`, `<Radio value="N" />`, `<Radio value="all" />`
+  - ❌ `<Radio value="checked" />`, `<Radio value="unchecked" />` — Checkbox 전용 값, Radio에 쓰지 마세요
 - **⚠️ Option의 props는 `label` + children뿐** — `showLabel`/`helperText`/`description` prop **없음**. 라벨·설명문이 필요하면 **OptionGroup**으로 감싸기 (단일 체크박스여도 OK)
 - Option 외부에 수동 `<p className="ml-7">설명...</p>` 추가 금지 → OptionGroup의 `helptext` prop 사용
 
