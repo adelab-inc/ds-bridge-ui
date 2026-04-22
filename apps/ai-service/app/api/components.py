@@ -1372,6 +1372,7 @@ COMPONENT_QUICK_REFERENCE = """
   4. **중간 행**: col-span 합 = **정확히 12** (초과 절대 금지)
   5. 🚨 **코드 작성 전 행별 col-span 검산 필수**: 1행: X+X+X=12 ✅, 마지막행: X+X+...+actionSpan=12 ✅. 12 초과 시 우측 overflow!
   6. **Figma에서 좁은 필터는 col-span-1 허용**하되, 라벨이 긴 필드(예: "전자서명(A+에셋)")는 col-span-2 이상
+  7. 🚨 **복합 필터(컨트롤 2개 이상)는 col-span-3 이상**: 하나의 필터 슬롯에 Select+DatePicker, Select+Field 등 입력 컨트롤이 2개 이상 나란히 들어가면 col-span-1~2로는 내용물이 옆 필드와 겹침. 복합 필터는 **col-span-3 이상** 할당
 - FilterBar 자체가 배경(`bg-bg-subtle rounded-xl`)을 가짐 → 외부에 배경 div 래핑 금지
 - 초기화(tertiary)/조회(primary) 버튼은 FilterBar가 자동 렌더링 → 별도 Button 배치 금지
 
@@ -1392,9 +1393,10 @@ COMPONENT_QUICK_REFERENCE = """
 - **⚠️ 배치 규칙**: TitleSection은 페이지 **전체 폭** 상단에 위치. 다중 패널 GridLayout(type=B~H)에서 특정 패널 안에 넣어 한 컬럼에 갇히게 하지 말 것
   - **type="A" (1패널)**: GridLayout 첫 자식 `<div>` 안 최상단 (현재 정석)
   - **type="B~H" (다중 패널)**: GridLayout **바깥** 상단에 배치 (GridLayout 앞 형제로). 페이지 breadcrumb/title이 한 패널만큼 좁아지는 현상 방지
-- **⚠️ TitleSection children 규칙**: children에는 **Figma의 TitleSection 영역 안에 실제로 있는 버튼/아이콘만** 넣으세요. Figma에서 TitleSection 바깥(그리드 위, FilterBar 아래 등)에 있는 버튼을 TitleSection children으로 옮기지 마세요.
+- **⚠️ TitleSection children 규칙**: children에는 **Figma의 TitleSection 영역(타이틀 행) 안에 실제로 있는 버튼만** 넣으세요. Figma에서 그리드 위·FilterBar 아래에 있는 버튼(엑셀다운 등)은 `RowSlot slot="actions"`에 배치하세요.
 - **⚠️ 즐겨찾기 (필수)**: TitleSection에는 **항상 `favorite` prop을 추가**하세요 (실제 앱에서 모든 페이지에 표시됨). `<TitleSection title="일반게시판" favorite={false} onFavoriteChange={() => {}} ...>` — 타이틀 바로 옆에 ☆ 아이콘이 자동 렌더링됨. ❌ IconButton으로 별도 추가하지 마세요
-- 신계약등록2/3·이미지시스템 버튼 금지 (매 페이지 반복되는 템플릿 기본 슬롯)
+- 🚨 **신계약등록2/3 버튼 생성 금지**: Figma JSON에 이 텍스트가 보여도 무시. 앱 셸(템플릿)이 자동 렌더링하는 요소
+- **이미지시스템 버튼**: Figma에 있으면 TitleSection children에 포함. `<Button buttonType="tertiary" size="sm" label="이미지시스템" showEndIcon={true} endIcon={<Icon name="external" size={16} />} />`
 
 ### Alert / Tag / LabelValue / Popover / Tab / Segment / OptionGroup / ActionBar / Tooltip / TreeMenu
 - Alert: `<Alert type="error" title="오류" body="설명" />` (type: error|info|success|warning). **⚠️ 에러/경고/성공/정보 메시지 박스 전용. 일반 안내·가이드 bullet 텍스트는 `<ul><li>` 또는 `<p>` 사용 (Alert 남용 금지)**
@@ -1513,6 +1515,11 @@ RowSlot slot: `"filter"` | `"actions"` | `"grid"` | `"detail"` | `"form"` | `"su
 - FilterBar + ActionButtons + DataGrid = **하나의 Section Card** (`bg-surface rounded-xl border border-default shadow-sm p-6`)
 - FilterBar와 Grid를 별도 카드로 분리 금지
 
+### 🚨 버튼 배치 규칙 (TitleSection vs 그리드 액션)
+- **TitleSection children**: Figma에서 타이틀 행(브레드크럼 옆)에 있는 버튼만. "신규 등록", "계약원부 보기" 등 페이지 수준 버튼 1~2개
+- **그리드 액션 버튼** (FilterBar 아래, DataGrid 위): "엑셀다운", "전자서명", "삭제" 등 데이터 조작 버튼 → `RowSlot slot="actions"` 안에 `<div className="flex justify-end gap-2">` 배치
+- 🚨 **버튼 위치는 Figma 기준**: Figma에서 타이틀 행에 있으면 TitleSection children, 그리드 위에 있으면 `RowSlot slot="actions"`. 위치를 임의로 바꾸지 마세요
+
 ### RP-1 조회형 정석 코드 (1행 필터)
 ```tsx
 import { GridLayout, RowPattern, RowSlot, TitleSection, FilterBar, Field, Select, Button, DataGrid } from '@/components';
@@ -1534,6 +1541,12 @@ import { GridLayout, RowPattern, RowSlot, TitleSection, FilterBar, Field, Select
                 <Select label="상태" placeholder="전체" options={[]} />
               </div>
             </FilterBar>
+          </RowSlot>
+          <RowSlot slot="actions">
+            <div className="flex justify-end gap-2">
+              <Button buttonType="tertiary" size="sm" label="엑셀다운" />
+              <Button buttonType="primary" size="sm" label="계약원부 보기" />
+            </div>
           </RowSlot>
           <RowSlot slot="grid">
             <DataGrid rowData={[]} columnDefs={[]} domLayout="autoHeight" pagination paginationPageSize={20} />
@@ -1615,10 +1628,14 @@ FINAL_REMINDER = """
 ### 🚨 FilterBar 필수 검증:
 18. **FilterBar import 확인**: `<FilterBar>`를 JSX에서 사용하면 반드시 `import { FilterBar } from '@/components'`에 포함. 누락 시 `FilterBar is not defined` CRASH
 19. **행별 col-span 합 = 12**: 각 행의 col-span 합이 정확히 12인가? (마지막 행은 필드 합 + actionSpan = 12). 12 초과 시 우측 overflow 발생
+20. **복합 필터 col-span ≥ 3**: 하나의 필터 슬롯에 컨트롤이 2개 이상(Select+DatePicker 등) 들어가는 복합 필터에 col-span-1~2를 사용하지 않았는가? → 내용물이 옆 필드와 겹침. 복합 필터는 col-span-3 이상
 
 ### 🚨 컴포넌트 사용 필수 검증:
-20. **Radio value**: Radio에 `value="checked"` 또는 `value="unchecked"` 쓰지 않았는가? → 이것은 Checkbox 전용. Radio는 `value="Y"`, `value="N"`, `value="all"` 등 실제 데이터 값만 사용
-21. **DS 컴포넌트 className**: Button, Badge, Select, Field, Radio, Checkbox에 `className="..."` 직접 전달하지 않았는가? → DS 컴포넌트는 자체 prop(buttonType, status 등)으로 스타일링. className은 래퍼 `<div>`에만 허용
+21. **Radio value**: Radio에 `value="checked"` 또는 `value="unchecked"` 쓰지 않았는가? → 이것은 Checkbox 전용. Radio는 `value="Y"`, `value="N"`, `value="all"` 등 실제 데이터 값만 사용
+22. **DS 컴포넌트 className**: Button, Badge, Select, Field, Radio, Checkbox에 `className="..."` 직접 전달하지 않았는가? → DS 컴포넌트는 자체 prop(buttonType, status 등)으로 스타일링. className은 래퍼 `<div>`에만 허용
+
+### 🚨 템플릿 요소 금지:
+23. **신계약등록2/3·마이메뉴·전체 메뉴 버튼 금지**: 코드에 "신계약등록", "마이메뉴", "전체 메뉴" 등 앱 셸 요소가 있으면 **삭제하세요**. Figma JSON에 보여도 이들은 템플릿이 자동 렌더링 → 코드에 넣으면 중복
 
 Create a premium, completed result.
 """
@@ -1902,7 +1919,7 @@ def extract_component_usage_summary(simplified_layout: dict) -> str:
         f"이 디자인의 DS 컴포넌트 총 {total}개. **반드시 아래 컴포넌트와 props를 그대로 사용하세요.**",
         "- JSON의 `component` 필드가 Select이면 반드시 `<Select>`를 사용. 스크린샷 보고 Field로 바꾸지 마세요.",
         "- 인벤토리에 없는 UI 요소(커스텀 레이아웃, 에디터 등)만 자유롭게 생성 가능.",
-        "- **TitleSection children에 신계약등록2/3·이미지시스템 버튼 금지** (매 페이지 반복되는 템플릿 기본 슬롯).",
+        "- **TitleSection children에 신계약등록2/3 버튼 금지** (매 페이지 반복되는 템플릿 기본 슬롯).",
         "- FilterBar 내장 버튼(초기화, 조회하기)은 onReset/onSearch로 자동 렌더링됨. 별도 배치 금지.",
         "",
     ]
