@@ -1,58 +1,27 @@
 'use client';
 
 import * as React from 'react';
-import { HugeiconsIcon } from '@hugeicons/react';
-import {
-  Message01Icon,
-  Bookmark02Icon,
-  Delete02Icon,
-  Tick01Icon,
-} from '@hugeicons/core-free-icons';
-import { useSearchParams } from 'next/navigation';
 
 import { cn } from '@/lib/utils';
 import { ChatMessageList } from './chat-message-list';
 import { ChatInput } from './chat-input';
-import { useChatStream } from '@/hooks/useChatStream';
+import { ChatHeader } from './chat-header';
+import { useSelectedMessage } from './hooks/use-selected-message';
+import { useChatStreamLifecycle } from './hooks/use-chat-stream-lifecycle';
+import { useMessageDelete } from './hooks/use-message-delete';
+import { useMessageBookmarks } from './hooks/use-message-bookmarks';
 import { useImageUpload } from '@/hooks/useImageUpload';
-import { useBookmarks } from '@/hooks/useBookmarks';
-import { useRoomChannel } from '@/hooks/supabase/useRoomChannel';
 import { useGetPaginatedMessages } from '@/hooks/supabase/useGetPaginatedMessages';
-import { useStreamingStore } from '@/stores/useStreamingStore';
 import { useDescriptionStore } from '@/stores/useDescriptionStore';
 import type { CodeEvent } from '@/types/chat';
-import { FIGMA_RATE_LIMIT_CODE } from '@/types/chat';
-import { useDeleteMessage } from '@/hooks/api/useDeleteMessage';
 import type { ChatMessage } from '@packages/shared-types/typescript/database/types';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { DescriptionTab } from '@/components/features/description/description-tab';
 import { DescriptionActionBar } from '@/components/features/description/description-action-bar';
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogAction,
-  AlertDialogCancel,
-} from '@/components/ui/alert-dialog';
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
-
-/** 이벤트 간 무활동 허용 시간 (150초) — 마지막 broadcast 이벤트 이후 이만큼 조용하면 타임아웃 */
-const STREAM_INACTIVITY_TIMEOUT_MS = 150_000;
-/** 스트리밍 총 상한 (6분) — Cloud Run --timeout 300s + Supabase broadcast 유실 방어 60s */
-const STREAM_HARD_MAX_MS = 360_000;
+import { BookmarkLabelDialog } from './dialogs/bookmark-label-dialog';
+import { DeleteMessageDialog } from './dialogs/delete-message-dialog';
+import { FigmaRateLimitDialog } from './dialogs/figma-rate-limit-dialog';
+import { UnsavedEditDialog } from './dialogs/unsaved-edit-dialog';
 
 interface ChatSectionProps extends React.ComponentProps<'section'> {
   roomId: string;
@@ -81,8 +50,7 @@ function ChatSection({
     },
   });
 
-  const searchParams = useSearchParams();
-  const deleteMessageMutation = useDeleteMessage();
+  const { selectedMessageId, updateSelectedMessageId } = useSelectedMessage();
 
   // 디스크립션 탭 상태
   const activeTab = useDescriptionStore((s) => s.activeTab);
@@ -91,8 +59,6 @@ function ChatSection({
 
   // 편집 중 탭 전환 시 미저장 확인용
   const [pendingTab, setPendingTab] = React.useState<string | null>(null);
-  // Figma API 호출 한도 소진 시 사용자에게 안내하는 모달 오픈 상태
-  const [figmaRateLimitOpen, setFigmaRateLimitOpen] = React.useState(false);
 
   const handleTabChange = React.useCallback(
     (value: string | number | null) => {
@@ -107,58 +73,6 @@ function ChatSection({
     [descriptionUiState, setActiveTab]
   );
 
-  // 스트리밍 중인 단일 메시지 (Zustand 외부 스토어로 관리)
-  // → React 배칭/동시성 렌더링에 의한 state 유실 방지
-  const streamingMessage = useStreamingStore((s) => s.message);
-  const setStreamingMessage = useStreamingStore((s) => s.setMessage);
-  const updateStreamingMessage = useStreamingStore((s) => s.updateMessage);
-
-  const inactivityTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(
-    null
-  );
-  const hardMaxTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(
-    null
-  );
-
-  // Broadcast 콜백에서 사용할 ref (state updater 밖에서 side effect 실행용)
-  const pendingQuestionRef = React.useRef<string>('');
-  const activeMessageIdRef = React.useRef<string | null>(null);
-
-  const [deleteMessageDialog, setDeleteMessageDialog] = React.useState<{
-    open: boolean;
-    message: ChatMessage | null;
-  }>({ open: false, message: null });
-
-  // 선택된 메시지 ID — useState로 즉시 UI 반영, URL은 부가 동기화
-  const [selectedMessageId, setSelectedMessageId] = React.useState<
-    string | null
-  >(() => searchParams.get('mid'));
-
-  // 외부 URL 변경 시 로컬 상태 동기화 (룸 전환 등)
-  const urlMid = searchParams.get('mid');
-  React.useEffect(() => {
-    setSelectedMessageId(urlMid);
-  }, [urlMid]);
-
-  // URL의 mid 파라미터 업데이트 + 로컬 상태 즉시 반영
-  const updateSelectedMessageId = React.useCallback(
-    (messageId: string | null) => {
-      setSelectedMessageId(messageId);
-      const url = new URL(window.location.href);
-      if (messageId) {
-        url.searchParams.set('mid', messageId);
-      } else {
-        url.searchParams.delete('mid');
-      }
-      window.history.replaceState(
-        window.history.state,
-        '',
-        url.pathname + url.search
-      );
-    },
-    []
-  );
-
   const {
     images,
     addImages,
@@ -168,172 +82,23 @@ function ChatSection({
     uploadedUrls,
   } = useImageUpload(roomId);
 
-  const { sendMessage, isLoading: isSending, error } = useChatStream();
-
-  // 모든 타이머 클리어 헬퍼
-  const clearAllTimers = React.useCallback(() => {
-    if (inactivityTimerRef.current) {
-      clearTimeout(inactivityTimerRef.current);
-      inactivityTimerRef.current = null;
-    }
-    if (hardMaxTimerRef.current) {
-      clearTimeout(hardMaxTimerRef.current);
-      hardMaxTimerRef.current = null;
-    }
-  }, []);
-
-  // 타임아웃 공통 핸들러 (inactivity / hard_max 구분)
-  const handleTimeout = React.useCallback(
-    (reason: 'inactivity' | 'hard_max') => {
-      activeMessageIdRef.current = null;
-      const now = Date.now();
-      updateStreamingMessage((prev) =>
-        prev
-          ? {
-              ...prev,
-              text:
-                prev.text ||
-                (reason === 'inactivity'
-                  ? 'Error: 응답 지연 (150초 동안 새 이벤트 없음)'
-                  : 'Error: 응답 시간 초과 (최대 6분)'),
-              status: 'ERROR' as const,
-              answer_created_at: now,
-            }
-          : prev
-      );
-      clearAllTimers();
-      onStreamEnd?.();
-    },
-    [clearAllTimers, onStreamEnd, updateStreamingMessage]
-  );
-
-  // 무활동 타이머만 리셋 (broadcast 이벤트 수신 시 호출)
-  const resetInactivityTimer = React.useCallback(() => {
-    if (inactivityTimerRef.current) {
-      clearTimeout(inactivityTimerRef.current);
-    }
-    inactivityTimerRef.current = setTimeout(
-      () => handleTimeout('inactivity'),
-      STREAM_INACTIVITY_TIMEOUT_MS
-    );
-  }, [handleTimeout]);
-
-  // 스트리밍 종료 헬퍼 (done/error 공통)
-  const finishStreaming = React.useCallback(() => {
-    clearAllTimers();
-    onStreamEnd?.();
-  }, [clearAllTimers, onStreamEnd]);
-
-  // === Broadcast 채널 구독 ===
-  useRoomChannel({
+  const {
+    handleSend,
+    isLoading,
+    streamingMessage,
+    sendError,
+    figmaRateLimitOpen,
+    setFigmaRateLimitOpen,
+  } = useChatStreamLifecycle({
     roomId,
-    enabled: !!roomId,
-    callbacks: {
-      onStart: (payload) => {
-        activeMessageIdRef.current = payload.message_id;
-        updateStreamingMessage((prev) => {
-          if (prev) {
-            return { ...prev, id: payload.message_id };
-          }
-          // handleSend의 state가 아직 반영되지 않은 경우 ref에서 질문 복원
-          return {
-            id: payload.message_id,
-            question: pendingQuestionRef.current,
-            text: '',
-            content: '',
-            path: '',
-            room_id: roomId,
-            question_created_at: Date.now(),
-            answer_created_at: 0,
-            status: 'GENERATING' as const,
-          };
-        });
-        resetInactivityTimer();
-      },
-      onChunk: (payload) => {
-        // state updater는 순수 함수로 유지 (side effect 금지)
-        updateStreamingMessage((prev) => {
-          if (!prev) {
-            console.warn('[ChatSection] onChunk: prev is NULL, dropping chunk');
-            return prev;
-          }
-
-          if (payload.type === 'chat' && payload.text) {
-            return { ...prev, text: prev.text + payload.text };
-          }
-
-          if (payload.type === 'code') {
-            return {
-              ...prev,
-              content: payload.content ?? prev.content,
-              path: payload.path ?? prev.path,
-            };
-          }
-
-          console.warn('[ChatSection] onChunk: unknown type', payload);
-          return prev;
-        });
-
-        // side effect는 state updater 바깥에서 실행
-        if (payload.type === 'code' && payload.content) {
-          const msgId = activeMessageIdRef.current;
-          if (msgId) updateSelectedMessageId(msgId);
-          onCodeGenerated?.({
-            type: 'code',
-            content: payload.content,
-            path: payload.path ?? '',
-          });
-        }
-
-        // 이벤트 수신 시마다 무활동 타이머 리셋
-        resetInactivityTimer();
-      },
-      onDone: (payload) => {
-        activeMessageIdRef.current = null;
-
-        // 모든 타이머 즉시 클리어 (inactivity + hard_max)
-        clearAllTimers();
-        onStreamEnd?.();
-
-        // 스트리밍 메시지를 DONE 상태로 전환 (refetch 전까지 화면 유지)
-        // done 이벤트의 정본 텍스트로 교체하여 chunk 중복 방지
-        updateStreamingMessage((prev) =>
-          prev
-            ? {
-                ...prev,
-                text: payload.text || prev.text,
-                status: 'DONE' as const,
-                answer_created_at: Date.now(),
-              }
-            : null
-        );
-
-        // DB refetch 후 streamingMessage 제거 (DB 메시지로 교체)
-        refetchMessages()
-          .then(() => setStreamingMessage(null))
-          .catch(() => setStreamingMessage(null));
-      },
-      onError: (payload) => {
-        activeMessageIdRef.current = null;
-        const now = Date.now();
-        const isFigmaRateLimit = payload.error_code === FIGMA_RATE_LIMIT_CODE;
-        if (isFigmaRateLimit) {
-          setFigmaRateLimitOpen(true);
-        }
-        updateStreamingMessage((prev) =>
-          prev
-            ? {
-                ...prev,
-                // rate limit은 모달로 안내하므로 채팅 버블 본문은 간결하게
-                text: isFigmaRateLimit ? '' : `Error: ${payload.error}`,
-                status: 'ERROR' as const,
-                answer_created_at: now,
-              }
-            : prev
-        );
-        finishStreaming();
-      },
-    },
+    uploadedUrls,
+    clearImages,
+    selectedMessageId,
+    refetchMessages,
+    updateSelectedMessageId,
+    onStreamStart,
+    onStreamEnd,
+    onCodeGenerated,
   });
 
   // 메시지 클릭 시 해당 메시지의 content를 미리보기에 표시
@@ -351,83 +116,6 @@ function ChatSection({
     [updateSelectedMessageId, onCodeGenerated]
   );
 
-  const handleSend = async (message: string) => {
-    const tempId = crypto.randomUUID();
-
-    // 업로드 완료된 이미지 URL 캡처
-    const imageUrls = uploadedUrls.length > 0 ? [...uploadedUrls] : undefined;
-
-    // Optimistic UI: streamingMessage 즉시 생성
-    const newMessage: ChatMessage = {
-      id: tempId,
-      question: imageUrls
-        ? `[이미지 ${imageUrls.length}개] ${message}`
-        : message,
-      text: '',
-      content: '',
-      path: '',
-      room_id: roomId,
-      question_created_at: Date.now(),
-      answer_created_at: 0,
-      status: 'GENERATING',
-    };
-
-    pendingQuestionRef.current = newMessage.question;
-    activeMessageIdRef.current = tempId;
-
-    // Zustand store에 직접 설정 (React 배칭 영향 없음)
-    setStreamingMessage(newMessage);
-
-    // 이미지 초기화 (전송 후)
-    clearImages();
-
-    // 부모 컴포넌트에 스트리밍 시작 알림 (Zustand store 업데이트)
-    onStreamStart?.();
-
-    // 타임아웃 설정
-    // - inactivity: broadcast 이벤트 간 150초 무음이면 타임아웃
-    // - hard_max: 총 6분 상한 (Cloud Run 300s + 방어 60s)
-    clearAllTimers();
-    resetInactivityTimer();
-    hardMaxTimerRef.current = setTimeout(
-      () => handleTimeout('hard_max'),
-      STREAM_HARD_MAX_MS
-    );
-
-    // AI에게 메시지 전송
-    const messageId = await sendMessage({
-      message,
-      room_id: roomId,
-      stream: true,
-      from_message_id: selectedMessageId ?? undefined,
-      image_urls: imageUrls,
-    });
-
-    if (messageId) {
-      // tempId → message_id 즉시 갱신 (onStart 도착 전 dedup 보장)
-      activeMessageIdRef.current = messageId;
-      updateStreamingMessage((prev) =>
-        prev ? { ...prev, id: messageId } : prev
-      );
-    } else {
-      // POST 실패 시 에러 처리
-      activeMessageIdRef.current = null;
-      const now = Date.now();
-      updateStreamingMessage((prev) =>
-        prev
-          ? {
-              ...prev,
-              text: 'Error: 메시지 전송 실패',
-              status: 'ERROR' as const,
-              answer_created_at: now,
-            }
-          : prev
-      );
-      clearAllTimers();
-      onStreamEnd?.();
-    }
-  };
-
   // DB 메시지 목록
   const dbMessages = React.useMemo(() => {
     if (!data) return [];
@@ -441,9 +129,6 @@ function ChatSection({
     const filtered = dbMessages.filter((msg) => msg.id !== streamingMessage.id);
     return [...filtered, streamingMessage];
   }, [dbMessages, streamingMessage]);
-
-  // isLoading: POST 중이거나 스트리밍 중일 때
-  const isLoading = isSending || !!streamingMessage;
 
   // DB 메시지 로드 시 초기 메시지 선택 처리
   const initialSelectionRef = React.useRef(false);
@@ -489,123 +174,39 @@ function ChatSection({
     updateSelectedMessageId,
   ]);
 
-  // 타임아웃 cleanup
-  React.useEffect(() => {
-    return () => clearAllTimers();
-  }, [clearAllTimers]);
-
-  // ===== 북마크 기능 =====
-  const { bookmarks, addBookmark, removeBookmark, isBookmarked } =
-    useBookmarks(roomId);
-
-  // 북마크된 메시지 ID Set (ChatMessageList에 전달)
-  const bookmarkedMessageIds = React.useMemo(
-    () => new Set(bookmarks.map((b) => b.messageId)),
-    [bookmarks]
-  );
-
-  // 북마크 추가 다이얼로그 상태
-  const [bookmarkDialog, setBookmarkDialog] = React.useState<{
-    open: boolean;
-    message: ChatMessage | null;
-  }>({ open: false, message: null });
-  const [bookmarkLabel, setBookmarkLabel] = React.useState('');
-
-  // 메시지 삭제 아이콘 클릭
-  const handleDeleteIconClick = React.useCallback((message: ChatMessage) => {
-    setDeleteMessageDialog({ open: true, message });
-  }, []);
-
-  // 메시지 삭제 확인
-  const handleDeleteMessageConfirm = React.useCallback(() => {
-    if (!deleteMessageDialog.message) return;
-    const messageToDelete = deleteMessageDialog.message;
-    deleteMessageMutation.mutate(
-      { roomId, messageId: messageToDelete.id },
-      {
-        onSuccess: () => {
-          setDeleteMessageDialog({ open: false, message: null });
-          refetchMessages();
-          if (selectedMessageId === messageToDelete.id) {
-            // 남은 메시지 중 마지막 content 있는 메시지 자동 선택
-            const remaining = displayMessages.filter(
-              (msg) => msg.id !== messageToDelete.id
-            );
-            const lastWithContent = [...remaining]
-              .reverse()
-              .find((msg) => msg.content && msg.content.trim());
-            if (lastWithContent) {
-              updateSelectedMessageId(lastWithContent.id);
-              onCodeGenerated?.({
-                type: 'code',
-                content: lastWithContent.content,
-                path: lastWithContent.path,
-              });
-            } else {
-              updateSelectedMessageId(null);
-            }
-          }
-        },
-      }
-    );
-  }, [
-    deleteMessageDialog.message,
+  const {
+    deleteMessageDialog,
+    setDeleteMessageDialog,
     deleteMessageMutation,
+    handleDeleteIconClick,
+    handleDeleteMessageConfirm,
+  } = useMessageDelete({
     roomId,
     selectedMessageId,
-    updateSelectedMessageId,
     displayMessages,
+    updateSelectedMessageId,
+    refetchMessages,
     onCodeGenerated,
-  ]);
+  });
 
-  // 북마크 아이콘 클릭: 미등록 → 다이얼로그 열기, 등록됨 → 삭제
-  const handleBookmarkIconClick = React.useCallback(
-    (message: ChatMessage) => {
-      if (isBookmarked(message.id)) {
-        const bm = bookmarks.find((b) => b.messageId === message.id);
-        if (bm) removeBookmark(bm.id);
-      } else {
-        setBookmarkLabel(
-          message.question.replace(/^\[이미지 \d+개\] /, '').slice(0, 50)
-        );
-        setBookmarkDialog({ open: true, message });
-      }
-    },
-    [isBookmarked, bookmarks, removeBookmark]
-  );
-
-  // 북마크 저장
-  const handleBookmarkSubmit = React.useCallback(() => {
-    if (!bookmarkDialog.message || !bookmarkLabel.trim()) return;
-    addBookmark({
-      messageId: bookmarkDialog.message.id,
-      roomId,
-      label: bookmarkLabel.trim(),
-      question: bookmarkDialog.message.question,
-    });
-    setBookmarkDialog({ open: false, message: null });
-    setBookmarkLabel('');
-  }, [bookmarkDialog.message, bookmarkLabel, addBookmark, roomId]);
-
-  // 북마크 클릭 → 해당 메시지로 이동
-  const handleBookmarkClick = React.useCallback(
-    (messageId: string) => {
-      const allMessages = [
-        ...dbMessages,
-        ...(streamingMessage ? [streamingMessage] : []),
-      ];
-      const target = allMessages.find((msg) => msg.id === messageId);
-      if (target?.content?.trim()) {
-        updateSelectedMessageId(messageId);
-        onCodeGenerated?.({
-          type: 'code',
-          content: target.content,
-          path: target.path,
-        });
-      }
-    },
-    [dbMessages, streamingMessage, updateSelectedMessageId, onCodeGenerated]
-  );
+  const {
+    bookmarks,
+    bookmarkedMessageIds,
+    removeBookmark,
+    bookmarkDialog,
+    setBookmarkDialog,
+    bookmarkLabel,
+    setBookmarkLabel,
+    handleBookmarkIconClick,
+    handleBookmarkSubmit,
+    handleBookmarkClick,
+  } = useMessageBookmarks({
+    roomId,
+    dbMessages,
+    streamingMessage,
+    updateSelectedMessageId,
+    onCodeGenerated,
+  });
 
   return (
     <>
@@ -623,93 +224,13 @@ function ChatSection({
           onValueChange={handleTabChange}
           className="flex min-h-0 flex-1 flex-col gap-0"
         >
-          {/* Header + TabsList 인라인 */}
-          <div className="border-border flex items-center gap-2 border-b px-4 py-3">
-            <HugeiconsIcon
-              icon={Message01Icon}
-              className="text-muted-foreground size-4"
-              strokeWidth={2}
-            />
-            <h2 className="text-sm font-medium">AI Navigator</h2>
-            <div className="border-border h-4 border-l" />
-            <TabsList variant="line">
-              <TabsTrigger value="design">디자인 모드</TabsTrigger>
-              <TabsTrigger value="description">디스크립션 모드</TabsTrigger>
-            </TabsList>
-
-            {error && <span className="text-destructive text-xs">{error}</span>}
-
-            {/* 북마크 플로팅 버튼 */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  className="ml-auto rounded-full"
-                  aria-label="북마크 목록"
-                >
-                  <HugeiconsIcon
-                    icon={Bookmark02Icon}
-                    className="size-4"
-                    strokeWidth={2}
-                  />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                side="bottom"
-                align="end"
-                sideOffset={4}
-                className="w-64"
-              >
-                <DropdownMenuGroup>
-                  <DropdownMenuLabel>북마크</DropdownMenuLabel>
-                </DropdownMenuGroup>
-                <DropdownMenuSeparator />
-                {bookmarks.length === 0 ? (
-                  <p className="text-muted-foreground px-2 py-3 text-center text-xs">
-                    북마크가 없습니다
-                  </p>
-                ) : (
-                  bookmarks.map((bm) => (
-                    <DropdownMenuItem
-                      key={bm.id}
-                      className="flex items-center justify-between gap-2"
-                      onClick={() => handleBookmarkClick(bm.messageId)}
-                    >
-                      {selectedMessageId === bm.messageId && (
-                        <HugeiconsIcon
-                          icon={Tick01Icon}
-                          className="text-primary size-3.5 shrink-0"
-                          strokeWidth={2}
-                        />
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm">{bm.label}</p>
-                        <p className="text-muted-foreground truncate text-xs">
-                          {new Date(bm.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        className="text-muted-foreground hover:text-destructive shrink-0 p-0.5 cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeBookmark(bm.id);
-                        }}
-                        aria-label="북마크 삭제"
-                      >
-                        <HugeiconsIcon
-                          icon={Delete02Icon}
-                          className="size-3.5"
-                          strokeWidth={2}
-                        />
-                      </button>
-                    </DropdownMenuItem>
-                  ))
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          <ChatHeader
+            error={sendError}
+            bookmarks={bookmarks}
+            selectedMessageId={selectedMessageId}
+            onBookmarkSelect={handleBookmarkClick}
+            onBookmarkDelete={removeBookmark}
+          />
 
           <TabsContent
             value="design"
@@ -754,125 +275,46 @@ function ChatSection({
         </Tabs>
       </section>
 
-      {/* 북마크 이름 입력 다이얼로그 */}
-      <AlertDialog
+      <BookmarkLabelDialog
         open={bookmarkDialog.open}
+        label={bookmarkLabel}
+        onLabelChange={setBookmarkLabel}
         onOpenChange={(open) => {
           if (!open) {
             setBookmarkDialog({ open: false, message: null });
             setBookmarkLabel('');
           }
         }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>북마크 추가</AlertDialogTitle>
-            <AlertDialogDescription>
-              북마크 이름을 입력하세요
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <Input
-            value={bookmarkLabel}
-            onChange={(e) => setBookmarkLabel(e.target.value)}
-            placeholder="북마크 이름"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                handleBookmarkSubmit();
-              }
-            }}
-            autoFocus
-          />
-          <AlertDialogFooter>
-            <AlertDialogCancel>취소</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleBookmarkSubmit}
-              disabled={!bookmarkLabel.trim()}
-            >
-              추가
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        onSubmit={handleBookmarkSubmit}
+      />
 
-      {/* 메시지 삭제 확인 다이얼로그 */}
-      <AlertDialog
+      <DeleteMessageDialog
         open={deleteMessageDialog.open}
+        isPending={deleteMessageMutation.isPending}
         onOpenChange={(open) => {
           if (!open) setDeleteMessageDialog({ open: false, message: null });
         }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>메시지 삭제</AlertDialogTitle>
-            <AlertDialogDescription>
-              이 메시지를 삭제하시겠습니까? 삭제된 메시지는 복구할 수 없습니다.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>취소</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteMessageConfirm}
-              disabled={deleteMessageMutation.isPending}
-            >
-              삭제
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        onConfirm={handleDeleteMessageConfirm}
+      />
 
-      {/* Figma 이용 한도 초과 안내 다이얼로그 */}
-      <AlertDialog
+      <FigmaRateLimitDialog
         open={figmaRateLimitOpen}
         onOpenChange={setFigmaRateLimitOpen}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Figma 이용 한도 초과</AlertDialogTitle>
-            <AlertDialogDescription>
-              피그마 이용 횟수를 모두 소진했습니다. 런타임허브 담당자에게 문의
-              부탁드립니다.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setFigmaRateLimitOpen(false)}>
-              확인
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      />
 
-      {/* 편집 중 탭 전환 미저장 확인 다이얼로그 */}
-      <AlertDialog
+      <UnsavedEditDialog
         open={pendingTab !== null}
         onOpenChange={(open) => {
           if (!open) setPendingTab(null);
         }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>편집 중인 내용이 있습니다</AlertDialogTitle>
-            <AlertDialogDescription>
-              저장하지 않은 편집 내용이 있습니다. 탭을 전환하면 변경 사항이
-              사라집니다.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>편집 계속</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                useDescriptionStore.getState().cancelEdit();
-                if (pendingTab) {
-                  setActiveTab(pendingTab as 'design' | 'description');
-                }
-                setPendingTab(null);
-              }}
-            >
-              변경 사항 버리기
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        onDiscard={() => {
+          useDescriptionStore.getState().cancelEdit();
+          if (pendingTab) {
+            setActiveTab(pendingTab as 'design' | 'description');
+          }
+          setPendingTab(null);
+        }}
+      />
     </>
   );
 }
