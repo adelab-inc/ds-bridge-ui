@@ -84,7 +84,12 @@ export interface BroadcastDonePayload {
 
 export interface BroadcastErrorPayload {
   error: string;
+  /** 서버가 분류한 에러 코드. 프론트에서 특수 UI(예: Figma 한도 모달)로 분기할 때 사용 */
+  error_code?: string;
 }
+
+/** Figma REST API 호출 한도 소진 시 서버가 내려주는 error_code */
+export const FIGMA_RATE_LIMIT_CODE = 'figma_rate_limit' as const;
 
 // === BFF 응답 타입 ===
 

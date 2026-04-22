@@ -16,6 +16,7 @@ from collections.abc import AsyncGenerator
 from app.services.ai_provider import AIProvider
 from app.services.broadcast import broadcast_event
 from app.services.figma_api import (
+    FigmaRateLimitError,
     export_node_image,
     fetch_node_detail,
     fetch_page_structure,
@@ -30,9 +31,15 @@ _PREFETCH_TIMEOUT = 90
 
 
 async def _fetch_with_timeout(coro, label: str, timeout: float = 80.0):
-    """개별 Figma 호출에 타임아웃 적용. 실패 시 None 반환."""
+    """개별 Figma 호출에 타임아웃 적용. 실패 시 None 반환.
+
+    예외: FigmaRateLimitError는 swallow하지 않고 상위로 전파해
+    유저에게 전용 모달 안내를 띄울 수 있도록 한다.
+    """
     try:
         return await asyncio.wait_for(coro, timeout=timeout)
+    except FigmaRateLimitError:
+        raise
     except TimeoutError:
         logger.warning(f"Figma {label} timeout after {timeout}s")
         return None
