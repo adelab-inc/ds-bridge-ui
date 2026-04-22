@@ -134,7 +134,7 @@ class AnthropicProvider(AIProvider):
 
         response = await self.client.messages.create(
             model=self.model,
-            max_tokens=4096,
+            max_tokens=8192,
             system=system_message if system_message else None,
             messages=chat_messages,
             temperature=0.5,
@@ -158,7 +158,7 @@ class AnthropicProvider(AIProvider):
 
         async with self.client.messages.stream(
             model=self.model,
-            max_tokens=4096,
+            max_tokens=8192,
             system=system_message if system_message else None,
             messages=chat_messages,
             temperature=0.5,

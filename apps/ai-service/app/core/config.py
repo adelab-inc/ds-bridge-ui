@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     # Gemini
     gemini_api_key: str = ""
     gemini_model: str = "gemini-3-flash-preview"
-    gemini_thinking_level: str = "low"  # off(비활성), minimal, low, medium, high
+    gemini_thinking_level: str = "off"  # off(비활성), minimal, low, medium, high
 
     # API Authentication
     x_api_key: str = ""  # X-API-Key 헤더로 인증
@@ -43,9 +43,20 @@ class Settings(BaseSettings):
     storage_bucket_uploads: str = "user-uploads"
     storage_bucket_exports: str = "exports"
 
+    # Figma
+    figma_personal_access_token: str = ""
+    figma_design_system_url: str = ""  # 기본 디자인시스템 Figma URL (키워드 감지 시 폴백)
+
     # Chat Settings
     max_history_count: int = 10  # 대화 컨텍스트에 포함할 최대 메시지 수
     max_image_size_mb: int = 10  # 이미지 업로드 최대 크기 (MB)
+
+    # Code Validation (Stage 4)
+    enable_validation: bool = False       # 기본 off, 단계적 롤아웃
+    validation_timeout_ms: int = 200      # validator 자체 타임아웃
+
+    # Code Repair (Stage 5)
+    enable_repair: bool = False           # Repair 루프 (ENABLE_VALIDATION=True 전제)
 
     @model_validator(mode="after")
     def _validate_supabase(self) -> "Settings":

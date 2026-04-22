@@ -600,3 +600,27 @@ async def upload_description_to_storage(
             extra={"storage_path": storage_path, "error": str(e)},
         )
         raise
+
+
+async def fetch_component_usage_map() -> dict | None:
+    """
+    컴포넌트 사용 패턴 맵 가져오기 (Figma에서 추출된 패턴)
+
+    Returns:
+        컴포넌트 사용 패턴 dict, 없으면 None
+    """
+    # TODO: Supabase에서 실제로 가져오기
+    # 현재는 빈 dict 반환
+    return None
+
+
+async def save_component_usage_map(usage_map: dict) -> None:
+    """
+    컴포넌트 사용 패턴 맵 저장 (Figma에서 추출된 패턴)
+
+    Args:
+        usage_map: 컴포넌트 사용 패턴 dict
+    """
+    # TODO: Supabase에 실제로 저장하기
+    # 현재는 로그만 남김
+    logger.info("Component usage map saved (stub)", extra={"pattern_count": len(usage_map)})

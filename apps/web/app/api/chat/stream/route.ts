@@ -4,6 +4,8 @@ import { verifySupabaseToken } from '@/lib/auth/verify-token';
 
 // Vercel Production CDN 캐싱/정적 최적화 방지
 export const dynamic = 'force-dynamic';
+// Cloud Run --timeout 300과 동일 — cold start + Vision base64 변환 등 꼬리 케이스 대응
+export const maxDuration = 300;
 
 type ChatStreamRequest =
   paths['/chat/stream']['post']['requestBody']['content']['application/json'];

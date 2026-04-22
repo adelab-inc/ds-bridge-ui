@@ -22,7 +22,7 @@ from app.services.supabase_db import (
     get_description_versions,
     get_latest_code_message,
     get_latest_description,
-    get_messages_by_room,
+    get_message_questions_by_room,
     update_edited_content,
 )
 
@@ -37,12 +37,32 @@ logger = logging.getLogger(__name__)
 EXTRACTION_INITIAL_SYSTEM = """\
 아래 대화 히스토리와 생성된 코드를 분석하여 화면 디스크립션을 생성하세요.
 
+[중요] 코드에서 UI 구조와 동작을 추출하고, 대화 히스토리에서 도메인 정보를 추출하세요:
+- 대화에서 언급된 DB 종류, 테이블명, 컬럼 매핑 → "데이터 정책", "AS-IS → TO-BE 데이터 매핑" 섹션
+- 대화에서 언급된 삭제 방식(논리/물리), 수정 규칙 → "데이터 정책" 섹션
+- 대화에서 언급된 권한 규칙, 서버 처리 방침 → "접근 권한" 섹션
+- 대화에서 언급된 API 에러 정책 → "API 에러 응답" 섹션
+- 사용자가 단정적으로 명시한 내용은 확정 사실로 기재하세요
+- '아마', '같다', '?', '일 것', '일 수도' 등 추측/질문 문장은 **확정 사실로 기재 금지**. 단, 해당 정보를 완전히 생략하지 말고 "(확인 필요)" 표기를 붙여 기재하세요
+  - 예: "아마 VENDOR_MST일 것 같고" → 데이터 정책에 "테이블명: VENDOR_MST (확인 필요)" 로 기재
+  - 예: "삭제는 아마 물리삭제일까요?" → "삭제 방식: 물리삭제 (확인 필요)" 로 기재
+
 {base_prompt}
 """
 
 EXTRACTION_WITH_EDITS_SYSTEM = """\
 사용자가 이전에 확정한 디스크립션(사용자 확정본)이 제공됩니다.
 이 확정본을 **그대로 유지**하면서, 새로 추가된 대화/코드 변경사항만 추가하세요.
+
+[중요] 코드에서 UI 구조와 동작을 추출하고, 대화 히스토리에서 도메인 정보를 추출하세요:
+- 대화에서 언급된 DB 종류, 테이블명, 컬럼 매핑 → "데이터 정책", "AS-IS → TO-BE 데이터 매핑" 섹션
+- 대화에서 언급된 삭제 방식(논리/물리), 수정 규칙 → "데이터 정책" 섹션
+- 대화에서 언급된 권한 규칙, 서버 처리 방침 → "접근 권한" 섹션
+- 대화에서 언급된 API 에러 정책 → "API 에러 응답" 섹션
+- 사용자가 단정적으로 명시한 내용은 확정 사실로 기재하세요
+- '아마', '같다', '?', '일 것', '일 수도' 등 추측/질문 문장은 **확정 사실로 기재 금지**. 단, 해당 정보를 완전히 생략하지 말고 "(확인 필요)" 표기를 붙여 기재하세요
+  - 예: "아마 VENDOR_MST일 것 같고" → 데이터 정책에 "테이블명: VENDOR_MST (확인 필요)" 로 기재
+  - 예: "삭제는 아마 물리삭제일까요?" → "삭제 방식: 물리삭제 (확인 필요)" 로 기재
 
 ## 최우선 규칙 (아래 출력 가이드보다 우선)
 1. 사용자 확정본의 **모든 섹션, 모든 항목, 모든 표현을 원문 그대로 유지**합니다.
@@ -73,15 +93,12 @@ def _build_extraction_messages(
 
     messages = [Message(role="system", content=system_content)]
 
-    # 대화 히스토리 요약
+    # 대화 히스토리: 사용자 요청만 추출 (AI 응답은 최종 코드에 이미 반영됨)
     history_parts = []
     for msg in conversation_history:
         q = msg.get("question", "")
-        t = msg.get("text", "")
         if q:
             history_parts.append(f"[사용자] {q}")
-        if t:
-            history_parts.append(f"[AI] {t}")
 
     history_text = "\n".join(history_parts) if history_parts else "(대화 히스토리 없음)"
 
@@ -162,8 +179,8 @@ async def extract_description(
         if room is None:
             raise HTTPException(status_code=404, detail="채팅방을 찾을 수 없습니다.")
 
-        # 2. 대화 히스토리 조회
-        conversation_history = await get_messages_by_room(request.room_id)
+        # 2. 대화 히스토리 조회 (question 필드만 경량 조회)
+        conversation_history = await get_message_questions_by_room(request.room_id)
         if not conversation_history:
             raise HTTPException(
                 status_code=422, detail="대화 히스토리가 없습니다. 먼저 대화를 진행해 주세요."

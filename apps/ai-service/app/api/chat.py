@@ -22,18 +22,11 @@ from app.schemas.chat import (
     Message,
     ParsedResponse,
 )
-from app.services.broadcast import broadcast_event, track_broadcast_task
+from app.schemas.validation import ValidationError, ValidationReport
 from app.services.ai_provider import AIProvider, get_ai_provider
-from app.services.supabase_storage import (
-    DEFAULT_AG_GRID_SCHEMA_KEY,
-    DEFAULT_SCHEMA_KEY,
-    fetch_ag_grid_tokens_from_storage,
-    fetch_all_layouts_from_storage,
-    fetch_component_definitions_from_storage,
-    fetch_design_tokens_from_storage,
-    fetch_image_as_base64,
-    fetch_schema_from_storage,
-)
+from app.services.broadcast import broadcast_event, track_broadcast_task
+from app.services.code_validator import ComponentCatalog, validate_code
+from app.services.figma_api import FigmaRateLimitError, extract_figma_url
 from app.services.supabase_db import (
     DatabaseError,
     RoomNotFoundError,
@@ -44,6 +37,100 @@ from app.services.supabase_db import (
     get_timestamp_ms,
     update_chat_message,
 )
+from app.services.supabase_storage import (
+    DEFAULT_AG_GRID_SCHEMA_KEY,
+    DEFAULT_SCHEMA_KEY,
+    fetch_ag_grid_tokens_from_storage,
+    fetch_component_definitions_from_storage,
+    fetch_component_usage_map,
+    fetch_design_tokens_from_storage,
+    fetch_image_as_base64,
+    fetch_schema_from_storage,
+)
+from app.services.tool_calling_loop import run_figma_tool_calling_loop
+
+# Validator 싱글턴 (모듈 import 시 1회 로드)
+_CODE_CATALOG = ComponentCatalog.load_default()
+
+
+async def _maybe_validate_and_repair(parsed: ParsedResponse, provider: object) -> None:
+    """ENABLE_VALIDATION이 켜져 있으면 parsed.files를 검증하고,
+    ENABLE_REPAIR까지 켜져 있으면 AI 수정을 시도한다.
+
+    여러 파일이 있어도 모두 검증하며, errors/elapsed_ms는 합산한다.
+    repair 성공 시 parsed.files와 parsed.validation을 교체한다.
+    """
+    settings = get_settings()
+    if not settings.enable_validation or not parsed.files:
+        return
+
+    # 1. 검증
+    merged_errors: list[ValidationError] = []
+    merged_warnings: list[ValidationError] = []
+    elapsed_total = 0
+    for f in parsed.files:
+        report = validate_code(f.content, _CODE_CATALOG)
+        for err in report.errors:
+            err.location = f"{f.path}: {err.location}"
+        for warn in report.warnings:
+            warn.location = f"{f.path}: {warn.location}"
+        merged_errors.extend(report.errors)
+        merged_warnings.extend(report.warnings)
+        elapsed_total += report.elapsed_ms
+
+    merged_report = ValidationReport(
+        passed=not merged_errors,
+        errors=merged_errors,
+        warnings=merged_warnings,
+        elapsed_ms=elapsed_total,
+    )
+
+    # 2. 검증 통과 또는 repair 비활성 → 리포트만 설정
+    if merged_report.passed or not settings.enable_repair:
+        parsed.validation = merged_report
+        return
+
+    # 3. Repair 시도
+    from app.services.repair_loop import repair_code
+
+    result = await repair_code(parsed.files, merged_report, provider, _CODE_CATALOG)
+    if result.success:
+        parsed.files = result.files
+        parsed.validation = result.report
+    else:
+        parsed.validation = merged_report
+
+
+def _build_done_validation_payload(collected_files: list[dict]) -> dict:
+    """스트리밍 `done` 이벤트에 첨부할 검증 리포트 딕셔너리를 만든다.
+
+    ENABLE_VALIDATION=false 이거나 생성 파일이 없으면 빈 dict를 반환해
+    기존 페이로드 형식을 유지한다.
+    """
+    settings = get_settings()
+    if not settings.enable_validation or not collected_files:
+        return {}
+
+    merged_errors: list[ValidationError] = []
+    merged_warnings: list[ValidationError] = []
+    elapsed_total = 0
+    for f in collected_files:
+        content = f.get("content", "")
+        if not content:
+            continue
+        report = validate_code(content, _CODE_CATALOG)
+        merged_errors.extend(report.errors)
+        merged_warnings.extend(report.warnings)
+        elapsed_total += report.elapsed_ms
+
+    report_obj = ValidationReport(
+        passed=not merged_errors,
+        errors=merged_errors,
+        warnings=merged_warnings,
+        elapsed_ms=elapsed_total,
+    )
+    return {"validation": report_obj.model_dump()}
+
 
 router = APIRouter(dependencies=[Depends(verify_api_key)])
 logger = logging.getLogger(__name__)
@@ -121,67 +208,63 @@ def build_instance_edit_context(
 """
 
 
+
+
+
+
 async def resolve_system_prompt(
     schema_key: str | None,
     current_composition: CurrentComposition | None = None,
     selected_instance_id: str | None = None,
+    *,
+    skip_ui_patterns: bool = False,
 ) -> str:
     """
-    schema_key 여부에 따라 시스템 프롬프트 반환
+    schema_key 여부에 따라 시스템 프롬프트 반환 (데이터 병렬 로드)
 
     Args:
         schema_key: Firebase Storage 스키마 경로 (None이면 디폴트 경로 사용)
         current_composition: 현재 렌더링된 컴포넌트 구조 (인스턴스 편집용)
         selected_instance_id: 선택된 인스턴스 ID (인스턴스 편집용)
+        skip_ui_patterns: True이면 UI_PATTERN_EXAMPLES 제외 (Figma 모드 등 도메인 예시 오염 방지)
 
     Returns:
         시스템 프롬프트 문자열
     """
-    # 디자인 토큰 로드 (실패 시 기본값 사용)
-    design_tokens = await fetch_design_tokens_from_storage()
-
-    # AG Grid 스키마 및 토큰 로드 (실패 시 None, 프롬프트에서 생략됨)
-    ag_grid_schema = None
-    ag_grid_tokens = None
-    try:
-        ag_grid_schema = await fetch_schema_from_storage(DEFAULT_AG_GRID_SCHEMA_KEY)
-        ag_grid_tokens = await fetch_ag_grid_tokens_from_storage()
-    except Exception as e:
-        logger.warning("AG Grid data not loaded", extra={"error": str(e)})
-
-    # 컴포넌트 정의 로드 (실패 시 None, 프롬프트에서 생략됨)
-    component_definitions = None
-    try:
-        component_definitions = await fetch_component_definitions_from_storage()
-    except Exception as e:
-        logger.warning("Component definitions not loaded", extra={"error": str(e)})
-
-    # 레이아웃 로드 (실패 시 빈 리스트, 프롬프트에서 생략됨)
-    layouts: list[dict] = []
-    try:
-        layouts = await fetch_all_layouts_from_storage()
-        if layouts:
-            logger.info("Layouts loaded", extra={"count": len(layouts)})
-    except Exception as e:
-        logger.warning("Layouts not loaded", extra={"error": str(e)})
-
-    # 스키마 로드 (schema_key 없으면 Firebase 디폴트 경로 사용)
     effective_key = schema_key or DEFAULT_SCHEMA_KEY
-    try:
-        schema = await fetch_schema_from_storage(effective_key)
-        base_prompt = generate_system_prompt(
-            schema, design_tokens, ag_grid_schema, ag_grid_tokens, layouts, component_definitions
-        )
-    except FileNotFoundError:
-        logger.warning("Schema not found in storage", extra={"schema_key": effective_key})
-        raise HTTPException(
-            status_code=404, detail=f"Schema not found: {effective_key}"
-        )
-    except Exception as e:
-        logger.error("Failed to fetch schema", extra={"schema_key": effective_key, "error": str(e)})
+
+    # 모든 Supabase 데이터를 병렬 로드
+    results = await asyncio.gather(
+        fetch_design_tokens_from_storage(),
+        fetch_schema_from_storage(DEFAULT_AG_GRID_SCHEMA_KEY),
+        fetch_ag_grid_tokens_from_storage(),
+        fetch_component_definitions_from_storage(),
+        fetch_schema_from_storage(effective_key),
+        fetch_component_usage_map(),
+        return_exceptions=True,
+    )
+
+    design_tokens = results[0] if not isinstance(results[0], Exception) else None
+    ag_grid_schema = results[1] if not isinstance(results[1], Exception) else None
+    ag_grid_tokens = results[2] if not isinstance(results[2], Exception) else None
+    component_definitions = results[3] if not isinstance(results[3], Exception) else None
+    schema = results[4]
+    component_usage_map = results[5] if not isinstance(results[5], Exception) else None
+
+    if isinstance(schema, Exception):
+        if isinstance(schema, FileNotFoundError):
+            logger.warning("Schema not found in storage", extra={"schema_key": effective_key})
+            raise HTTPException(status_code=404, detail=f"Schema not found: {effective_key}")
+        logger.error("Failed to fetch schema", extra={"schema_key": effective_key, "error": str(schema)})
         raise HTTPException(
             status_code=500, detail="Failed to load schema from storage. Please try again."
-        ) from e
+        )
+
+    base_prompt = generate_system_prompt(
+        schema, design_tokens, ag_grid_schema, ag_grid_tokens, component_definitions,
+        skip_ui_patterns=skip_ui_patterns,
+        component_usage_map=component_usage_map,
+    )
 
     # 인스턴스 편집 모드면 컨텍스트 추가
     if current_composition and selected_instance_id:
@@ -267,6 +350,15 @@ async def build_conversation_history(
         # 첫 메시지 — 코드 없이 요청만
         final_message = current_message
 
+        # 완성도 리마인더: 첫 생성 시에만 추가 (수정 경로에서는 "요청 외 변경 금지"와 충돌)
+        final_message += (
+            "\n\n⚠️ 완성도 필수: 위 요청에 명시된 그리드 컬럼, 드롭다운 옵션, "
+            "다이얼로그를 전부 구현하세요. 조건부 활성/비활성 컬럼이나 "
+            "단순 텍스트 입력 컬럼도 빠짐없이 columnDefs에 포함하세요. "
+            "코드 출력 전 요청된 컬럼 수와 columnDefs 항목 수가 일치하는지 "
+            "반드시 세어보고, 누락이 있으면 추가한 뒤 출력하세요."
+        )
+
     messages.append(Message(role="user", content=final_message))
 
     return messages
@@ -323,9 +415,133 @@ def _fix_icon_sizes(content: str) -> str:
     return _ICON_TAG_PATTERN.sub(_replace, content)
 
 
+def _fix_button_icon_crash(content: str) -> str:
+    """Button/IconButton의 size prop이 icon size를 강제 변환하여 발생하는 CRASH를 교정한다.
+
+    Button:     sm→16, md→16, lg→20
+    IconButton: sm→16, md→20, lg→24
+
+    아이콘이 해당 size에 없으면 icon이 존재하는 size로 버튼 size를 변경한다.
+    """
+    # 버튼 size → 내부 icon size 매핑
+    _BUTTON_ICON_SIZE = {"sm": 16, "md": 16, "lg": 20}
+    _ICONBUTTON_ICON_SIZE = {"sm": 16, "md": 20, "lg": 24}
+
+    # icon size → 필요한 버튼 size (역매핑, size 20 우선)
+    _BUTTON_SIZE_FOR_ICON = {20: "lg", 16: "sm"}
+    _ICONBUTTON_SIZE_FOR_ICON = {20: "md", 16: "sm", 24: "lg"}
+
+    tag_re = re.compile(
+        r'<((?:Icon)?Button)\b((?:[^>{}]|\{(?:[^{}]|\{[^{}]*\})*\})*)(/>|>)',
+        re.DOTALL,
+    )
+
+    def _find_best_size(icon_names: list[str], size_for_icon: dict[int, str]) -> str | None:
+        """아이콘들이 모두 존재하는 버튼 size를 찾는다. 없으면 None."""
+        # size 20 → 16 → 24 순으로 시도 (size 20이 가장 많은 아이콘 보유)
+        for icon_size in (20, 16, 24):
+            available = _ICON_NAMES_BY_SIZE.get(icon_size, set())
+            if all(name in available for name in icon_names):
+                btn_size = size_for_icon.get(icon_size)
+                if btn_size:
+                    return btn_size
+        return None
+
+    def _fix_tag(m: re.Match[str]) -> str:
+        tag_name = m.group(1)
+        props = m.group(2)
+        closing = m.group(3)
+        is_icon_button = tag_name == "IconButton"
+
+        # 현재 size 추출
+        size_match = re.search(r'\bsize="(sm|md|lg)"', props)
+        if not size_match:
+            return m.group(0)
+        current_size = size_match.group(1)
+
+        # 아이콘 이름 추출
+        icon_names = re.findall(
+            r'(?:startIcon|endIcon|iconOnly)=\{<Icon\s+name="([^"]+)"', props
+        )
+        if not icon_names:
+            return m.group(0)
+
+        # 현재 size로 강제되는 icon size 확인
+        size_map = _ICONBUTTON_ICON_SIZE if is_icon_button else _BUTTON_ICON_SIZE
+        forced_icon_size = size_map.get(current_size, 20)
+        available = _ICON_NAMES_BY_SIZE.get(forced_icon_size, set())
+
+        # 모든 아이콘이 해당 size에 존재하면 OK
+        if all(name in available for name in icon_names):
+            return m.group(0)
+
+        # 유효한 버튼 size 찾기
+        size_for_icon = _ICONBUTTON_SIZE_FOR_ICON if is_icon_button else _BUTTON_SIZE_FOR_ICON
+        best_size = _find_best_size(icon_names, size_for_icon)
+        if not best_size or best_size == current_size:
+            return m.group(0)
+
+        fixed_props = re.sub(r'\bsize="(?:sm|md|lg)"', f'size="{best_size}"', props)
+        return f"<{tag_name}{fixed_props}{closing}"
+
+    return tag_re.sub(_fix_tag, content)
+
+
+def _fix_viewport_height(content: str) -> str:
+    """viewport 기반 고정 높이 클래스를 제거한다.
+
+    앱 공통 레이아웃이 이미 높이 계산을 처리하므로
+    페이지 콘텐츠에서 `h-[calc(100vh-...)]`, `h-screen`, `min-h-screen` 등을 쓰면
+    2중 계산되어 콘텐츠가 잘리거나 짧아진다.
+    """
+    # h-[calc(100vh-...)] / min-h-[calc(100vh-...)] / h-[100vh] 등 제거
+    content = re.sub(
+        r'\s*(?:min-)?h-\[(?:calc\()?100vh[^\]]*\]',
+        '',
+        content,
+    )
+    # h-screen, min-h-screen, max-h-screen 제거
+    content = re.sub(
+        r'\s*(?:min-|max-)?h-screen\b',
+        '',
+        content,
+    )
+    # className 내부 여분 공백 정리 (className scope 한정)
+    content = re.sub(
+        r'className="([^"]*)"',
+        lambda m: f'className="{re.sub(r"\s+", " ", m.group(1)).strip()}"',
+        content,
+    )
+    return content
+
+
+def _normalize_multiline_imports(content: str) -> str:
+    """멀티라인 import를 단일 줄로 정규화.
+
+    프론트엔드 srcdoc 프리뷰가 import 문에서 컴포넌트 이름을 추출하여
+    전역 매핑(AplusUI.XXX)에 사용하므로, import 자체를 제거하면 안 됨.
+    대신 멀티라인 import를 단일 줄로 변환하여 프론트엔드 regex가 파싱 가능하게 함.
+    """
+    def _flatten(m: re.Match) -> str:
+        # 중괄호 내부의 개행/공백을 단일 공백으로
+        inner = re.sub(r'\s+', ' ', m.group(0))
+        return inner
+
+    return re.sub(
+        r'^[ \t]*import\s+\{[^}]*\}\s+from\s+[\'"][^\'"]+[\'"];?',
+        _flatten,
+        content,
+        flags=re.MULTILINE | re.DOTALL,
+    )
+
+
 def _postprocess_code(content: str) -> str:
-    """AI 생성 코드의 Icon size 오류를 교정한다."""
-    return _fix_icon_sizes(content)
+    """AI 생성 코드의 Icon 관련 오류와 레이아웃 문제를 교정한다."""
+    result = _normalize_multiline_imports(content)
+    result = _fix_icon_sizes(result)
+    result = _fix_button_icon_crash(result)
+    result = _fix_viewport_height(result)
+    return result
 
 
 def parse_ai_response(content: str) -> ParsedResponse:
@@ -564,6 +780,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
 
         response_message, usage = await provider.chat(messages)
         parsed = parse_ai_response(response_message.content)
+        await _maybe_validate_and_repair(parsed, provider)
 
         # DB에 메시지 저장 (question + text + code 하나의 문서로)
         first_file = parsed.files[0] if parsed.files else None
@@ -672,7 +889,10 @@ async def chat_stream(request: ChatRequest) -> JSONResponse:
     채팅방의 schema_key가 설정되어 있으면 Storage에서 스키마를 로드합니다.
     """
     try:
-        # Vision 모드 여부 판단
+        # Figma / Vision 모드 여부 판단
+        # 명시적 figma_url 필드 또는 메시지 내 Figma URL 자동 감지
+        figma_url = request.figma_url or extract_figma_url(request.message)
+        is_figma_mode = bool(figma_url)
         is_vision_mode = bool(request.image_urls and len(request.image_urls) > 0)
 
         # 이미지 URL에서 base64로 변환 (Vision 모드인 경우)
@@ -709,7 +929,9 @@ async def chat_stream(request: ChatRequest) -> JSONResponse:
 
         # 2. GENERATING 상태로 메시지 먼저 생성
         question_text = request.message
-        if is_vision_mode:
+        if is_figma_mode:
+            question_text = f"[Figma] {request.message}"
+        elif is_vision_mode:
             question_text = f"[이미지 {len(images)}개] {request.message}"
 
         message_data = await create_chat_message(
@@ -724,8 +946,15 @@ async def chat_stream(request: ChatRequest) -> JSONResponse:
         # 3. AI Provider 초기화
         provider = get_ai_provider()
 
-        # 4. 시스템 프롬프트 생성 (Vision/일반 모드에 따라 분기)
-        if is_vision_mode:
+        # 4. 시스템 프롬프트 생성 (Figma/Vision/일반 모드에 따라 분기)
+        if is_figma_mode:
+            system_prompt = await resolve_system_prompt(
+                schema_key=room.get("schema_key"),
+                current_composition=request.current_composition,
+                selected_instance_id=request.selected_instance_id,
+                skip_ui_patterns=True,
+            )
+        elif is_vision_mode:
             # Vision 모드에서도 컴포넌트 정의 로드
             vision_component_definitions = None
             try:
@@ -763,6 +992,9 @@ async def chat_stream(request: ChatRequest) -> JSONResponse:
                 messages=messages,
                 images=images,
                 is_vision_mode=is_vision_mode,
+                figma_url=figma_url if is_figma_mode else None,
+                system_prompt=system_prompt if is_figma_mode else None,
+                user_message=request.message if is_figma_mode else None,
             ),
             name=f"broadcast:{request.room_id}:{message_id}",
         )
@@ -839,6 +1071,9 @@ async def _run_broadcast_generation(
     messages: list,
     images: list[ImageContent],
     is_vision_mode: bool,
+    figma_url: str | None = None,
+    system_prompt: str | None = None,
+    user_message: str | None = None,
 ) -> None:
     """백그라운드에서 AI 응답을 생성하고 broadcast 이벤트를 발행한다."""
     parser = StreamingParser()
@@ -850,8 +1085,16 @@ async def _run_broadcast_generation(
         await broadcast_event(room_id, "start", {"message_id": message_id, "user_id": user_id})
 
         async with asyncio.timeout(300):  # 5분 타임아웃
-            # Vision/일반 모드에 따라 스트리밍 호출
-            if is_vision_mode:
+            # Figma / Vision / 일반 모드에 따라 스트리밍 호출
+            if figma_url and system_prompt and user_message:
+                stream = run_figma_tool_calling_loop(
+                    room_id=room_id,
+                    provider=provider,
+                    system_prompt=system_prompt,
+                    user_message=user_message,
+                    figma_url=figma_url,
+                )
+            elif is_vision_mode:
                 # Vision 미지원 프로바이더인지 확인 후 폴백
                 _supports_vision = type(provider).chat_vision_stream is not AIProvider.chat_vision_stream
                 if not _supports_vision:
@@ -899,7 +1142,9 @@ async def _run_broadcast_generation(
             status="DONE",
         )
 
-        await broadcast_event(room_id, "done", {"message_id": message_id})
+        done_payload = {"message_id": message_id}
+        done_payload.update(_build_done_validation_payload(collected_files))
+        await broadcast_event(room_id, "done", done_payload)
 
     except TimeoutError:
         logger.error(
@@ -907,9 +1152,13 @@ async def _run_broadcast_generation(
             extra={"room_id": room_id, "message_id": message_id, "timeout_seconds": 300},
         )
         try:
+            # 타임아웃 시에도 이미 수신한 파일이 있으면 함께 저장 (유저 데이터 유실 방지)
+            first_file = collected_files[0] if collected_files else None
             await _save_message_with_retry(
                 message_id=message_id,
                 text=collected_text.strip() if collected_text else None,
+                content=first_file["content"] if first_file else None,
+                path=first_file["path"] if first_file else None,
                 status="ERROR",
             )
             await broadcast_event(
@@ -927,13 +1176,40 @@ async def _run_broadcast_generation(
             "error",
             {"error": "현재 AI 프로바이더는 Vision 기능을 지원하지 않습니다."},
         )
+    except FigmaRateLimitError:
+        logger.warning(
+            "Figma rate limit exhausted",
+            extra={"room_id": room_id, "message_id": message_id},
+        )
+        try:
+            await _save_message_with_retry(message_id=message_id, status="ERROR")
+            await broadcast_event(
+                room_id,
+                "error",
+                {
+                    "error": "피그마 이용 횟수를 모두 소진했습니다. 런타임허브 담당자에게 문의 부탁드립니다.",
+                    "error_code": "figma_rate_limit",
+                },
+            )
+        except Exception:
+            logger.exception(
+                "Failed to send figma rate limit broadcast",
+                extra={"room_id": room_id, "message_id": message_id},
+            )
     except Exception as e:
         logger.error(
             "Broadcast generation error",
             extra={"room_id": room_id, "message_id": message_id, "error": str(e)},
         )
         try:
-            await _save_message_with_retry(message_id=message_id, status="ERROR")
+            first_file = collected_files[0] if collected_files else None
+            await _save_message_with_retry(
+                message_id=message_id,
+                text=collected_text.strip() if collected_text else None,
+                content=first_file["content"] if first_file else None,
+                path=first_file["path"] if first_file else None,
+                status="ERROR",
+            )
             await broadcast_event(
                 room_id,
                 "error",
