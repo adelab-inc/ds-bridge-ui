@@ -26,10 +26,10 @@ from app.schemas.chat import ImageContent, Message
 logger = logging.getLogger(__name__)
 
 # Figma prefetch 전체 타임아웃 (초) — 이 시간 안에 못 가져오면 가진 데이터로 진행
-_PREFETCH_TIMEOUT = 60
+_PREFETCH_TIMEOUT = 90
 
 
-async def _fetch_with_timeout(coro, label: str, timeout: float = 55.0):
+async def _fetch_with_timeout(coro, label: str, timeout: float = 80.0):
     """개별 Figma 호출에 타임아웃 적용. 실패 시 None 반환."""
     try:
         return await asyncio.wait_for(coro, timeout=timeout)
