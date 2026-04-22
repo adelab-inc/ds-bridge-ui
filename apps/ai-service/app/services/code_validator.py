@@ -35,8 +35,13 @@ REACT_BUILTINS: frozenset[str] = frozenset({"Fragment", "React"})
 _AI_SERVICE_ROOT = Path(__file__).resolve().parents[2]
 _DEFAULT_SCHEMA_CANDIDATES: tuple[Path, ...] = (
     _AI_SERVICE_ROOT / "component-schema.json",
-    _AI_SERVICE_ROOT.parents[1] / "storybook-standalone" / "dist" / "component-schema.json",
 )
+# 로컬 개발 환경에서만 존재하는 storybook 경로 (Docker에서는 parents 부족으로 IndexError)
+try:
+    _STORYBOOK_SCHEMA = _AI_SERVICE_ROOT.parents[1] / "storybook-standalone" / "dist" / "component-schema.json"
+    _DEFAULT_SCHEMA_CANDIDATES = _DEFAULT_SCHEMA_CANDIDATES + (_STORYBOOK_SCHEMA,)
+except IndexError:
+    pass
 
 
 class ComponentCatalog:
