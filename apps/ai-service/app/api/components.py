@@ -857,18 +857,21 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("- `headerCheckboxSelection: true` in columnDefs — v34에서 **삭제됨**, rowSelection.headerCheckbox로 대체")
     lines.append("")
     lines.append("#### ✅ 유일한 올바른 방법:")
+    lines.append("")
+    lines.append("🚨 **체크박스 중복 금지**: `rowSelection.checkboxes: true`와 columnDefs의 `checkboxSelection: true`를 **동시에 사용하면 체크박스가 2열** 생김. 반드시 하나만 사용!")
+    lines.append("")
     lines.append("```tsx")
-    lines.append("// ⚠️ rowData는 반드시 useState로")
+    lines.append("// ⚠️ rowData는 반드시 useState로 (일반 const 변수 금지 — 리렌더 시 선택 해제됨)")
     lines.append("const [rowData] = useState([...initialData]);")
     lines.append("")
-    lines.append("// ✅ 체크박스를 원하는 컬럼 위치에 배치 가능 (checkboxSelection: true)")
+    lines.append("// columnDefs에 checkboxSelection 넣지 마세요 (rowSelection.checkboxes가 자동 생성)")
     lines.append("const columnDefs: ColDef[] = [")
     lines.append("  { field: 'name', headerName: '이름' },")
-    lines.append("  { field: 'dept', headerName: '부서', checkboxSelection: true },  // 체크박스가 부서 컬럼에 표시")
+    lines.append("  { field: 'dept', headerName: '부서' },")
     lines.append("  { field: 'age', headerName: '나이' },")
     lines.append("];")
     lines.append("")
-    lines.append("// ✅ 다중 선택 + 체크박스로만 선택 (행 클릭으로 선택 안 됨)")
+    lines.append("// ✅ 다중 선택 + 자동 체크박스 열 (가장 일반적)")
     lines.append("<DataGrid")
     lines.append("  rowData={rowData}")
     lines.append("  columnDefs={columnDefs}")
@@ -876,7 +879,7 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("  onSelectionChanged={handleSelectionChanged}")
     lines.append("/>")
     lines.append("")
-    lines.append("// ✅ 단일 선택 + 체크박스로만 선택")
+    lines.append("// ✅ 단일 선택 + 자동 체크박스 열")
     lines.append("<DataGrid")
     lines.append("  rowData={rowData}")
     lines.append("  columnDefs={columnDefs}")
@@ -891,7 +894,7 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("/>")
     lines.append("```")
     lines.append("")
-    lines.append("**요약: rowSelection은 반드시 객체 `{{ }}` 형태로 작성. 문자열 금지. suppressRowClickSelection 금지. 체크박스 위치는 columnDefs에서 checkboxSelection: true로 원하는 컬럼에 배치 가능. pinned 사용 금지.**")
+    lines.append("**요약: rowSelection은 반드시 객체 `{{ }}` 형태로 작성. 문자열 금지. suppressRowClickSelection 금지. `rowSelection.checkboxes: true` 사용 시 columnDefs에 `checkboxSelection: true` 넣지 마세요 (체크박스 2열 버그). pinned 사용 금지.**")
     lines.append("")
 
     # 이벤트 핸들러
@@ -1604,6 +1607,8 @@ FINAL_REMINDER = """
 13. **COLUMN_TYPES import 여부**: DataGrid가 있으면 `import { DataGrid, COLUMN_TYPES } from '@aplus/ui'` 필수. `COLUMN_TYPES` 없이 `DataGrid`만 import하면 안 됨
 14. **COLUMN_TYPES 적용 여부**: 날짜/일자 → `...COLUMN_TYPES.dateColumn`, 금액/수수료/급여 → `...COLUMN_TYPES.currencyColumn`, 수량/건수 → `...COLUMN_TYPES.numberColumn`, 비율/% → `...COLUMN_TYPES.percentColumn` 적용했는가?
 15. **상태/구분 컬럼 Badge**: '상태', '구분', '유형', '등급' 컬럼에 Badge cellRenderer를 사용했는가? 상태값을 단순 텍스트(valueFormatter)로 표시하면 안 됨 — 반드시 `<Badge type="status" status="..." label="..." />` 사용
+16. **체크박스 중복 금지**: `rowSelection={{ checkboxes: true }}`와 columnDefs의 `checkboxSelection: true`를 동시 사용하지 않았는가? → 체크박스 2열 버그. 하나만 사용
+17. **rowData는 useState**: `const rowData = [...]` 일반 변수 금지. 반드시 `const [rowData] = useState([...])` — 일반 변수면 리렌더 시 체크박스 선택 해제됨
 
 ### 🚨 컴포넌트 사용 필수 검증:
 16. **Radio value**: Radio에 `value="checked"` 또는 `value="unchecked"` 쓰지 않았는가? → 이것은 Checkbox 전용. Radio는 `value="Y"`, `value="N"`, `value="all"` 등 실제 데이터 값만 사용
