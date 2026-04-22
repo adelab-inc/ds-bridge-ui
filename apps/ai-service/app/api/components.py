@@ -537,14 +537,17 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     # Import 가이드 (가이드 문서 기준으로 고정)
     lines.append("### Required Imports")
     lines.append("```tsx")
-    lines.append("// 기본 사용")
-    lines.append("import { DataGrid } from '@aplus/ui';")
+    lines.append("// ✅ 기본 사용 (COLUMN_TYPES는 항상 함께 import)")
+    lines.append("import { DataGrid, COLUMN_TYPES } from '@aplus/ui';")
     lines.append("import { ColDef } from 'ag-grid-community';")
     lines.append("")
-    lines.append("// 셀 렌더러가 필요한 경우")
-    lines.append("import { DataGrid, CheckboxCellRenderer, ImageCellRenderer } from '@aplus/ui';")
+    lines.append("// ❌ COLUMN_TYPES 없이 DataGrid만 import 금지")
+    lines.append("// import { DataGrid } from '@aplus/ui';  ← 이렇게 하지 마세요")
     lines.append("")
-    lines.append("// 컬럼 타입 또는 유틸리티가 필요한 경우")
+    lines.append("// 셀 렌더러가 필요한 경우")
+    lines.append("import { DataGrid, COLUMN_TYPES, CheckboxCellRenderer, ImageCellRenderer } from '@aplus/ui';")
+    lines.append("")
+    lines.append("// 유틸리티가 필요한 경우")
     lines.append("import { DataGrid, COLUMN_TYPES, AgGridUtils } from '@aplus/ui';")
     lines.append("```")
     lines.append("")
@@ -698,7 +701,7 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("### Usage Example (Complex - Many Columns + Action Button)")
     lines.append("```tsx")
     lines.append("import { DataGrid, COLUMN_TYPES } from '@aplus/ui';")
-    lines.append("import { Button } from '@/components';")
+    lines.append("import { Button, Badge } from '@/components';")
     lines.append("")
     lines.append("// [prefix] 방식: 단순 시각적 그룹핑용 (1-depth 헤더 유지). 2-depth+ 다단 헤더는 ColGroupDef 사용")
     lines.append("const columnDefs: ColDef[] = [")
@@ -709,8 +712,12 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("  { field: 'joinDate', headerName: '[인사] 입사일', ...COLUMN_TYPES.dateColumn },")
     lines.append("  { field: 'baseSalary', headerName: '[급여] 기본급', ...COLUMN_TYPES.currencyColumn },")
     lines.append("  { field: 'bonus', headerName: '[급여] 상여금', ...COLUMN_TYPES.currencyColumn },")
-    lines.append("  { field: 'status', headerName: '상태', width: 100,")
-    lines.append("    valueFormatter: (params) => params.value === 'active' ? '재직' : '퇴직' },")
+    lines.append("  { field: 'status', headerName: '상태', width: 120,")
+    lines.append("    cellRenderer: (params: any) => (")
+    lines.append("      <Badge type=\"status\" status={params.value === 'active' ? 'success' : 'error'}")
+    lines.append("        appearance=\"subtle\" label={params.value === 'active' ? '재직' : '퇴직'} />")
+    lines.append("    ) },")
+    lines.append("  // ⚠️ 상태/구분 컬럼은 반드시 Badge cellRenderer 사용 (valueFormatter로 텍스트만 표시 금지)")
     lines.append("  // Action button — Button 컴포넌트를 cellRenderer로 직접 사용")
     lines.append("  { headerName: '상세', width: 100,")
     lines.append("    cellRenderer: (params: any) => (")
@@ -817,6 +824,7 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("")
     lines.append("**⚠️ cellRenderer 사용 기준 (필수):**")
     lines.append("cellRenderer는 **시각적 가공이 필요한 컬럼에만** 사용하세요:")
+    lines.append("- ✅ **상태/구분/유형/등급 컬럼 → Badge cellRenderer 필수** — `<Badge type=\"status\" status=\"success\" label=\"완료\" />` 등. valueFormatter로 단순 텍스트만 표시 금지")
     lines.append("- ✅ Badge, 진행률 바, 아바타, 아이콘 버튼 등 **DS 컴포넌트가 필요한 경우**")
     lines.append("- ✅ 금액에 toLocaleString() + 색상 분기 등 **복합 포맷팅**")
     lines.append("- ❌ `(p) => <div className=\"h-full flex items-center\">{p.value}</div>` — 기본 렌더링과 동일. 쓰지 마세요")
@@ -1275,7 +1283,7 @@ Always respond in Korean.
 1. `import { Button, Field, Select, Icon } from '@/components'` — 사용하는 컴포넌트 전부 import. 미사용/누락 = CRASH
 2. import 양방향 점검: import→JSX, JSX→import 모두 1:1 매칭. 커스텀 컴포넌트 정의 금지(import 사용)
 3. `React.useState`, `React.useEffect` 직접 사용 (import 불필요)
-4. Tailwind CSS only. `style={{}}` = 동적 JS 값만. 외부 라이브러리 import 금지 (예외: DataGrid 컬럼 타입은 `import { ColDef } from 'ag-grid-community'` 허용. 다단 헤더 사용 시 `import { ColDef, ColGroupDef } from 'ag-grid-community'` 허용)
+4. Tailwind CSS only. `style={{}}` = 동적 JS 값만. 외부 라이브러리 import 금지 (예외: DataGrid 컬럼 타입은 `import { ColDef } from 'ag-grid-community'` 허용. 다단 헤더 사용 시 `import { ColDef, ColGroupDef } from 'ag-grid-community'` 허용). **DataGrid 사용 시 `import { DataGrid, COLUMN_TYPES } from '@aplus/ui'` 필수** — COLUMN_TYPES 없이 DataGrid만 import 금지
 5. 테이블 = `<DataGrid>` only (HTML table 태그 금지). 10건+ mock data. 페이지네이션이 보이면 `pagination paginationPageSize={20}` prop 추가 (별도 Pagination 컴포넌트 없음)
 6. 코드 생략(`...`, `// 나머지 동일`) 절대 금지. 전체 코드 출력. 모든 button→onClick, input→value+onChange
 7. 수정 요청 시 기존 코드 전부 유지 + 대상만 변경
@@ -1591,6 +1599,15 @@ FINAL_REMINDER = """
 10. 드로어 요청 → Drawer, 다이얼로그/모달/팝업 → Dialog
 11. 날짜 필드: YYYY-MM-DD 형식
 12. Select options 3개 이상 (2개 이하면 Radio)
+
+### 🚨 AG Grid 필수 검증 (DataGrid 사용 시):
+13. **COLUMN_TYPES import 여부**: DataGrid가 있으면 `import { DataGrid, COLUMN_TYPES } from '@aplus/ui'` 필수. `COLUMN_TYPES` 없이 `DataGrid`만 import하면 안 됨
+14. **COLUMN_TYPES 적용 여부**: 날짜/일자 → `...COLUMN_TYPES.dateColumn`, 금액/수수료/급여 → `...COLUMN_TYPES.currencyColumn`, 수량/건수 → `...COLUMN_TYPES.numberColumn`, 비율/% → `...COLUMN_TYPES.percentColumn` 적용했는가?
+15. **상태/구분 컬럼 Badge**: '상태', '구분', '유형', '등급' 컬럼에 Badge cellRenderer를 사용했는가? 상태값을 단순 텍스트(valueFormatter)로 표시하면 안 됨 — 반드시 `<Badge type="status" status="..." label="..." />` 사용
+
+### 🚨 컴포넌트 사용 필수 검증:
+16. **Radio value**: Radio에 `value="checked"` 또는 `value="unchecked"` 쓰지 않았는가? → 이것은 Checkbox 전용. Radio는 `value="Y"`, `value="N"`, `value="all"` 등 실제 데이터 값만 사용
+17. **DS 컴포넌트 className**: Button, Badge, Select, Field, Radio, Checkbox에 `className="..."` 직접 전달하지 않았는가? → DS 컴포넌트는 자체 prop(buttonType, status 등)으로 스타일링. className은 래퍼 `<div>`에만 허용
 
 Create a premium, completed result.
 """
