@@ -1362,16 +1362,16 @@ COMPONENT_QUICK_REFERENCE = """
 - size: sm | md | lg (xl 없음). 내장 padding. 삭제 확인, 단순 알림, 필드 1~2개만
 
 ### FilterBar (12컬럼 CSS Grid, 버튼 내장)
+- **import 필수**: `import { FilterBar } from '@/components'` — 누락 시 `FilterBar is not defined` CRASH
 - `<FilterBar mode="compact" onReset={fn} onSearch={fn} actionSpan={3}>`
 - 각 필드: `<div className="col-span-N">` 래핑
 - **🚨 col-span + actionSpan 계산 규칙 (반드시 따르세요)**:
-  1. JSON 필드의 `w` 값을 합산하여 각 필드의 12칸 비율 계산
-  2. `actionSpan={3}` 고정 (초기화+조회 버튼 영역 3칸)
-  3. **마지막 행**: 필드 col-span 합 + actionSpan = 12. 예: `col-span-9` + `actionSpan={3}` = 12
-  4. **중간 행**: 12칸 전부 필드 OK (col-span 합 = 정확히 12)
-  5. ❌ `col-span-10` + `actionSpan={2}` = 버튼 찌그러짐. 절대 사용 금지
-  6. 🚨 **행별 col-span 합이 12를 초과하면 필터가 우측으로 삐져나감 (overflow)**. 필드 배치 전에 각 행의 col-span 합을 반드시 검산하세요
-  7. **col-span 최소 2** — col-span-1은 Select/Field 라벨이 잘림. 필터 필드가 많으면 행을 늘려서 최소 col-span-2 확보
+  1. Figma 필터 필드의 `w` 값 비율로 각 필드의 col-span 계산
+  2. **actionSpan은 마지막 행 여유에 맞춰 결정**: 필드 합이 9면 `actionSpan={3}`, 10이면 `actionSpan={2}`. 공식: **actionSpan = 12 - 마지막행 필드 col-span 합**
+  3. **마지막 행**: 필드 col-span 합 + actionSpan = **정확히 12**
+  4. **중간 행**: col-span 합 = **정확히 12** (초과 절대 금지)
+  5. 🚨 **코드 작성 전 행별 col-span 검산 필수**: 1행: X+X+X=12 ✅, 마지막행: X+X+...+actionSpan=12 ✅. 12 초과 시 우측 overflow!
+  6. **Figma에서 좁은 필터는 col-span-1 허용**하되, 라벨이 긴 필드(예: "전자서명(A+에셋)")는 col-span-2 이상
 - FilterBar 자체가 배경(`bg-bg-subtle rounded-xl`)을 가짐 → 외부에 배경 div 래핑 금지
 - 초기화(tertiary)/조회(primary) 버튼은 FilterBar가 자동 렌더링 → 별도 Button 배치 금지
 
@@ -1613,11 +1613,12 @@ FINAL_REMINDER = """
 17. **rowData는 useState**: `const rowData = [...]` 일반 변수 금지. 반드시 `const [rowData] = useState([...])` — 일반 변수면 리렌더 시 체크박스 선택 해제됨
 
 ### 🚨 FilterBar 필수 검증:
-18. **행별 col-span 합 = 12**: 각 행의 col-span 합이 정확히 12인가? (마지막 행은 필드 합 + actionSpan = 12). 12 초과 시 우측 overflow 발생
+18. **FilterBar import 확인**: `<FilterBar>`를 JSX에서 사용하면 반드시 `import { FilterBar } from '@/components'`에 포함. 누락 시 `FilterBar is not defined` CRASH
+19. **행별 col-span 합 = 12**: 각 행의 col-span 합이 정확히 12인가? (마지막 행은 필드 합 + actionSpan = 12). 12 초과 시 우측 overflow 발생
 
 ### 🚨 컴포넌트 사용 필수 검증:
-16. **Radio value**: Radio에 `value="checked"` 또는 `value="unchecked"` 쓰지 않았는가? → 이것은 Checkbox 전용. Radio는 `value="Y"`, `value="N"`, `value="all"` 등 실제 데이터 값만 사용
-17. **DS 컴포넌트 className**: Button, Badge, Select, Field, Radio, Checkbox에 `className="..."` 직접 전달하지 않았는가? → DS 컴포넌트는 자체 prop(buttonType, status 등)으로 스타일링. className은 래퍼 `<div>`에만 허용
+20. **Radio value**: Radio에 `value="checked"` 또는 `value="unchecked"` 쓰지 않았는가? → 이것은 Checkbox 전용. Radio는 `value="Y"`, `value="N"`, `value="all"` 등 실제 데이터 값만 사용
+21. **DS 컴포넌트 className**: Button, Badge, Select, Field, Radio, Checkbox에 `className="..."` 직접 전달하지 않았는가? → DS 컴포넌트는 자체 prop(buttonType, status 등)으로 스타일링. className은 래퍼 `<div>`에만 허용
 
 Create a premium, completed result.
 """
