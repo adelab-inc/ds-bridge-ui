@@ -17,6 +17,6 @@
     "./api": "./typescript/api/schema.ts"
   },
   "devDependencies": {
-    "openapi-typescript": "^7.10.1"
+    "openapi-typescript": "^7.13.0"
   }
 }

@@ -20,6 +20,11 @@
     "gen:types": "pnpm --filter @ds-hub/shared-types gen:types"
   },
   "devDependencies": {
-    "typescript": "^5.0.0"
+    "typescript": "^5.9.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "eslint-plugin-react-hooks": "7.0.1"
+    }
   }
 }
