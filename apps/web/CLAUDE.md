@@ -72,9 +72,94 @@ pnpm format:fix   # prettier --write .
 | Base UI | `/mui/base-ui` | SSR/Hydration, 컴포넌트 API |
 | react-resizable-panels | `/bvaughn/react-resizable-panels` | Panel props, CSS 단위 |
 
+#### Base UI Hydration 에러 방지
+
+Base UI `^1.4.x`는 React 19의 `useId()` 훅을 내부적으로 사용하여 SSR/클라이언트 간 ID 불일치 발생 가능.
+
+**작업 전 필수 확인:**
+
+1. Context7 MCP로 `/mui/base-ui` 공식 문서에서 SSR 관련 내용 확인
+2. 해당 컴포넌트의 hydration 이슈 여부 파악
+
+**해결 패턴:**
+
+- Base UI 컴포넌트 사용 영역을 `ClientOnly` 래퍼로 감싸기
+- Skeleton fallback 제공하여 SSR 시 레이아웃 유지
+
+**예시** (`components/layout/header.tsx` 참고):
+
+```tsx
+<header>
+  <HeaderLogo /> {/* SSR 렌더링 */}
+  <ClientOnly fallback={<Skeleton />}>
+    <TooltipProvider>
+      <InputGroup>...</InputGroup> {/* Base UI 사용 */}
+    </TooltipProvider>
+  </ClientOnly>
+</header>
+```
+
 ### Serena MCP (활성화 시 우선 사용)
 
-파일 탐색·편집 시 Serena의 `find_symbol` / `replace_symbol_body` / `find_referencing_symbols`가 있으면 전체 파일 재작성 대신 심볼 단위로 처리.
+Serena MCP 플러그인이 활성화되어 있는 경우, 코드베이스 탐색 및 편집 시 **Serena 도구를 우선 활용**할 것.
+
+| 작업 | Serena 도구 | 비고 |
+| --- | --- | --- |
+| 심볼 탐색 | `get_symbols_overview`, `find_symbol` | 파일 전체를 읽기 전에 심볼 단위로 탐색 |
+| 심볼 관계 파악 | `find_referencing_symbols` | 참조/의존 관계 추적 |
+| 코드 편집 | `replace_symbol_body`, `insert_after_symbol`, `insert_before_symbol` | 심볼 단위 정밀 편집 |
+| 텍스트 치환 | `replace_content` | 부분 수정 시 regex 기반 치환 |
+| 파일/패턴 검색 | `find_file`, `search_for_pattern`, `list_dir` | 파일 시스템 탐색 |
+
+#### 원칙
+
+- **심볼 우선 접근**: 파일 전체를 읽기보다 `get_symbols_overview` → `find_symbol(include_body=True)`로 필요한 부분만 읽을 것
+- **정밀 편집**: 전체 파일 재작성 대신 `replace_symbol_body`나 `replace_content`로 최소 범위만 수정
+- **참조 안전성**: 심볼 수정 전 `find_referencing_symbols`로 영향 범위를 확인하고, 하위 호환이 깨지면 참조도 함께 수정
+
+---
+
+## @aplus/ui 디자인 시스템 사용 규칙
+
+> ⚠️ **절대 금지**: `storybook-standalone/packages/ui/src/` 내부 파일 수정 또는 생성
+
+### 금지 사항
+
+| 금지                  | 설명                                                  |
+| --------------------- | ----------------------------------------------------- |
+| 컴포넌트 내부 수정 ❌ | Badge.tsx, Button.tsx 등 기존 컴포넌트 로직 변경 금지 |
+| 새 컴포넌트 생성 ❌   | `src/components/` 폴더에 새 파일 생성 금지            |
+| 스타일 수정 ❌        | variants, CVA 설정 등 스타일 관련 코드 변경 금지      |
+
+### 허용 사항
+
+| 허용             | 설명                                            |
+| ---------------- | ----------------------------------------------- |
+| Read Only ✅     | 컴포넌트 구조, props, 사용법 파악을 위한 읽기   |
+| Export 추가 ✅   | `index.ts`에서 기존 컴포넌트 re-export 추가     |
+| Import & 사용 ✅ | apps/web에서 @aplus/ui 컴포넌트 import하여 사용 |
+
+### 컴포넌트 부족 시 해결 방법
+
+1. **기존 컴포넌트 조합**: 필요한 UI를 기존 컴포넌트 조합으로 구현
+2. **Re-export 추가**: 하위 컴포넌트가 필요하면 `index.ts`에 export 추가
+   ```typescript
+   // storybook-standalone/packages/ui/src/components/index.ts
+   export { Heading } from './Menu/Heading'; // 하위 컴포넌트 re-export
+   ```
+3. **UMD 번들 재빌드**: export 추가 후 반드시 재빌드
+   ```bash
+   cd storybook-standalone/packages/ui && pnpm build:umd
+   ```
+
+### AI 컴포넌트 사용 가이드
+
+AI가 컴포넌트를 올바르게 사용하도록 참고:
+
+- 가이드: `docs/web/aplus-ui-props-guide.md`
+- Badge: `statusVariant` prop 필수
+- Chip: `children`으로 텍스트 전달
+- Heading: div 기반, 커스텀 스타일 필요
 
 ---
 
@@ -151,12 +236,37 @@ app/
 
 ## RSC 설계 가이드
 
-| 구분 | Server Component (기본) | Client Component (`"use client"`) |
-| --- | --- | --- |
-| 용도 | 정적 마크업, 데이터 fetch | 상태, 이벤트, 브라우저 API |
-| 예 | `HeaderLogo`, `RightPanel`, RSC page | `Header`, `DesktopLayout`, chat/* |
+Next.js 16 App Router 사용 시 Server/Client 컴포넌트 경계를 명확히 구분해야 함.
 
-원칙: 정적 마크업은 Server, 인터랙티브 영역만 Client로 분리. Base UI 사용 영역은 `ClientOnly` + Skeleton fallback.
+### 기본 원칙
+
+| 구분   | Server Component (기본)          | Client Component (`"use client"`) |
+| ------ | -------------------------------- | --------------------------------- |
+| 지시어 | 없음 (기본값)                    | `"use client"` 필수               |
+| 용도   | 정적 마크업, 데이터 fetch        | 인터랙션, 상태, 브라우저 API      |
+| 예시   | `HeaderLogo`, `RightPanel`, page | `Header`, `DesktopLayout`, chat/* |
+
+### 설계 패턴
+
+**1. 정적/동적 분리** (9a15908 커밋 참고)
+
+- 정적 마크업(`<div>`, `<main>`)은 Server Component (`page.tsx`)
+- 인터랙티브 영역만 Client Component로 분리
+
+**2. Base UI 사용 시 ClientOnly 래핑**
+
+- Base UI 컴포넌트는 `useId()` 사용으로 hydration 이슈 발생
+- `ClientOnly` 래퍼로 감싸고 Skeleton fallback 제공
+
+**3. 컴포넌트 분리 기준**
+
+- 정적 부분: Server Component로 분리 (예: `HeaderLogo`)
+- 상태/이벤트 필요: Client Component 유지
+
+### 참고 커밋
+
+- `9a15908`: RSC 최적화를 위한 레이아웃 구조 개선
+- `DesktopLayout`, `MobileLayout` 분리 및 `ClientOnly` 적용 패턴
 
 ---
 
