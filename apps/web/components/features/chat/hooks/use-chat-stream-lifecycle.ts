@@ -147,6 +147,12 @@ export function useChatStreamLifecycle({
         resetInactivityTimer();
       },
       onChunk: (payload) => {
+        // heartbeat는 타이머 리셋만 하고 상태 업데이트 스킵
+        if (payload.type === 'heartbeat') {
+          resetInactivityTimer();
+          return;
+        }
+
         // state updater는 순수 함수로 유지 (side effect 금지)
         updateStreamingMessage((prev) => {
           if (!prev) {

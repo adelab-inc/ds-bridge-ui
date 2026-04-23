@@ -1081,10 +1081,23 @@ async def _run_broadcast_generation(
     parser = StreamingParser()
     collected_text = ""
     collected_files: list[dict] = []
+    heartbeat_task: asyncio.Task | None = None
+
+    async def _heartbeat_loop() -> None:
+        """30초마다 heartbeat 이벤트를 전송하여 프론트엔드 연결 유지."""
+        try:
+            while True:
+                await asyncio.sleep(30)
+                await broadcast_event(room_id, "chunk", {"type": "heartbeat"})
+        except asyncio.CancelledError:
+            pass
 
     try:
         # start 이벤트
         await broadcast_event(room_id, "start", {"message_id": message_id, "user_id": user_id})
+
+        # heartbeat 태스크 시작 (프론트엔드 150초 타임아웃 방지)
+        heartbeat_task = asyncio.create_task(_heartbeat_loop())
 
         async with asyncio.timeout(300):  # 5분 타임아웃
             # Figma / Vision / 일반 모드에 따라 스트리밍 호출
@@ -1219,6 +1232,9 @@ async def _run_broadcast_generation(
             )
         except Exception:
             logger.exception("Failed to send error broadcast", extra={"room_id": room_id, "message_id": message_id})
+    finally:
+        if heartbeat_task and not heartbeat_task.done():
+            heartbeat_task.cancel()
 
 
 # ============================================================================
