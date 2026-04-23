@@ -58,6 +58,9 @@ class Settings(BaseSettings):
     # Code Repair (Stage 5)
     enable_repair: bool = False           # Repair 루프 (ENABLE_VALIDATION=True 전제)
 
+    # Message Condensing
+    condense_threshold: int = 7000        # 이 길이 초과 시 경량 모델로 메시지 압축
+
     @model_validator(mode="after")
     def _validate_supabase(self) -> "Settings":
         """Supabase 필수 환경변수 검증 (빈 문자열이면 서버 시작 시 즉시 실패)"""
