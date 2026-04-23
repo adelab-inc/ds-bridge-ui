@@ -14,6 +14,10 @@ import type { ChatMessage } from '@packages/shared-types/typescript/database/typ
 const STREAM_INACTIVITY_TIMEOUT_MS = 150_000;
 /** 스트리밍 총 상한 (6분) — Cloud Run --timeout 300s + Supabase broadcast 유실 방어 60s */
 const STREAM_HARD_MAX_MS = 360_000;
+/** 중복 chunk 감지 시간 창 — 이 시간 안에 동일 payload가 다시 오면 중복으로 판정 */
+const DUP_CHUNK_WINDOW_MS = 5_000;
+/** 중복 감지용 ring buffer 최대 크기 — 최근 N개 chunk만 기억 */
+const DUP_CHUNK_RECENT_MAX = 30;
 
 interface UseChatStreamLifecycleArgs {
   roomId: string;
@@ -72,6 +76,11 @@ export function useChatStreamLifecycle({
   // 이전 응답의 잔여 chunk가 새 streamingMessage에 섞이는 것을 방지한다.
   // (BroadcastChunkPayload에 message_id가 없어 프론트에서 구분 불가능한 한계를 가림)
   const expectingStartRef = React.useRef(false);
+
+  // mid-stream 중복 chunk 감지용 ring buffer.
+  // 같은 payload가 짧은 시간 안에 여러 번 도착하는 케이스(서버 이중 publish 혹은
+  // Supabase Realtime 중복 전달)를 잡아내 drop한다.
+  const recentChunksRef = React.useRef<{ hash: string; ts: number }[]>([]);
 
   const [figmaRateLimitOpen, setFigmaRateLimitOpen] = React.useState(false);
 
@@ -181,6 +190,36 @@ export function useChatStreamLifecycle({
             head: payload.text?.slice(0, 30),
           });
           return;
+        }
+
+        // mid-stream 중복 chunk 감지. 동일 payload가 DUP_CHUNK_WINDOW_MS 안에 다시
+        // 도착하면 드롭 + 관측 로그 전송. Supabase Realtime 중복 전달 혹은 AI 서버
+        // 이중 publish 상황에서 텍스트 중복 출력의 주된 원인.
+        const hash = `${payload.type}:${payload.text ?? ''}:${payload.content ?? ''}:${payload.path ?? ''}`;
+        const nowTs = Date.now();
+        const cutoff = nowTs - DUP_CHUNK_WINDOW_MS;
+        recentChunksRef.current = recentChunksRef.current.filter(
+          (c) => c.ts > cutoff
+        );
+        const dup = recentChunksRef.current.find((c) => c.hash === hash);
+        if (dup) {
+          console.warn('[ChatSection] onChunk: duplicate chunk, dropping', {
+            gap_ms: nowTs - dup.ts,
+            type: payload.type,
+            len: payload.text?.length,
+          });
+          sendDebugLog('duplicate_chunk', {
+            roomId,
+            gap_ms: nowTs - dup.ts,
+            type: payload.type,
+            len: payload.text?.length,
+            head: payload.text?.slice(0, 30),
+          });
+          return;
+        }
+        recentChunksRef.current.push({ hash, ts: nowTs });
+        if (recentChunksRef.current.length > DUP_CHUNK_RECENT_MAX) {
+          recentChunksRef.current.shift();
         }
 
         console.log('[onChunk]', {
@@ -306,6 +345,9 @@ export function useChatStreamLifecycle({
       // 새 세션 시작 → onStart 수신 전까지 chunk를 drop하여
       // 이전 응답 잔여 broadcast가 새 streamingMessage에 섞이지 않도록 한다.
       expectingStartRef.current = true;
+
+      // 중복 감지 버퍼 초기화 — 이전 세션의 hash가 새 세션에 오탐을 유발하지 않도록.
+      recentChunksRef.current = [];
 
       // Zustand store에 직접 설정 (React 배칭 영향 없음)
       setStreamingMessage(newMessage);
