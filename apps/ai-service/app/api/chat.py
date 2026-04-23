@@ -25,6 +25,7 @@ from app.schemas.chat import (
 from app.schemas.validation import ValidationError, ValidationReport
 from app.services.ai_provider import AIProvider, get_ai_provider
 from app.services.broadcast import broadcast_event, track_broadcast_task
+from app.services.message_condenser import condense_message
 from app.services.code_validator import ComponentCatalog, validate_code
 from app.services.figma_api import FigmaRateLimitError, extract_figma_url
 from app.services.supabase_db import (
@@ -347,8 +348,9 @@ async def build_conversation_history(
 - 전체 코드를 빠짐없이 출력할 것 (생략 시 빈 화면 발생)
 - 수정 전후 diff가 요청 범위 안에서만 발생해야 함'''
     else:
-        # 첫 메시지 — 코드 없이 요청만
-        final_message = current_message
+        # 첫 메시지 — 코드 없이 요청만 (긴 메시지는 경량 모델로 압축)
+        processed = await condense_message(current_message)
+        final_message = processed
 
         # 완성도 리마인더: 첫 생성 시에만 추가 (수정 경로에서는 "요청 외 변경 금지"와 충돌)
         final_message += (
