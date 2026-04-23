@@ -59,7 +59,7 @@ class Settings(BaseSettings):
     enable_repair: bool = False           # Repair 루프 (ENABLE_VALIDATION=True 전제)
 
     # Message Condensing
-    condense_threshold: int = 8000        # 이 길이 초과 시 경량 모델로 메시지 압축
+    condense_threshold: int = 7000        # 이 길이 초과 시 경량 모델로 메시지 압축
 
     @model_validator(mode="after")
     def _validate_supabase(self) -> "Settings":
