@@ -176,6 +176,12 @@ export function useChatStreamLifecycle({
         resetInactivityTimer();
       },
       onChunk: (payload) => {
+        // heartbeat는 타이머 리셋만 하고 상태 업데이트 스킵
+        if (payload.type === 'heartbeat') {
+          resetInactivityTimer();
+          return;
+        }
+
         // start 이전에 도착한 chunk는 이전 응답의 잔여분일 가능성이 높아 drop.
         // BroadcastChunkPayload에 message_id가 없어 달리 구분할 방법이 없음.
         if (expectingStartRef.current) {

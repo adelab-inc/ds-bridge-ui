@@ -71,7 +71,7 @@ export interface BroadcastStartPayload {
 }
 
 export interface BroadcastChunkPayload {
-  type: 'chat' | 'code';
+  type: 'chat' | 'code' | 'heartbeat';
   text?: string; // type === 'chat'
   content?: string; // type === 'code'
   path?: string; // type === 'code'
