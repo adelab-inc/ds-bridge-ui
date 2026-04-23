@@ -689,8 +689,17 @@ function CodePreviewIframe({
         ${transpiledCode}
 
         // 렌더링
+        // 프리뷰 기본 프롭: Drawer/Dialog/Modal 같이 controlled open 패턴을 쓰는
+        // 루트 컴포넌트가 프롭 없이 렌더되면 닫힌 상태로 보이지 않는 문제를 방지.
+        // 컴포넌트가 해당 프롭을 쓰지 않으면 React가 무시하므로 안전.
+        const PREVIEW_DEFAULT_PROPS = {
+          open: true,
+          isOpen: true,
+          onClose: function () {},
+          onOpenChange: function () {},
+        };
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(React.createElement(${componentName}));
+        root.render(React.createElement(${componentName}, PREVIEW_DEFAULT_PROPS));
       } catch (err) {
         document.getElementById('root').innerHTML =
           '<div style="padding: 24px; color: #dc2626; font-family: monospace;">' +
