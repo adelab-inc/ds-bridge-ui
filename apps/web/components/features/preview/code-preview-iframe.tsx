@@ -16,12 +16,14 @@ const AG_GRID_CDN = 'https://cdn.jsdelivr.net/npm/ag-grid-community@34.2.0';
 // UMD 번들에서 사용 가능한 @aplus/ui 컴포넌트 목록
 // import 누락 시 자동 감지하여 fallback 주입에 사용
 const AVAILABLE_APLUS_COMPONENTS = [
-  'Alert', 'Badge', 'Button', 'Checkbox', 'Chip', 'ChipGroup',
-  'Dialog', 'Divider', 'Drawer', 'Field', 'FieldGroup', 'Icon',
-  'IconButton', 'Link', 'LoadingSpinner', 'Menu', 'ModalStackProvider',
-  'Option', 'OptionGroup', 'Pagination', 'Radio', 'Segment', 'Select',
-  'SpacingModeProvider', 'Tab', 'Tag', 'TagGroup', 'Toast',
-  'ToggleSwitch', 'Tooltip', 'TreeMenu',
+  'ActionBar', 'AgChartComponent', 'Alert', 'Badge', 'Button', 'Checkbox',
+  'Chip', 'ChipGroup', 'Dialog', 'Divider', 'Drawer', 'Field', 'FieldGroup',
+  'FilterBar', 'FormGrid', 'FormGridCell', 'GridLayout', 'Heading', 'Icon',
+  'IconButton', 'LabelValue', 'Link', 'LoadingSpinner', 'Menu',
+  'ModalStackProvider', 'Option', 'OptionGroup', 'Pagination', 'Radio',
+  'RowPattern', 'RowSlot', 'Segment', 'Select', 'SpacingModeProvider',
+  'Tab', 'Tag', 'TagGroup', 'TitleSection', 'Toast', 'ToggleSwitch',
+  'Tooltip', 'TreeMenu',
 ];
 
 // ── Module-level UMD 번들 캐시 ──
