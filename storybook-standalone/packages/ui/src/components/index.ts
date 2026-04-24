@@ -19,6 +19,7 @@ export * from './LabelValue';
 export * from './Link';
 export * from './LoadingSpinner';
 export * from './Menu';
+export { Heading, headingVariants } from './Menu/Heading';
 export * from './ModalStackProvider';
 export * from './Option';
 export * from './Popover';
