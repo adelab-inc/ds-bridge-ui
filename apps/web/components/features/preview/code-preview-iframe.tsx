@@ -4,6 +4,11 @@ import * as React from 'react';
 import { transform } from 'sucrase';
 
 import { cn } from '@/lib/utils';
+import {
+  DS_CANVAS_COLOR,
+  DS_TAILWIND_COLORS,
+  DS_TOKEN_UTILITY_CSS,
+} from './ds-preset-tokens';
 
 // AG Grid CDN URL (v34.2.0 고정)
 const AG_GRID_CDN = 'https://cdn.jsdelivr.net/npm/ag-grid-community@34.2.0';
@@ -595,7 +600,7 @@ function CodePreviewIframe({
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>tailwind.config = { corePlugins: { preflight: false } }</script>
+  <script>tailwind.config = { corePlugins: { preflight: false }, theme: { extend: { colors: ${JSON.stringify(DS_TAILWIND_COLORS)} } } }</script>
   ${
     needsAgGrid
       ? `
@@ -607,8 +612,15 @@ function CodePreviewIframe({
   }
   ${umdBundle ? `<script>${umdBundle.replace(/<\/script>/gi, '<\\/script>')}</script>` : ''}
   ${umdCss ? `<style>${umdCss}</style>` : ''}
+  <!-- DS 토큰 짧은 형태 유틸리티 (예: .bg-canvas, .bg-surface, .border-default, .text-primary).
+       AI 생성 코드가 DS 풀 네이밍(bg-bg-canvas) 대신 짧은 형태를 자주 쓰기 때문에 명시적으로 발행. -->
+  <style>${DS_TOKEN_UTILITY_CSS}</style>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
+    /* 부모(호스트 앱) 배경이 transparent iframe 으로 비쳐 보이지 않도록
+       html/body 에 DS canvas 배경을 기본값으로 지정. 컴포넌트가 자체 배경을
+       정의하면 덮어씌워지므로 문제 없음. */
+    html, body { background: ${DS_CANVAS_COLOR}; }
     body {
       margin: 0;
       font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -850,8 +862,9 @@ function CodePreviewIframe({
                   transform: `scale(${scale})`,
                   transformOrigin: 'top left',
                   border: 'none',
+                  background: DS_CANVAS_COLOR,
                 }
-              : undefined
+              : { background: DS_CANVAS_COLOR }
           }
         />
       </div>
