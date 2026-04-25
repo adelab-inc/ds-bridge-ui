@@ -279,6 +279,16 @@ function CodePreviewIframe({
         ...nonAgGridImportedComponents,
         ...nonAgGridAplusComponents,
       ];
+      // 사용자 코드에서 로컬로 선언한 PascalCase 식별자.
+      // 자동 주입(`const X = AplusUI.X || ...`)이 사용자의 `const X = ...` 와
+      // 같은 스코프에서 충돌하면 `Identifier already declared` 가 나므로 제외해야 한다.
+      const localDeclRe =
+        /(?:^|[\s;])(?:const|let|var|function|class)\s+([A-Z]\w+)\b/g;
+      const locallyDeclared = new Set<string>();
+      let declMatch: RegExpExecArray | null;
+      while ((declMatch = localDeclRe.exec(transpiledCode)) !== null) {
+        locallyDeclared.add(declMatch[1]);
+      }
       const createdComponentsRe = /React\.createElement\(([A-Z]\w+)\b/g;
       const usedComponents = new Set<string>();
       let ceMatch: RegExpExecArray | null;
@@ -288,7 +298,16 @@ function CodePreviewIframe({
       const autoDetectedComponents = [...usedComponents]
         .filter((c) => AVAILABLE_APLUS_COMPONENTS.includes(c))
         .filter((c) => !explicitlyMapped.includes(c))
-        .filter((c) => !agGridRelatedExports.includes(c));
+        .filter((c) => !agGridRelatedExports.includes(c))
+        .filter((c) => !locallyDeclared.has(c));
+
+      // 명시 import 매핑도 사용자 로컬 선언과 충돌 방지를 위해 동일 필터 적용
+      const importedToInject = nonAgGridImportedComponents.filter(
+        (c) => !locallyDeclared.has(c)
+      );
+      const aplusToInject = nonAgGridAplusComponents.filter(
+        (c) => !locallyDeclared.has(c)
+      );
 
       // 5-2. Compound component 서브 프로퍼티 감지 (예: Dialog.Header, Dialog.Body 등)
       const allMappedComponents = [
@@ -647,8 +666,8 @@ function CodePreviewIframe({
         const AplusUI = window.AplusUI || {};
         const missingComponents = [];
         ${
-          nonAgGridImportedComponents.length > 0
-            ? nonAgGridImportedComponents
+          importedToInject.length > 0
+            ? importedToInject
                 .map(
                   (comp) =>
                     `const ${comp} = AplusUI.${comp} || (function() { missingComponents.push('${comp}'); return function(props) { return React.createElement('div', { style: { padding: '8px', border: '1px dashed #ccc', borderRadius: '4px', background: '#f9f9f9' }, ...props }, props.children || '[${comp}]'); }; })();`
@@ -659,8 +678,8 @@ function CodePreviewIframe({
 
         // @aplus/ui 컴포넌트 매핑 (AG Grid 관련은 커스텀 래퍼로 주입되므로 제외)
         ${
-          nonAgGridAplusComponents.length > 0
-            ? nonAgGridAplusComponents
+          aplusToInject.length > 0
+            ? aplusToInject
                 .map(
                   (comp) =>
                     `const ${comp} = AplusUI.${comp} || (function() { missingComponents.push('${comp}'); return function(props) { return React.createElement('div', { style: { padding: '8px', border: '1px dashed #ccc', borderRadius: '4px', background: '#f9f9f9' }, ...props }, props.children || '[${comp}]'); }; })();`
