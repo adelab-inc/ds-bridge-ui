@@ -146,7 +146,7 @@ deploy() {
         --cpu 1 \
         --min-instances 0 \
         --max-instances 3 \
-        --timeout 300 \
+        --timeout 600 \
 
     log_info "Deployment complete!"
 
@@ -210,7 +210,7 @@ deploy_simple() {
         --cpu 1 \
         --min-instances 1 \
         --max-instances 5 \
-        --timeout 300 \
+        --timeout 600 \
         --set-env-vars "${ENV_VARS}"
 
     log_info "Deployment complete!"
