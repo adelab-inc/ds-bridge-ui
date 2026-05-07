@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -32,15 +33,27 @@ settings = get_settings()
 # ============================================================================
 
 
+async def _periodic_cleanup(interval_seconds: int = 300) -> None:
+    """주기적으로 stuck GENERATING 메시지를 정리 (기본 5분 간격)."""
+    while True:
+        await asyncio.sleep(interval_seconds)
+        try:
+            await cleanup_stuck_generating_messages(max_age_minutes=15)
+        except Exception:
+            logger.exception("Periodic cleanup failed")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """애플리케이션 생명주기 관리"""
     # Startup
     logger.info("Starting DS Bridge AI Server...")
-    await cleanup_stuck_generating_messages()
+    await cleanup_stuck_generating_messages(max_age_minutes=0)
+    cleanup_task = asyncio.create_task(_periodic_cleanup())
     yield
     # Shutdown
     logger.info("Shutting down DS Bridge AI Server...")
+    cleanup_task.cancel()
     await drain_broadcast_tasks(timeout=30.0)
     await close_broadcast_client()
     await close_supabase_client()
