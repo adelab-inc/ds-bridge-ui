@@ -1180,7 +1180,6 @@ async def _run_broadcast_generation(
                             text=collected_text.strip(),
                             content=first_file.get("content", ""),
                             path=first_file.get("path", ""),
-                            status="GENERATING",
                         )
 
                     await chunk_queue.put({"type": event_type, **event})
