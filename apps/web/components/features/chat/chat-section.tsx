@@ -13,6 +13,7 @@ import { useMessageBookmarks } from './hooks/use-message-bookmarks';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import { useGetPaginatedMessages } from '@/hooks/supabase/useGetPaginatedMessages';
 import { useDescriptionStore } from '@/stores/useDescriptionStore';
+import { useStreamingStore } from '@/stores/useStreamingStore';
 import type { CodeEvent } from '@/types/chat';
 import type { ChatMessage } from '@packages/shared-types/typescript/database/types';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
@@ -81,6 +82,8 @@ function ChatSection({
     isUploading,
     uploadedUrls,
   } = useImageUpload(roomId);
+
+  const streamingDelayState = useStreamingStore((s) => s.delayState);
 
   const {
     handleSend,
@@ -242,6 +245,8 @@ function ChatSection({
               messages={displayMessages}
               selectedMessageId={selectedMessageId ?? undefined}
               bookmarkedMessageIds={bookmarkedMessageIds}
+              streamingMessageId={streamingMessage?.id}
+              streamingDelayState={streamingDelayState}
               onMessageClick={handleMessageClick}
               onBookmarkClick={handleBookmarkIconClick}
               onDeleteClick={handleDeleteIconClick}
