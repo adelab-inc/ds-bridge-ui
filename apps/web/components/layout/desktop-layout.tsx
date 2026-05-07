@@ -74,7 +74,7 @@ function DesktopLayout() {
           {/* Left Panel */}
           <ResizablePanel
             id="left-panel"
-            defaultSize={LAYOUT.LEFT_PANEL_DEFAULT}
+            defaultSize={`${LAYOUT.LEFT_PANEL_DEFAULT}%`}
             minSize={`${LAYOUT.LEFT_PANEL_MIN_PX}px`}
             maxSize={`${LAYOUT.LEFT_PANEL_MAX_PX}px`}
             collapsible
@@ -119,7 +119,7 @@ function DesktopLayout() {
           {/* Right Panel */}
           <ResizablePanel
             id="right-panel"
-            defaultSize={100 - LAYOUT.LEFT_PANEL_DEFAULT}
+            defaultSize={`${100 - LAYOUT.LEFT_PANEL_DEFAULT}%`}
           >
             <RightPanel>
               <PreviewSection
