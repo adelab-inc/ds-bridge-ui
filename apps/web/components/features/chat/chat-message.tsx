@@ -14,8 +14,10 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import { Badge } from '@/components/ui/badge';
 import { Markdown } from '@/components/ui/markdown';
 import { useState } from 'react';
+import type { StreamingDelayState } from '@/stores/useStreamingStore';
 
 function ChatMessage({
   text,
@@ -25,6 +27,7 @@ function ChatMessage({
   content,
   isSelected,
   isBookmarked,
+  delayState,
   onClick,
   onBookmarkClick,
   onDeleteClick,
@@ -41,6 +44,8 @@ function ChatMessage({
   isSelected?: boolean;
   /** 북마크 여부 */
   isBookmarked?: boolean;
+  /** 스트리밍 메시지에만 전달되는 지연 상태(소프트 모드 시 배너 표시) */
+  delayState?: StreamingDelayState;
   /** 클릭 핸들러 (content가 있는 메시지만 클릭 가능) */
   onClick?: () => void;
   /** 북마크 아이콘 클릭 핸들러 */
@@ -97,6 +102,19 @@ function ChatMessage({
           isSelected && 'border border-amber-200'
         )}
       >
+        {delayState === 'delayed_polling' && (
+          <div className="mb-2 flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1.5 dark:border-amber-800 dark:bg-amber-950/30">
+            <Badge
+              variant="outline"
+              className="border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-400"
+            >
+              지연
+            </Badge>
+            <span className="text-muted-foreground text-xs">
+              응답이 평소보다 오래 걸리고 있어요. 확인 중…
+            </span>
+          </div>
+        )}
         <p className="whitespace-pre-wrap">{text}</p>
         <div className="mt-1 flex items-center gap-2">
           {timestamp > 0 && (

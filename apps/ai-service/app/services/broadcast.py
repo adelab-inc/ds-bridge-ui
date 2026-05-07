@@ -110,7 +110,7 @@ async def broadcast_event(
             last_error = e
             logger.warning(
                 "Broadcast request error (retrying)",
-                extra={"room_id": room_id, "error": str(e), "attempt": attempt + 1},
+                extra={"room_id": room_id, "error": f"{type(e).__name__}: {e!r}", "attempt": attempt + 1},
             )
 
         if attempt < max_retries - 1:
@@ -119,7 +119,12 @@ async def broadcast_event(
 
     logger.error(
         "Broadcast failed after retries",
-        extra={"room_id": room_id, "event_type": event_type, "max_retries": max_retries},
+        extra={
+            "room_id": room_id,
+            "event_type": event_type,
+            "max_retries": max_retries,
+            "last_error": f"{type(last_error).__name__}: {last_error!r}" if last_error else "",
+        },
     )
     raise last_error  # type: ignore[misc]
 

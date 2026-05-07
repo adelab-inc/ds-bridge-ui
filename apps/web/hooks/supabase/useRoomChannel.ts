@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
 import { sendDebugLog } from '@/lib/debug-log';
@@ -195,4 +195,21 @@ export function useRoomChannel({
       }
     };
   }, []);
+
+  /**
+   * 외부에서 강제로 채널을 즉시 재구독한다. 지수 백오프 카운터를 리셋하여
+   * 다음 자동 재시도가 정상 카운터로 시작되게 한다. 보통 inactivity 타임아웃처럼
+   * "broadcast가 끊긴 것으로 보이지만 실제로는 채널이 살아 있는지 확인이 필요한"
+   * 상황에서 사용된다.
+   */
+  const reconnect = useCallback(() => {
+    retryCountRef.current = 0;
+    if (retryTimerRef.current) {
+      clearTimeout(retryTimerRef.current);
+      retryTimerRef.current = null;
+    }
+    setupRef.current?.();
+  }, []);
+
+  return { reconnect };
 }

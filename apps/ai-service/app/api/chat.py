@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import re
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
@@ -1082,6 +1083,9 @@ async def _run_broadcast_generation(
     collected_text = ""
     collected_files: list[dict] = []
     heartbeat_task: asyncio.Task | None = None
+    chunk_sender_task: asyncio.Task | None = None
+    chunk_queue: asyncio.Queue[dict | None] = asyncio.Queue()
+    dropped_chunks = 0
 
     async def _heartbeat_loop() -> None:
         """30초마다 heartbeat 이벤트를 전송하여 프론트엔드 연결 유지."""
@@ -1092,14 +1096,47 @@ async def _run_broadcast_generation(
         except asyncio.CancelledError:
             pass
 
+    def _fire_and_forget_save(**kwargs: Any) -> None:
+        """DB 중간 저장을 fire-and-forget으로 실행. 실패해도 무시 — 최종 저장이 대체."""
+        async def _do_save() -> None:
+            try:
+                await update_chat_message(**kwargs)
+            except Exception:
+                pass
+
+        asyncio.create_task(_do_save())
+
+    async def _chunk_sender() -> None:
+        """큐에서 chunk를 꺼내 순서대로 broadcast. 실패 시 drop하고 계속 진행."""
+        nonlocal dropped_chunks
+        while True:
+            item = await chunk_queue.get()
+            if item is None:
+                break
+            try:
+                await broadcast_event(
+                    room_id, "chunk", item, max_retries=1, base_delay=0.2,
+                )
+            except Exception as e:
+                dropped_chunks += 1
+                logger.warning(
+                    "Chunk broadcast dropped",
+                    extra={
+                        "room_id": room_id,
+                        "error": f"{type(e).__name__}: {e!r}",
+                        "dropped_total": dropped_chunks,
+                    },
+                )
+
     try:
         # start 이벤트
         await broadcast_event(room_id, "start", {"message_id": message_id, "user_id": user_id})
 
         # heartbeat 태스크 시작 (프론트엔드 150초 타임아웃 방지)
         heartbeat_task = asyncio.create_task(_heartbeat_loop())
+        chunk_sender_task = asyncio.create_task(_chunk_sender())
 
-        async with asyncio.timeout(300):  # 5분 타임아웃
+        async with asyncio.timeout(600):  # 10분 타임아웃
             # Figma / Vision / 일반 모드에 따라 스트리밍 호출
             if figma_url and system_prompt and user_message:
                 stream = run_figma_tool_calling_loop(
@@ -1136,8 +1173,16 @@ async def _run_broadcast_generation(
                         collected_text += event.get("text", "")
                     elif event_type == "code":
                         collected_files.append(event)
+                        # 코드 블록 도착 즉시 중간 저장 (timeout 시 데이터 유실 방지)
+                        first_file = collected_files[0]
+                        _fire_and_forget_save(
+                            message_id=message_id,
+                            text=collected_text.strip(),
+                            content=first_file.get("content", ""),
+                            path=first_file.get("path", ""),
+                        )
 
-                    await broadcast_event(room_id, "chunk", {"type": event_type, **event})
+                    await chunk_queue.put({"type": event_type, **event})
 
         # 남은 버퍼 처리
         final_events = parser.flush()
@@ -1145,7 +1190,26 @@ async def _run_broadcast_generation(
             event_type = event.pop("type")
             if event_type == "chat":
                 collected_text += event.get("text", "")
-            await broadcast_event(room_id, "chunk", {"type": event_type, **event})
+            await chunk_queue.put({"type": event_type, **event})
+
+        # chunk sender 종료 대기 (남은 큐 drain, 30초 한도)
+        await chunk_queue.put(None)
+        try:
+            async with asyncio.timeout(30):
+                await chunk_sender_task
+        except TimeoutError:
+            logger.warning(
+                "Chunk sender drain timed out, cancelling",
+                extra={"room_id": room_id, "queue_remaining": chunk_queue.qsize()},
+            )
+            chunk_sender_task.cancel()
+        chunk_sender_task = None
+
+        if dropped_chunks:
+            logger.warning(
+                "Chunks dropped during generation",
+                extra={"room_id": room_id, "message_id": message_id, "dropped": dropped_chunks},
+            )
 
         # 완료 시 DB 저장 (재시도 포함)
         first_file = collected_files[0] if collected_files else None
@@ -1164,7 +1228,7 @@ async def _run_broadcast_generation(
     except TimeoutError:
         logger.error(
             "Broadcast generation timed out",
-            extra={"room_id": room_id, "message_id": message_id, "timeout_seconds": 300},
+            extra={"room_id": room_id, "message_id": message_id, "timeout_seconds": 600},
         )
         try:
             # 타임아웃 시에도 이미 수신한 파일이 있으면 함께 저장 (유저 데이터 유실 방지)
@@ -1212,9 +1276,9 @@ async def _run_broadcast_generation(
                 extra={"room_id": room_id, "message_id": message_id},
             )
     except Exception as e:
-        logger.error(
+        logger.exception(
             "Broadcast generation error",
-            extra={"room_id": room_id, "message_id": message_id, "error": str(e)},
+            extra={"room_id": room_id, "message_id": message_id, "error": f"{type(e).__name__}: {e!r}"},
         )
         try:
             first_file = collected_files[0] if collected_files else None
@@ -1235,6 +1299,8 @@ async def _run_broadcast_generation(
     finally:
         if heartbeat_task and not heartbeat_task.done():
             heartbeat_task.cancel()
+        if chunk_sender_task and not chunk_sender_task.done():
+            chunk_sender_task.cancel()
 
 
 # ============================================================================

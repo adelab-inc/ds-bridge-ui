@@ -638,27 +638,32 @@ async def get_latest_code_message(room_id: str) -> MessageData | None:
     return None
 
 
-async def cleanup_stuck_generating_messages() -> int:
+async def cleanup_stuck_generating_messages(*, max_age_minutes: int = 15) -> int:
     """
-    서버 시작 시 GENERATING 상태로 남아있는 고아 메시지를 ERROR로 전환.
+    GENERATING 상태로 일정 시간 이상 남아있는 고아 메시지를 ERROR로 전환.
+
+    Args:
+        max_age_minutes: 이 시간(분)보다 오래된 GENERATING 메시지만 정리 (기본 15분)
 
     Returns:
         정리된 메시지 수
     """
     try:
         client = await get_supabase_client()
+        cutoff_ms = get_timestamp_ms() - (max_age_minutes * 60 * 1000)
         result = await (
             client.table("chat_messages")
             .update({
                 "status": "ERROR",
-                "text": "서버 재시작으로 인해 중단됨",
+                "text": "응답 생성이 중단되었습니다. 다시 시도해주세요.",
             })
             .eq("status", "GENERATING")
+            .lt("question_created_at", cutoff_ms)
             .execute()
         )
         count = len(result.data)
         if count > 0:
-            logger.info("Cleaned up stuck GENERATING messages", extra={"count": count})
+            logger.info("Cleaned up stuck GENERATING messages", extra={"count": count, "max_age_minutes": max_age_minutes})
         return count
     except Exception as e:
         logger.error("Failed to cleanup stuck messages", extra={"error": str(e)})

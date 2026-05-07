@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChatMessage } from './chat-message';
 import type { ChatMessage as ChatMessageType } from '@packages/shared-types/typescript/database/types';
+import type { StreamingDelayState } from '@/stores/useStreamingStore';
 
 interface ChatMessageListProps extends React.ComponentProps<'div'> {
   messages?: ChatMessageType[];
@@ -13,6 +14,10 @@ interface ChatMessageListProps extends React.ComponentProps<'div'> {
   selectedMessageId?: string;
   /** 북마크된 메시지 ID 목록 */
   bookmarkedMessageIds?: Set<string>;
+  /** 현재 스트리밍 중인 메시지 ID — 지연 배너 표시 대상 식별 */
+  streamingMessageId?: string;
+  /** 스트리밍 메시지의 지연 상태 */
+  streamingDelayState?: StreamingDelayState;
   /** 메시지 클릭 핸들러 (content가 있는 메시지만 호출됨) */
   onMessageClick?: (message: ChatMessageType) => void;
   /** 북마크 아이콘 클릭 핸들러 */
@@ -25,6 +30,8 @@ function ChatMessageList({
   messages = [],
   selectedMessageId,
   bookmarkedMessageIds,
+  streamingMessageId,
+  streamingDelayState,
   onMessageClick,
   onBookmarkClick,
   onDeleteClick,
@@ -77,6 +84,11 @@ function ChatMessageList({
               hasContent={hasContent}
               isSelected={selectedMessageId === message.id}
               isBookmarked={bookmarkedMessageIds?.has(message.id)}
+              delayState={
+                streamingMessageId && message.id === streamingMessageId
+                  ? streamingDelayState
+                  : undefined
+              }
               onClick={hasContent ? () => onMessageClick?.(message) : undefined}
               onBookmarkClick={
                 hasContent ? () => onBookmarkClick?.(message) : undefined

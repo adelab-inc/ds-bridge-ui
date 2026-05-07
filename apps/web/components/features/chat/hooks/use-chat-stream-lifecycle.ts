@@ -10,10 +10,12 @@ import type { CodeEvent } from '@/types/chat';
 import { FIGMA_RATE_LIMIT_CODE } from '@/types/chat';
 import type { ChatMessage } from '@packages/shared-types/typescript/database/types';
 
-/** 이벤트 간 무활동 허용 시간 (150초) — 마지막 broadcast 이벤트 이후 이만큼 조용하면 타임아웃 */
+/** 이벤트 간 무활동 허용 시간 (150초) — 이만큼 조용하면 소프트 지연 모드로 전환 */
 const STREAM_INACTIVITY_TIMEOUT_MS = 150_000;
 /** 스트리밍 총 상한 (6분) — Cloud Run --timeout 300s + Supabase broadcast 유실 방어 60s */
 const STREAM_HARD_MAX_MS = 360_000;
+/** 소프트 지연 모드에서 DB 폴링 간격 (3초) */
+const STREAM_DB_POLL_INTERVAL_MS = 3_000;
 /** 중복 chunk 감지 시간 창 — 이 시간 안에 동일 payload가 다시 오면 중복으로 판정 */
 const DUP_CHUNK_WINDOW_MS = 5_000;
 /** 중복 감지용 ring buffer 최대 크기 — 최근 N개 chunk만 기억 */
@@ -37,7 +39,9 @@ interface UseChatStreamLifecycleArgs {
  * 책임:
  * - `useChatStream`(POST) + `useRoomChannel`(broadcast 수신) 조합
  * - `useStreamingStore` 기반 optimistic streaming 메시지 관리
- * - inactivity(150s) / hard_max(360s) 타임아웃 제어
+ * - 2단계 타임아웃 제어:
+ *   - inactivity(150s) → 소프트 지연 모드(폴링 + 채널 재구독, status=GENERATING 유지)
+ *   - hard_max(360s) → 진짜 ERROR 종결
  * - Figma 429 전용 모달 open state 노출
  *
  * 규칙:
@@ -60,6 +64,7 @@ export function useChatStreamLifecycle({
   const streamingMessage = useStreamingStore((s) => s.message);
   const setStreamingMessage = useStreamingStore((s) => s.setMessage);
   const updateStreamingMessage = useStreamingStore((s) => s.updateMessage);
+  const setDelayState = useStreamingStore((s) => s.setDelayState);
 
   const inactivityTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(
     null
@@ -67,6 +72,8 @@ export function useChatStreamLifecycle({
   const hardMaxTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(
     null
   );
+  /** 소프트 지연 모드에서의 3초 간격 폴링 타이머 */
+  const pollTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Broadcast 콜백에서 사용할 ref (state updater 밖에서 side effect 실행용)
   const pendingQuestionRef = React.useRef<string>('');
@@ -82,6 +89,13 @@ export function useChatStreamLifecycle({
   // Supabase Realtime 중복 전달)를 잡아내 drop한다.
   const recentChunksRef = React.useRef<{ hash: string; ts: number }[]>([]);
 
+  // useRoomChannel.reconnect / schedulePoll의 순환 의존성을 끊기 위한 ref들.
+  // useRoomChannel은 콜백 안에서 resetInactivityTimer를 참조해야 하고,
+  // resetInactivityTimer는 handleSoftTimeout(reconnect 호출)을 참조하므로
+  // reconnect를 ref로 우회한다.
+  const reconnectRef = React.useRef<() => void>(() => {});
+  const schedulePollRef = React.useRef<() => void>(() => {});
+
   const [figmaRateLimitOpen, setFigmaRateLimitOpen] = React.useState(false);
 
   const {
@@ -89,6 +103,13 @@ export function useChatStreamLifecycle({
     isLoading: isSending,
     error: sendError,
   } = useChatStream();
+
+  const stopPolling = React.useCallback(() => {
+    if (pollTimerRef.current) {
+      clearTimeout(pollTimerRef.current);
+      pollTimerRef.current = null;
+    }
+  }, []);
 
   const clearAllTimers = React.useCallback(() => {
     if (inactivityTimerRef.current) {
@@ -99,49 +120,111 @@ export function useChatStreamLifecycle({
       clearTimeout(hardMaxTimerRef.current);
       hardMaxTimerRef.current = null;
     }
-  }, []);
+    stopPolling();
+  }, [stopPolling]);
 
-  const handleTimeout = React.useCallback(
-    (reason: 'inactivity' | 'hard_max') => {
-      expectingStartRef.current = false;
-      activeMessageIdRef.current = null;
-      const now = Date.now();
-      updateStreamingMessage((prev) =>
-        prev
-          ? {
-              ...prev,
-              text:
-                prev.text ||
-                (reason === 'inactivity'
-                  ? 'Error: 응답 지연 (150초 동안 새 이벤트 없음)'
-                  : 'Error: 응답 시간 초과 (최대 6분)'),
-              status: 'ERROR' as const,
-              answer_created_at: now,
-            }
-          : prev
-      );
-      clearAllTimers();
-      onStreamEnd?.();
-    },
-    [clearAllTimers, onStreamEnd, updateStreamingMessage]
-  );
+  /**
+   * 소프트 지연 모드에서 3초 간격으로 DB를 폴링하여 streamingMessage가 DONE/ERROR로
+   * 수렴했는지 확인한다. broadcast가 도착하면 onChunk/onDone/onError 등에서
+   * stopPolling 호출 + delayState='normal' 복귀가 일어나므로 자연스럽게 종료된다.
+   */
+  const schedulePoll = React.useCallback(() => {
+    if (pollTimerRef.current) return;
+    pollTimerRef.current = setTimeout(async () => {
+      pollTimerRef.current = null;
+      try {
+        await refetchMessages();
+      } catch {
+        /* network blip 정도는 무시하고 다음 tick 기다림 */
+      }
+      const s = useStreamingStore.getState();
+      // refetch 결과로 onDone 경로(setStreamingMessage(null))가 발화했을 수 있다.
+      // 메시지가 사라졌거나 지연 모드에서 빠져나왔다면 추가 polling 불필요.
+      if (s.message && s.delayState === 'delayed_polling') {
+        schedulePollRef.current();
+      }
+    }, STREAM_DB_POLL_INTERVAL_MS);
+  }, [refetchMessages]);
+
+  React.useEffect(() => {
+    schedulePollRef.current = schedulePoll;
+  });
+
+  /**
+   * 150초 무음 시점에 호출. ERROR로 종결하지 않고 소프트 지연 모드로 진입한다.
+   * 1) UI 배너 노출용 delayState='delayed_polling'
+   * 2) 채널이 stale일 가능성 → reconnect 1회 강제
+   * 3) DB 폴링 시작(3초 간격) — 서버가 조용히 generate 끝내고 DB만 갱신한 경우 회복
+   * inactivityTimerRef는 더 이상 재가동하지 않는다(broadcast가 다시 오면
+   * resetInactivityTimer에서 정상 모드로 복귀하면서 다시 시작됨).
+   */
+  const handleSoftTimeout = React.useCallback(() => {
+    if (!useStreamingStore.getState().message) return;
+    setDelayState('delayed_polling');
+    sendDebugLog('stream_inactivity_soft', {
+      roomId,
+      message_id: activeMessageIdRef.current,
+    });
+    reconnectRef.current();
+    refetchMessages().catch(() => {});
+    schedulePoll();
+  }, [setDelayState, roomId, refetchMessages, schedulePoll]);
 
   const resetInactivityTimer = React.useCallback(() => {
+    // 어떤 broadcast 이벤트든 도착했다는 신호 → 지연 모드/폴링 해제
+    if (useStreamingStore.getState().delayState === 'delayed_polling') {
+      setDelayState('normal');
+      stopPolling();
+    }
     if (inactivityTimerRef.current) {
       clearTimeout(inactivityTimerRef.current);
     }
     inactivityTimerRef.current = setTimeout(
-      () => handleTimeout('inactivity'),
+      handleSoftTimeout,
       STREAM_INACTIVITY_TIMEOUT_MS
     );
-  }, [handleTimeout]);
+  }, [setDelayState, stopPolling, handleSoftTimeout]);
+
+  /**
+   * 6분 도달 시 호출. 그동안 폴링/재구독으로도 수렴하지 못했다면 진짜 ERROR로 종결.
+   */
+  const handleHardTimeout = React.useCallback(() => {
+    expectingStartRef.current = false;
+    activeMessageIdRef.current = null;
+    const now = Date.now();
+    setDelayState('failed');
+    updateStreamingMessage((prev) =>
+      prev
+        ? {
+            ...prev,
+            text:
+              prev.text ||
+              '응답을 받지 못했습니다. 잠시 후 다시 시도해 주세요.',
+            status: 'ERROR' as const,
+            answer_created_at: now,
+          }
+        : prev
+    );
+    sendDebugLog('stream_inactivity_hard', {
+      roomId,
+      message_id: activeMessageIdRef.current,
+    });
+    clearAllTimers();
+    onStreamEnd?.();
+  }, [
+    clearAllTimers,
+    onStreamEnd,
+    updateStreamingMessage,
+    setDelayState,
+    roomId,
+  ]);
 
   const finishStreaming = React.useCallback(() => {
     clearAllTimers();
     onStreamEnd?.();
   }, [clearAllTimers, onStreamEnd]);
 
-  useRoomChannel({
+  const { reconnect } = useRoomChannel({
     roomId,
     enabled: !!roomId,
     callbacks: {
@@ -323,6 +406,10 @@ export function useChatStreamLifecycle({
     },
   });
 
+  React.useEffect(() => {
+    reconnectRef.current = reconnect;
+  }, [reconnect]);
+
   const handleSend = React.useCallback(
     async (message: string) => {
       const tempId = crypto.randomUUID();
@@ -356,6 +443,8 @@ export function useChatStreamLifecycle({
       recentChunksRef.current = [];
 
       // Zustand store에 직접 설정 (React 배칭 영향 없음)
+      // setStreamingMessage(non-null)는 delayState를 자동 리셋하지 않으므로 명시적 호출.
+      setDelayState('normal');
       setStreamingMessage(newMessage);
 
       // 이미지 초기화 (전송 후)
@@ -365,14 +454,11 @@ export function useChatStreamLifecycle({
       onStreamStart?.();
 
       // 타임아웃 설정
-      // - inactivity: broadcast 이벤트 간 150초 무음이면 타임아웃
-      // - hard_max: 총 6분 상한 (Cloud Run 300s + 방어 60s)
+      // - inactivity: broadcast 이벤트 간 150초 무음 → 소프트 지연 모드
+      // - hard_max: 총 6분 상한 (Cloud Run 300s + 방어 60s) → 진짜 ERROR
       clearAllTimers();
       resetInactivityTimer();
-      hardMaxTimerRef.current = setTimeout(
-        () => handleTimeout('hard_max'),
-        STREAM_HARD_MAX_MS
-      );
+      hardMaxTimerRef.current = setTimeout(handleHardTimeout, STREAM_HARD_MAX_MS);
 
       // AI에게 메시지 전송
       const messageId = await sendMessage({
@@ -412,13 +498,14 @@ export function useChatStreamLifecycle({
       uploadedUrls,
       roomId,
       setStreamingMessage,
+      setDelayState,
       updateStreamingMessage,
       clearImages,
       onStreamStart,
       onStreamEnd,
       clearAllTimers,
       resetInactivityTimer,
-      handleTimeout,
+      handleHardTimeout,
       sendMessage,
       selectedMessageId,
     ]
