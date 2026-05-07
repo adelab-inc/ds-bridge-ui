@@ -86,7 +86,7 @@ jobs:
             --memory=${{ env.MEMORY }}
             --min-instances=${{ env.MIN_INSTANCES }}
             --max-instances=${{ env.MAX_INSTANCES }}
-            --timeout=300
+            --timeout=600
             --allow-unauthenticated
           env_vars: |
             PYTHONUNBUFFERED=1
