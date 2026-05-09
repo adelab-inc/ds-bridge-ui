@@ -4,7 +4,7 @@ import { updateSession } from '@/lib/supabase/middleware';
 
 const PUBLIC_ROUTES = ['/login', '/auth/callback'];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // 공개 라우트 허용

@@ -308,7 +308,7 @@ const buttonVariants = cva('px-4 py-2 rounded-md', {
 | --- | --- |
 | Browser 클라이언트 | `lib/supabase/client.ts` |
 | Server 클라이언트 | `lib/supabase/server.ts` |
-| 세션 갱신 | `lib/supabase/middleware.ts#updateSession` (루트 `middleware.ts`에서 호출) |
+| 세션 갱신 | `lib/supabase/middleware.ts#updateSession` (루트 `proxy.ts`에서 호출) |
 | 인증 액션 | `lib/auth/actions.ts` (`sendSignInLink`, `signInWithGoogle`, `getIdToken`) |
 | JWT 검증 | `lib/auth/verify-token.ts#verifySupabaseToken` |
 | DB 타입 | `@ds-hub/shared-types/typescript/database/` (chat_rooms, chat_messages, description_*) |
@@ -352,7 +352,6 @@ X_API_KEY
 
 ## 알려진 이슈 / TODO
 
-- **`middleware.ts` deprecated** — Next 16.2.x는 `proxy.ts` 파일 규칙 권장. 현재 그대로 동작하지만 Next 17 대비 이전 필요
 - **`react-hooks/set-state-in-effect` 오탐 대상 (4개 파일)** — 수정 시 의도적 패턴임을 이해하고 작업:
   - `components/ui/client-only.tsx` — SSR hydration gate
   - `components/features/chat/hooks/use-selected-message.ts` — URL → state sync
