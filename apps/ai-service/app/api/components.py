@@ -875,6 +875,22 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("- ⚠️ rowSpan 사용 컬럼은 정렬/필터 시 병합이 깨질 수 있음 — `sortable: false`, `filter: false` 명시 권장")
     lines.append("- ⚠️ **금지**: `treeData`, `masterDetail`, `rowGroup`, `getDataPath`, `autoGroupColumnDef` (Enterprise → iframe 프리뷰 렌더 실패)")
     lines.append("")
+    lines.append("**Multi-Row Body 일관성 — 자주 빠뜨리는 안티패턴:**")
+    lines.append(
+        "- ✅ **메트릭별 의미 없는 셀은 `null` (0 금지)** — 예: '모집고'/'유지고' 행의 진도율 필드. "
+        "`COLUMN_TYPES.percentColumn` 같은 formatter는 `null`은 `-`로, `0`은 `'0%'`로 출력. "
+        "0을 쓰면 의미 없는 `0%`가 행마다 노출되어 시각 노이즈 발생."
+    )
+    lines.append("  ```tsx")
+    lines.append("  // ❌ { metric: '모집고', rate: 0 }    → 화면에 '0%' 표시 (의미 없음)")
+    lines.append("  // ✅ { metric: '모집고', rate: null } → 화면에 '-' 표시")
+    lines.append("  ```")
+    lines.append(
+        "- ✅ **메트릭이 행 차원이면 정렬·필터 무의미 → `defaultColDef`로 일괄 비활성**: "
+        "`<DataGrid defaultColDef={{ sortable: false, filter: false, resizable: true }} />`. "
+        "헤더 funnel/sort 아이콘 노출을 차단해 시각 노이즈 제거. 좌측 키 컬럼에 개별 `sortable: false` 명시할 필요도 없어짐."
+    )
+    lines.append("")
 
     # 합계 행 상단 고정 Usage Example
     lines.append("### Usage Example (합계 행 상단 고정 + Bold)")
