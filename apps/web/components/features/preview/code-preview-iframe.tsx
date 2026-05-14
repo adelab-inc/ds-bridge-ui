@@ -430,6 +430,18 @@ function CodePreviewIframe({
                 animateRows: props.animateRows !== false,
                 theme: props.theme || themeQuartz,
                 defaultColDef: props.defaultColDef || { flex: 1, filter: true, sortable: true, resizable: true },
+
+                // rowSpan 패턴 / 합계 행 / 행 스타일 / 헤더·행 높이
+                suppressRowTransform: props.suppressRowTransform,
+                pinnedTopRowData: props.pinnedTopRowData,
+                pinnedBottomRowData: props.pinnedBottomRowData,
+                getRowStyle: props.getRowStyle,
+                getRowClass: props.getRowClass,
+                headerHeight: props.headerHeight,
+                rowHeight: props.rowHeight,
+                getRowId: props.getRowId,
+                quickFilterText: props.quickFilterText,
+
                 onGridReady: function(params) {
                   gridApiRef.current = params.api;
                   if (props.onGridReady) props.onGridReady(params);
@@ -439,6 +451,9 @@ function CodePreviewIframe({
                 onRowSelected: props.onRowSelected,
                 onFilterChanged: props.onFilterChanged,
                 onSortChanged: props.onSortChanged,
+                onCellValueChanged: props.onCellValueChanged,
+                onColumnMoved: props.onColumnMoved,
+                onRowDoubleClicked: props.onRowDoubleClicked,
               };
 
               // 그리드 생성
@@ -574,6 +589,17 @@ function CodePreviewIframe({
               onCellValueChanged: onCellValueChanged,
               onColumnMoved: onColumnMoved,
               suppressRowClickSelection: suppressRowClickSelection,
+              // rowSpan 패턴 / 합계 행 / 행 스타일 / 헤더·행 높이
+              suppressRowTransform: props.suppressRowTransform,
+              pinnedTopRowData: props.pinnedTopRowData,
+              pinnedBottomRowData: props.pinnedBottomRowData,
+              getRowStyle: props.getRowStyle,
+              getRowClass: props.getRowClass,
+              headerHeight: props.headerHeight,
+              rowHeight: props.rowHeight,
+              getRowId: props.getRowId,
+              quickFilterText: props.quickFilterText,
+              onRowDoubleClicked: props.onRowDoubleClicked,
             })
           );
         };
