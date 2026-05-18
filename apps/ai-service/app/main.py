@@ -9,18 +9,18 @@ from fastapi.openapi.utils import get_openapi
 
 from app.api.chat import router as chat_router
 from app.api.description import router as description_router
-from app.api.external import router as external_router
+from app.api.external import external_app
 from app.api.rooms import router as rooms_router
 from app.core.config import get_settings
 from app.core.logging import setup_logging
 from app.services.broadcast import close_broadcast_client, drain_broadcast_tasks
-from app.services.supabase_storage import cleanup_supabase
 from app.services.supabase_db import (
     DatabaseError,
     cleanup_stuck_generating_messages,
     close_supabase_client,
     get_supabase_client,
 )
+from app.services.supabase_storage import cleanup_supabase
 
 # JSON 로깅 초기화 (모듈 로드 시 즉시 실행)
 setup_logging()
@@ -151,7 +151,10 @@ app.add_middleware(
 app.include_router(rooms_router, prefix="/rooms", tags=["rooms"])
 app.include_router(chat_router, prefix="/chat", tags=["chat"])
 app.include_router(description_router, prefix="/description", tags=["description"])
-app.include_router(external_router)
+
+# 외부 파트너 전용 API는 별도 sub-app 으로 마운트 — 메인 /docs 와 격리
+# 외부 파트너용 스웨거: /external/docs, OpenAPI JSON: /external/openapi.json
+app.mount("/external", external_app)
 
 
 # ============================================================================
@@ -212,31 +215,24 @@ def custom_openapi():
         "url": "https://fastapi.tiangolo.com/img/logo-margin/logo-teal.png"
     }
 
-    # Security schemes
+    # Security scheme for X-API-Key (내부 BFF/관리자용)
+    # 외부 파트너용 X-Partner-Key 는 별도 sub-app(/external)에서 자체 OpenAPI 로 노출.
     openapi_schema["components"]["securitySchemes"] = {
         "X-API-Key": {
             "type": "apiKey",
             "in": "header",
             "name": "X-API-Key",
-            "description": "내부 BFF/관리자 인증. Chat·Rooms·Description·Components API에 필요합니다.",
-        },
-        "X-Partner-Key": {
-            "type": "apiKey",
-            "in": "header",
-            "name": "X-Partner-Key",
-            "description": "외부 파트너 인증. /external/* 엔드포인트에 필요합니다. 내부 X-API-Key와 별도 발급/회수.",
-        },
+            "description": "API 키 인증. Chat API 엔드포인트에 필요합니다.",
+        }
     }
 
     # /health 제외 모든 엔드포인트에 security 적용
-    # /external/* 는 X-Partner-Key, 나머지는 X-API-Key
     for path, methods in openapi_schema["paths"].items():
         if path == "/health":
             continue
-        security_scheme = "X-Partner-Key" if path.startswith("/external/") else "X-API-Key"
         for method in methods.values():
             if isinstance(method, dict):
-                method["security"] = [{security_scheme: []}]
+                method["security"] = [{"X-API-Key": []}]
 
     # Body_ prefix 스키마 제거 (파일 업로드용 자동 생성 스키마)
     schemas = openapi_schema.get("components", {}).get("schemas", {})
