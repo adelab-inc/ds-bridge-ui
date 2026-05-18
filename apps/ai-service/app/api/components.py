@@ -840,12 +840,37 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
         "더 '정확한 의도'로 가중되기 쉬우나, 이번 도메인에서는 그 가중치를 의도적으로 뒤집어야 함."
     )
     lines.append("")
-    lines.append("**자동 변환 절차 (AI 가 직접 수행해야 할 일)**:")
+    lines.append("**자동 변환 절차 (AI 가 직접 수행해야 할 일 — 6단계, MUST)**:")
     lines.append("1. (A) 헤더 트리에서 leaf 가 메트릭(`총수량/총배분건수/총진도율`, `수량/배분건수/진도율` 등)인 노드를 식별.")
     lines.append("2. 그 메트릭 leaf 를 **삭제**하고 상위 차원(그룹 이름)만 leaf 로 남김 — 깊이 1 감소.")
     lines.append("3. 좌측 키 컬럼(`사업단`, `승인자` 등) 옆에 **`구분` 라벨 컬럼**을 추가하여 (B) 의 행 메트릭 라벨(`모집고`/`유지고`/`%`)을 표시.")
     lines.append("4. rowData 는 (B) 의 행 메트릭 묶음 기준으로 평탄화 (`metricIndex` 0..N-1, `metric` 필드 포함).")
     lines.append("5. 사용자가 명시한 정렬·포맷(`총진도율 오름차순` 등)은 행 단위로 재해석 (`% 행 기준 진도율 오름차순`).")
+    lines.append(
+        "6. **`defaultColDef` 에 `sortable: false, filter: false, resizable: true` 일괄 적용** — "
+        "메트릭이 행 차원일 때 정렬·필터는 의미가 없으므로 헤더 funnel/sort 아이콘 노출 차단. "
+        "결합 케이스에서도 절대 빠뜨리지 말 것."
+    )
+    lines.append("")
+    lines.append("🛑 **헤더 leaf 단어 절대 금지 목록 (결합 케이스에서 자주 새는 단어)**")
+    lines.append(
+        "다음 단어들이 **사용자 입력 헤더 트리에 등장하더라도**, AI 응답의 `columnDefs` 내 "
+        "`headerName` 으로 출력하면 안 됩니다. 이들은 모두 메트릭이라 행 라벨로만 사용되어야 합니다."
+    )
+    lines.append("- `총수량`, `총배분건수`, `총진도율`")
+    lines.append("- `수량`, `배분건수`, `진도율`")
+    lines.append("- `모집고`, `유지고`, `%` (이건 `metric` 필드 값으로만 사용, 컬럼 헤더 X)")
+    lines.append(
+        "응답을 만들기 전 마지막 자가 점검: `headerName: '총수량'` / `headerName: '진도율'` 같은 줄이 "
+        "내가 만든 코드에 단 한 줄이라도 있으면 STOP. 그 컬럼을 삭제하고 그 메트릭은 행으로 빠진 게 맞다."
+    )
+    lines.append("")
+    lines.append("✅ **응답 생성 직전 자가 점검 체크리스트 (5개 모두 True 여야 응답 제출)**")
+    lines.append("- [ ] `columnDefs` 의 어떤 `headerName` 도 위 금지 목록 단어 사용 안 함")
+    lines.append("- [ ] `rowData` 가 엔티티당 N행으로 평탄화되어 있음 (`metricIndex` 필드 존재)")
+    lines.append("- [ ] 좌측 키 컬럼에 `rowSpan` 콜백 + `<DataGrid suppressRowTransform={true} />` 둘 다 있음")
+    lines.append("- [ ] `defaultColDef={{ sortable: false, filter: false, resizable: true }}` 가 `<DataGrid>` props 에 명시됨")
+    lines.append("- [ ] `구분` 같은 행 메트릭 라벨 컬럼이 추가됨 (`field: 'metric'`)")
     lines.append("")
     lines.append("**❌ 잘못 결합한 예 (자주 발생하는 실패)**")
     lines.append("```")
