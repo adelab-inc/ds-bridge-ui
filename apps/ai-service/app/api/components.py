@@ -942,6 +942,46 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("- 사용자 `~~3Depth~~ (합계>총매출액/총원가, 분기별>Q1>매출액/원가)` → 변환 후 실제 `2Depth (합계 leaf, 분기별 > Q1/Q2/Q3/Q4)`")
     lines.append("- 사용자 `~~3Depth~~ (분기별>Q1>1월/2월/3월)` → 차원이 진짜 3단이므로 그대로 `3Depth (분기별 > Q1 > 1월/2월/3월)` 유지")
     lines.append("")
+    lines.append("**(h) 🎯 rowSpan 시각 보장 — 좌측 키 cell 강제 hide (필수)**")
+    lines.append("")
+    lines.append(
+        "`colDef.rowSpan` 콜백만으로는 일부 환경(특히 iframe 프리뷰 + React eval 조합)에서 "
+        "AG Grid 가 다른 row 의 동일 cell 을 hide 처리하지 못해 좌측 키 텍스트가 N번 반복 노출되는 "
+        "현상이 발생합니다. rowSpan 콜백 + 강제 hide 둘 다 박아서 시각 결과를 100% 보장하세요."
+    )
+    lines.append("")
+    lines.append("**모든 좌측 키 ROWSPAN 컬럼 (사업단·승인자·구분·부서·담당자 등)** 에 `cellStyle` 콜백 추가:")
+    lines.append("```tsx")
+    lines.append("const spanThree = (params: any) => (params.data?.metricIndex === 0 ? 3 : 1);")
+    lines.append("const hideIfNotFirst = (params: any) => ")
+    lines.append("  params.data?.metricIndex !== 0 ? { display: 'none' } : undefined;")
+    lines.append("")
+    lines.append("{ ")
+    lines.append("  field: 'dept', ")
+    lines.append("  headerName: '부서', ")
+    lines.append("  rowSpan: spanThree,")
+    lines.append("  cellStyle: hideIfNotFirst,   // ✅ 강제 hide — 시각 보장")
+    lines.append("  // ... ")
+    lines.append("}")
+    lines.append("```")
+    lines.append("")
+    lines.append(
+        "원리: `metricIndex !== 0` 인 row (= rowSpan 으로 덮여야 할 row) 에서 해당 cell 을 "
+        "`display: none` 처리. rowSpan 콜백이 작동하든 안 하든 시각상 첫 row 만 노출. "
+        "두 메커니즘이 함께 작동해야 결과가 안정적."
+    )
+    lines.append("")
+    lines.append("⚠️ pinnedTopRowData 의 행에는 위 hide 적용하지 말 것 (pinned 는 rowSpan 미지원이라 모든 row 보여야 함).")
+    lines.append("→ `pinnedTopRowData` 의 row 에는 `metricIndex` 필드를 빼거나 음수로 설정해 hide 조건 회피:")
+    lines.append("```tsx")
+    lines.append("// 본문 row")
+    lines.append("{ dept: '사업단A', metricIndex: 0, metric: '수량', ... }  // hide 안 됨")
+    lines.append("{ dept: '사업단A', metricIndex: 1, metric: '배분건수', ... } // hide 됨")
+    lines.append("// pinned top — metricIndex 필드 자체 생략하여 hide 회피")
+    lines.append("{ dept: '합계', metric: '수량', ... }       // metricIndex 없음 → hide X")
+    lines.append("{ dept: '합계', metric: '배분건수', ... }   // 동일")
+    lines.append("```")
+    lines.append("")
     lines.append("✅ **응답 생성 직전 자가 점검 체크리스트 (7개 모두 True 여야 응답 제출)**")
     lines.append("- [ ] `columnDefs` 의 어떤 `headerName` 도 메트릭 식별 휴리스틱에 해당 안 함 (위 1~5번 패턴)")
     lines.append("- [ ] `rowData` 가 엔티티당 N행으로 평탄화되어 있음 (`metricIndex` 필드 존재)")
