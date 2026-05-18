@@ -887,21 +887,33 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("")
     lines.append("📐 **헤더 구조 추가 규칙 (시각 품질 보장)**")
     lines.append("")
-    lines.append("**(e) `ColGroupDef` 자식 수 제약 — 자식 1개 이하면 ColGroupDef 사용 금지**")
+    lines.append("**(e) 🚫 `ColGroupDef` 자식 수 제약 — children.length ≥ 2 가 아니면 ColGroupDef 절대 금지**")
     lines.append(
         "ColGroupDef 는 그룹 헤더 한 줄 + 자식 헤더 한 줄을 만들어 시각적 그룹을 표현합니다. "
         "자식이 1개뿐이면 그 자식은 그냥 leaf 로 두세요. 자식 1개짜리 ColGroupDef 는 "
-        "의미 없는 빈 그룹 헤더 한 줄을 추가할 뿐이고, 결합 변환 결과에서 자주 나오는 안티패턴입니다."
+        "의미 없는 빈 그룹 헤더 한 줄을 추가할 뿐이고, **결합 변환 결과에서 가장 빈번하게 나오는 안티패턴**입니다."
+    )
+    lines.append("")
+    lines.append(
+        "**알고리즘 (응답 코드 작성 직전 반드시 수행)**: "
+        "`columnDefs` 의 모든 노드를 순회하며 `children` 이 있으면 `children.length` 를 센다. "
+        "1이면 **즉시 STOP** — 그 ColGroupDef 를 자식 1개의 leaf 로 평탄화한 후 다시 응답 작성. "
+        "이 점검을 통과하지 못한 코드는 절대 출력하지 말 것."
     )
     lines.append("```")
-    lines.append("// ❌ 안티패턴: 자식 1개짜리 ColGroupDef")
-    lines.append("{ headerName: '합계', children: [{ headerName: '총계', field: 'total' }] }")
-    lines.append("{ headerName: 'Q1',   children: [{ headerName: '실적', field: 'q1' }] }")
+    lines.append("// ❌ 안티패턴 (자주 발생) — 매출/보험/실적 도메인에서 반복 출현")
+    lines.append("{ headerName: '합계',  children: [{ headerName: '총계', field: 'total' }] }       // 자식 1개")
+    lines.append("{ headerName: 'Q1',    children: [{ headerName: '실적', field: 'q1' }] }         // 자식 1개")
+    lines.append("{ headerName: '월별',  children: [{ headerName: '월간실적', field: 'm' }] }      // 자식 1개")
+    lines.append("{ headerName: '합계',  children: [{ field: 'total', headerName: '값' }] }        // 자식 1개")
     lines.append("")
-    lines.append("// ✅ 올바른 형태: 그냥 leaf 로 평탄화")
-    lines.append("{ headerName: '합계', field: 'total' }")
-    lines.append("{ headerName: 'Q1',   field: 'q1' }")
+    lines.append("// ✅ 올바른 형태 — ColGroupDef 를 제거하고 leaf 의 headerName 으로 흡수")
+    lines.append("{ headerName: '합계', field: 'total' }       // 합계 그룹 → 단일 합계 컬럼")
+    lines.append("{ headerName: 'Q1',   field: 'q1' }          // Q1 그룹 → 단일 Q1 컬럼")
+    lines.append("{ headerName: '월별', field: 'm' }           // 월별 그룹 → 단일 월별 컬럼")
     lines.append("```")
+    lines.append("")
+    lines.append("⚠️ **사용자가 헤더 트리에 `합계 (단일 leaf)` 또는 그룹명만 명시했더라도 children 1개로 ColGroupDef 만들지 말 것**. 단일 컬럼은 항상 leaf.")
     lines.append("")
     lines.append("**(f) 헤더 깊이 자동 감소 — 사용자 명시 N-Depth 는 결합 변환 후 (N-1)-Depth**")
     lines.append(
