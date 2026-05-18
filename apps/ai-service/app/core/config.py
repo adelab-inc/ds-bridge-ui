@@ -30,8 +30,9 @@ class Settings(BaseSettings):
     gemini_thinking_level: str = "off"  # off(비활성), minimal, low, medium, high
 
     # API Authentication
-    x_api_key: str = ""  # X-API-Key 헤더로 인증 (내부 BFF/관리자용)
-    x_partner_key: str = ""  # X-Partner-Key 헤더로 인증 (외부 파트너용, /external/* 라우터)
+    # 헤더 이름은 외부/내부 모두 X-API-Key 로 통일. 값(secret)만 분리해서 발급.
+    x_api_key: str = ""           # 내부 BFF/관리자용 X-API-Key 값
+    x_external_key: str = ""      # 외부 파트너용 X-API-Key 값 (/external/* 라우터 전용)
 
     # CORS
     cors_origins: str = "http://localhost:3000,http://localhost:5173"

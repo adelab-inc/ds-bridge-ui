@@ -5,16 +5,13 @@ from fastapi.security import APIKeyHeader
 
 from app.core.config import get_settings
 
-# X-API-Key 헤더 스키마 (내부 BFF/관리자용)
+# X-API-Key 헤더 스키마
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
-
-# X-Partner-Key 헤더 스키마 (외부 파트너용, /external/* 라우터)
-partner_key_header = APIKeyHeader(name="X-Partner-Key", auto_error=False)
 
 
 async def verify_api_key(api_key: str | None = Security(api_key_header)) -> str:
     """
-    API 키 검증 의존성
+    내부용 X-API-Key 검증 의존성
 
     - X_API_KEY 환경변수가 설정되지 않으면 인증 비활성화 (개발 모드)
     - 설정된 경우 X-API-Key 헤더 필수
@@ -41,29 +38,31 @@ async def verify_api_key(api_key: str | None = Security(api_key_header)) -> str:
     return api_key
 
 
-async def verify_partner_key(partner_key: str | None = Security(partner_key_header)) -> str:
+async def verify_external_api_key(api_key: str | None = Security(api_key_header)) -> str:
     """
-    파트너 API 키 검증 의존성 (외부 파트너용)
+    외부 파트너용 X-API-Key 검증 의존성
 
-    - X_PARTNER_KEY 환경변수가 설정되지 않으면 인증 비활성화 (개발 모드)
-    - 설정된 경우 X-Partner-Key 헤더 필수
-    - 내부용 X-API-Key와 별도로 관리하여 권한·발급·회수 분리
+    헤더 이름은 내부와 동일한 X-API-Key 를 사용하지만, 비교 대상 값은 별도 환경변수
+    `X_EXTERNAL_KEY` 로 분리되어 있습니다. 즉 외부 파트너에게 발급된 키 값은 내부
+    API 호출에 사용할 수 없고, 내부 키 값으로 /external/* 호출도 불가능합니다.
+
+    - X_EXTERNAL_KEY 환경변수가 설정되지 않으면 인증 비활성화 (개발 모드)
     """
     settings = get_settings()
 
-    if not settings.x_partner_key:
+    if not settings.x_external_key:
         return ""
 
-    if not partner_key:
+    if not api_key:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing partner key. Provide X-Partner-Key header.",
+            detail="Missing API key. Provide X-API-Key header.",
         )
 
-    if not secrets.compare_digest(partner_key, settings.x_partner_key):
+    if not secrets.compare_digest(api_key, settings.x_external_key):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Invalid partner key",
+            detail="Invalid API key",
         )
 
-    return partner_key
+    return api_key

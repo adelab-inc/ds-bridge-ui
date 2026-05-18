@@ -13,8 +13,9 @@ crid(=room_id)로 조회할 수 있도록 노출합니다.
 - 메인 `/docs`에는 내부 API만 노출되므로 외부 파트너에게 내부 스펙이 새지 않습니다.
 
 ## 인증
-- 헤더 `X-Partner-Key` 필수 (내부 BFF용 `X-API-Key`와 분리)
-- 환경변수 `X_PARTNER_KEY`로 발급/회수 관리
+- 헤더 `X-API-Key` 필수 (내부 BFF와 헤더 이름 통일)
+- 키 값(secret)은 외부 전용으로 분리 발급. 환경변수 `X_EXTERNAL_KEY` 로 관리.
+- 내부용 X-API-Key 값으로 본 라우터 호출 불가 (반대도 동일).
 
 ## 사용 시나리오
 - 외부 시스템이 런타임 허브 URL의 `crid` 파라미터를 추출하여 본 API 호출
@@ -23,7 +24,7 @@ crid(=room_id)로 조회할 수 있도록 노출합니다.
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Path, status
 from fastapi.openapi.utils import get_openapi
 
-from app.core.auth import verify_partner_key
+from app.core.auth import verify_external_api_key
 from app.schemas.external import (
     ExternalCodeResponse,
     ExternalDescriptionResponse,
@@ -37,10 +38,10 @@ from app.services.supabase_db import (
 router = APIRouter(
     # prefix는 main.py에서 app.mount("/external", external_app)로 부여 — 중복 방지 위해 여기서는 비움
     tags=["external"],
-    dependencies=[Depends(verify_partner_key)],
+    dependencies=[Depends(verify_external_api_key)],
     responses={
-        401: {"model": ExternalErrorResponse, "description": "X-Partner-Key 헤더 누락"},
-        403: {"model": ExternalErrorResponse, "description": "X-Partner-Key 값 불일치"},
+        401: {"model": ExternalErrorResponse, "description": "X-API-Key 헤더 누락"},
+        403: {"model": ExternalErrorResponse, "description": "X-API-Key 값 불일치"},
         404: {"model": ExternalErrorResponse, "description": "리소스 또는 데이터 없음"},
     },
 )
@@ -132,7 +133,8 @@ external_app = FastAPI(
     description=(
         "외부 파트너용 read-only API.\n\n"
         "런타임 허브에서 생성된 디자인 코드와 디스크립션을 `crid`(=room_id)로 조회합니다.\n\n"
-        "**인증**: 모든 엔드포인트는 `X-Partner-Key` 헤더가 필요합니다.\n\n"
+        "**인증**: 모든 엔드포인트는 `X-API-Key` 헤더가 필요합니다 "
+        "(헤더 이름은 내부와 동일하지만 외부 전용 키 값이 별도 발급됩니다).\n\n"
         "**에러**: 채팅방에 해당 데이터가 없으면 `404 Not Found` 를 반환합니다."
     ),
     version="0.1.0",
@@ -144,7 +146,7 @@ external_app.include_router(router)
 
 
 def _external_openapi() -> dict:
-    """External sub-app 전용 OpenAPI 스펙. X-Partner-Key 만 security scheme 으로 노출."""
+    """External sub-app 전용 OpenAPI 스펙. X-API-Key 를 security scheme 으로 노출."""
     if external_app.openapi_schema:
         return external_app.openapi_schema
 
@@ -156,18 +158,18 @@ def _external_openapi() -> dict:
     )
 
     schema.setdefault("components", {})["securitySchemes"] = {
-        "X-Partner-Key": {
+        "X-API-Key": {
             "type": "apiKey",
             "in": "header",
-            "name": "X-Partner-Key",
-            "description": "외부 파트너 인증 키. 운영 담당자에게 발급 요청 후 안전한 채널로 전달받으세요.",
+            "name": "X-API-Key",
+            "description": "API 키 인증. 운영 담당자에게 발급 요청 후 안전한 채널로 전달받으세요.",
         }
     }
 
     for _path, methods in schema.get("paths", {}).items():
         for method in methods.values():
             if isinstance(method, dict):
-                method["security"] = [{"X-Partner-Key": []}]
+                method["security"] = [{"X-API-Key": []}]
 
     external_app.openapi_schema = schema
     return external_app.openapi_schema
