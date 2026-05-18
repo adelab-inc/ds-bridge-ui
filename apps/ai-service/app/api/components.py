@@ -915,15 +915,32 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("")
     lines.append("⚠️ **사용자가 헤더 트리에 `합계 (단일 leaf)` 또는 그룹명만 명시했더라도 children 1개로 ColGroupDef 만들지 말 것**. 단일 컬럼은 항상 leaf.")
     lines.append("")
-    lines.append("**(f) 헤더 깊이 자동 감소 — 사용자 명시 N-Depth 는 결합 변환 후 (N-1)-Depth**")
+    lines.append("**(f) 🔥 헤더 깊이 자동 감소 — 사용자 `■ 그리드 메타 헤더 구조: N-Depth` 는 결합 변환 시 무시하고 자연스러운 깊이로 출력**")
+    lines.append("")
     lines.append(
-        "사용자가 `■ 그리드 메타 헤더 구조: 3Depth` 라고 명시했더라도, 메트릭이 행으로 빠지면서 "
-        "헤더 깊이는 한 단계 자동 감소합니다. 강제로 3-Depth 를 맞추려고 자식 1개짜리 ColGroupDef 를 "
-        "만들지 마세요. 사용자가 의도한 \"3Depth\" 는 변환 전 wide 패턴의 깊이이고, 변환 후 tall "
-        "패턴에서는 자연스럽게 2-Depth 가 되는 것이 정상입니다."
+        "**핵심 우선순위**: 사용자 메타의 `헤더 구조: 3Depth` 같은 명시는 **(B) 결합 신호가 있을 때 무시**해야 합니다. "
+        "이 메타는 (A) wide 패턴 기준 표기이며, 메트릭이 행으로 빠지는 변환 후에는 깊이가 자연스럽게 감소합니다. "
+        "절대로 메타의 숫자를 맞추려고 인위적 깊이를 만들지 마세요. (e) 룰 위반의 가장 흔한 원인입니다."
     )
-    lines.append("- 예: 사용자 `3Depth (합계>총수량/총배분건수/총진도율, 권역별>수도권>수량/배분건수/진도율)` → 변환 후 `2Depth (합계, 권역별>수도권/강원권/제주권)`")
-    lines.append("- 예: 사용자 `3Depth (합계>총매출액/총원가, 분기별>Q1>매출액/원가)` → 변환 후 `2Depth (합계, 분기별>Q1/Q2/Q3/Q4)`")
+    lines.append("")
+    lines.append("**왜 무시해야 하나**: 사용자가 `3Depth` 라고 적은 건 \"합계 > 총수량 > ...\" 같은 wide 트리의 깊이를 센 것. 메트릭을 행으로 빼면 그 레벨이 통째로 사라지므로 깊이도 1 줄어듭니다. 사용자 의도와 모순되지 않으며, 오히려 변환 후 깊이가 그대로면 자식 1개 그룹이 강제로 생성되어 시각적으로 망가집니다.")
+    lines.append("")
+    lines.append("**진짜 N-Depth 와 강제 N-Depth 의 차이**:")
+    lines.append("- ✅ **진짜 3-Depth (자연스러운 차원 계층)**: `권역별 > 수도권 > [서울, 경기, 인천]` 처럼 각 그룹이 자식 2개 이상")
+    lines.append("- ✅ **진짜 3-Depth (시간 계층)**: `분기별 > Q1 > [1월, 2월, 3월]` 처럼 각 분기 안에 월이 충분")
+    lines.append("- ❌ **강제 3-Depth (안티패턴)**: `분기별 > Q1 > 실적` 자식 1개 — 차원이 부족한데 깊이만 맞추려는 시도")
+    lines.append("- ❌ **강제 3-Depth (안티패턴)**: `합계 > 총계` 자식 1개")
+    lines.append("")
+    lines.append("**판단 알고리즘**: (B) 결합 신호가 있는 응답을 만들 때:")
+    lines.append("1. 사용자 메타의 `헤더 구조: N-Depth` 숫자를 **완전히 무시**한다.")
+    lines.append("2. 차원만 가지고 자연스럽게 columnDefs 를 구성한다.")
+    lines.append("3. 결과 깊이가 N-1 이든 N 이든 상관 없다 — 차원 계층에 따라 결정.")
+    lines.append("4. 자식 1개 ColGroupDef 가 하나라도 생기면 (e) 위반 — 즉시 그 그룹을 leaf 로 평탄화.")
+    lines.append("")
+    lines.append("**변환 예시 (사용자 메타는 회색 처리)**:")
+    lines.append("- 사용자 `~~3Depth~~ (합계>총수량/총배분건수/총진도율, 권역별>수도권>수량/배분건수/진도율)` → 변환 후 실제 `2Depth (합계 leaf, 권역별 > 수도권/강원권/제주권)`")
+    lines.append("- 사용자 `~~3Depth~~ (합계>총매출액/총원가, 분기별>Q1>매출액/원가)` → 변환 후 실제 `2Depth (합계 leaf, 분기별 > Q1/Q2/Q3/Q4)`")
+    lines.append("- 사용자 `~~3Depth~~ (분기별>Q1>1월/2월/3월)` → 차원이 진짜 3단이므로 그대로 `3Depth (분기별 > Q1 > 1월/2월/3월)` 유지")
     lines.append("")
     lines.append("✅ **응답 생성 직전 자가 점검 체크리스트 (7개 모두 True 여야 응답 제출)**")
     lines.append("- [ ] `columnDefs` 의 어떤 `headerName` 도 메트릭 식별 휴리스틱에 해당 안 함 (위 1~5번 패턴)")
