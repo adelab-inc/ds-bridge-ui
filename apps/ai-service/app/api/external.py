@@ -19,9 +19,6 @@ crid(=room_id)로 조회할 수 있도록 노출합니다.
 ## 사용 시나리오
 - 외부 시스템이 런타임 허브 URL의 `crid` 파라미터를 추출하여 본 API 호출
 - 로컬 환경 또는 사내망 사용 가정 (방화벽 이슈 없음)
-
-⚠️ **현재 STUB 상태**: 응답 스키마 합의용으로 골격만 노출, 실제 구현은 후속.
-모든 엔드포인트가 `501 Not Implemented` 반환.
 """
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Path, status
 from fastapi.openapi.utils import get_openapi
@@ -32,6 +29,10 @@ from app.schemas.external import (
     ExternalDescriptionResponse,
     ExternalErrorResponse,
 )
+from app.services.supabase_db import (
+    get_latest_code_message,
+    get_latest_description,
+)
 
 router = APIRouter(
     # prefix는 main.py에서 app.mount("/external", external_app)로 부여 — 중복 방지 위해 여기서는 비움
@@ -40,8 +41,7 @@ router = APIRouter(
     responses={
         401: {"model": ExternalErrorResponse, "description": "X-Partner-Key 헤더 누락"},
         403: {"model": ExternalErrorResponse, "description": "X-Partner-Key 값 불일치"},
-        404: {"model": ExternalErrorResponse, "description": "리소스 없음"},
-        501: {"model": ExternalErrorResponse, "description": "스펙 합의 단계 — 미구현"},
+        404: {"model": ExternalErrorResponse, "description": "리소스 또는 데이터 없음"},
     },
 )
 
@@ -65,9 +65,18 @@ async def get_external_code(
         examples=["5169a302-629f-4759-8568-c0a7849f4439"],
     ),
 ) -> ExternalCodeResponse:
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="External code API is under specification review. Implementation pending.",
+    message = await get_latest_code_message(crid)
+    if message is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No code found for crid: {crid}",
+        )
+
+    return ExternalCodeResponse(
+        crid=crid,
+        code=message.get("content", ""),
+        path=message.get("path", ""),
+        generated_at=message.get("answer_created_at", 0),
     )
 
 
@@ -91,9 +100,23 @@ async def get_external_description(
         examples=["5169a302-629f-4759-8568-c0a7849f4439"],
     ),
 ) -> ExternalDescriptionResponse:
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="External description API is under specification review. Implementation pending.",
+    record = await get_latest_description(crid)
+    if record is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No description found for crid: {crid}",
+        )
+
+    edited = record.get("edited_content")
+    is_edited = bool(edited)
+    content = edited if is_edited else record.get("content", "")
+
+    return ExternalDescriptionResponse(
+        crid=crid,
+        content=content,
+        version=record.get("version", 0),
+        is_edited=is_edited,
+        updated_at=record.get("created_at", 0),
     )
 
 
@@ -110,7 +133,7 @@ external_app = FastAPI(
         "외부 파트너용 read-only API.\n\n"
         "런타임 허브에서 생성된 디자인 코드와 디스크립션을 `crid`(=room_id)로 조회합니다.\n\n"
         "**인증**: 모든 엔드포인트는 `X-Partner-Key` 헤더가 필요합니다.\n\n"
-        "⚠️ 현재 STUB 단계 — 응답 스키마 합의용으로 `501 Not Implemented` 반환."
+        "**에러**: 채팅방에 해당 데이터가 없으면 `404 Not Found` 를 반환합니다."
     ),
     version="0.1.0",
     docs_url="/docs",
