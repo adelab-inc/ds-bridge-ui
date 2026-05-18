@@ -9,6 +9,7 @@ from fastapi.openapi.utils import get_openapi
 
 from app.api.chat import router as chat_router
 from app.api.description import router as description_router
+from app.api.external import router as external_router
 from app.api.rooms import router as rooms_router
 from app.core.config import get_settings
 from app.core.logging import setup_logging
@@ -150,6 +151,7 @@ app.add_middleware(
 app.include_router(rooms_router, prefix="/rooms", tags=["rooms"])
 app.include_router(chat_router, prefix="/chat", tags=["chat"])
 app.include_router(description_router, prefix="/description", tags=["description"])
+app.include_router(external_router)
 
 
 # ============================================================================
@@ -210,23 +212,31 @@ def custom_openapi():
         "url": "https://fastapi.tiangolo.com/img/logo-margin/logo-teal.png"
     }
 
-    # Security scheme for X-API-Key
+    # Security schemes
     openapi_schema["components"]["securitySchemes"] = {
         "X-API-Key": {
             "type": "apiKey",
             "in": "header",
             "name": "X-API-Key",
-            "description": "API 키 인증. Chat API 엔드포인트에 필요합니다.",
-        }
+            "description": "내부 BFF/관리자 인증. Chat·Rooms·Description·Components API에 필요합니다.",
+        },
+        "X-Partner-Key": {
+            "type": "apiKey",
+            "in": "header",
+            "name": "X-Partner-Key",
+            "description": "외부 파트너 인증. /external/* 엔드포인트에 필요합니다. 내부 X-API-Key와 별도 발급/회수.",
+        },
     }
 
     # /health 제외 모든 엔드포인트에 security 적용
+    # /external/* 는 X-Partner-Key, 나머지는 X-API-Key
     for path, methods in openapi_schema["paths"].items():
         if path == "/health":
             continue
+        security_scheme = "X-Partner-Key" if path.startswith("/external/") else "X-API-Key"
         for method in methods.values():
             if isinstance(method, dict):
-                method["security"] = [{"X-API-Key": []}]
+                method["security"] = [{security_scheme: []}]
 
     # Body_ prefix 스키마 제거 (파일 업로드용 자동 생성 스키마)
     schemas = openapi_schema.get("components", {}).get("schemas", {})
