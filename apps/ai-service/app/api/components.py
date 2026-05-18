@@ -885,12 +885,42 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
         "1개씩 검사. 메트릭 패턴 하나라도 해당하면 STOP — 그 컬럼을 삭제하고 메트릭은 행으로 빼라."
     )
     lines.append("")
-    lines.append("✅ **응답 생성 직전 자가 점검 체크리스트 (5개 모두 True 여야 응답 제출)**")
+    lines.append("📐 **헤더 구조 추가 규칙 (시각 품질 보장)**")
+    lines.append("")
+    lines.append("**(e) `ColGroupDef` 자식 수 제약 — 자식 1개 이하면 ColGroupDef 사용 금지**")
+    lines.append(
+        "ColGroupDef 는 그룹 헤더 한 줄 + 자식 헤더 한 줄을 만들어 시각적 그룹을 표현합니다. "
+        "자식이 1개뿐이면 그 자식은 그냥 leaf 로 두세요. 자식 1개짜리 ColGroupDef 는 "
+        "의미 없는 빈 그룹 헤더 한 줄을 추가할 뿐이고, 결합 변환 결과에서 자주 나오는 안티패턴입니다."
+    )
+    lines.append("```")
+    lines.append("// ❌ 안티패턴: 자식 1개짜리 ColGroupDef")
+    lines.append("{ headerName: '합계', children: [{ headerName: '총계', field: 'total' }] }")
+    lines.append("{ headerName: 'Q1',   children: [{ headerName: '실적', field: 'q1' }] }")
+    lines.append("")
+    lines.append("// ✅ 올바른 형태: 그냥 leaf 로 평탄화")
+    lines.append("{ headerName: '합계', field: 'total' }")
+    lines.append("{ headerName: 'Q1',   field: 'q1' }")
+    lines.append("```")
+    lines.append("")
+    lines.append("**(f) 헤더 깊이 자동 감소 — 사용자 명시 N-Depth 는 결합 변환 후 (N-1)-Depth**")
+    lines.append(
+        "사용자가 `■ 그리드 메타 헤더 구조: 3Depth` 라고 명시했더라도, 메트릭이 행으로 빠지면서 "
+        "헤더 깊이는 한 단계 자동 감소합니다. 강제로 3-Depth 를 맞추려고 자식 1개짜리 ColGroupDef 를 "
+        "만들지 마세요. 사용자가 의도한 \"3Depth\" 는 변환 전 wide 패턴의 깊이이고, 변환 후 tall "
+        "패턴에서는 자연스럽게 2-Depth 가 되는 것이 정상입니다."
+    )
+    lines.append("- 예: 사용자 `3Depth (합계>총수량/총배분건수/총진도율, 권역별>수도권>수량/배분건수/진도율)` → 변환 후 `2Depth (합계, 권역별>수도권/강원권/제주권)`")
+    lines.append("- 예: 사용자 `3Depth (합계>총매출액/총원가, 분기별>Q1>매출액/원가)` → 변환 후 `2Depth (합계, 분기별>Q1/Q2/Q3/Q4)`")
+    lines.append("")
+    lines.append("✅ **응답 생성 직전 자가 점검 체크리스트 (7개 모두 True 여야 응답 제출)**")
     lines.append("- [ ] `columnDefs` 의 어떤 `headerName` 도 메트릭 식별 휴리스틱에 해당 안 함 (위 1~5번 패턴)")
     lines.append("- [ ] `rowData` 가 엔티티당 N행으로 평탄화되어 있음 (`metricIndex` 필드 존재)")
     lines.append("- [ ] 좌측 키 컬럼에 `rowSpan` 콜백 + `<DataGrid suppressRowTransform={true} />` 둘 다 있음")
     lines.append("- [ ] `defaultColDef={{ sortable: false, filter: false, resizable: true }}` 가 `<DataGrid>` props 에 명시됨")
     lines.append("- [ ] 행 메트릭 라벨 컬럼이 추가됨 (`field: 'metric'`, headerName 은 `구분`/`회차`/`메트릭` 등 도메인에 맞는 자유 표기)")
+    lines.append("- [ ] **모든 ColGroupDef 의 children 길이가 2 이상** (자식 1개짜리 그룹 없음) — 위 (e)")
+    lines.append("- [ ] **개별 컬럼에 `sort: ...` 박지 않음** (defaultColDef.sortable=false 와 모순). 정렬은 데이터 전처리 단계에서 처리.")
     lines.append("")
     lines.append("**❌ 잘못 결합한 예 (자주 발생하는 실패)**")
     lines.append("```")
