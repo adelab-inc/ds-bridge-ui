@@ -157,6 +157,11 @@ def _external_openapi() -> dict:
         routes=external_app.routes,
     )
 
+    # 마운트 prefix(/external) 를 servers 로 명시 — Swagger UI 의 Try it out 이
+    # 자기 자신을 root 로 인식해 /code/{crid} 로 호출하던 404 문제 해결.
+    # `/` 로 시작하면 페이지 origin 기준 상대 경로로 합성됨.
+    schema["servers"] = [{"url": "/external", "description": "External API base path"}]
+
     schema.setdefault("components", {})["securitySchemes"] = {
         "X-API-Key": {
             "type": "apiKey",
