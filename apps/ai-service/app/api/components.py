@@ -852,25 +852,45 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
         "결합 케이스에서도 절대 빠뜨리지 말 것."
     )
     lines.append("")
-    lines.append("🛑 **헤더 leaf 단어 절대 금지 목록 (결합 케이스에서 자주 새는 단어)**")
+    lines.append("🛑 **헤더 leaf 의 \"메트릭 여부\" 식별 휴리스틱 (도메인 무관 일반 규칙)**")
     lines.append(
-        "다음 단어들이 **사용자 입력 헤더 트리에 등장하더라도**, AI 응답의 `columnDefs` 내 "
-        "`headerName` 으로 출력하면 안 됩니다. 이들은 모두 메트릭이라 행 라벨로만 사용되어야 합니다."
+        "헤더 트리의 leaf 가 다음 패턴 중 **하나라도** 해당하면 **메트릭**입니다. "
+        "메트릭은 컬럼이 아니라 **행 라벨**로만 사용되어야 하므로 응답 `headerName` 에 박지 마세요."
     )
-    lines.append("- `총수량`, `총배분건수`, `총진도율`")
-    lines.append("- `수량`, `배분건수`, `진도율`")
-    lines.append("- `모집고`, `유지고`, `%` (이건 `metric` 필드 값으로만 사용, 컬럼 헤더 X)")
+    lines.append("")
+    lines.append("**식별 패턴 (도메인 무관)**:")
+    lines.append("1. **어미 패턴**: `~량`, `~수`, `~건수`, `~금액`, `~액`, `~율`, `~비율`, `~고`, `~합계`, `~평균`, `~점수`")
+    lines.append("   - 예: `수량`, `배분건수`, `매출액`, `진도율`, `이익률`, `재고량`, `평균점수`, `유지고`, `모집고`")
+    lines.append("2. **포맷 어노테이션 동반**: leaf 옆에 `(천단위 콤마)`, `(소수점 N자리 + %)`, `(원 단위)` 같은 표기")
+    lines.append("3. **정렬 가능성 명시**: 사용자가 `정렬: <컬럼명> 오름차순/내림차순` 으로 지정한 컬럼명은 보통 메트릭")
+    lines.append("4. **사용자 (B) 신호의 행 메트릭 묶음과 동일**: 사용자가 `엔티티당 N행 (X/Y/Z)` 에서 X/Y/Z 로 명시한 단어가 헤더 leaf 에 또 나타나면 100% 메트릭 — 우선순위 (B)")
+    lines.append("5. **명시 메트릭 단어** (`%`, `합계`, `평균`, `차이`, `증감`) 단독 사용")
+    lines.append("")
+    lines.append("**식별 예시 (도메인별)**:")
+    lines.append("- 보험 도메인: `모집고`, `유지고`, `%`, `총수량`, `총배분건수`, `총진도율`, `수량`, `배분건수`, `진도율`")
+    lines.append("- 매출 도메인: `매출액`, `총매출액`, `원가`, `이익률`, `평균이익률`")
+    lines.append("- 재고 도메인: `입고량`, `출고량`, `재고량`, `회전율`")
+    lines.append("- 고객 도메인: `방문수`, `구매건수`, `전환율`, `객단가`")
+    lines.append("- 위 예시는 일부일 뿐. 다른 도메인에서도 위 패턴(어미·어노테이션·정렬)으로 식별.")
+    lines.append("")
+    lines.append("**차원(차원 컬럼으로 가는 것) — 메트릭과 대조**:")
+    lines.append("- 시간축: `2026-05`, `Q1`, `1월`, `1주차`, `당월`, `전월`, `회차`, `202605`")
+    lines.append("- 지역: `수도권`, `강원권`, `서울`, `해외`")
+    lines.append("- 조직: `사업단`, `부서`, `제휴사`, `채널`, `팀`")
+    lines.append("- 카테고리: `상품군`, `등급`, `유형` (집계 대상 분류용)")
+    lines.append("- 합계(`합계`/`소계`/`전체`)는 차원의 마지막 집계 컬럼 — 단일 leaf 로 유지 가능")
+    lines.append("")
     lines.append(
-        "응답을 만들기 전 마지막 자가 점검: `headerName: '총수량'` / `headerName: '진도율'` 같은 줄이 "
-        "내가 만든 코드에 단 한 줄이라도 있으면 STOP. 그 컬럼을 삭제하고 그 메트릭은 행으로 빠진 게 맞다."
+        "응답을 만들기 전 마지막 자가 점검: 응답 `columnDefs` 에 있는 모든 `headerName` 값을 위 휴리스틱으로 "
+        "1개씩 검사. 메트릭 패턴 하나라도 해당하면 STOP — 그 컬럼을 삭제하고 메트릭은 행으로 빼라."
     )
     lines.append("")
     lines.append("✅ **응답 생성 직전 자가 점검 체크리스트 (5개 모두 True 여야 응답 제출)**")
-    lines.append("- [ ] `columnDefs` 의 어떤 `headerName` 도 위 금지 목록 단어 사용 안 함")
+    lines.append("- [ ] `columnDefs` 의 어떤 `headerName` 도 메트릭 식별 휴리스틱에 해당 안 함 (위 1~5번 패턴)")
     lines.append("- [ ] `rowData` 가 엔티티당 N행으로 평탄화되어 있음 (`metricIndex` 필드 존재)")
     lines.append("- [ ] 좌측 키 컬럼에 `rowSpan` 콜백 + `<DataGrid suppressRowTransform={true} />` 둘 다 있음")
     lines.append("- [ ] `defaultColDef={{ sortable: false, filter: false, resizable: true }}` 가 `<DataGrid>` props 에 명시됨")
-    lines.append("- [ ] `구분` 같은 행 메트릭 라벨 컬럼이 추가됨 (`field: 'metric'`)")
+    lines.append("- [ ] 행 메트릭 라벨 컬럼이 추가됨 (`field: 'metric'`, headerName 은 `구분`/`회차`/`메트릭` 등 도메인에 맞는 자유 표기)")
     lines.append("")
     lines.append("**❌ 잘못 결합한 예 (자주 발생하는 실패)**")
     lines.append("```")
