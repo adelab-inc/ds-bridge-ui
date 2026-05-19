@@ -826,6 +826,211 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("- 사용자의 헤더 트리에 메트릭 같은 leaf(`총수량/총배분건수/총진도율`, `수량/배분건수/진도율`)가 보이면 → 그건 **컬럼이 아니라 행 라벨**로 해석하라. 헤더에서 빼고 행으로 옮겨라.")
     lines.append("- 헤더 그룹은 차원에 맞춰 `ColGroupDef`로 묶는 것만 허용: `{ headerName: '권역별', children: [{ field: 'metro', headerName: '수도권' }, { field: 'gangwon', headerName: '강원권' }, { field: 'jeju', headerName: '제주권' }] }`")
     lines.append("")
+    lines.append("🚨 **결합 우선순위 (운영 사고 방지)**")
+    lines.append(
+        "사용자 입력에 (A) 와 (B) 가 **동시에** 들어오는 경우가 빈번합니다 — 기획자가 상세 헤더를 그려놓고, "
+        "거기에 '엔티티당 3행' 한 줄을 추가하는 패턴. 이 경우 둘이 메트릭을 양쪽에 정의하기 때문에 충돌."
+    )
+    lines.append("")
+    lines.append("- (A) **상세 헤더 트리 표기**: `■ 헤더 트리`, `├─`, `[그룹]`, `[하위그룹]`, `ROWSPAN=N`, 들여쓰기 트리 구조")
+    lines.append("- (B) **행 메트릭 신호**: `엔티티당 N행`, `사업단당 3행`, `제휴사당 3행`, `모집고/유지고/%` 메트릭 묶음")
+    lines.append("")
+    lines.append(
+        "**규칙**: (A) 와 (B) 가 동시에 보이면 **무조건 (B) 가 우선**. (A) 의 자세한 표기는 학습 데이터 분포상 "
+        "더 '정확한 의도'로 가중되기 쉬우나, 이번 도메인에서는 그 가중치를 의도적으로 뒤집어야 함."
+    )
+    lines.append("")
+    lines.append("**자동 변환 절차 (AI 가 직접 수행해야 할 일 — 6단계, MUST)**:")
+    lines.append("1. (A) 헤더 트리에서 leaf 가 메트릭(`총수량/총배분건수/총진도율`, `수량/배분건수/진도율` 등)인 노드를 식별.")
+    lines.append("2. 그 메트릭 leaf 를 **삭제**하고 상위 차원(그룹 이름)만 leaf 로 남김 — 깊이 1 감소.")
+    lines.append("3. 좌측 키 컬럼(`사업단`, `승인자` 등) 옆에 **`구분` 라벨 컬럼**을 추가하여 (B) 의 행 메트릭 라벨(`모집고`/`유지고`/`%`)을 표시.")
+    lines.append("4. rowData 는 (B) 의 행 메트릭 묶음 기준으로 평탄화 (`metricIndex` 0..N-1, `metric` 필드 포함).")
+    lines.append("5. 사용자가 명시한 정렬·포맷(`총진도율 오름차순` 등)은 행 단위로 재해석 (`% 행 기준 진도율 오름차순`).")
+    lines.append(
+        "6. **`defaultColDef` 에 `sortable: false, filter: false, resizable: true` 일괄 적용** — "
+        "메트릭이 행 차원일 때 정렬·필터는 의미가 없으므로 헤더 funnel/sort 아이콘 노출 차단. "
+        "결합 케이스에서도 절대 빠뜨리지 말 것."
+    )
+    lines.append("")
+    lines.append("🛑 **헤더 leaf 의 \"메트릭 여부\" 식별 휴리스틱 (도메인 무관 일반 규칙)**")
+    lines.append(
+        "헤더 트리의 leaf 가 다음 패턴 중 **하나라도** 해당하면 **메트릭**입니다. "
+        "메트릭은 컬럼이 아니라 **행 라벨**로만 사용되어야 하므로 응답 `headerName` 에 박지 마세요."
+    )
+    lines.append("")
+    lines.append("**식별 패턴 (도메인 무관)**:")
+    lines.append("1. **어미 패턴**: `~량`, `~수`, `~건수`, `~금액`, `~액`, `~율`, `~비율`, `~고`, `~합계`, `~평균`, `~점수`")
+    lines.append("   - 예: `수량`, `배분건수`, `매출액`, `진도율`, `이익률`, `재고량`, `평균점수`, `유지고`, `모집고`")
+    lines.append("2. **포맷 어노테이션 동반**: leaf 옆에 `(천단위 콤마)`, `(소수점 N자리 + %)`, `(원 단위)` 같은 표기")
+    lines.append("3. **정렬 가능성 명시**: 사용자가 `정렬: <컬럼명> 오름차순/내림차순` 으로 지정한 컬럼명은 보통 메트릭")
+    lines.append("4. **사용자 (B) 신호의 행 메트릭 묶음과 동일**: 사용자가 `엔티티당 N행 (X/Y/Z)` 에서 X/Y/Z 로 명시한 단어가 헤더 leaf 에 또 나타나면 100% 메트릭 — 우선순위 (B)")
+    lines.append("5. **명시 메트릭 단어** (`%`, `합계`, `평균`, `차이`, `증감`) 단독 사용")
+    lines.append("")
+    lines.append("**식별 예시 (도메인별)**:")
+    lines.append("- 보험 도메인: `모집고`, `유지고`, `%`, `총수량`, `총배분건수`, `총진도율`, `수량`, `배분건수`, `진도율`")
+    lines.append("- 매출 도메인: `매출액`, `총매출액`, `원가`, `이익률`, `평균이익률`")
+    lines.append("- 재고 도메인: `입고량`, `출고량`, `재고량`, `회전율`")
+    lines.append("- 고객 도메인: `방문수`, `구매건수`, `전환율`, `객단가`")
+    lines.append("- 위 예시는 일부일 뿐. 다른 도메인에서도 위 패턴(어미·어노테이션·정렬)으로 식별.")
+    lines.append("")
+    lines.append("**차원(차원 컬럼으로 가는 것) — 메트릭과 대조**:")
+    lines.append("- 시간축: `2026-05`, `Q1`, `1월`, `1주차`, `당월`, `전월`, `회차`, `202605`")
+    lines.append("- 지역: `수도권`, `강원권`, `서울`, `해외`")
+    lines.append("- 조직: `사업단`, `부서`, `제휴사`, `채널`, `팀`")
+    lines.append("- 카테고리: `상품군`, `등급`, `유형` (집계 대상 분류용)")
+    lines.append("- 합계(`합계`/`소계`/`전체`)는 차원의 마지막 집계 컬럼 — 단일 leaf 로 유지 가능")
+    lines.append("")
+    lines.append(
+        "응답을 만들기 전 마지막 자가 점검: 응답 `columnDefs` 에 있는 모든 `headerName` 값을 위 휴리스틱으로 "
+        "1개씩 검사. 메트릭 패턴 하나라도 해당하면 STOP — 그 컬럼을 삭제하고 메트릭은 행으로 빼라."
+    )
+    lines.append("")
+    lines.append("📐 **헤더 구조 추가 규칙 (시각 품질 보장)**")
+    lines.append("")
+    lines.append("**(e) 🚫 `ColGroupDef` 자식 수 제약 — children.length ≥ 2 가 아니면 ColGroupDef 절대 금지**")
+    lines.append(
+        "ColGroupDef 는 그룹 헤더 한 줄 + 자식 헤더 한 줄을 만들어 시각적 그룹을 표현합니다. "
+        "자식이 1개뿐이면 그 자식은 그냥 leaf 로 두세요. 자식 1개짜리 ColGroupDef 는 "
+        "의미 없는 빈 그룹 헤더 한 줄을 추가할 뿐이고, **결합 변환 결과에서 가장 빈번하게 나오는 안티패턴**입니다."
+    )
+    lines.append("")
+    lines.append(
+        "**알고리즘 (응답 코드 작성 직전 반드시 수행)**: "
+        "`columnDefs` 의 모든 노드를 순회하며 `children` 이 있으면 `children.length` 를 센다. "
+        "1이면 **즉시 STOP** — 그 ColGroupDef 를 자식 1개의 leaf 로 평탄화한 후 다시 응답 작성. "
+        "이 점검을 통과하지 못한 코드는 절대 출력하지 말 것."
+    )
+    lines.append("```")
+    lines.append("// ❌ 안티패턴 (자주 발생) — 매출/보험/실적 도메인에서 반복 출현")
+    lines.append("{ headerName: '합계',  children: [{ headerName: '총계', field: 'total' }] }       // 자식 1개")
+    lines.append("{ headerName: 'Q1',    children: [{ headerName: '실적', field: 'q1' }] }         // 자식 1개")
+    lines.append("{ headerName: '월별',  children: [{ headerName: '월간실적', field: 'm' }] }      // 자식 1개")
+    lines.append("{ headerName: '합계',  children: [{ field: 'total', headerName: '값' }] }        // 자식 1개")
+    lines.append("")
+    lines.append("// ✅ 올바른 형태 — ColGroupDef 를 제거하고 leaf 의 headerName 으로 흡수")
+    lines.append("{ headerName: '합계', field: 'total' }       // 합계 그룹 → 단일 합계 컬럼")
+    lines.append("{ headerName: 'Q1',   field: 'q1' }          // Q1 그룹 → 단일 Q1 컬럼")
+    lines.append("{ headerName: '월별', field: 'm' }           // 월별 그룹 → 단일 월별 컬럼")
+    lines.append("```")
+    lines.append("")
+    lines.append("⚠️ **사용자가 헤더 트리에 `합계 (단일 leaf)` 또는 그룹명만 명시했더라도 children 1개로 ColGroupDef 만들지 말 것**. 단일 컬럼은 항상 leaf.")
+    lines.append("")
+    lines.append("**(f) 🔥 헤더 깊이 자동 감소 — 사용자 `■ 그리드 메타 헤더 구조: N-Depth` 는 결합 변환 시 무시하고 자연스러운 깊이로 출력**")
+    lines.append("")
+    lines.append(
+        "**핵심 우선순위**: 사용자 메타의 `헤더 구조: 3Depth` 같은 명시는 **(B) 결합 신호가 있을 때 무시**해야 합니다. "
+        "이 메타는 (A) wide 패턴 기준 표기이며, 메트릭이 행으로 빠지는 변환 후에는 깊이가 자연스럽게 감소합니다. "
+        "절대로 메타의 숫자를 맞추려고 인위적 깊이를 만들지 마세요. (e) 룰 위반의 가장 흔한 원인입니다."
+    )
+    lines.append("")
+    lines.append("**왜 무시해야 하나**: 사용자가 `3Depth` 라고 적은 건 \"합계 > 총수량 > ...\" 같은 wide 트리의 깊이를 센 것. 메트릭을 행으로 빼면 그 레벨이 통째로 사라지므로 깊이도 1 줄어듭니다. 사용자 의도와 모순되지 않으며, 오히려 변환 후 깊이가 그대로면 자식 1개 그룹이 강제로 생성되어 시각적으로 망가집니다.")
+    lines.append("")
+    lines.append("**진짜 N-Depth 와 강제 N-Depth 의 차이**:")
+    lines.append("- ✅ **진짜 3-Depth (자연스러운 차원 계층)**: `권역별 > 수도권 > [서울, 경기, 인천]` 처럼 각 그룹이 자식 2개 이상")
+    lines.append("- ✅ **진짜 3-Depth (시간 계층)**: `분기별 > Q1 > [1월, 2월, 3월]` 처럼 각 분기 안에 월이 충분")
+    lines.append("- ❌ **강제 3-Depth (안티패턴)**: `분기별 > Q1 > 실적` 자식 1개 — 차원이 부족한데 깊이만 맞추려는 시도")
+    lines.append("- ❌ **강제 3-Depth (안티패턴)**: `합계 > 총계` 자식 1개")
+    lines.append("")
+    lines.append("**판단 알고리즘**: (B) 결합 신호가 있는 응답을 만들 때:")
+    lines.append("1. 사용자 메타의 `헤더 구조: N-Depth` 숫자를 **완전히 무시**한다.")
+    lines.append("2. 차원만 가지고 자연스럽게 columnDefs 를 구성한다.")
+    lines.append("3. 결과 깊이가 N-1 이든 N 이든 상관 없다 — 차원 계층에 따라 결정.")
+    lines.append("4. 자식 1개 ColGroupDef 가 하나라도 생기면 (e) 위반 — 즉시 그 그룹을 leaf 로 평탄화.")
+    lines.append("")
+    lines.append("**변환 예시 (사용자 메타는 회색 처리)**:")
+    lines.append("- 사용자 `~~3Depth~~ (합계>총수량/총배분건수/총진도율, 권역별>수도권>수량/배분건수/진도율)` → 변환 후 실제 `2Depth (합계 leaf, 권역별 > 수도권/강원권/제주권)`")
+    lines.append("- 사용자 `~~3Depth~~ (합계>총매출액/총원가, 분기별>Q1>매출액/원가)` → 변환 후 실제 `2Depth (합계 leaf, 분기별 > Q1/Q2/Q3/Q4)`")
+    lines.append("- 사용자 `~~3Depth~~ (분기별>Q1>1월/2월/3월)` → 차원이 진짜 3단이므로 그대로 `3Depth (분기별 > Q1 > 1월/2월/3월)` 유지")
+    lines.append("")
+    lines.append("**(h) 🎯 rowSpan 시각 보장 — 좌측 키 cell 강제 hide (필수)**")
+    lines.append("")
+    lines.append(
+        "`colDef.rowSpan` 콜백만으로는 일부 환경(특히 iframe 프리뷰 + React eval 조합)에서 "
+        "AG Grid 가 다른 row 의 동일 cell 을 hide 처리하지 못해 좌측 키 텍스트가 N번 반복 노출되는 "
+        "현상이 발생합니다. rowSpan 콜백 + 강제 hide 둘 다 박아서 시각 결과를 100% 보장하세요."
+    )
+    lines.append("")
+    lines.append("**모든 좌측 키 ROWSPAN 컬럼 (사업단·승인자·구분·부서·담당자 등)** 에 `cellStyle` 콜백 추가:")
+    lines.append("```tsx")
+    lines.append("const spanThree = (params: any) => (params.data?.metricIndex === 0 ? 3 : 1);")
+    lines.append("const hideIfNotFirst = (params: any) => ")
+    lines.append("  params.data?.metricIndex !== 0 ? { display: 'none' } : undefined;")
+    lines.append("")
+    lines.append("{ ")
+    lines.append("  field: 'dept', ")
+    lines.append("  headerName: '부서', ")
+    lines.append("  rowSpan: spanThree,")
+    lines.append("  cellStyle: hideIfNotFirst,   // ✅ 강제 hide — 시각 보장")
+    lines.append("  // ... ")
+    lines.append("}")
+    lines.append("```")
+    lines.append("")
+    lines.append(
+        "원리: `metricIndex !== 0` 인 row (= rowSpan 으로 덮여야 할 row) 에서 해당 cell 을 "
+        "`display: none` 처리. rowSpan 콜백이 작동하든 안 하든 시각상 첫 row 만 노출. "
+        "두 메커니즘이 함께 작동해야 결과가 안정적."
+    )
+    lines.append("")
+    lines.append("⚠️ pinnedTopRowData 의 행에는 위 hide 적용하지 말 것 (pinned 는 rowSpan 미지원이라 모든 row 보여야 함).")
+    lines.append("→ `pinnedTopRowData` 의 row 에는 `metricIndex` 필드를 빼거나 음수로 설정해 hide 조건 회피:")
+    lines.append("```tsx")
+    lines.append("// 본문 row")
+    lines.append("{ dept: '사업단A', metricIndex: 0, metric: '수량', ... }  // hide 안 됨")
+    lines.append("{ dept: '사업단A', metricIndex: 1, metric: '배분건수', ... } // hide 됨")
+    lines.append("// pinned top — metricIndex 필드 자체 생략하여 hide 회피")
+    lines.append("{ dept: '합계', metric: '수량', ... }       // metricIndex 없음 → hide X")
+    lines.append("{ dept: '합계', metric: '배분건수', ... }   // 동일")
+    lines.append("```")
+    lines.append("")
+    lines.append("✅ **응답 생성 직전 자가 점검 체크리스트 (7개 모두 True 여야 응답 제출)**")
+    lines.append("- [ ] `columnDefs` 의 어떤 `headerName` 도 메트릭 식별 휴리스틱에 해당 안 함 (위 1~5번 패턴)")
+    lines.append("- [ ] `rowData` 가 엔티티당 N행으로 평탄화되어 있음 (`metricIndex` 필드 존재)")
+    lines.append("- [ ] 좌측 키 컬럼에 `rowSpan` 콜백 + `<DataGrid suppressRowTransform={true} />` 둘 다 있음")
+    lines.append("- [ ] `defaultColDef={{ sortable: false, filter: false, resizable: true }}` 가 `<DataGrid>` props 에 명시됨")
+    lines.append("- [ ] 행 메트릭 라벨 컬럼이 추가됨 (`field: 'metric'`, headerName 은 `구분`/`회차`/`메트릭` 등 도메인에 맞는 자유 표기)")
+    lines.append("- [ ] **모든 ColGroupDef 의 children 길이가 2 이상** (자식 1개짜리 그룹 없음) — 위 (e)")
+    lines.append("- [ ] **개별 컬럼에 `sort: ...` 박지 않음** (defaultColDef.sortable=false 와 모순). 정렬은 데이터 전처리 단계에서 처리.")
+    lines.append("")
+    lines.append("**❌ 잘못 결합한 예 (자주 발생하는 실패)**")
+    lines.append("```")
+    lines.append("# 사용자 입력")
+    lines.append("■ 헤더 트리")
+    lines.append("├─ 사업단 (ROWSPAN=3)")
+    lines.append("├─ [그룹] 합계")
+    lines.append("│  ├─ 총수량 / 총배분건수 / 총진도율   ← 메트릭 leaf")
+    lines.append("├─ [그룹] 권역별 > 수도권 > 수량/배분건수/진도율  ← 메트릭 leaf")
+    lines.append("- 엔티티당 3행 (모집고/유지고/%)        ← 행에도 메트릭")
+    lines.append("")
+    lines.append("# AI 의 잘못된 응답")
+    lines.append("# - 헤더에 총수량/총배분건수/총진도율 sub-column 그대로 만들고")
+    lines.append("# - 행도 모집고/유지고/% 3행 평탄화 → 한 셀에 의미 충돌")
+    lines.append("# - 예: '% 행' 의 'totalQty' 셀에 67.2 같은 진도율 숫자가 들어감")
+    lines.append("```")
+    lines.append("")
+    lines.append("**✅ AI 가 변환해서 응답해야 할 형태**")
+    lines.append("```")
+    lines.append("# 헤더 (메트릭 leaf 제거, 차원만)")
+    lines.append("├─ 사업단 (ROWSPAN=3)")
+    lines.append("├─ 승인자 (ROWSPAN=3)")
+    lines.append("├─ 구분 (ROWSPAN=3, 행 메트릭 라벨)   ← 신규 추가")
+    lines.append("├─ 합계 (단일 leaf)                    ← sub-column 삭제")
+    lines.append("├─ [그룹] 권역별")
+    lines.append("│  ├─ 수도권 (단일 leaf)               ← sub-column 삭제")
+    lines.append("│  ├─ 강원권 (단일 leaf)")
+    lines.append("│  └─ 제주권 (단일 leaf)")
+    lines.append("")
+    lines.append("# 바디 (사업단당 3행)")
+    lines.append("Row 1: 모집고 — 합계·수도권·강원권·제주권 컬럼에 수량")
+    lines.append("Row 2: 유지고 — 동일 컬럼에 수량")
+    lines.append("Row 3: %     — 동일 컬럼에 진도율 (소수 1자리 + %)")
+    lines.append("```")
+    lines.append("")
+    lines.append(
+        "**판단 가이드**: 사용자 입력이 자세하든 단순하든, '엔티티당 N행' 또는 'ROWSPAN=N' 또는 메트릭 묶음 신호가 "
+        "한 줄이라도 있으면 그 신호가 절대 우선. 헤더 트리는 차원 정보만 추출해서 사용. "
+        "헤더에 등장한 메트릭 명칭이 너무 자세해서 '컬럼이 분명하다' 라고 판단하면 안 됨 — 그건 항상 행 라벨."
+    )
+    lines.append("")
     lines.append("⚠️ **금지**: `treeData`, `masterDetail`, `rowGroup`, `autoGroupColumnDef`은 Enterprise 전용이라 프리뷰 환경에서 렌더 실패. 절대 사용 금지.")
     lines.append("```tsx")
     lines.append("import { DataGrid, COLUMN_TYPES } from '@aplus/ui';")
