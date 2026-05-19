@@ -9,17 +9,18 @@ from fastapi.openapi.utils import get_openapi
 
 from app.api.chat import router as chat_router
 from app.api.description import router as description_router
+from app.api.external import external_app
 from app.api.rooms import router as rooms_router
 from app.core.config import get_settings
 from app.core.logging import setup_logging
 from app.services.broadcast import close_broadcast_client, drain_broadcast_tasks
-from app.services.supabase_storage import cleanup_supabase
 from app.services.supabase_db import (
     DatabaseError,
     cleanup_stuck_generating_messages,
     close_supabase_client,
     get_supabase_client,
 )
+from app.services.supabase_storage import cleanup_supabase
 
 # JSON 로깅 초기화 (모듈 로드 시 즉시 실행)
 setup_logging()
@@ -151,6 +152,10 @@ app.include_router(rooms_router, prefix="/rooms", tags=["rooms"])
 app.include_router(chat_router, prefix="/chat", tags=["chat"])
 app.include_router(description_router, prefix="/description", tags=["description"])
 
+# 외부 파트너 전용 API는 별도 sub-app 으로 마운트 — 메인 /docs 와 격리
+# 외부 파트너용 스웨거: /external/docs, OpenAPI JSON: /external/openapi.json
+app.mount("/external", external_app)
+
 
 # ============================================================================
 # Health Check
@@ -210,7 +215,8 @@ def custom_openapi():
         "url": "https://fastapi.tiangolo.com/img/logo-margin/logo-teal.png"
     }
 
-    # Security scheme for X-API-Key
+    # Security scheme for X-API-Key (내부 BFF/관리자용)
+    # 외부 파트너용 X-Partner-Key 는 별도 sub-app(/external)에서 자체 OpenAPI 로 노출.
     openapi_schema["components"]["securitySchemes"] = {
         "X-API-Key": {
             "type": "apiKey",
