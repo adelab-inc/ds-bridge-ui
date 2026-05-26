@@ -65,7 +65,36 @@ function normalizeTableCellNewlines(md: string): string {
       out.push(line);
       continue;
     }
-    // 표 종료: 빈 줄 또는 파이프가 전혀 없는 줄
+    // 직전 본문 row 가 미완성이면 이번 줄을 그 row 의 마지막 셀에 병합한다.
+    // 빈 줄/파이프 없는 줄/파이프 있는 줄을 가리지 않는다 — 사용자가 셀 안에
+    // bullet 같은 파이프 0개 라인을 직접 입력해도 표가 끊기지 않게 하기 위함.
+    // 단, delimiter row 이거나 다음 줄이 delimiter 인 새 표 헤더 후보면 병합을
+    // 멈추고 새 컨텍스트로 넘어간다.
+    if (
+      lastBodyIdx >= 0 &&
+      !isRowComplete(out[lastBodyIdx], headerPipes, headerTrailing)
+    ) {
+      if (isDelimiterRow(line)) {
+        out.push(line);
+        lastBodyIdx = -1;
+        continue;
+      }
+      const nextForHeader = lines[i + 1];
+      if (
+        line.includes('|') &&
+        nextForHeader &&
+        isDelimiterRow(nextForHeader)
+      ) {
+        headerPipes = countUnescapedPipes(line);
+        headerTrailing = endsWithPipe(line);
+        lastBodyIdx = -1;
+        out.push(line);
+        continue;
+      }
+      out[lastBodyIdx] = out[lastBodyIdx].replace(/\s*$/, '') + '<br/>' + line;
+      continue;
+    }
+    // 표 종료: 빈 줄 또는 파이프가 전혀 없는 줄 (직전 row 가 완성된 경우만)
     if (line.trim() === '' || !line.includes('|')) {
       inTable = false;
       lastBodyIdx = -1;
@@ -76,14 +105,6 @@ function normalizeTableCellNewlines(md: string): string {
     if (isDelimiterRow(line)) {
       out.push(line);
       lastBodyIdx = -1;
-      continue;
-    }
-    // 직전 본문 row 가 미완성이면 이번 줄을 그 row 의 마지막 셀에 병합
-    if (
-      lastBodyIdx >= 0 &&
-      !isRowComplete(out[lastBodyIdx], headerPipes, headerTrailing)
-    ) {
-      out[lastBodyIdx] = out[lastBodyIdx].replace(/\s*$/, '') + '<br/>' + line;
       continue;
     }
     out.push(line);
