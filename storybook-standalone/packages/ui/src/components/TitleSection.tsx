@@ -69,14 +69,15 @@ const TitleSection = React.forwardRef<HTMLDivElement, TitleSectionProps>(
     },
     ref,
   ) => {
-    // breadcrumb 순서: 높은 번호(상위) → 낮은 번호 → Title(현재 페이지)
-    // 3슬롯: Menu3 > Menu2 > Title
-    // 4슬롯: Menu4 > Menu3 > Menu2 > Title
+    // 시각 렌더 순서: Menu2 → Menu3 → Menu4 → Title (좌 → 우)
+    // Figma 의미(Menu2=Title 바로 위, Menu4=최상위)는 prop JSDoc 그대로 유지하고
+    // 시각 결과만 좌측이 상위로 보이도록 반전한다.
+    // menu4가 title과 같으면 인접 중복을 피하기 위해 title은 추가하지 않는다.
     const crumbs: string[] = [];
-    if (showMenu4 && menu4) crumbs.push(menu4);
-    if (showMenu3 && menu3) crumbs.push(menu3);
     if (showMenu2 && menu2) crumbs.push(menu2);
-    crumbs.push(title); // Title은 항상 마지막 (= Menu1, 현재 페이지)
+    if (showMenu3 && menu3) crumbs.push(menu3);
+    if (showMenu4 && menu4) crumbs.push(menu4);
+    if (crumbs[crumbs.length - 1] !== title) crumbs.push(title);
 
     const hasBreadcrumb = showBreadcrumb && crumbs.length > 1;
 
