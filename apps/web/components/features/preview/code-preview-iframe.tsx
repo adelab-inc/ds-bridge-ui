@@ -128,6 +128,30 @@ function CodePreviewIframe({
     return () => ro.disconnect();
   }, []);
 
+  // iframe 내부의 console.* 호출을 호스트 브라우저 콘솔로 포워딩.
+  // iframe 쪽에서 postMessage({ __previewConsole: true, level, args }) 송신.
+  React.useEffect(() => {
+    type ConsoleLevel = 'log' | 'info' | 'warn' | 'error' | 'debug';
+    const handler = (event: MessageEvent) => {
+      const data = event.data;
+      if (!data || typeof data !== 'object' || data.__previewConsole !== true)
+        return;
+      const level: ConsoleLevel =
+        data.level === 'log' ||
+        data.level === 'info' ||
+        data.level === 'warn' ||
+        data.level === 'error' ||
+        data.level === 'debug'
+          ? data.level
+          : 'log';
+      const args = Array.isArray(data.args) ? data.args : [];
+      // 프리뷰 콘솔 출력임을 식별 가능하도록 prefix 부여
+      console[level]('%c[preview]', 'color:#6b7280', ...args);
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
   // Scale 계산
   const needsTransform = viewMode === 'fit' || viewMode === 'transform';
   const scale = React.useMemo(() => {
@@ -683,6 +707,50 @@ function CodePreviewIframe({
   <div id="root"></div>
   <script>
     (function() {
+      // ── 콘솔 포워딩 ──
+      // iframe 내부의 console.log / warn / error / info / debug 호출을 부모
+      // 윈도우로 postMessage 하여, 호스트 페이지의 브라우저 콘솔에서도
+      // 함께 볼 수 있게 한다. 'allow-same-origin' 이 sandbox 에 없어
+      // 부모 콘솔 객체에 직접 접근할 수 없으므로 postMessage 채널 사용.
+      (function () {
+        if (typeof window === 'undefined' || window.parent === window) return;
+        var methods = ['log', 'info', 'warn', 'error', 'debug'];
+        function serialize(a) {
+          if (a === undefined) return 'undefined';
+          if (a === null) return 'null';
+          if (typeof a === 'string') return a;
+          if (typeof a === 'number' || typeof a === 'boolean') return String(a);
+          if (a instanceof Error) return (a.stack || a.message || String(a));
+          try {
+            var seen = new WeakSet();
+            return JSON.stringify(a, function (_k, v) {
+              if (typeof v === 'object' && v !== null) {
+                if (seen.has(v)) return '[Circular]';
+                seen.add(v);
+              }
+              if (typeof v === 'function') return '[Function ' + (v.name || 'anonymous') + ']';
+              return v;
+            }, 2);
+          } catch (e) {
+            try { return String(a); } catch (_e) { return '[Unserializable]'; }
+          }
+        }
+        methods.forEach(function (m) {
+          var orig = window.console[m] ? window.console[m].bind(window.console) : function(){};
+          window.console[m] = function () {
+            var args = Array.prototype.slice.call(arguments);
+            try { orig.apply(null, args); } catch (_e) {}
+            try {
+              window.parent.postMessage({
+                __previewConsole: true,
+                level: m,
+                args: args.map(serialize),
+              }, '*');
+            } catch (_e) { /* postMessage 실패는 무시 */ }
+          };
+        });
+      })();
+
       try {
         // React hooks
         const { useState, useEffect, useCallback, useMemo, useRef, forwardRef } = React;
@@ -751,14 +819,221 @@ function CodePreviewIframe({
         // 프리뷰 기본 프롭: Drawer/Dialog/Modal 같이 controlled open 패턴을 쓰는
         // 루트 컴포넌트가 프롭 없이 렌더되면 닫힌 상태로 보이지 않는 문제를 방지.
         // 컴포넌트가 해당 프롭을 쓰지 않으면 React가 무시하므로 안전.
-        const PREVIEW_DEFAULT_PROPS = {
+        //
+        // 미정의 prop 접근 방어: AI 생성 코드가 \`initialFilters.coalCoCd\`,
+        // \`params.CUST_NM\` 처럼 도메인 객체를 prop으로 요구하면
+        // \`undefined.x\` 크래시가 난다. 정의되지 않은 키 접근에 대해 재귀 Proxy를
+        // 돌려주어 크래시 없이 "비어있는 상태"로라도 렌더되도록 한다.
+        //   - 체이닝(\`a.b.c\`) 가능
+        //   - 문자열/JSX text 컨텍스트에선 '' 로 평가 (Symbol.toPrimitive)
+        //   - JSX child 컨텍스트에선 빈 iterable 로 평가 → 아무것도 렌더 X
+        //   - 호출 가능(\`onChange()\`)
+        //
+        // 구현 주의: React.createElement(Comp, config) 는 내부에서
+        // for...in + hasOwnProperty 로 config 를 새 plain object 로 복사하기
+        // 때문에, props 자체를 Proxy 로 넘기면 ownKeys 에 정의되지 않은 키는
+        // 복사되지 않아 효과가 없다. 그래서 사용자 컴포넌트를 함수로 직접 호출하는
+        // 래퍼(__PreviewWrapper)를 거쳐, 그 안에서 Proxy 를 입혀 전달한다.
+        function createSafeProxy() {
+          const target = function () {};
+          const blocked = new Set([
+            'then',          // thenable 로 오인되어 Promise 처리되는 것 방지
+            '$$typeof',      // React element 판별
+            'asymmetricMatch',
+            'nodeType', 'tagName',
+          ]);
+          return new Proxy(target, {
+            get: function (_t, prop) {
+              if (prop === Symbol.toPrimitive) return function () { return ''; };
+              if (prop === Symbol.iterator) return function* () {};
+              if (prop === Symbol.toStringTag) return 'String';
+              if (prop === 'toString' || prop === 'valueOf') return function () { return ''; };
+              if (typeof prop === 'symbol') return undefined;
+              if (blocked.has(prop)) return undefined;
+              return createSafeProxy();
+            },
+            apply: function () { return createSafeProxy(); },
+            construct: function () { return createSafeProxy(); },
+            has: function () { return false; },
+            ownKeys: function () { return []; },
+            getOwnPropertyDescriptor: function () { return undefined; },
+          });
+        }
+
+        const PREVIEW_DEFAULTS = {
           open: true,
           isOpen: true,
           onClose: function () {},
           onOpenChange: function () {},
         };
+
+        // 사용자 컴포넌트를 함수로 직접 호출하는 래퍼.
+        // React.createElement 의 props 복사를 한 번 거친 뒤(__PreviewWrapper 가
+        // plain props 를 수신), 거기에 safeProxy fallback 을 입혀 사용자 컴포넌트를
+        // 직접 호출한다. 사용자 컴포넌트 내부의 hooks 는 __PreviewWrapper 의 fiber
+        // 컨텍스트에서 실행되므로 정상 동작한다.
+        const __UserComponent = ${componentName};
+        // 누락된 top-level prop 이름을 한 번씩만 경고 (호스트 콘솔로 포워딩됨).
+        // safeProxy 가 크래시를 흡수하기 때문에 무엇이 비어있는지 알기 어려워서,
+        // 여기서 명시적으로 알려준다.
+        const __reportedMissingProps = new Set();
+        function __reportMissingProp(prop) {
+          if (typeof prop !== 'string') return;
+          if (__reportedMissingProps.has(prop)) return;
+          __reportedMissingProps.add(prop);
+          console.warn(
+            '[Preview] 누락된 prop 접근: "' + prop +
+            '" — safeProxy 로 흡수했습니다. AI 코드가 외부에서 주입받아야 하는 ' +
+            '데이터를 사용 중일 수 있습니다.'
+          );
+        }
+        function __PreviewWrapper(realProps) {
+          const base = realProps || {};
+          const safeProps = new Proxy(base, {
+            get: function (t, prop) {
+              if (typeof prop === 'symbol') return t[prop];
+              if (prop in t) return t[prop];
+              __reportMissingProp(prop);
+              return createSafeProxy();
+            },
+            has: function (t, prop) { return prop in t; },
+            ownKeys: function (t) { return Reflect.ownKeys(t); },
+            getOwnPropertyDescriptor: function (t, prop) {
+              return Reflect.getOwnPropertyDescriptor(t, prop);
+            },
+          });
+          return __UserComponent(safeProps);
+        }
+
+        // ── Error Boundary ──
+        // safeProxy fallback 으로도 잡히지 않는 케이스(직접 throw, 자식 컴포넌트
+        // 내부 undefined 접근 등)에서 React render 중 예외가 나면 빨간 에러
+        // 박스를 표시한다. 기존 트랜스파일 에러 UI와 톤을 통일.
+        class __PreviewErrorBoundary extends React.Component {
+          constructor(props) {
+            super(props);
+            this.state = { error: null, info: null };
+          }
+          static getDerivedStateFromError(error) {
+            return { error: error };
+          }
+          componentDidCatch(error, info) {
+            this.setState({ info: info });
+            console.error('[Preview ErrorBoundary]', error, info);
+          }
+          render() {
+            if (!this.state.error) return this.props.children;
+            var err = this.state.error;
+            var msg = (err && err.message) || String(err);
+            var stack = (err && err.stack) || '';
+            var compStack = (this.state.info && this.state.info.componentStack) || '';
+            var box = function (style, children) {
+              return React.createElement('div', { style: style }, children);
+            };
+            var pre = function (style, text) {
+              return React.createElement('pre', { style: style }, text);
+            };
+            return React.createElement('div', {
+              style: {
+                padding: '24px',
+                background: '#fef2f2',
+                color: '#991b1b',
+                fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, monospace',
+                minHeight: '100vh',
+                boxSizing: 'border-box',
+              }
+            },
+              React.createElement('div', {
+                style: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }
+              },
+                React.createElement('div', {
+                  style: {
+                    width: '40px', height: '40px', borderRadius: '50%',
+                    background: '#fecaca', display: 'flex',
+                    alignItems: 'center', justifyContent: 'center',
+                    color: '#dc2626', fontSize: '20px', fontWeight: 'bold',
+                  }
+                }, '!'),
+                React.createElement('strong', { style: { fontSize: '16px' } }, '렌더링 에러')
+              ),
+              React.createElement('div', {
+                style: { fontSize: '13px', color: '#b91c1c', marginBottom: '12px' }
+              }, 'AI가 생성한 컴포넌트가 렌더 도중 예외를 던졌습니다. 누락된 prop 또는 undefined 접근을 확인하세요.'),
+              pre({
+                background: '#fff', border: '1px solid #fecaca',
+                borderRadius: '6px', padding: '12px',
+                whiteSpace: 'pre-wrap', fontSize: '12px', color: '#7f1d1d',
+                marginBottom: '12px', wordBreak: 'break-word',
+              }, msg),
+              compStack ? React.createElement('details', { style: { fontSize: '12px', marginBottom: '8px' } },
+                React.createElement('summary', { style: { cursor: 'pointer', marginBottom: '6px' } }, '컴포넌트 스택'),
+                pre({
+                  background: '#fff', padding: '8px', borderRadius: '4px',
+                  whiteSpace: 'pre-wrap', color: '#7f1d1d', fontSize: '11px',
+                }, compStack)
+              ) : null,
+              stack ? React.createElement('details', { style: { fontSize: '12px' } },
+                React.createElement('summary', { style: { cursor: 'pointer', marginBottom: '6px' } }, '에러 스택'),
+                pre({
+                  background: '#fff', padding: '8px', borderRadius: '4px',
+                  whiteSpace: 'pre-wrap', color: '#7f1d1d', fontSize: '11px',
+                }, stack)
+              ) : null,
+            );
+          }
+        }
+
+        // ── 비차단 런타임 에러 배너 ──
+        // useEffect / 이벤트 핸들러 / Promise 등 React render 트리 밖에서 나는
+        // 에러는 ErrorBoundary 가 잡지 못한다. 콘텐츠는 그대로 둔 채 상단에
+        // 작은 빨간 배너로 표시하여 개발자/사용자가 즉시 인지 가능하게 한다.
+        function __showRuntimeErrorBanner(msg) {
+          var banner = document.getElementById('__preview_err_banner');
+          if (!banner) {
+            banner = document.createElement('div');
+            banner.id = '__preview_err_banner';
+            banner.style.cssText =
+              'position:fixed;top:0;left:0;right:0;z-index:2147483647;' +
+              'background:#fef2f2;color:#991b1b;' +
+              'border-bottom:1px solid #fecaca;padding:8px 12px;' +
+              'font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,Monaco,monospace;' +
+              'max-height:160px;overflow-y:auto;' +
+              'box-shadow:0 1px 4px rgba(0,0,0,0.08);';
+            var close = document.createElement('button');
+            close.textContent = '×';
+            close.setAttribute('aria-label', '닫기');
+            close.style.cssText =
+              'position:absolute;top:4px;right:8px;background:transparent;' +
+              'border:0;color:#991b1b;font-size:16px;cursor:pointer;line-height:1;';
+            close.onclick = function () { banner.remove(); };
+            banner.appendChild(close);
+            var title = document.createElement('div');
+            title.textContent = '⚠ 런타임 에러 (렌더는 유지됨)';
+            title.style.cssText = 'font-weight:600;margin-bottom:4px;padding-right:20px;';
+            banner.appendChild(title);
+            document.body.appendChild(banner);
+          }
+          var line = document.createElement('div');
+          line.textContent = String(msg);
+          line.style.cssText = 'padding:2px 0;border-top:1px dashed #fecaca;word-break:break-word;';
+          banner.appendChild(line);
+        }
+        window.addEventListener('error', function (e) {
+          var m = (e && e.error && e.error.message) || e.message || 'Unknown error';
+          __showRuntimeErrorBanner(m);
+        });
+        window.addEventListener('unhandledrejection', function (e) {
+          var r = e && e.reason;
+          var m = (r && r.message) || (typeof r === 'string' ? r : 'Promise rejected');
+          __showRuntimeErrorBanner('Promise rejection: ' + m);
+        });
+
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(React.createElement(${componentName}, PREVIEW_DEFAULT_PROPS));
+        root.render(
+          React.createElement(__PreviewErrorBoundary, null,
+            React.createElement(__PreviewWrapper, PREVIEW_DEFAULTS)
+          )
+        );
       } catch (err) {
         document.getElementById('root').innerHTML =
           '<div style="padding: 24px; color: #dc2626; font-family: monospace;">' +
