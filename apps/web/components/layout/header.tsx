@@ -30,8 +30,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuGroup,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -379,131 +377,142 @@ function Header({
                   <p>프로젝트 목록</p>
                 </TooltipContent>
               </Tooltip>
-              <DropdownMenuContent align="end" className="w-72">
-                <DropdownMenuGroup>
-                  <div className="flex items-center justify-between gap-2 px-1.5 py-1">
-                    <DropdownMenuLabel className="p-0">
-                      프로젝트 목록
-                    </DropdownMenuLabel>
-                    {rooms.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={toggleDeleteMode}
-                        className={cn(
-                          'rounded px-1.5 py-0.5 text-xs font-medium transition-colors cursor-pointer',
-                          deleteMode
-                            ? 'text-destructive'
-                            : 'text-muted-foreground hover:text-foreground'
-                        )}
-                      >
-                        {deleteMode ? '완료' : '선택 삭제'}
-                      </button>
-                    )}
-                  </div>
-                </DropdownMenuGroup>
-                <DropdownMenuSeparator />
-                {isRoomsLoading ? (
-                  <div className="text-muted-foreground px-2 py-3 text-center text-sm">
-                    불러오는 중...
-                  </div>
-                ) : rooms.length === 0 ? (
-                  <div className="text-muted-foreground px-2 py-3 text-center text-sm">
-                    프로젝트가 없습니다
-                  </div>
-                ) : (
-                  rooms.map((room) => {
-                    const selected = selectedIds.has(room.id);
-                    return (
-                      <DropdownMenuItem
-                        key={room.id}
-                        closeOnClick={!deleteMode}
-                        onClick={() => {
-                          if (deleteMode) {
-                            toggleSelect(room.id);
-                          } else {
-                            handleSelectRoom(room.id);
+              <DropdownMenuContent
+                align="end"
+                className="w-72 flex flex-col overflow-hidden p-0"
+              >
+                {/* (A) 고정 헤더 */}
+                <div className="shrink-0 flex h-10 items-center justify-between gap-2 border-b px-2">
+                  {deleteMode ? (
+                    <>
+                      <span className="text-sm font-medium">
+                        {selectedIds.size}개 선택
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="xs"
+                          variant="ghost"
+                          onClick={exitDeleteMode}
+                        >
+                          취소
+                        </Button>
+                        <Button
+                          size="xs"
+                          variant="destructive"
+                          disabled={
+                            selectedIds.size === 0 ||
+                            deleteRoomsMutation.isPending
                           }
-                        }}
-                        className={cn(
-                          'flex items-center gap-2',
-                          !deleteMode &&
-                            room.id === currentRoomId &&
-                            'bg-accent'
-                        )}
-                      >
-                        {deleteMode && (
-                          <span
-                            aria-hidden
-                            className={cn(
-                              'flex size-4 shrink-0 items-center justify-center rounded border transition-colors',
-                              selected
-                                ? 'bg-primary border-primary text-primary-foreground'
-                                : 'border-input'
-                            )}
-                          >
-                            {selected && (
-                              <HugeiconsIcon
-                                icon={Tick01Icon}
-                                className="size-3"
-                                strokeWidth={2.5}
-                              />
-                            )}
-                          </span>
-                        )}
-                        <div className="min-w-0 flex-1 flex flex-col gap-0.5">
-                          <span className="truncate text-sm font-medium">
-                            {getRoomName(room)}
-                          </span>
-                          <span className="text-muted-foreground text-xs">
-                            {formatDate(room.created_at)}
-                          </span>
-                        </div>
-                        {!deleteMode && (
-                          <div className="flex shrink-0 items-center gap-0.5">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditDialog({
-                                  open: true,
-                                  roomId: room.id,
-                                  storybookUrl: room.storybook_url || '',
-                                });
-                              }}
-                              className="text-muted-foreground hover:text-foreground shrink-0 rounded-full p-0.5 transition-colors cursor-pointer"
-                              aria-label="프로젝트 수정"
-                            >
-                              <HugeiconsIcon
-                                icon={PencilEdit02Icon}
-                                className="size-3.5"
-                                strokeWidth={2}
-                              />
-                            </button>
-                          </div>
-                        )}
-                      </DropdownMenuItem>
-                    );
-                  })
-                )}
-                {deleteMode && rooms.length > 0 && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <div className="p-1">
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        className="w-full"
-                        disabled={
-                          selectedIds.size === 0 ||
-                          deleteRoomsMutation.isPending
-                        }
-                        onClick={() => setConfirmDeleteOpen(true)}
-                      >
-                        삭제 ({selectedIds.size})
-                      </Button>
+                          onClick={() => setConfirmDeleteOpen(true)}
+                        >
+                          삭제 ({selectedIds.size})
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-muted-foreground text-xs font-medium">
+                        프로젝트 목록
+                      </span>
+                      {rooms.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={toggleDeleteMode}
+                          className="text-muted-foreground hover:text-foreground rounded px-1.5 py-0.5 text-xs font-medium transition-colors cursor-pointer"
+                        >
+                          선택 삭제
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+                {/* (B) 스크롤 영역 — 목록만 스크롤 */}
+                <div className="flex-1 min-h-0 overflow-y-auto p-1">
+                  {isRoomsLoading ? (
+                    <div className="text-muted-foreground px-2 py-3 text-center text-sm">
+                      불러오는 중...
                     </div>
-                  </>
-                )}
+                  ) : rooms.length === 0 ? (
+                    <div className="text-muted-foreground px-2 py-3 text-center text-sm">
+                      프로젝트가 없습니다
+                    </div>
+                  ) : (
+                    rooms.map((room) => {
+                      const selected = selectedIds.has(room.id);
+                      return (
+                        <DropdownMenuItem
+                          key={room.id}
+                          closeOnClick={!deleteMode}
+                          onClick={() => {
+                            if (deleteMode) {
+                              toggleSelect(room.id);
+                            } else {
+                              handleSelectRoom(room.id);
+                            }
+                          }}
+                          className={cn(
+                            'flex items-center gap-2',
+                            !deleteMode &&
+                              room.id === currentRoomId &&
+                              'bg-accent',
+                            deleteMode && selected && 'bg-accent/60'
+                          )}
+                        >
+                          {deleteMode && (
+                            <span
+                              aria-hidden
+                              className={cn(
+                                'flex size-4 shrink-0 items-center justify-center rounded border transition-colors',
+                                selected
+                                  ? 'bg-primary border-primary text-primary-foreground'
+                                  : 'border-input'
+                              )}
+                            >
+                              {selected && (
+                                <HugeiconsIcon
+                                  icon={Tick01Icon}
+                                  className="size-3"
+                                  strokeWidth={2.5}
+                                />
+                              )}
+                            </span>
+                          )}
+                          <div className="min-w-0 flex-1 flex flex-col gap-0.5">
+                            <span className="truncate text-sm font-medium">
+                              {getRoomName(room)}
+                            </span>
+                            <span className="text-muted-foreground text-xs">
+                              {formatDate(room.created_at)}
+                            </span>
+                          </div>
+                          {!deleteMode && (
+                            <div className="flex shrink-0 items-center gap-0.5">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditDialog({
+                                    open: true,
+                                    roomId: room.id,
+                                    storybookUrl: room.storybook_url || '',
+                                  });
+                                }}
+                                className="text-muted-foreground hover:text-foreground shrink-0 rounded-full p-0.5 transition-colors cursor-pointer"
+                                aria-label="프로젝트 수정"
+                              >
+                                <HugeiconsIcon
+                                  icon={PencilEdit02Icon}
+                                  className="size-3.5"
+                                  strokeWidth={2}
+                                />
+                              </button>
+                            </div>
+                          )}
+                        </DropdownMenuItem>
+                      );
+                    })
+                  )}
+                </div>
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -578,8 +587,7 @@ function Header({
                   <AlertDialogHeader>
                     <AlertDialogTitle>삭제 중...</AlertDialogTitle>
                     <AlertDialogDescription>
-                      선택한 프로젝트를 삭제하고 있습니다. 잠시만 기다려
-                      주세요.
+                      선택한 프로젝트를 삭제하고 있습니다. 잠시만 기다려 주세요.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                 ) : deleteResult ? (
