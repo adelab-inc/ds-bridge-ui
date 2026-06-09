@@ -1,3 +1,4 @@
+import logging
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator
 from typing import Any
@@ -11,6 +12,34 @@ from app.core.config import get_settings
 from app.schemas.chat import ImageContent, Message
 
 settings = get_settings()
+logger = logging.getLogger(__name__)
+
+
+# 정상 종료로 간주하는 finish_reason (그 외 RECITATION/SAFETY/OTHER 등은 비정상)
+_NORMAL_FINISH_REASONS = {"STOP", "MAX_TOKENS", "FINISH_REASON_UNSPECIFIED"}
+
+
+def _check_gemini_finish(response_or_chunk: Any) -> None:
+    """Gemini 응답의 비정상 종료 신호(RECITATION/SAFETY 등)·프롬프트 차단을 로깅.
+
+    recitation 환각처럼 모델이 작업을 이탈해도 text는 정상으로 흘러 서버가
+    모르고 저장하는 것을 막기 위한 관측 지점. 로깅 실패가 스트림을 깨면 안 되므로
+    모든 예외는 무시한다.
+    """
+    try:
+        fb = getattr(response_or_chunk, "prompt_feedback", None)
+        block_reason = getattr(fb, "block_reason", None) if fb is not None else None
+        if block_reason:
+            logger.warning("Gemini prompt blocked", extra={"block_reason": str(block_reason)})
+        for cand in getattr(response_or_chunk, "candidates", None) or []:
+            fr = getattr(cand, "finish_reason", None)
+            if fr is None:
+                continue
+            name = getattr(fr, "name", str(fr))
+            if name not in _NORMAL_FINISH_REASONS:
+                logger.warning("Gemini abnormal finish_reason", extra={"finish_reason": name})
+    except Exception:
+        logger.debug("finish_reason check failed", exc_info=True)
 
 
 class AIProvider(ABC):
@@ -268,6 +297,7 @@ class GeminiProvider(AIProvider):
             contents=contents,
             config=config,
         )
+        _check_gemini_finish(response)
 
         # thinking 파트 제외하고 응답 텍스트만 추출
         parts = (
@@ -308,6 +338,7 @@ class GeminiProvider(AIProvider):
             config=config,
         )
         async for chunk in stream:
+            _check_gemini_finish(chunk)
             # thinking 파트 제외하고 응답 텍스트만 스트리밍
             if chunk.candidates and chunk.candidates[0].content:
                 for part in chunk.candidates[0].content.parts:
@@ -359,6 +390,7 @@ class GeminiProvider(AIProvider):
             config=config,
         )
         async for chunk in stream:
+            _check_gemini_finish(chunk)
             # thinking 파트 제외하고 응답 텍스트만 스트리밍
             if chunk.candidates and chunk.candidates[0].content:
                 for part in chunk.candidates[0].content.parts:
