@@ -690,6 +690,28 @@ class StreamingParser:
         return events
 
 
+# 모델이 <file> 태그 대신 마크다운 펜스(```tsx 등)로만 코드를 낸 경우 회수하는 fallback
+_FENCE_CODE_PATTERN = re.compile(
+    r"```(?:tsx|jsx|typescript|ts|javascript|js)?\s*\n(.*?)```",
+    re.DOTALL,
+)
+
+
+def _extract_fenced_code(text: str) -> dict | None:
+    """<file> 태그 없이 마크다운 코드펜스로만 온 코드를 회수한다.
+
+    가장 긴 코드 블록을 고르고, 컴포넌트로 보이는 최소 신호가 있을 때만 인정.
+    회수 불가 시 None. (recitation 등 진짜 탈선은 펜스도 없으므로 None → 가드 발동)
+    """
+    blocks = [str(m).strip() for m in _FENCE_CODE_PATTERN.findall(text) if str(m).strip()]
+    if not blocks:
+        return None
+    content: str = max(blocks, key=len)
+    if not re.search(r"\b(export|return|function|const)\b|=>", content):
+        return None
+    return {"path": "src/Component.tsx", "content": _postprocess_code(content)}
+
+
 # ============================================================================
 # API Endpoints
 # ============================================================================
@@ -1211,13 +1233,50 @@ async def _run_broadcast_generation(
                 extra={"room_id": room_id, "message_id": message_id, "dropped": dropped_chunks},
             )
 
+        # 파서 fallback: 모델이 <file> 대신 ```tsx 펜스로만 코드를 낸 경우 회수.
+        # (가드가 멀쩡한 펜스 코드를 탈선으로 오판하지 않도록 가드보다 먼저 시도)
+        if not collected_files:
+            recovered = _extract_fenced_code(collected_text)
+            if recovered:
+                logger.warning(
+                    "Recovered code from markdown fence (no <file> tag)",
+                    extra={"room_id": room_id, "message_id": message_id, "path": recovered["path"]},
+                )
+                await broadcast_event(room_id, "chunk", {"type": "code", **recovered})
+                collected_files.append(recovered)
+
+        # 가드: 모델이 코드(<file>)를 하나도 생성하지 않으면 탈선/실패로 간주.
+        # DONE으로 저장하면 무관한 텍스트(예: 엉뚱한 기사)가 "성공"으로 노출되므로 ERROR 처리.
+        # (모델의 일시적 탈선은 비결정적이라 원천 차단 불가 → 결과물 노출만 확실히 막는 방어막)
+        if not collected_files:
+            logger.error(
+                "Generation produced no code file (treating as derailed/failed)",
+                extra={
+                    "room_id": room_id,
+                    "message_id": message_id,
+                    "text_len": len(collected_text),
+                    "text_sample": collected_text.strip()[:500],
+                },
+            )
+            await _save_message_with_retry(
+                message_id=message_id,
+                text=collected_text.strip() or None,
+                status="ERROR",
+            )
+            await broadcast_event(
+                room_id,
+                "error",
+                {"error": "응답 생성에 실패했습니다. 다시 시도해주세요."},
+            )
+            return
+
         # 완료 시 DB 저장 (재시도 포함)
-        first_file = collected_files[0] if collected_files else None
+        first_file = collected_files[0]
         await _save_message_with_retry(
             message_id=message_id,
             text=collected_text.strip(),
-            content=first_file.get("content", "") if first_file else "",
-            path=first_file.get("path", "") if first_file else "",
+            content=first_file.get("content", ""),
+            path=first_file.get("path", ""),
             status="DONE",
         )
 
