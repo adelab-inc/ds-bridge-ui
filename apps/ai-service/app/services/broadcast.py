@@ -41,6 +41,8 @@ def get_broadcast_client() -> httpx.AsyncClient:
             },
             timeout=httpx.Timeout(10.0),
             limits=httpx.Limits(max_connections=50, max_keepalive_connections=10),
+            # 전송계층 재시도: 일시적 연결 실패(ConnectError) 시 커넥션 자동 재수립
+            transport=httpx.AsyncHTTPTransport(retries=2),
         )
         logger.info("Broadcast client initialized")
 
