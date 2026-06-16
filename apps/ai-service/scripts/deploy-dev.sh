@@ -172,9 +172,8 @@ deploy_simple() {
         --port 8080 \
         --memory 512Mi \
         --cpu 1 \
-        --min-instances 2 \
-        --max-instances 8 \
-        --concurrency 1 \
+        --min-instances 0 \
+        --max-instances 2 \
         --timeout 600 \
         --set-env-vars "${ENV_VARS}"
 
