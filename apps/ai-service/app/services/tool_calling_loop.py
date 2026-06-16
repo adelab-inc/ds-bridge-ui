@@ -522,15 +522,26 @@ async def run_figma_tool_calling_loop(
     # ------------------------------------------------------------------
     # 단일 스트리밍 호출 (thinking OFF)
     # ------------------------------------------------------------------
-    await broadcast_event(room_id, "chunk", {
-        "type": "status",
-        "text": "React 코드 생성 중...",
-    })
+    # 코드 생성 상태 알림 — fire-and-forget (critical path에서 broadcast 제거;
+    # egress 경합 시 awaited broadcast가 모델 호출을 지연시키는 것 방지)
+    track_broadcast_task(asyncio.create_task(
+        broadcast_event(room_id, "chunk", {
+            "type": "status",
+            "text": "React 코드 생성 중...",
+        })
+    ))
 
     messages = [
         Message(role="system", content=full_system_prompt),
         Message(role="user", content=user_message),
     ]
+
+    # 계측: 모델 호출 직전 시점. (prefetch~여기 = 우리 코드, 여기~첫청크 = Gemini TTFT)
+    logger.info("Figma generation: calling model", extra={
+        "room_id": room_id,
+        "elapsed_s": round(time.monotonic() - t_start, 2),
+        "has_image": bool(screenshot_base64 and screenshot_media_type),
+    })
 
     first_chunk = True
 
