@@ -13,16 +13,17 @@ import logging
 import time
 from collections.abc import AsyncGenerator
 
+from app.schemas.chat import ImageContent, Message
 from app.services.ai_provider import AIProvider
-from app.services.broadcast import broadcast_event
+from app.services.broadcast import broadcast_event, track_broadcast_task
 from app.services.figma_api import (
+    FigmaFetchError,
     FigmaRateLimitError,
     export_node_image,
     fetch_node_detail,
     fetch_page_structure,
     parse_figma_url,
 )
-from app.schemas.chat import ImageContent, Message
 
 logger = logging.getLogger(__name__)
 
@@ -124,10 +125,15 @@ async def run_figma_tool_calling_loop(
     t_start = time.monotonic()
     file_key, node_id = parse_figma_url(figma_url)
 
-    await broadcast_event(room_id, "chunk", {
-        "type": "status",
-        "text": "Figma 디자인 데이터 로드 중...",
-    })
+    # 로딩 상태 알림은 비핵심 → fire-and-forget.
+    # awaited로 두면 Supabase broadcast 실패/재시도가 prefetch 시작을 지연시켜
+    # 아래 asyncio.timeout(90) 밖에서 시간을 까먹는다(실측 prefetch가 90s→163s로 샘).
+    track_broadcast_task(asyncio.create_task(
+        broadcast_event(room_id, "chunk", {
+            "type": "status",
+            "text": "Figma 디자인 데이터 로드 중...",
+        })
+    ))
 
     # ------------------------------------------------------------------
     # Prefetch (전체 15초 타임아웃 — 실패해도 가진 데이터로 진행)
@@ -238,6 +244,19 @@ async def run_figma_tool_calling_loop(
         "nodes_fetched": len(node_details),
         "has_screenshot": bool(screenshot_base64),
     })
+
+    # 빈 데이터 가드: 페이지 구조·노드 상세·스크린샷이 전부 비면 Figma를 한 건도 못 읽은 것.
+    # 이대로 진행하면 모델이 URL만 보고 화면을 환각하므로(매 응답 다른 화면), 생성을 중단한다.
+    if not prefetch_info and not node_details and not screenshot_base64:
+        logger.warning("Figma prefetch returned no data — aborting generation", extra={
+            "room_id": room_id,
+            "file_key": file_key,
+            "node_id": node_id,
+            "elapsed_s": round(t_prefetch - t_start, 2),
+        })
+        raise FigmaFetchError(
+            f"Figma 디자인 데이터를 가져오지 못했습니다 (file_key={file_key}, node_id={node_id})"
+        )
 
     # ------------------------------------------------------------------
     # 시스템 프롬프트에 Figma 컨텍스트 추가
@@ -416,7 +435,7 @@ async def run_figma_tool_calling_loop(
     )
 
     # 컴포넌트 인벤토리 (recency bias 활용 — figma_context 맨 마지막에 배치)
-    from app.api.components import extract_component_usage_summary, extract_component_usage_map
+    from app.api.components import extract_component_usage_map, extract_component_usage_summary
 
     for detail_json in node_details.values():
         try:
