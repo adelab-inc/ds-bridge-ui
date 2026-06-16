@@ -43,7 +43,7 @@ _MAX_RETRIES = 3
 _BASE_DELAY = 1.0
 
 # Figma API 동시 요청 제한 (429 방지)
-_figma_semaphore = asyncio.Semaphore(3)
+_figma_semaphore = asyncio.Semaphore(get_settings().figma_concurrency)
 
 # 공유 httpx 클라이언트 (커넥션 재사용 → DNS/TLS 핸드셰이크 절약)
 _shared_client: httpx.AsyncClient | None = None

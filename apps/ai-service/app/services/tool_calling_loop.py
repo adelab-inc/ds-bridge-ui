@@ -106,6 +106,152 @@ async def _save_usage_map_background(usage_map: dict, room_id: str) -> None:
         logger.warning(f"Failed to save usage map: {e}", extra={"room_id": room_id})
 
 
+# ---------------------------------------------------------------------------
+# Prefetch 결과 캐시 (동일 file_key+node_id 재요청 시 Figma 재호출 스킵)
+# ---------------------------------------------------------------------------
+_PREFETCH_CACHE_TTL = 300.0  # 초. Figma 디자인은 자주 안 바뀌므로 5분간 재사용
+_PREFETCH_CACHE_MAX = 64     # 인메모리 캐시 최대 항목 수 (초과 시 가장 오래된 것 제거)
+# 프로세스 메모리(인스턴스별) 저장. key -> (stored_at_monotonic, (prefetch_info, node_details, screenshot_base64, screenshot_media_type))
+_prefetch_cache: dict[str, tuple[float, tuple[str, dict[str, str], str, str]]] = {}
+
+
+def _get_cached_prefetch(key: str) -> tuple[str, dict[str, str], str, str] | None:
+    entry = _prefetch_cache.get(key)
+    if entry is None:
+        return None
+    stored_at, value = entry
+    if time.monotonic() - stored_at > _PREFETCH_CACHE_TTL:
+        _prefetch_cache.pop(key, None)
+        return None
+    prefetch_info, node_details, screenshot_base64, screenshot_media_type = value
+    # node_details는 이후 in-place 가공되므로 매 hit마다 복사본 반환(캐시 오염 방지)
+    return prefetch_info, dict(node_details), screenshot_base64, screenshot_media_type
+
+
+def _store_prefetch(key: str, value: tuple[str, dict[str, str], str, str]) -> None:
+    prefetch_info, node_details, screenshot_base64, screenshot_media_type = value
+    # 빈 결과(실패)는 캐싱하지 않음 — 다음 요청이 재시도하도록
+    if not (prefetch_info or node_details or screenshot_base64):
+        return
+    # 크기 상한 초과 시 가장 오래된 항목 제거 (메모리 무한증가 방지)
+    if len(_prefetch_cache) >= _PREFETCH_CACHE_MAX and key not in _prefetch_cache:
+        oldest = min(_prefetch_cache, key=lambda k: _prefetch_cache[k][0])
+        _prefetch_cache.pop(oldest, None)
+    _prefetch_cache[key] = (
+        time.monotonic(),
+        (prefetch_info, dict(node_details), screenshot_base64, screenshot_media_type),
+    )
+
+
+async def _fetch_figma_prefetch(
+    room_id: str, file_key: str, node_id: str | None,
+) -> tuple[str, dict[str, str], str, str]:
+    """Figma 데이터를 prefetch한다(캐시 미스 시 호출).
+
+    Returns: (prefetch_info, node_details, screenshot_base64, screenshot_media_type)
+    """
+    t0 = time.monotonic()
+    prefetch_info = ""
+    node_details: dict[str, str] = {}
+    screenshot_base64 = ""
+    screenshot_media_type = ""
+
+    try:
+        async with asyncio.timeout(_PREFETCH_TIMEOUT):
+            if node_id:
+                # Case A: node_id 있음 → 3개 태스크 동시 시작, 빠른 것부터 결과 저장
+                screenshot_task = asyncio.create_task(
+                    _fetch_with_timeout(
+                        export_node_image(file_key, node_id, scale=1, image_format="png", max_retries=2),
+                        "screenshot",
+                    )
+                )
+                page_task = asyncio.create_task(
+                    _fetch_with_timeout(
+                        fetch_page_structure(file_key, node_id, max_retries=2),
+                        "page_structure",
+                    )
+                )
+                detail_task = asyncio.create_task(
+                    _fetch_with_timeout(
+                        fetch_node_detail(file_key, node_id, max_depth=8, max_retries=2),
+                        "node_detail",
+                    )
+                )
+
+                page_result = await page_task
+                if page_result and not isinstance(page_result, Exception):
+                    prefetch_info = json.dumps(
+                        page_result, ensure_ascii=False, separators=(",", ":"),
+                    )
+
+                try:
+                    image_result = await screenshot_task
+                    if image_result and not isinstance(image_result, Exception):
+                        screenshot_base64, screenshot_media_type = image_result
+                except Exception:
+                    logger.warning("Screenshot task failed after structure data ready")
+
+                detail_result = await detail_task
+                if detail_result and not isinstance(detail_result, Exception):
+                    node_details[node_id] = json.dumps(
+                        detail_result, ensure_ascii=False, separators=(",", ":"),
+                    )
+
+            else:
+                # Case B: node_id 없음 → page_structure 먼저, 나머지 병렬
+                page_result = await _fetch_with_timeout(
+                    fetch_page_structure(file_key, node_id, max_retries=2),
+                    "page_structure",
+                )
+                page_structure = page_result if page_result else {"frames": []}
+                prefetch_info = json.dumps(
+                    page_structure, ensure_ascii=False, separators=(",", ":"),
+                )
+
+                frames = page_structure.get("frames", [])
+                target_node_id = frames[0].get("node_id") if frames else None
+
+                if target_node_id:
+                    screenshot_task = asyncio.create_task(
+                        _fetch_with_timeout(
+                            export_node_image(file_key, target_node_id, scale=1, image_format="png", max_retries=2),
+                            "screenshot",
+                        )
+                    )
+                    detail_result = await _fetch_with_timeout(
+                        fetch_node_detail(file_key, target_node_id, max_depth=8, max_retries=2),
+                        "node_detail",
+                    )
+
+                    if detail_result and not isinstance(detail_result, Exception):
+                        node_details[target_node_id] = json.dumps(
+                            detail_result, ensure_ascii=False, separators=(",", ":"),
+                        )
+
+                    try:
+                        image_result = await screenshot_task
+                        if image_result and not isinstance(image_result, Exception):
+                            screenshot_base64, screenshot_media_type = image_result
+                    except Exception:
+                        logger.warning("Screenshot task failed after structure data ready")
+
+    except TimeoutError:
+        logger.warning("Figma prefetch global timeout", extra={
+            "room_id": room_id,
+            "elapsed_s": round(time.monotonic() - t0, 2),
+        })
+
+    logger.info("Figma prefetch done", extra={
+        "room_id": room_id,
+        "elapsed_s": round(time.monotonic() - t0, 2),
+        "has_page_structure": bool(prefetch_info),
+        "nodes_fetched": len(node_details),
+        "has_screenshot": bool(screenshot_base64),
+    })
+    return prefetch_info, node_details, screenshot_base64, screenshot_media_type
+
+
 async def run_figma_tool_calling_loop(
     *,
     room_id: str,
@@ -136,123 +282,34 @@ async def run_figma_tool_calling_loop(
     ))
 
     # ------------------------------------------------------------------
-    # Prefetch (전체 15초 타임아웃 — 실패해도 가진 데이터로 진행)
+    # Prefetch (캐시 우선 — 동일 file_key+node_id 재요청 시 Figma 재호출 스킵)
     # ------------------------------------------------------------------
-    prefetch_info = ""
-    node_details: dict[str, str] = {}
-    screenshot_base64 = ""
-    screenshot_media_type = ""
-
-    try:
-        async with asyncio.timeout(_PREFETCH_TIMEOUT):
-            if node_id:
-                # Case A: node_id 있음 → 3개 태스크 동시 시작, 빠른 것부터 결과 저장
-                # ⚠️ gather를 쓰면 느린 태스크(node_detail)가 글로벌 타임아웃을
-                # 유발해 이미 완료된 page_structure 결과까지 유실됨
-                screenshot_task = asyncio.create_task(
-                    _fetch_with_timeout(
-                        export_node_image(file_key, node_id, scale=1, image_format="png", max_retries=2),
-                        "screenshot",
-                    )
-                )
-                page_task = asyncio.create_task(
-                    _fetch_with_timeout(
-                        fetch_page_structure(file_key, node_id, max_retries=2),
-                        "page_structure",
-                    )
-                )
-                detail_task = asyncio.create_task(
-                    _fetch_with_timeout(
-                        fetch_node_detail(file_key, node_id, max_depth=8, max_retries=2),
-                        "node_detail",
-                    )
-                )
-
-                # page_structure 먼저 대기 (depth=2, 보통 빠름) → 즉시 저장
-                page_result = await page_task
-                if page_result and not isinstance(page_result, Exception):
-                    prefetch_info = json.dumps(
-                        page_result, ensure_ascii=False, separators=(",", ":"),
-                    )
-
-                # 스크린샷: page_structure보다 빠르거나 비슷 → 즉시 대기
-                try:
-                    image_result = await screenshot_task
-                    if image_result and not isinstance(image_result, Exception):
-                        screenshot_base64, screenshot_media_type = image_result
-                except Exception:
-                    logger.warning("Screenshot task failed after structure data ready")
-
-                # node_detail 대기 (depth=12, 느릴 수 있음) → 글로벌 타임아웃 시 스킵
-                detail_result = await detail_task
-                if detail_result and not isinstance(detail_result, Exception):
-                    node_details[node_id] = json.dumps(
-                        detail_result, ensure_ascii=False, separators=(",", ":"),
-                    )
-
-            else:
-                # Case B: node_id 없음 → page_structure 먼저, 나머지 병렬
-                page_result = await _fetch_with_timeout(
-                    fetch_page_structure(file_key, node_id, max_retries=2),
-                    "page_structure",
-                )
-                page_structure = page_result if page_result else {"frames": []}
-                prefetch_info = json.dumps(
-                    page_structure, ensure_ascii=False, separators=(",", ":"),
-                )
-
-                # page_structure에서 node_id 추출
-                frames = page_structure.get("frames", [])
-                target_node_id = frames[0].get("node_id") if frames else None
-
-                if target_node_id:
-                    screenshot_task = asyncio.create_task(
-                        _fetch_with_timeout(
-                            export_node_image(file_key, target_node_id, scale=1, image_format="png", max_retries=2),
-                            "screenshot",
-                        )
-                    )
-                    detail_result = await _fetch_with_timeout(
-                        fetch_node_detail(file_key, target_node_id, max_depth=8, max_retries=2),
-                        "node_detail",
-                    )
-
-                    if detail_result and not isinstance(detail_result, Exception):
-                        node_details[target_node_id] = json.dumps(
-                            detail_result, ensure_ascii=False, separators=(",", ":"),
-                        )
-
-                    # 스크린샷: node_detail 완료 후 추가 대기
-                    try:
-                        image_result = await screenshot_task
-                        if image_result and not isinstance(image_result, Exception):
-                            screenshot_base64, screenshot_media_type = image_result
-                    except Exception:
-                        logger.warning("Screenshot task failed after structure data ready")
-
-    except TimeoutError:
-        logger.warning("Figma prefetch global timeout", extra={
+    cache_key = f"{file_key}:{node_id}"
+    cached = _get_cached_prefetch(cache_key)
+    if cached is not None:
+        prefetch_info, node_details, screenshot_base64, screenshot_media_type = cached
+        logger.info("Figma prefetch cache hit", extra={
             "room_id": room_id,
+            "cache_key": cache_key,
             "elapsed_s": round(time.monotonic() - t_start, 2),
         })
-
-    t_prefetch = time.monotonic()
-    logger.info("Figma prefetch done", extra={
-        "room_id": room_id,
-        "elapsed_s": round(t_prefetch - t_start, 2),
-        "has_page_structure": bool(prefetch_info),
-        "nodes_fetched": len(node_details),
-        "has_screenshot": bool(screenshot_base64),
-    })
+    else:
+        prefetch_info, node_details, screenshot_base64, screenshot_media_type = (
+            await _fetch_figma_prefetch(room_id, file_key, node_id)
+        )
+        _store_prefetch(
+            cache_key,
+            (prefetch_info, node_details, screenshot_base64, screenshot_media_type),
+        )
 
     # 빈 데이터 가드: 페이지 구조·노드 상세·스크린샷이 전부 비면 Figma를 한 건도 못 읽은 것.
     # 이대로 진행하면 모델이 URL만 보고 화면을 환각하므로(매 응답 다른 화면), 생성을 중단한다.
+    # (캐시는 빈 결과를 저장하지 않으므로, 빈 결과 = 방금 fetch가 실패한 경우)
     if not prefetch_info and not node_details and not screenshot_base64:
         logger.warning("Figma prefetch returned no data — aborting generation", extra={
             "room_id": room_id,
             "file_key": file_key,
             "node_id": node_id,
-            "elapsed_s": round(t_prefetch - t_start, 2),
         })
         raise FigmaFetchError(
             f"Figma 디자인 데이터를 가져오지 못했습니다 (file_key={file_key}, node_id={node_id})"
@@ -465,15 +522,26 @@ async def run_figma_tool_calling_loop(
     # ------------------------------------------------------------------
     # 단일 스트리밍 호출 (thinking OFF)
     # ------------------------------------------------------------------
-    await broadcast_event(room_id, "chunk", {
-        "type": "status",
-        "text": "React 코드 생성 중...",
-    })
+    # 코드 생성 상태 알림 — fire-and-forget (critical path에서 broadcast 제거;
+    # egress 경합 시 awaited broadcast가 모델 호출을 지연시키는 것 방지)
+    track_broadcast_task(asyncio.create_task(
+        broadcast_event(room_id, "chunk", {
+            "type": "status",
+            "text": "React 코드 생성 중...",
+        })
+    ))
 
     messages = [
         Message(role="system", content=full_system_prompt),
         Message(role="user", content=user_message),
     ]
+
+    # 계측: 모델 호출 직전 시점. (prefetch~여기 = 우리 코드, 여기~첫청크 = Gemini TTFT)
+    logger.info("Figma generation: calling model", extra={
+        "room_id": room_id,
+        "elapsed_s": round(time.monotonic() - t_start, 2),
+        "has_image": bool(screenshot_base64 and screenshot_media_type),
+    })
 
     first_chunk = True
 
