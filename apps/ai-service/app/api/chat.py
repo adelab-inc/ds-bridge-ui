@@ -4,6 +4,7 @@ import logging
 import re
 from typing import Any
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 
@@ -26,9 +27,9 @@ from app.schemas.chat import (
 from app.schemas.validation import ValidationError, ValidationReport
 from app.services.ai_provider import AIProvider, get_ai_provider
 from app.services.broadcast import broadcast_event, track_broadcast_task
-from app.services.message_condenser import condense_message
 from app.services.code_validator import ComponentCatalog, validate_code
-from app.services.figma_api import FigmaRateLimitError, extract_figma_url
+from app.services.figma_api import FigmaFetchError, FigmaRateLimitError, extract_figma_url
+from app.services.message_condenser import condense_message
 from app.services.supabase_db import (
     DatabaseError,
     RoomNotFoundError,
@@ -53,6 +54,32 @@ from app.services.tool_calling_loop import run_figma_tool_calling_loop
 
 # Validator 싱글턴 (모듈 import 시 1회 로드)
 _CODE_CATALOG = ComponentCatalog.load_default()
+
+
+def _is_connection_error(exc: BaseException | None) -> bool:
+    """예외 체인에 연결/핸드셰이크 실패(ConnectError 등)가 있는지 검사.
+
+    google-genai/httpx가 연결 실패를 다른 예외로 감쌀 수 있어 __cause__/__context__를
+    따라가며 확인한다. (Gemini/Figma/Supabase 외부 연결 실패를 사용자 안내로 분기)
+    """
+    seen: set[int] = set()
+    conn_types = (
+        httpx.ConnectError,
+        httpx.ConnectTimeout,
+        httpx.ReadError,
+        httpx.ReadTimeout,
+        httpx.RemoteProtocolError,
+    )
+    while exc is not None and id(exc) not in seen:
+        seen.add(id(exc))
+        if isinstance(exc, conn_types):
+            return True
+        if type(exc).__name__ in {
+            "ConnectError", "ConnectTimeout", "ReadError", "ReadTimeout", "ConnectionError",
+        }:
+            return True
+        exc = exc.__cause__ or exc.__context__
+    return False
 
 
 async def _maybe_validate_and_repair(parsed: ParsedResponse, provider: object) -> None:
@@ -1129,16 +1156,22 @@ async def _run_broadcast_generation(
         asyncio.create_task(_do_save())
 
     async def _chunk_sender() -> None:
-        """큐에서 chunk를 꺼내 순서대로 broadcast. 실패 시 drop하고 계속 진행."""
+        """큐에서 chunk를 꺼내 broadcast. 실패 시 drop하고 계속 진행.
+
+        연속된 'chat' 텍스트는 모아서(coalesce) 전송한다 — 토큰마다 POST하면
+        Supabase Realtime broadcast가 포화돼 drain timeout/청크 드랍이 잦으므로,
+        ~200ms 또는 ~400자 단위로 묶어 POST 횟수를 크게 줄인다(체감 동일, 부하↓).
+        'code' 등 비-chat 이벤트는 순서 보장을 위해 chat 버퍼를 먼저 flush한 뒤 그대로 전송.
+        """
         nonlocal dropped_chunks
-        while True:
-            item = await chunk_queue.get()
-            if item is None:
-                break
+        flush_interval = 0.2  # 초 (idle 시 주기 flush → 스트리밍 끊김 없이 ~5fps)
+        flush_chars = 400
+        chat_buf = ""
+
+        async def _send(payload: dict) -> None:
+            nonlocal dropped_chunks
             try:
-                await broadcast_event(
-                    room_id, "chunk", item, max_retries=1, base_delay=0.2,
-                )
+                await broadcast_event(room_id, "chunk", payload, max_retries=1, base_delay=0.2)
             except Exception as e:
                 dropped_chunks += 1
                 logger.warning(
@@ -1149,6 +1182,29 @@ async def _run_broadcast_generation(
                         "dropped_total": dropped_chunks,
                     },
                 )
+
+        async def _flush_chat() -> None:
+            nonlocal chat_buf
+            if chat_buf:
+                payload, chat_buf = {"type": "chat", "text": chat_buf}, ""
+                await _send(payload)
+
+        while True:
+            try:
+                item = await asyncio.wait_for(chunk_queue.get(), timeout=flush_interval)
+            except TimeoutError:
+                await _flush_chat()
+                continue
+            if item is None:
+                await _flush_chat()
+                break
+            if item.get("type") == "chat":
+                chat_buf += item.get("text", "")
+                if len(chat_buf) >= flush_chars:
+                    await _flush_chat()
+            else:
+                await _flush_chat()
+                await _send(item)
 
     try:
         # start 이벤트
@@ -1334,10 +1390,37 @@ async def _run_broadcast_generation(
                 "Failed to send figma rate limit broadcast",
                 extra={"room_id": room_id, "message_id": message_id},
             )
+    except FigmaFetchError as e:
+        # Figma prefetch가 데이터를 0건 가져옴 → 생성 중단됨. 환각 코드 대신 안내.
+        logger.warning(
+            "Figma fetch failed (no design data)",
+            extra={"room_id": room_id, "message_id": message_id, "error": str(e)},
+        )
+        try:
+            await _save_message_with_retry(message_id=message_id, status="ERROR")
+            await broadcast_event(
+                room_id,
+                "error",
+                {
+                    "error": "Figma 디자인 데이터를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.",
+                    "error_code": "figma_fetch_failed",
+                },
+            )
+        except Exception:
+            logger.exception(
+                "Failed to send figma fetch error broadcast",
+                extra={"room_id": room_id, "message_id": message_id},
+            )
     except Exception as e:
+        is_conn = _is_connection_error(e)
         logger.exception(
             "Broadcast generation error",
-            extra={"room_id": room_id, "message_id": message_id, "error": f"{type(e).__name__}: {e!r}"},
+            extra={
+                "room_id": room_id,
+                "message_id": message_id,
+                "error": f"{type(e).__name__}: {e!r}",
+                "connection_error": is_conn,
+            },
         )
         try:
             first_file = collected_files[0] if collected_files else None
@@ -1348,11 +1431,15 @@ async def _run_broadcast_generation(
                 path=first_file["path"] if first_file else None,
                 status="ERROR",
             )
-            await broadcast_event(
-                room_id,
-                "error",
-                {"error": "An error occurred during generation. Please try again."},
-            )
+            # 외부 API 연결 실패(Gemini/Supabase 등)는 일시적 네트워크 오류로 안내해 재시도 유도
+            if is_conn:
+                error_payload = {
+                    "error": "일시적인 네트워크 오류로 응답을 생성하지 못했습니다. 잠시 후 다시 시도해주세요.",
+                    "error_code": "network_error",
+                }
+            else:
+                error_payload = {"error": "An error occurred during generation. Please try again."}
+            await broadcast_event(room_id, "error", error_payload)
         except Exception:
             logger.exception("Failed to send error broadcast", extra={"room_id": room_id, "message_id": message_id})
     finally:

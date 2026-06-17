@@ -10,7 +10,7 @@ import base64
 import logging
 import re
 import time
-from urllib.parse import unquote, urlparse, parse_qs
+from urllib.parse import parse_qs, unquote, urlparse
 
 import httpx
 
@@ -29,12 +29,21 @@ class FigmaRateLimitError(Exception):
     `error_code: "figma_rate_limit"`로 전달하는 신호로 사용된다.
     """
 
+
+class FigmaFetchError(Exception):
+    """Figma prefetch가 디자인 데이터를 0건 가져온 경우 (연결 실패/타임아웃 등).
+
+    데이터 없이 생성을 진행하면 모델이 화면을 환각하므로, 생성을 중단하고
+    프론트엔드에 `error_code: "figma_fetch_failed"`로 안내하기 위한 신호.
+    """
+
+
 # 재시도 설정
 _MAX_RETRIES = 3
 _BASE_DELAY = 1.0
 
 # Figma API 동시 요청 제한 (429 방지)
-_figma_semaphore = asyncio.Semaphore(3)
+_figma_semaphore = asyncio.Semaphore(get_settings().figma_concurrency)
 
 # 공유 httpx 클라이언트 (커넥션 재사용 → DNS/TLS 핸드셰이크 절약)
 _shared_client: httpx.AsyncClient | None = None
@@ -46,6 +55,8 @@ def _get_client() -> httpx.AsyncClient:
         _shared_client = httpx.AsyncClient(
             timeout=httpx.Timeout(50.0, connect=15.0),
             limits=httpx.Limits(max_connections=5, max_keepalive_connections=3),
+            # 전송계층 재시도: 일시적 연결 실패(ConnectError) 시 커넥션 자동 재수립
+            transport=httpx.AsyncHTTPTransport(retries=2),
         )
     return _shared_client
 

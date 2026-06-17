@@ -48,6 +48,9 @@ class Settings(BaseSettings):
     # Figma
     figma_personal_access_token: str = ""
     figma_design_system_url: str = ""  # 기본 디자인시스템 Figma URL (키워드 감지 시 폴백)
+    # 인스턴스당 동시 Figma API 호출 상한 (429 방지 vs 멀티유저 동시성 트레이드오프).
+    # 3은 멀티유저 시 prefetch 큐잉이 심해 상향(측정상 5요청 동시 시 prefetch 31~89초).
+    figma_concurrency: int = 6
 
     # Chat Settings
     max_history_count: int = 10  # 대화 컨텍스트에 포함할 최대 메시지 수
