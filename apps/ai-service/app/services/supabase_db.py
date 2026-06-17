@@ -671,9 +671,41 @@ async def cleanup_stuck_generating_messages(*, max_age_minutes: int = 15) -> int
 
 
 @handle_db_error("채팅방 삭제 실패")
+async def _archive_room_before_delete(client, room_id: str, deleted_by: str | None) -> None:
+    """방 hard delete 직전에 방+메시지+디스크립션 스냅샷을 deleted_room_archive에 보관.
+
+    복구·감사 안전망. 아카이브 실패가 삭제를 막지 않도록(기존 동작 유지) best-effort로 동작한다.
+    (deleted_room_archive 테이블 미생성 등으로 실패해도 경고만 남기고 삭제는 진행)
+    """
+    try:
+        room = (await client.table("chat_rooms").select("*").eq("id", room_id).execute()).data
+        if not room:
+            return  # 방이 없으면 아카이브할 것도 없음
+        messages = (await client.table("chat_messages").select("*").eq("room_id", room_id).execute()).data
+        try:
+            descriptions = (await client.table("descriptions").select("*").eq("room_id", room_id).execute()).data
+        except Exception:
+            descriptions = []
+        await client.table("deleted_room_archive").insert({
+            "room_id": room_id,
+            "deleted_by": deleted_by,
+            "payload": {"room": room[0], "messages": messages, "descriptions": descriptions},
+        }).execute()
+        logger.info("Room archived before delete", extra={
+            "room_id": room_id, "messages": len(messages), "descriptions": len(descriptions),
+        })
+    except Exception as e:
+        logger.warning(
+            "Room archive before delete failed (deleting anyway)",
+            extra={"room_id": room_id, "error": f"{type(e).__name__}: {e}"},
+        )
+
+
 async def delete_chat_room(room_id: str, deleted_by: str | None = None) -> bool:
     """
     채팅방 삭제 (CASCADE로 메시지도 함께 삭제됨)
+
+    삭제 전 방+메시지+디스크립션을 deleted_room_archive에 스냅샷 보관(복구 안전망).
 
     Args:
         room_id: 채팅방 ID
@@ -683,6 +715,10 @@ async def delete_chat_room(room_id: str, deleted_by: str | None = None) -> bool:
         True if deleted, False if not found
     """
     client = await get_supabase_client()
+
+    # 삭제 전 스냅샷 → 아카이브 (best-effort: 실패해도 삭제는 진행)
+    await _archive_room_before_delete(client, room_id, deleted_by)
+
     result = await client.table("chat_rooms").delete().eq("id", room_id).execute()
     deleted = len(result.data) > 0
     if deleted:
