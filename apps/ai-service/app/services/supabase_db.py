@@ -671,12 +671,13 @@ async def cleanup_stuck_generating_messages(*, max_age_minutes: int = 15) -> int
 
 
 @handle_db_error("채팅방 삭제 실패")
-async def delete_chat_room(room_id: str) -> bool:
+async def delete_chat_room(room_id: str, deleted_by: str | None = None) -> bool:
     """
     채팅방 삭제 (CASCADE로 메시지도 함께 삭제됨)
 
     Args:
         room_id: 채팅방 ID
+        deleted_by: 삭제 요청 사용자 ID (감사 로그용)
 
     Returns:
         True if deleted, False if not found
@@ -685,7 +686,7 @@ async def delete_chat_room(room_id: str) -> bool:
     result = await client.table("chat_rooms").delete().eq("id", room_id).execute()
     deleted = len(result.data) > 0
     if deleted:
-        logger.info("Chat room deleted", extra={"room_id": room_id})
+        logger.info("Chat room deleted", extra={"room_id": room_id, "deleted_by": deleted_by})
     return deleted
 
 
