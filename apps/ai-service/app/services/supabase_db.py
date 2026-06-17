@@ -776,6 +776,80 @@ async def delete_chat_message(message_id: str, deleted_by: str | None = None) ->
     return deleted
 
 
+async def restore_room_from_archive(
+    room_id: str, message_ids: list[str] | None = None,
+) -> dict:
+    """deleted_room_archive에서 방을 복구한다.
+
+    - message_ids=None  → 방 + 전체 메시지 + 디스크립션 복원
+    - message_ids=[...] → 방 + 지정 메시지만 복원 (부분 복구)
+    이미 존재하는 행은 upsert로 안전 처리. 방이 살아있으면 메시지/디스크립션만 복원된다.
+
+    Returns: {"room": bool, "messages": int, "descriptions": int}
+    Raises: ValueError (아카이브 없음)
+    """
+    client = await get_supabase_client()
+    rows = (
+        await client.table("deleted_room_archive").select("*")
+        .eq("room_id", room_id).order("deleted_at", desc=True).limit(1).execute()
+    ).data
+    if not rows:
+        raise ValueError(f"No archive found for room {room_id}")
+
+    payload = rows[0].get("payload") or {}
+    room = payload.get("room")
+    messages = payload.get("messages") or []
+    descriptions = payload.get("descriptions") or []
+    restored = {"room": False, "messages": 0, "descriptions": 0}
+
+    # 1. 방 복원 (이미 있으면 스킵 — FK 부모)
+    existing = (await client.table("chat_rooms").select("id").eq("id", room_id).execute()).data
+    if not existing and room:
+        await client.table("chat_rooms").insert(room).execute()
+        restored["room"] = True
+
+    # 2. 메시지 복원 (부분 지정 가능)
+    to_restore = messages
+    if message_ids is not None:
+        idset = set(message_ids)
+        to_restore = [m for m in messages if m.get("id") in idset]
+    if to_restore:
+        await client.table("chat_messages").upsert(to_restore).execute()
+        restored["messages"] = len(to_restore)
+
+    # 3. 디스크립션 복원 (전체 복구일 때만)
+    if message_ids is None and descriptions:
+        await client.table("descriptions").upsert(descriptions).execute()
+        restored["descriptions"] = len(descriptions)
+
+    logger.info("Room restored from archive", extra={"room_id": room_id, **restored})
+    return restored
+
+
+async def restore_message_from_archive(message_id: str) -> bool:
+    """deleted_message_archive에서 개별 메시지를 복구한다.
+
+    메시지의 방이 살아있어야 한다(FK). 없으면 ValueError — 방부터 복구 필요.
+    """
+    client = await get_supabase_client()
+    rows = (
+        await client.table("deleted_message_archive").select("*")
+        .eq("message_id", message_id).order("deleted_at", desc=True).limit(1).execute()
+    ).data
+    if not rows:
+        raise ValueError(f"No archive found for message {message_id}")
+
+    msg = rows[0].get("payload") or {}
+    room_id = msg.get("room_id")
+    room = (await client.table("chat_rooms").select("id").eq("id", room_id).execute()).data
+    if not room:
+        raise ValueError(f"Cannot restore message: room {room_id} does not exist (restore room first)")
+
+    await client.table("chat_messages").upsert(msg).execute()
+    logger.info("Message restored from archive", extra={"message_id": message_id, "room_id": room_id})
+    return True
+
+
 # ============================================================================
 # Description CRUD
 # ============================================================================
