@@ -72,3 +72,24 @@ async def test_archive_failure_does_not_raise():
 
     # best-effort: 예외가 밖으로 새지 않아야 함 (삭제가 막히면 안 됨)
     await _archive_room_before_delete(_Boom(), "r1", "u1")
+
+
+# ── 개별 메시지 삭제 아카이브 ──────────────────────────────────
+
+async def test_message_archive_snapshots_before_delete():
+    from app.services.supabase_db import _archive_message_before_delete
+    client = _Client({"chat_messages": [{"id": "m1", "room_id": "r1", "content": "코드"}]})
+    await _archive_message_before_delete(client, "m1", "u1")
+    arch = client.store["archived"]
+    assert arch is not None
+    assert arch["message_id"] == "m1"
+    assert arch["room_id"] == "r1"
+    assert arch["deleted_by"] == "u1"
+    assert arch["payload"]["content"] == "코드"
+
+
+async def test_message_archive_skips_when_missing():
+    from app.services.supabase_db import _archive_message_before_delete
+    client = _Client({"chat_messages": []})
+    await _archive_message_before_delete(client, "nope", "u1")
+    assert client.store["archived"] is None

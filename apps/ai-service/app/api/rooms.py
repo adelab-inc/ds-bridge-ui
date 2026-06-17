@@ -616,11 +616,12 @@ async def delete_room(
 async def delete_message(
     room_id: str,
     message_id: str,
+    user_id: str | None = Query(None, description="요청 사용자 ID (삭제자 기록용)"),
     _room: RoomData = Depends(get_room_or_404),
 ) -> dict:
-    """개별 메시지 삭제"""
+    """개별 메시지 삭제 (삭제 전 아카이브 보관)"""
     try:
-        deleted = await delete_chat_message(message_id)
+        deleted = await delete_chat_message(message_id, deleted_by=user_id)
         if not deleted:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

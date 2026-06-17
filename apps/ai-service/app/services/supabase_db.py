@@ -727,21 +727,52 @@ async def delete_chat_room(room_id: str, deleted_by: str | None = None) -> bool:
 
 
 @handle_db_error("메시지 삭제 실패")
-async def delete_chat_message(message_id: str) -> bool:
+async def _archive_message_before_delete(client, message_id: str, deleted_by: str | None) -> None:
+    """메시지 hard delete 직전에 메시지 스냅샷을 deleted_message_archive에 보관.
+
+    복구·감사 안전망. 아카이브 실패가 삭제를 막지 않도록 best-effort로 동작한다.
     """
-    개별 메시지 삭제
+    try:
+        msg = (await client.table("chat_messages").select("*").eq("id", message_id).execute()).data
+        if not msg:
+            return  # 메시지가 없으면 아카이브할 것도 없음
+        m = msg[0]
+        await client.table("deleted_message_archive").insert({
+            "message_id": message_id,
+            "room_id": m.get("room_id"),
+            "deleted_by": deleted_by,
+            "payload": m,
+        }).execute()
+        logger.info("Message archived before delete", extra={
+            "message_id": message_id, "room_id": m.get("room_id"),
+        })
+    except Exception as e:
+        logger.warning(
+            "Message archive before delete failed (deleting anyway)",
+            extra={"message_id": message_id, "error": f"{type(e).__name__}: {e}"},
+        )
+
+
+async def delete_chat_message(message_id: str, deleted_by: str | None = None) -> bool:
+    """
+    개별 메시지 삭제 (삭제 전 deleted_message_archive에 스냅샷 보관)
 
     Args:
         message_id: 메시지 ID
+        deleted_by: 삭제 요청 사용자 ID (감사 로그용)
 
     Returns:
         True if deleted, False if not found
     """
     client = await get_supabase_client()
+
+    # 삭제 전 스냅샷 → 아카이브 (best-effort: 실패해도 삭제는 진행)
+    await _archive_message_before_delete(client, message_id, deleted_by)
+
     result = await client.table("chat_messages").delete().eq("id", message_id).execute()
     deleted = len(result.data) > 0
     if deleted:
-        logger.info("Chat message deleted", extra={"message_id": message_id})
+        logger.info("Chat message deleted", extra={"message_id": message_id, "deleted_by": deleted_by})
     return deleted
 
 
