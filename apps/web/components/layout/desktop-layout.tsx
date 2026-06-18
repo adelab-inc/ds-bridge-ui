@@ -47,7 +47,6 @@ function DesktopLayout() {
     onStreamStart,
     onStreamEnd,
     onCodeGenerated,
-    reset: resetCodeGeneration,
   } = useCodeGenerationStore();
 
   const resetDescription = useDescriptionStore((s) => s.reset);
@@ -56,11 +55,13 @@ function DesktopLayout() {
   const showCode = generatedRoomId === roomId;
   const showGenerating = generatingRoomId === roomId && isGeneratingCode;
 
-  // roomId 변경 시 프리뷰 + 디스크립션 상태 초기화
+  // roomId 변경 시 디스크립션 상태만 초기화.
+  // 코드/미리보기는 위 generatedRoomId 게이트로 격리되므로 reset이 불필요하며,
+  // reset을 두면 캐시된 메시지의 초기 선택 stamp(onCodeGenerated)를 곧바로
+  // 덮어써(child→parent effect 순서) 미리보기가 비어버린다.
   React.useEffect(() => {
-    resetCodeGeneration();
     resetDescription();
-  }, [roomId, resetCodeGeneration, resetDescription]);
+  }, [roomId, resetDescription]);
 
   return (
     <ClientOnly

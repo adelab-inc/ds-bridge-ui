@@ -40,17 +40,13 @@ function MobileLayoutContent() {
     onStreamStart,
     onStreamEnd,
     onCodeGenerated,
-    reset: resetCodeGeneration,
   } = useCodeGenerationStore();
 
-  // 현재 룸과 일치할 때만 코드/생성중 표시 (룸 전환 시 오염 방지)
+  // 현재 룸과 일치할 때만 코드/생성중 표시 (룸 전환 시 오염 방지).
+  // generatedRoomId 게이트가 격리를 담당하므로 roomId 변경 시 별도 reset은 하지 않는다.
+  // (reset을 두면 캐시된 메시지의 초기 선택 stamp를 덮어써 미리보기가 비어버린다)
   const showCode = generatedRoomId === roomId;
   const showGenerating = generatingRoomId === roomId && isGeneratingCode;
-
-  // roomId 변경 시 프리뷰 상태 초기화
-  React.useEffect(() => {
-    resetCodeGeneration();
-  }, [roomId, resetCodeGeneration]);
 
   // 채팅 컨텐츠 렌더링
   const chatContent = React.useMemo(() => {
