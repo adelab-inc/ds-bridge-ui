@@ -2,7 +2,9 @@
 
 외부 시스템에서 crid(=room_id)를 인자로 디자인 코드와 디스크립션을 조회할 때 사용.
 """
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field, model_validator
+
+from app.core.hashing import content_hash, short_hash
 
 
 class ExternalCodeResponse(BaseModel):
@@ -38,6 +40,28 @@ class ExternalCodeResponse(BaseModel):
         examples=[1716700800000],
     )
 
+    code_hash: str | None = Field(
+        default=None,
+        description=(
+            "`code` 본문의 SHA-256 해시(hex, 64자). DB 저장 컬럼에서 옴. "
+            "코드가 바뀌면 해시도 바뀌므로 전체 코드를 다시 받지 않고 해시만 비교해 변경을 "
+            "탐지할 수 있음 (`/code/hash/{crid}` 의 값과 동일)."
+        ),
+    )
+
+    @model_validator(mode="after")
+    def _fill_code_hash(self) -> "ExternalCodeResponse":
+        """저장 컬럼이 비어있을 때만 `code` 로 즉석 계산 (저장값과 동일)."""
+        if self.code_hash is None and self.code:
+            self.code_hash = content_hash(self.code)
+        return self
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def code_hash_short(self) -> str | None:
+        """`code_hash` 의 git 약식 형태(앞 7자). 표시용 — 비교/식별은 풀 해시로."""
+        return short_hash(self.code_hash)
+
     model_config = {
         "json_schema_extra": {
             "example": {
@@ -50,7 +74,49 @@ class ExternalCodeResponse(BaseModel):
                     "};\n\n"
                     "export default InsuranceCodeApplication;\n"
                 ),
+                "code_hash": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
                 "path": "src/pages/InsuranceCodeApplication.tsx",
+                "generated_at": 1716700800000,
+            }
+        }
+    }
+
+
+class ExternalCodeHashResponse(BaseModel):
+    """코드 해시 전용(경량) 응답 — 본문 없이 해시만 반환.
+
+    변경 탐지 폴링용. 전체 코드를 내려받지 않으므로 토큰/대역폭에 효율적이다.
+    `code_hash` 가 직전 조회와 다르면 코드가 변경된 것이므로, 그때만 `/code/{crid}`
+    로 전체 코드를 받으면 된다.
+    """
+
+    crid: str = Field(
+        ...,
+        description="채팅방 ID (요청 시 URL의 crid 파라미터와 동일한 값)",
+        examples=["5169a302-629f-4759-8568-c0a7849f4439"],
+    )
+    code_hash: str = Field(
+        ...,
+        description="최신 코드 본문의 SHA-256 해시(hex, 64자). `/code/{crid}` 의 `code_hash` 와 동일.",
+        examples=["9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"],
+    )
+    generated_at: int = Field(
+        ...,
+        description="코드 생성 시각 (Unix epoch milliseconds). 가장 최근 코드 메시지의 응답 완료 시각.",
+        examples=[1716700800000],
+    )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def code_hash_short(self) -> str | None:
+        """`code_hash` 의 git 약식 형태(앞 7자). 표시용."""
+        return short_hash(self.code_hash)
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "crid": "5169a302-629f-4759-8568-c0a7849f4439",
+                "code_hash": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
                 "generated_at": 1716700800000,
             }
         }
@@ -104,6 +170,27 @@ class ExternalDescriptionResponse(BaseModel):
         examples=[1716700800000],
     )
 
+    description_hash: str | None = Field(
+        default=None,
+        description=(
+            "반환하는 `content` 본문의 SHA-256 해시(hex, 64자). DB 저장 컬럼에서 옴. "
+            "편집본이면 편집본 기준. 디스크립션이 바뀌면 해시도 바뀌므로 전체 본문 diff 없이 변경 탐지 가능."
+        ),
+    )
+
+    @model_validator(mode="after")
+    def _fill_description_hash(self) -> "ExternalDescriptionResponse":
+        """저장 컬럼이 비어있을 때만 `content` 로 즉석 계산 (저장값과 동일)."""
+        if self.description_hash is None and self.content:
+            self.description_hash = content_hash(self.content)
+        return self
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def description_hash_short(self) -> str | None:
+        """`description_hash` 의 git 약식 형태(앞 7자). 표시용."""
+        return short_hash(self.description_hash)
+
     model_config = {
         "json_schema_extra": {
             "example": {
@@ -118,6 +205,7 @@ class ExternalDescriptionResponse(BaseModel):
                     "- 보험사별로 신청 코드를 등록·관리\n"
                     "- 신청기간 내 유효성 검증\n"
                 ),
+                "description_hash": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
                 "version": 3,
                 "is_edited": True,
                 "updated_at": 1716700800000,

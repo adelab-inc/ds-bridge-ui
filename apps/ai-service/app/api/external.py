@@ -31,7 +31,9 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 
 from app.core.auth import verify_external_api_key
+from app.core.hashing import content_hash
 from app.schemas.external import (
+    ExternalCodeHashResponse,
     ExternalCodeResponse,
     ExternalDescriptionResponse,
     ExternalErrorResponse,
@@ -139,7 +141,52 @@ async def get_external_code(
     return ExternalCodeResponse(
         crid=crid_str,
         code=message.get("content", ""),
+        code_hash=message.get("code_hash"),  # DB 저장 컬럼 (없으면 모델 validator가 code로 계산)
         path=message.get("path", ""),
+        generated_at=message.get("answer_created_at", 0),
+    )
+
+
+@router.get(
+    "/code/hash/{crid}",
+    response_model=ExternalCodeHashResponse,
+    summary="코드 해시만 조회 (경량)",
+    description=(
+        "지정한 채팅방(`crid`)의 최신 코드에 대한 **해시만** 반환합니다. 전체 코드 본문은 "
+        "포함하지 않으므로 변경 탐지 폴링에 토큰/대역폭 효율적입니다.\n\n"
+        "**사용법**\n"
+        "- 주기적으로 본 EP를 호출해 `code_hash` 를 직전 값과 비교\n"
+        "- 값이 다르면 코드가 변경된 것 → 그때만 `/code/{crid}` 로 전체 코드 수신\n\n"
+        "**응답 필드**\n"
+        "- `code_hash` — 최신 코드 본문의 SHA-256 해시(hex, 64자). `/code/{crid}` 의 `code_hash` 와 동일\n"
+        "- `generated_at` — 코드 생성 시각 (Unix epoch milliseconds)\n\n"
+        "**에러** — `/code/{crid}` 와 동일 (404/422/401/403/500)"
+    ),
+    response_description="채팅방 최신 코드의 해시와 생성 시각",
+)
+async def get_external_code_hash(
+    crid: UUID = Path(
+        ...,
+        description=(
+            "채팅방 ID. UUID v4 형식. "
+            "런타임 허브 URL 의 `?crid=...` 파라미터와 동일한 값."
+        ),
+        examples=["5169a302-629f-4759-8568-c0a7849f4439"],
+    ),
+) -> ExternalCodeHashResponse:
+    crid_str = str(crid)
+    message = await get_latest_code_message(crid_str)
+    if message is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No code found for crid: {crid_str}",
+        )
+
+    # DB 저장 컬럼 우선, 없으면(마이그레이션 적용 전) content 로 즉석 계산
+    code_hash = message.get("code_hash") or content_hash(message.get("content", ""))
+    return ExternalCodeHashResponse(
+        crid=crid_str,
+        code_hash=code_hash,
         generated_at=message.get("answer_created_at", 0),
     )
 
@@ -188,6 +235,7 @@ async def get_external_description(
     return ExternalDescriptionResponse(
         crid=crid_str,
         content=content,
+        description_hash=record.get("description_hash"),  # DB 저장 컬럼 (없으면 validator가 content로 계산)
         version=record.get("version", 0),
         is_edited=is_edited,
         updated_at=record.get("created_at", 0),

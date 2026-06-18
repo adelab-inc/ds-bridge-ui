@@ -47,6 +47,7 @@ class MessageData(TypedDict, total=False):
     answer_created_at: int
     status: str
     image_urls: list[str]  # Vision 모드에서 사용된 이미지 URL 목록
+    code_hash: str | None  # content의 SHA-256 (DB 생성 컬럼, 마이그레이션 004). 코드 없으면 None
 
 
 class PaginatedMessages(TypedDict):
@@ -776,6 +777,16 @@ async def delete_chat_message(message_id: str, deleted_by: str | None = None) ->
     return deleted
 
 
+# 마이그레이션 004 의 STORED 생성 컬럼 — 본문에서 자동 계산되므로 직접 INSERT/UPDATE 불가.
+# 아카이브 스냅샷(select *)엔 포함되지만, 복구 재삽입 시엔 반드시 제외해야 Postgres가 거부하지 않는다.
+_GENERATED_COLUMNS = ("code_hash", "description_hash")
+
+
+def _strip_generated_columns(row: dict) -> dict:
+    """DB 생성 컬럼(code_hash/description_hash)을 제거한 새 dict 반환."""
+    return {k: v for k, v in row.items() if k not in _GENERATED_COLUMNS}
+
+
 async def restore_room_from_archive(
     room_id: str, message_ids: list[str] | None = None,
 ) -> dict:
@@ -805,21 +816,25 @@ async def restore_room_from_archive(
     # 1. 방 복원 (이미 있으면 스킵 — FK 부모)
     existing = (await client.table("chat_rooms").select("id").eq("id", room_id).execute()).data
     if not existing and room:
-        await client.table("chat_rooms").insert(room).execute()
+        await client.table("chat_rooms").insert(_strip_generated_columns(room)).execute()
         restored["room"] = True
 
-    # 2. 메시지 복원 (부분 지정 가능)
+    # 2. 메시지 복원 (부분 지정 가능). 생성 컬럼(code_hash) 제외하고 재삽입.
     to_restore = messages
     if message_ids is not None:
         idset = set(message_ids)
         to_restore = [m for m in messages if m.get("id") in idset]
     if to_restore:
-        await client.table("chat_messages").upsert(to_restore).execute()
+        await client.table("chat_messages").upsert(
+            [_strip_generated_columns(m) for m in to_restore]
+        ).execute()
         restored["messages"] = len(to_restore)
 
-    # 3. 디스크립션 복원 (전체 복구일 때만)
+    # 3. 디스크립션 복원 (전체 복구일 때만). 생성 컬럼(description_hash) 제외.
     if message_ids is None and descriptions:
-        await client.table("descriptions").upsert(descriptions).execute()
+        await client.table("descriptions").upsert(
+            [_strip_generated_columns(d) for d in descriptions]
+        ).execute()
         restored["descriptions"] = len(descriptions)
 
     logger.info("Room restored from archive", extra={"room_id": room_id, **restored})
@@ -845,7 +860,7 @@ async def restore_message_from_archive(message_id: str) -> bool:
     if not room:
         raise ValueError(f"Cannot restore message: room {room_id} does not exist (restore room first)")
 
-    await client.table("chat_messages").upsert(msg).execute()
+    await client.table("chat_messages").upsert(_strip_generated_columns(msg)).execute()
     logger.info("Message restored from archive", extra={"message_id": message_id, "room_id": room_id})
     return True
 
