@@ -122,6 +122,25 @@ async def test_restore_message_ok(monkeypatch):
     assert client.written["chat_messages"][0]["id"] == "m1"
 
 
+async def test_restore_strips_generated_columns(monkeypatch):
+    """복구 재삽입 시 DB 생성 컬럼(code_hash/description_hash)은 제외돼야 함 (Postgres 거부 방지)."""
+    archive = {
+        "room_id": "r1",
+        "payload": {
+            "room": {"id": "r1", "user_id": "u1"},
+            "messages": [{"id": "m1", "content": "code", "code_hash": "GEN"}],
+            "descriptions": [{"id": "d1", "content": "desc", "description_hash": "GEN"}],
+        },
+    }
+    client = _Client({"deleted_room_archive": [archive], "chat_rooms": []})
+    monkeypatch.setattr("app.services.supabase_db.get_supabase_client", lambda: _async(client))
+    await restore_room_from_archive("r1")
+    msg = client.written["chat_messages"][0]
+    desc = client.written["descriptions"][0]
+    assert "code_hash" not in msg and msg["id"] == "m1"  # 생성 컬럼만 제거, 나머지 유지
+    assert "description_hash" not in desc and desc["id"] == "d1"
+
+
 async def test_restore_message_raises_when_room_gone(monkeypatch):
     client = _Client({
         "deleted_message_archive": [{"payload": {"id": "m1", "room_id": "r1"}}],
