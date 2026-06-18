@@ -610,8 +610,13 @@ function Header({
                           {deleteResult.failed.map((f) => {
                             const room = rooms.find((r) => r.id === f.id);
                             return (
-                              <li key={f.id} className="truncate">
-                                {room ? getRoomName(room) : f.id}
+                              <li key={f.id}>
+                                <span className="block truncate">
+                                  {room ? getRoomName(room) : f.id}
+                                </span>
+                                <span className="text-destructive/80 block truncate text-xs">
+                                  {f.error}
+                                </span>
                               </li>
                             );
                           })}

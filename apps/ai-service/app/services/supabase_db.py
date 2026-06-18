@@ -958,7 +958,7 @@ async def get_description_versions(room_id: str) -> list[dict]:
     client = await get_supabase_client()
     result = (
         await client.table("descriptions")
-        .select("id, version, reason, created_at")
+        .select("id, version, reason, created_at, description_hash")
         .eq("room_id", room_id)
         .order("version", desc=True)
         .execute()

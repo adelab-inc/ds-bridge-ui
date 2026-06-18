@@ -21,6 +21,10 @@ export interface Description {
   base_message_id: string | null;
   created_by: string | null;
   created_at: number;
+  /** SHA-256 풀 해시(64자). 변경 탐지/비교용 (STORED 컬럼, migration 004) */
+  description_hash?: string | null;
+  /** description_hash 의 git 약식(앞 7자). 화면 뱃지 표시 전용 (REST 응답 computed) */
+  description_hash_short?: string | null;
 }
 
 /** 버전 목록 조회용 요약 타입 */
@@ -29,6 +33,8 @@ export interface DescriptionVersionSummary {
   version: number;
   reason: DescriptionReason;
   created_at: number;
+  /** description_hash 의 git 약식(앞 7자). BE VersionSummaryResponse 가 내려줄 때만 존재 */
+  description_hash_short?: string | null;
 }
 
 /** 편집 이력 (재추출 시 AI 컨텍스트 전달용) */

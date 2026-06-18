@@ -4,6 +4,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { deleteErrorMessage } from '@/lib/utils';
 import { roomKeys } from './useRoomQuery';
 
 /** 동시에 실행할 최대 DELETE 요청 수 (AI 서버 부하 보호) */
@@ -78,10 +79,11 @@ export function useDeleteRooms(mutationOptions?: UseDeleteRoomsOptions) {
             });
 
             if (!response.ok) {
+              // 401(미인증)·403(타인 방) 등은 사용자용 한글 메시지로 변환
               return {
                 ok: false,
                 id: roomId,
-                error: `Failed to delete room: ${response.statusText}`,
+                error: deleteErrorMessage(response.status, 'room'),
               };
             }
 

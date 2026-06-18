@@ -9,6 +9,8 @@ interface DescriptionVersionBannerProps {
   reason: DescriptionReason;
   isLatest: boolean;
   isEditing: boolean;
+  /** 디스크립션 해시 git 약식(7자). 표시 전용 — 비교는 풀 해시 */
+  descriptionHashShort?: string | null;
 }
 
 /** 생성 사유 → 표시 텍스트 매핑 */
@@ -28,6 +30,7 @@ function DescriptionVersionBanner({
   reason,
   isLatest,
   isEditing,
+  descriptionHashShort,
 }: DescriptionVersionBannerProps) {
   if (isEditing) {
     return (
@@ -64,6 +67,15 @@ function DescriptionVersionBanner({
       {isLatest && (
         <Badge variant="secondary" className="text-xs">
           최신
+        </Badge>
+      )}
+      {descriptionHashShort && (
+        <Badge
+          variant="outline"
+          className="font-mono text-[10px]"
+          title="디스크립션 콘텐츠 해시 (SHA-256 앞 7자)"
+        >
+          {descriptionHashShort}
         </Badge>
       )}
       <span className="text-muted-foreground text-xs">

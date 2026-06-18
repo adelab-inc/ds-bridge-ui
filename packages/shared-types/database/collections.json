@@ -37,6 +37,10 @@
           "type": "string",
           "enum": ["GENERATING", "DONE", "ERROR"],
           "description": "Response status"
+        },
+        "code_hash": {
+          "type": ["string", "null"],
+          "description": "SHA-256 hash of content (React code), 64 hex chars. NULL if no code. STORED generated column (migration 004)"
         }
       }
     },
@@ -60,6 +64,10 @@
         "created_at": {
           "type": "number",
           "description": "Created timestamp (ms)"
+        },
+        "description_hash": {
+          "type": ["string", "null"],
+          "description": "SHA-256 hash of display text (edited_content ?? content), 64 hex chars. STORED generated column (migration 004)"
         }
       }
     }

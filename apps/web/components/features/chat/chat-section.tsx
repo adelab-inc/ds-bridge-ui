@@ -149,6 +149,7 @@ function ChatSection({
           type: 'code',
           content: targetMessage.content,
           path: targetMessage.path,
+          code_hash: targetMessage.code_hash,
         });
         initialSelectionRef.current = true;
         return;
@@ -166,6 +167,7 @@ function ChatSection({
         type: 'code',
         content: latestWithContent.content,
         path: latestWithContent.path,
+        code_hash: latestWithContent.code_hash,
       });
       initialSelectionRef.current = true;
     }
@@ -296,6 +298,11 @@ function ChatSection({
       <DeleteMessageDialog
         open={deleteMessageDialog.open}
         isPending={deleteMessageMutation.isPending}
+        errorMessage={
+          deleteMessageMutation.isError
+            ? deleteMessageMutation.error.message
+            : undefined
+        }
         onOpenChange={(open) => {
           if (!open) setDeleteMessageDialog({ open: false, message: null });
         }}

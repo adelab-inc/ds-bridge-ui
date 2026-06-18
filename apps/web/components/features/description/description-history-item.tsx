@@ -66,6 +66,15 @@ function DescriptionHistoryItem({
             최신
           </Badge>
         )}
+        {version.description_hash_short && (
+          <Badge
+            variant="outline"
+            className="font-mono text-[10px]"
+            title="디스크립션 콘텐츠 해시 (SHA-256 앞 7자)"
+          >
+            {version.description_hash_short}
+          </Badge>
+        )}
         <span className="text-muted-foreground ml-auto text-xs">
           {formatRelativeTime(version.created_at)}
         </span>

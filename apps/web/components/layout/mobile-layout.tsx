@@ -3,6 +3,7 @@
 import * as React from 'react';
 
 import { LAYOUT } from '@/lib/constants';
+import { shortHash } from '@/lib/utils';
 import { ClientOnly } from '@/components/ui/client-only';
 import { RightPanel } from '@/components/layout/right-panel';
 import { MobileSheet } from '@/components/layout/mobile-sheet';
@@ -88,6 +89,7 @@ function MobileLayoutContent() {
             aiCode={generatedCode?.content}
             aiFilePath={generatedCode?.path}
             isGeneratingCode={isGeneratingCode}
+            codeHashShort={shortHash(generatedCode?.code_hash)}
           />
         </RightPanel>
       </div>

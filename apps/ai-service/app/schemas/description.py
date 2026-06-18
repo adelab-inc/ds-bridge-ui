@@ -80,6 +80,16 @@ class VersionSummaryResponse(BaseModel):
     version: int
     reason: str
     created_at: int
+    description_hash: str | None = Field(
+        default=None,
+        description="표시 본문(편집본 우선)의 SHA-256 풀 해시(64자). 변경 탐지/비교용.",
+    )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def description_hash_short(self) -> str | None:
+        """`description_hash` 의 git 약식 형태(앞 7자). 화면 뱃지 표시용."""
+        return short_hash(self.description_hash)
 
 
 class VersionListResponse(BaseModel):

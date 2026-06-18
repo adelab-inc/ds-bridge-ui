@@ -4,6 +4,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { deleteErrorMessage } from '@/lib/utils';
 
 interface DeleteMessageParams {
   roomId: string;
@@ -42,7 +43,8 @@ export function useDeleteMessage(mutationOptions?: UseDeleteMessageOptions) {
       );
 
       if (!response.ok) {
-        throw new Error(`Failed to delete message: ${response.statusText}`);
+        // 401(미인증)·403(타인 메시지) 등은 사용자용 한글 메시지로 변환
+        throw new Error(deleteErrorMessage(response.status, 'message'));
       }
     },
     onSuccess: (_data, { roomId }) => {
