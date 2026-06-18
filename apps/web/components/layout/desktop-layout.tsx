@@ -5,6 +5,7 @@ import { usePanelRef } from 'react-resizable-panels';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowLeft01Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons';
 import { LAYOUT } from '@/lib/constants';
+import { shortHash } from '@/lib/utils';
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -133,6 +134,9 @@ function DesktopLayout() {
                 aiCode={showCode ? generatedCode?.content : undefined}
                 aiFilePath={showCode ? generatedCode?.path : undefined}
                 isGeneratingCode={showGenerating}
+                codeHashShort={
+                  showCode ? shortHash(generatedCode?.code_hash) : undefined
+                }
               />
             </RightPanel>
           </ResizablePanel>

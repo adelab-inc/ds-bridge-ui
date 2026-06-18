@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useRoom } from '@/hooks/useRoom';
+import { useExternalHashPolling } from '@/hooks/api/useExternalHashPolling';
 import type { components } from '@ds-hub/shared-types/typescript/api/schema';
 
 type RoomResponse = components['schemas']['RoomResponse'];
@@ -23,6 +24,9 @@ interface RoomProviderProps {
 
 export function RoomProvider({ children, storybookUrl, userId }: RoomProviderProps) {
   const value = useRoom({ storybookUrl, userId });
+
+  // 외부 조회 해시 EP를 폴링해 코드/디스크립션 변경을 감지하고 자동 갱신 (단일 마운트)
+  useExternalHashPolling(value.roomId);
 
   return (
     <RoomContext.Provider value={value}>

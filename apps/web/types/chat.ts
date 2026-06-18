@@ -24,6 +24,8 @@ export interface CodeEvent {
   type: 'code';
   path: string;
   content: string;
+  /** 선택된 메시지의 코드 풀 해시(64자). 프리뷰 뱃지 표시용 — 스트리밍 중에는 없음 */
+  code_hash?: string | null;
 }
 
 export interface DoneEvent {

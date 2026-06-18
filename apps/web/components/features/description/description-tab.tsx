@@ -5,6 +5,7 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { File02Icon } from '@hugeicons/core-free-icons';
 
 import { Button } from '@/components/ui/button';
+import { shortHash } from '@/lib/utils';
 import { useDescriptionStore } from '@/stores/useDescriptionStore';
 import {
   useLatestDescription,
@@ -122,6 +123,10 @@ function DescriptionTab({ roomId }: DescriptionTabProps) {
               !latestDescription || currentVersion >= latestDescription.version
             }
             isEditing={false}
+            descriptionHashShort={
+              currentDescription.description_hash_short ??
+              shortHash(currentDescription.description_hash)
+            }
           />
         )}
         <DescriptionToolbar

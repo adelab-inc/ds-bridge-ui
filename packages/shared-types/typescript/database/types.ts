@@ -49,6 +49,8 @@ export interface ChatMessage {
   answer_created_at: number;
   /** Response status */
   status: Status;
+  /** SHA-256 hash of content (64 hex chars). NULL if no code. STORED column (migration 004). 표시는 7자 약식(shortHash), 비교는 풀 해시 */
+  code_hash?: string | null;
 }
 
 /**
@@ -75,6 +77,10 @@ export interface Description {
   edited_content: string | null;
   /** Created timestamp (ms) */
   created_at: number;
+  /** SHA-256 hash of display text (edited_content ?? content), 64 hex chars. STORED column (migration 004) */
+  description_hash?: string | null;
+  /** description_hash 의 git 약식(앞 7자). 서버 응답(REST)에만 존재하는 표시 전용 값 */
+  description_hash_short?: string | null;
 }
 
 /**

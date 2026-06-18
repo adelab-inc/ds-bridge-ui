@@ -34,6 +34,14 @@ export const LAYOUT = {
 } as const;
 
 /**
+ * 외부 조회 API(/external/*) 폴링 설정
+ */
+export const EXTERNAL_POLLING = {
+  /** 해시 전용 EP 폴링 주기 (ms). 경량이므로 짧게 잡되 백그라운드 탭에서는 정지 */
+  HASH_INTERVAL_MS: 15_000,
+} as const;
+
+/**
  * 브레이크포인트 (Tailwind 기본값과 동기화)
  */
 export const BREAKPOINTS = {
