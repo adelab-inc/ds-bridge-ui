@@ -75,6 +75,7 @@ class ExternalCodeResponse(BaseModel):
                     "export default InsuranceCodeApplication;\n"
                 ),
                 "code_hash": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+                "code_hash_short": "9f86d08",
                 "path": "src/pages/InsuranceCodeApplication.tsx",
                 "generated_at": 1716700800000,
             }
@@ -117,6 +118,7 @@ class ExternalCodeHashResponse(BaseModel):
             "example": {
                 "crid": "5169a302-629f-4759-8568-c0a7849f4439",
                 "code_hash": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+                "code_hash_short": "9f86d08",
                 "generated_at": 1716700800000,
             }
         }
@@ -206,8 +208,60 @@ class ExternalDescriptionResponse(BaseModel):
                     "- 신청기간 내 유효성 검증\n"
                 ),
                 "description_hash": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+                "description_hash_short": "9f86d08",
                 "version": 3,
                 "is_edited": True,
+                "updated_at": 1716700800000,
+            }
+        }
+    }
+
+
+class ExternalDescriptionHashResponse(BaseModel):
+    """디스크립션 해시 전용(경량) 응답 — 본문 없이 해시만 반환.
+
+    변경 탐지 폴링용. 전체 디스크립션(Markdown)을 내려받지 않으므로 토큰/대역폭에 효율적이다.
+    `description_hash` 가 직전 조회와 다르면 디스크립션이 변경된 것이므로, 그때만
+    `/description/{crid}` 로 전체 본문을 받으면 된다.
+    """
+
+    crid: str = Field(
+        ...,
+        description="채팅방 ID (요청 시 URL의 crid 파라미터와 동일한 값)",
+        examples=["5169a302-629f-4759-8568-c0a7849f4439"],
+    )
+    description_hash: str = Field(
+        ...,
+        description=(
+            "최신 디스크립션(편집본 우선) 본문의 SHA-256 해시(hex, 64자). "
+            "`/description/{crid}` 의 `description_hash` 와 동일."
+        ),
+        examples=["9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"],
+    )
+    version: int = Field(
+        ...,
+        description="디스크립션 버전 번호 (1부터, 새 추출 시마다 +1).",
+        examples=[3],
+    )
+    updated_at: int = Field(
+        ...,
+        description="해당 버전의 생성 시각 (Unix epoch milliseconds).",
+        examples=[1716700800000],
+    )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def description_hash_short(self) -> str | None:
+        """`description_hash` 의 git 약식 형태(앞 7자). 표시용."""
+        return short_hash(self.description_hash)
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "crid": "5169a302-629f-4759-8568-c0a7849f4439",
+                "description_hash": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+                "description_hash_short": "9f86d08",
+                "version": 3,
                 "updated_at": 1716700800000,
             }
         }

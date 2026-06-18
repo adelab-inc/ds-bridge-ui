@@ -191,3 +191,54 @@ def test_external_responses_expose_short(ext_client, monkeypatch):
 
     hbody = ext_client.get(f"/code/hash/{CRID}").json()
     assert hbody["code_hash_short"] == full[:7]
+
+
+def test_description_hash_endpoint(ext_client, monkeypatch):
+    async def fake(crid):
+        return {"content": "DESC", "edited_content": None, "version": 2, "created_at": 9}
+
+    monkeypatch.setattr(ext, "get_latest_description", fake)
+    r = ext_client.get(f"/description/hash/{CRID}")
+    assert r.status_code == 200, r.text
+    body = r.json()
+    full = content_hash("DESC")
+    assert body["description_hash"] == full
+    assert body["description_hash_short"] == full[:7]
+    assert body["version"] == 2
+    assert "content" not in body  # 경량: 본문 미포함
+
+
+def test_description_hash_endpoint_prefers_edited(ext_client, monkeypatch):
+    async def fake(crid):
+        return {"content": "ORIG", "edited_content": "EDIT", "version": 3, "created_at": 1}
+
+    monkeypatch.setattr(ext, "get_latest_description", fake)
+    body = ext_client.get(f"/description/hash/{CRID}").json()
+    assert body["description_hash"] == content_hash("EDIT")  # 편집본 우선
+
+
+def test_description_hash_endpoint_404(ext_client, monkeypatch):
+    async def fake(crid):
+        return None
+
+    monkeypatch.setattr(ext, "get_latest_description", fake)
+    assert ext_client.get(f"/description/hash/{CRID}").status_code == 404
+
+
+def test_examples_include_short_fields():
+    """스웨거 Example Value(json_schema_extra)에도 *_short 가 들어가야 함."""
+    from app.schemas.external import (
+        ExternalCodeHashResponse,
+        ExternalCodeResponse,
+        ExternalDescriptionHashResponse,
+        ExternalDescriptionResponse,
+    )
+    cases = [
+        (ExternalCodeResponse, "code_hash_short"),
+        (ExternalCodeHashResponse, "code_hash_short"),
+        (ExternalDescriptionResponse, "description_hash_short"),
+        (ExternalDescriptionHashResponse, "description_hash_short"),
+    ]
+    for model, key in cases:
+        example = model.model_json_schema().get("example", {})
+        assert key in example, f"{model.__name__} example에 {key} 누락"
