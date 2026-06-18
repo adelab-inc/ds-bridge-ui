@@ -34,6 +34,7 @@ jobs:
           echo "MEMORY=1Gi" >> $GITHUB_ENV
           echo "MIN_INSTANCES=1" >> $GITHUB_ENV
           echo "MAX_INSTANCES=5" >> $GITHUB_ENV
+          echo "JWT_VERIFY_ENABLED=false" >> $GITHUB_ENV   # prod: FE 토큰 forward 준비 후 true로
 
       - name: Set environment (dev)
         if: github.ref == 'refs/heads/develop'
@@ -44,6 +45,7 @@ jobs:
           echo "MEMORY=512Mi" >> $GITHUB_ENV
           echo "MIN_INSTANCES=0" >> $GITHUB_ENV
           echo "MAX_INSTANCES=2" >> $GITHUB_ENV
+          echo "JWT_VERIFY_ENABLED=true" >> $GITHUB_ENV    # dev: 삭제 소유권 검증 활성
 
       # ── GCP 인증 (Workload Identity Federation) ──
       - name: Authenticate to Google Cloud
@@ -100,3 +102,4 @@ jobs:
             SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
             STORAGE_BUCKET_UPLOADS=${{ env.BUCKET_UPLOADS }}
             STORAGE_BUCKET_EXPORTS=${{ env.BUCKET_EXPORTS }}
+            JWT_VERIFY_ENABLED=${{ env.JWT_VERIFY_ENABLED }}
