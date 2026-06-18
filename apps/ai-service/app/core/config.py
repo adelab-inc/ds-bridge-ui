@@ -40,6 +40,10 @@ class Settings(BaseSettings):
     # Supabase
     supabase_url: str = ""
     supabase_service_role_key: str = ""
+    # Supabase JWT Secret (대시보드 Settings → API → JWT Secret).
+    # 설정 시 보호 엔드포인트(방/메시지 삭제)에서 사용자 토큰(JWT)을 검증해 소유권을 강제한다.
+    # 미설정(빈 값)이면 JWT 검증 비활성(개발 모드) — X-API-Key 검증과 동일한 패턴.
+    supabase_jwt_secret: str = ""
 
     # Supabase Storage Bucket Names
     storage_bucket_uploads: str = "user-uploads"
