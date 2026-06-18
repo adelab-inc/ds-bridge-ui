@@ -17,6 +17,7 @@ import {
 import { cn } from '@/lib/utils';
 import { HeaderLogo } from '@/components/layout/header-logo';
 import { ClientOnly } from '@/components/ui/client-only';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 // import {
@@ -58,6 +59,7 @@ import {
   type DeleteRoomsResult,
 } from '@/hooks/api/useDeleteRooms';
 import { useUpdateRoom } from '@/hooks/api/useUpdateRoom';
+import { useIsRoomOwner } from '@/hooks/useIsRoomOwner';
 import { useAuthStore } from '@/stores/useAuthStore';
 import type { ChatRoom } from '@packages/shared-types/typescript/database/types';
 
@@ -106,6 +108,9 @@ function Header({
 
   const currentRoomId = searchParams.get('crid');
   const currentRoom = rooms.find((r) => r.id === currentRoomId);
+
+  // crid로 직접 조회한 room (내 목록에 없는 공유 링크도 포함) + 소유권 판별
+  const { room: fetchedRoom, isShared } = useIsRoomOwner(currentRoomId);
 
   const [createDialog, setCreateDialog] = React.useState(false);
   const [createProjectName, setCreateProjectName] = React.useState('');
@@ -168,7 +173,46 @@ function Header({
     }
   }, []);
 
+  // 목록 스크롤 컨테이너 ref + 모드 전환 시 스크롤 위치 보존
+  const listScrollRef = React.useRef<HTMLDivElement | null>(null);
+  const pendingScrollTopRef = React.useRef<number | null>(null);
+
+  const captureListScroll = () => {
+    pendingScrollTopRef.current = listScrollRef.current?.scrollTop ?? null;
+  };
+
+  // deleteMode 전환 시 Base UI Menu가 포커스를 아이템으로 옮기며 일으키는
+  // scrollIntoView 점프를 캡처해 둔 위치로 되돌린다.
+  // 포커스-스크롤이 paint 이후 비동기로 발생하므로 동기 복원만으로는 부족하다.
+  // → 동기 복원 + 짧은 구간 동안 scroll 가드 + rAF 로 어느 타이밍이든 상쇄한다.
+  React.useLayoutEffect(() => {
+    const top = pendingScrollTopRef.current;
+    pendingScrollTopRef.current = null;
+    const el = listScrollRef.current;
+    if (top == null || !el) return;
+
+    // 1) 즉시 복원 — 첫 페인트를 올바른 위치로
+    el.scrollTop = top;
+
+    // 2) 전환 직후 발생하는 비동기 점프(포커스 scrollIntoView)를 되돌린다.
+    const restore = () => {
+      el.scrollTop = top;
+    };
+    el.addEventListener('scroll', restore);
+    const raf = requestAnimationFrame(restore);
+    const timer = window.setTimeout(() => {
+      el.removeEventListener('scroll', restore);
+    }, 150);
+
+    return () => {
+      el.removeEventListener('scroll', restore);
+      cancelAnimationFrame(raf);
+      clearTimeout(timer);
+    };
+  }, [deleteMode]);
+
   const toggleDeleteMode = () => {
+    captureListScroll();
     setDeleteMode((prev) => {
       const next = !prev;
       if (!next) setSelectedIds(new Set());
@@ -177,6 +221,7 @@ function Header({
   };
 
   const exitDeleteMode = () => {
+    captureListScroll();
     setDeleteMode(false);
     setSelectedIds(new Set());
   };
@@ -298,14 +343,26 @@ function Header({
         <TooltipProvider>
           {/* 프로젝트 이름 */}
           <div className="border-border mx-1 h-5 w-px shrink-0 bg-current opacity-20" />
+          {/* 공유된 링크 뱃지 — 남이 만든 프로젝트(crid)일 때만 노출 */}
+          {isShared && (
+            <Badge
+              variant="secondary"
+              className="border-amber-300 bg-amber-100 text-amber-800 dark:border-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+            >
+              공유된 링크
+            </Badge>
+          )}
           <div className="flex min-w-0 flex-1 items-center">
             <span className="text-foreground truncate text-sm font-semibold">
               {(() => {
-                if (!currentRoom?.storybook_url) return '새 프로젝트';
+                // 내 목록(currentRoom)에 없으면 직접 조회한 room을 fallback으로 사용
+                const storybookUrl =
+                  currentRoom?.storybook_url ?? fetchedRoom?.storybook_url;
+                if (!storybookUrl) return '새 프로젝트';
                 try {
-                  return new URL(currentRoom.storybook_url).hostname;
+                  return new URL(storybookUrl).hostname;
                 } catch {
-                  return currentRoom.storybook_url;
+                  return storybookUrl;
                 }
               })()}
             </span>
@@ -427,7 +484,10 @@ function Header({
                   )}
                 </div>
                 {/* (B) 스크롤 영역 — 목록만 스크롤 */}
-                <div className="flex-1 min-h-0 overflow-y-auto p-1">
+                <div
+                  ref={listScrollRef}
+                  className="flex-1 min-h-0 overflow-y-auto p-1"
+                >
                   {isRoomsLoading ? (
                     <div className="text-muted-foreground px-2 py-3 text-center text-sm">
                       불러오는 중...
@@ -610,8 +670,13 @@ function Header({
                           {deleteResult.failed.map((f) => {
                             const room = rooms.find((r) => r.id === f.id);
                             return (
-                              <li key={f.id} className="truncate">
-                                {room ? getRoomName(room) : f.id}
+                              <li key={f.id}>
+                                <span className="block truncate">
+                                  {room ? getRoomName(room) : f.id}
+                                </span>
+                                <span className="text-destructive/80 block truncate text-xs">
+                                  {f.error}
+                                </span>
                               </li>
                             );
                           })}

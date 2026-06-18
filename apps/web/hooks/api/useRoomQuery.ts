@@ -1,14 +1,11 @@
 import { useQuery, UseQueryOptions } from '@tanstack/react-query';
 import type { paths } from '@ds-hub/shared-types/typescript/api/schema';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { roomKeys } from './roomKeys';
+import { STALE_TIME } from '@/lib/query/cache-config';
 
 type GetRoomResponse =
   paths['/rooms/{room_id}']['get']['responses']['200']['content']['application/json'];
-
-export const roomKeys = {
-  all: ['rooms'] as const,
-  detail: (id: string) => [...roomKeys.all, id] as const,
-};
 
 type GetRoomOptions<T = GetRoomResponse> = Omit<
   UseQueryOptions<
@@ -55,7 +52,7 @@ export const useGetRoom = <T = GetRoomResponse>(
       return response.json();
     },
     retry: false, // 404는 재시도하지 않음
-    staleTime: 5 * 60 * 1000, // 5분
+    staleTime: STALE_TIME.ROOM_DETAIL,
     ...queryOptions,
   });
 };

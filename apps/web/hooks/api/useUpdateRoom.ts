@@ -5,7 +5,7 @@ import {
 } from '@tanstack/react-query';
 import type { paths } from '@ds-hub/shared-types/typescript/api/schema';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { roomKeys } from './useRoomQuery';
+import { roomKeys } from './roomKeys';
 
 type UpdateRoomRequest =
   paths['/rooms/{room_id}']['patch']['requestBody']['content']['application/json'];

@@ -2,7 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import type { ChatRoom } from '@packages/shared-types/typescript/database/types';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { roomKeys } from '@/hooks/api/useCreateRoom';
+import { roomKeys } from '@/hooks/api/roomKeys';
+import { STALE_TIME } from '@/lib/query/cache-config';
 
 interface UseRoomsListReturn {
   rooms: ChatRoom[];
@@ -31,7 +32,7 @@ export function useRoomsList(): UseRoomsListReturn {
       return data as ChatRoom[];
     },
     enabled: !!uid,
-    staleTime: 1000 * 60 * 2, // 2분
+    staleTime: STALE_TIME.ROOM_LIST,
   });
 
   return {

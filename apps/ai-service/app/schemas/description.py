@@ -1,4 +1,6 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field, model_validator
+
+from app.core.hashing import content_hash, short_hash
 
 
 class DescriptionExtractRequest(BaseModel):
@@ -30,6 +32,27 @@ class DescriptionResponse(BaseModel):
     reason: str
     edited_content: str | None = None
     created_at: int
+    description_hash: str | None = Field(
+        default=None,
+        description=(
+            "표시 본문(`edited_content ?? content`)의 SHA-256 해시(hex, 64자). DB 저장 컬럼에서 옴. "
+            "external API(`/external/description/{crid}`)의 `description_hash` 와 동일 값. "
+            "런타임허브 뱃지는 앞 7자만 표시하면 됨."
+        ),
+    )
+
+    @model_validator(mode="after")
+    def _fill_description_hash(self) -> "DescriptionResponse":
+        """저장 컬럼이 비어있을 때(마이그레이션 적용 전 등)만 본문으로 즉석 계산."""
+        if self.description_hash is None:
+            self.description_hash = content_hash(self.edited_content or self.content)
+        return self
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def description_hash_short(self) -> str | None:
+        """`description_hash` 의 git 약식 형태(앞 7자). 화면 뱃지 표시용."""
+        return short_hash(self.description_hash)
 
 
 class EditContentRequest(BaseModel):
@@ -57,6 +80,16 @@ class VersionSummaryResponse(BaseModel):
     version: int
     reason: str
     created_at: int
+    description_hash: str | None = Field(
+        default=None,
+        description="표시 본문(편집본 우선)의 SHA-256 풀 해시(64자). 변경 탐지/비교용.",
+    )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def description_hash_short(self) -> str | None:
+        """`description_hash` 의 git 약식 형태(앞 7자). 화면 뱃지 표시용."""
+        return short_hash(self.description_hash)
 
 
 class VersionListResponse(BaseModel):

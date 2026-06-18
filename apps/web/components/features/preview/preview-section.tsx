@@ -24,6 +24,8 @@ interface PreviewSectionProps extends React.ComponentProps<'section'> {
   aiFilePath?: string;
   /** AI 코드 생성 진행 중 여부 */
   isGeneratingCode?: boolean;
+  /** 코드 해시 git 약식(7자). 있으면 AI Generated 탭 우상단에 뱃지 표시 */
+  codeHashShort?: string | null;
   defaultTab?: 'storybook' | 'composition' | 'ai-generated';
 }
 
@@ -34,6 +36,7 @@ function PreviewSection({
   aiCode,
   aiFilePath,
   isGeneratingCode = false,
+  codeHashShort,
   defaultTab = 'storybook',
   className,
   ...props
@@ -164,6 +167,7 @@ function PreviewSection({
                 <CodePreviewIframe
                   code={aiCode!}
                   filePath={aiFilePath}
+                  codeHashShort={codeHashShort}
                   viewMode={viewMode}
                 />
               )}

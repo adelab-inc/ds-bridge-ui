@@ -316,6 +316,8 @@ export async function DELETE(
       method: 'DELETE',
       headers: {
         'X-API-Key': xApiKey,
+        // 본인 방만 삭제되도록 BE가 사용자 토큰을 검증 → Authorization forward
+        Authorization: request.headers.get('authorization') ?? '',
       },
     });
 

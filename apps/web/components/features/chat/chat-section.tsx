@@ -27,10 +27,10 @@ import { UnsavedEditDialog } from './dialogs/unsaved-edit-dialog';
 interface ChatSectionProps extends React.ComponentProps<'section'> {
   roomId: string;
   schemaKey?: string;
-  /** AI가 코드를 생성했을 때 호출되는 콜백 */
-  onCodeGenerated?: (code: CodeEvent) => void;
-  /** 스트리밍이 시작될 때 호출되는 콜백 */
-  onStreamStart?: () => void;
+  /** AI가 코드를 생성했을 때 호출되는 콜백 (roomId로 룸 귀속 표시) */
+  onCodeGenerated?: (code: CodeEvent, roomId: string) => void;
+  /** 스트리밍이 시작될 때 호출되는 콜백 (roomId로 룸 귀속 표시) */
+  onStreamStart?: (roomId: string) => void;
   /** 스트리밍이 종료될 때 호출되는 콜백 (done/error) */
   onStreamEnd?: () => void;
 }
@@ -109,14 +109,17 @@ function ChatSection({
     (message: ChatMessage) => {
       if (message.content && message.content.trim()) {
         updateSelectedMessageId(message.id);
-        onCodeGenerated?.({
-          type: 'code',
-          content: message.content,
-          path: message.path,
-        });
+        onCodeGenerated?.(
+          {
+            type: 'code',
+            content: message.content,
+            path: message.path,
+          },
+          roomId
+        );
       }
     },
-    [updateSelectedMessageId, onCodeGenerated]
+    [updateSelectedMessageId, onCodeGenerated, roomId]
   );
 
   // DB 메시지 목록
@@ -145,11 +148,15 @@ function ChatSection({
         (msg) => msg.id === selectedMessageId
       );
       if (targetMessage?.content?.trim()) {
-        onCodeGenerated?.({
-          type: 'code',
-          content: targetMessage.content,
-          path: targetMessage.path,
-        });
+        onCodeGenerated?.(
+          {
+            type: 'code',
+            content: targetMessage.content,
+            path: targetMessage.path,
+            code_hash: targetMessage.code_hash,
+          },
+          roomId
+        );
         initialSelectionRef.current = true;
         return;
       }
@@ -162,11 +169,15 @@ function ChatSection({
 
     if (latestWithContent) {
       updateSelectedMessageId(latestWithContent.id);
-      onCodeGenerated?.({
-        type: 'code',
-        content: latestWithContent.content,
-        path: latestWithContent.path,
-      });
+      onCodeGenerated?.(
+        {
+          type: 'code',
+          content: latestWithContent.content,
+          path: latestWithContent.path,
+          code_hash: latestWithContent.code_hash,
+        },
+        roomId
+      );
       initialSelectionRef.current = true;
     }
   }, [
@@ -175,6 +186,7 @@ function ChatSection({
     selectedMessageId,
     onCodeGenerated,
     updateSelectedMessageId,
+    roomId,
   ]);
 
   const {
@@ -296,6 +308,11 @@ function ChatSection({
       <DeleteMessageDialog
         open={deleteMessageDialog.open}
         isPending={deleteMessageMutation.isPending}
+        errorMessage={
+          deleteMessageMutation.isError
+            ? deleteMessageMutation.error.message
+            : undefined
+        }
         onOpenChange={(open) => {
           if (!open) setDeleteMessageDialog({ open: false, message: null });
         }}

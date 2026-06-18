@@ -12,7 +12,7 @@ interface UseMessageDeleteArgs {
   displayMessages: ChatMessage[];
   updateSelectedMessageId: (messageId: string | null) => void;
   refetchMessages: () => unknown;
-  onCodeGenerated?: (code: CodeEvent) => void;
+  onCodeGenerated?: (code: CodeEvent, roomId: string) => void;
 }
 
 /**
@@ -38,9 +38,14 @@ export function useMessageDelete({
     message: ChatMessage | null;
   }>({ open: false, message: null });
 
-  const handleDeleteIconClick = React.useCallback((message: ChatMessage) => {
-    setDeleteMessageDialog({ open: true, message });
-  }, []);
+  const handleDeleteIconClick = React.useCallback(
+    (message: ChatMessage) => {
+      // 직전 삭제 실패 메시지가 남지 않도록 초기화 후 다이얼로그 오픈
+      deleteMessageMutation.reset();
+      setDeleteMessageDialog({ open: true, message });
+    },
+    [deleteMessageMutation]
+  );
 
   const handleDeleteMessageConfirm = React.useCallback(() => {
     if (!deleteMessageDialog.message) return;
@@ -60,11 +65,15 @@ export function useMessageDelete({
               .find((msg) => msg.content && msg.content.trim());
             if (lastWithContent) {
               updateSelectedMessageId(lastWithContent.id);
-              onCodeGenerated?.({
-                type: 'code',
-                content: lastWithContent.content,
-                path: lastWithContent.path,
-              });
+              onCodeGenerated?.(
+                {
+                  type: 'code',
+                  content: lastWithContent.content,
+                  path: lastWithContent.path,
+                  code_hash: lastWithContent.code_hash,
+                },
+                roomId
+              );
             } else {
               updateSelectedMessageId(null);
             }

@@ -346,6 +346,7 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 SUPABASE_SERVICE_ROLE_KEY       # server-only
 AI_SERVER_URL
 X_API_KEY
+X_EXTERNAL_KEY                  # server-only, 외부 조회 API(/external/*) 전용 키 (폴링 변경감지)
 ```
 
 ---

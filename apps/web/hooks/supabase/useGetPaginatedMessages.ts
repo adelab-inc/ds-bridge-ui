@@ -8,6 +8,8 @@ import {
 import { createClient } from '@/lib/supabase/client';
 import { TABLES } from '@packages/shared-types/typescript/database/collections';
 import type { ChatMessage } from '@packages/shared-types/typescript/database/types';
+import { messageKeys } from '@/hooks/api/messageKeys';
+import { STALE_TIME, GC_TIME } from '@/lib/query/cache-config';
 
 const PAGE_SIZE_DEFAULT = 20;
 
@@ -74,7 +76,7 @@ export const useGetPaginatedMessages = ({
   >;
 }) => {
   return useInfiniteQuery({
-    queryKey: ['paginatedMessages', roomId, pageSize, startAfter],
+    queryKey: messageKeys.list(roomId, pageSize, startAfter),
     queryFn: ({ pageParam }) =>
       fetchMessages({
         roomId,
@@ -90,7 +92,8 @@ export const useGetPaginatedMessages = ({
       return oldestMessage?.question_created_at;
     },
     initialPageParam: startAfter,
-    staleTime: 5 * 60 * 1000, // 5분
+    staleTime: STALE_TIME.MESSAGES,
+    gcTime: GC_TIME.MESSAGES,
     ...infiniteQueryOptions,
   });
 };

@@ -4,7 +4,9 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { roomKeys } from './useRoomQuery';
+import { deleteErrorMessage } from '@/lib/utils';
+import { roomKeys } from './roomKeys';
+import { messageKeys } from './messageKeys';
 
 /** 동시에 실행할 최대 DELETE 요청 수 (AI 서버 부하 보호) */
 const DELETE_CONCURRENCY = 4;
@@ -78,10 +80,11 @@ export function useDeleteRooms(mutationOptions?: UseDeleteRoomsOptions) {
             });
 
             if (!response.ok) {
+              // 401(미인증)·403(타인 방) 등은 사용자용 한글 메시지로 변환
               return {
                 ok: false,
                 id: roomId,
-                error: `Failed to delete room: ${response.statusText}`,
+                error: deleteErrorMessage(response.status, 'room'),
               };
             }
 
@@ -112,7 +115,7 @@ export function useDeleteRooms(mutationOptions?: UseDeleteRoomsOptions) {
       // 성공한 항목만 상세/메시지 캐시 제거
       result.succeededIds.forEach((id) => {
         queryClient.removeQueries({ queryKey: roomKeys.detail(id) });
-        queryClient.removeQueries({ queryKey: ['paginatedMessages', id] });
+        queryClient.removeQueries({ queryKey: messageKeys.byRoom(id) });
       });
       // 목록 재조회는 1건이라도 성공했을 때 1회만
       if (result.succeededIds.length > 0) {

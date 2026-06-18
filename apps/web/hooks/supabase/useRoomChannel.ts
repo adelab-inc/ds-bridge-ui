@@ -87,29 +87,39 @@ export function useRoomChannel({
         .on('broadcast', { event: 'start' }, (msg: { payload: unknown }) => {
           const isStale = channelRef.current !== channel;
           console.log('[channel-event] start', { isStale, roomId });
-          if (isStale)
+          if (isStale) {
+            // 채널이 교체된 뒤 도착한 이전 룸의 잔여 이벤트 → 콜백 실행 금지
+            // (룸 전환 시 직전 룸 결과가 새 룸 화면에 누수되는 것을 차단)
             sendDebugLog('stale_channel_event', { roomId, event: 'start' });
+            return;
+          }
           callbacksRef.current.onStart?.(msg.payload as BroadcastStartPayload);
         })
         .on('broadcast', { event: 'chunk' }, (msg: { payload: unknown }) => {
           const isStale = channelRef.current !== channel;
           console.log('[channel-event] chunk', { isStale, roomId });
-          if (isStale)
+          if (isStale) {
             sendDebugLog('stale_channel_event', { roomId, event: 'chunk' });
+            return;
+          }
           callbacksRef.current.onChunk?.(msg.payload as BroadcastChunkPayload);
         })
         .on('broadcast', { event: 'done' }, (msg: { payload: unknown }) => {
           const isStale = channelRef.current !== channel;
           console.log('[channel-event] done', { isStale, roomId });
-          if (isStale)
+          if (isStale) {
             sendDebugLog('stale_channel_event', { roomId, event: 'done' });
+            return;
+          }
           callbacksRef.current.onDone?.(msg.payload as BroadcastDonePayload);
         })
         .on('broadcast', { event: 'error' }, (msg: { payload: unknown }) => {
           const isStale = channelRef.current !== channel;
           console.log('[channel-event] error', { isStale, roomId });
-          if (isStale)
+          if (isStale) {
             sendDebugLog('stale_channel_event', { roomId, event: 'error' });
+            return;
+          }
           callbacksRef.current.onError?.(msg.payload as BroadcastErrorPayload);
         })
         .subscribe((status: string) => {

@@ -5,6 +5,7 @@ import { usePanelRef } from 'react-resizable-panels';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowLeft01Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons';
 import { LAYOUT } from '@/lib/constants';
+import { shortHash } from '@/lib/utils';
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -41,20 +42,27 @@ function DesktopLayout() {
   // Zustand 스토어에서 상태 및 핸들러 가져오기
   const {
     generatedCode,
+    generatedRoomId,
     isGeneratingCode,
+    generatingRoomId,
     onStreamStart,
     onStreamEnd,
     onCodeGenerated,
-    reset: resetCodeGeneration,
   } = useCodeGenerationStore();
 
   const resetDescription = useDescriptionStore((s) => s.reset);
 
-  // roomId 변경 시 프리뷰 + 디스크립션 상태 초기화
+  // 현재 룸과 일치할 때만 코드/생성중 표시 (룸 전환 시 오염 방지)
+  const showCode = generatedRoomId === roomId;
+  const showGenerating = generatingRoomId === roomId && isGeneratingCode;
+
+  // roomId 변경 시 디스크립션 상태만 초기화.
+  // 코드/미리보기는 위 generatedRoomId 게이트로 격리되므로 reset이 불필요하며,
+  // reset을 두면 캐시된 메시지의 초기 선택 stamp(onCodeGenerated)를 곧바로
+  // 덮어써(child→parent effect 순서) 미리보기가 비어버린다.
   React.useEffect(() => {
-    resetCodeGeneration();
     resetDescription();
-  }, [roomId, resetCodeGeneration, resetDescription]);
+  }, [roomId, resetDescription]);
 
   return (
     <ClientOnly
@@ -123,9 +131,12 @@ function DesktopLayout() {
           >
             <RightPanel>
               <PreviewSection
-                aiCode={generatedCode?.content}
-                aiFilePath={generatedCode?.path}
-                isGeneratingCode={isGeneratingCode}
+                aiCode={showCode ? generatedCode?.content : undefined}
+                aiFilePath={showCode ? generatedCode?.path : undefined}
+                isGeneratingCode={showGenerating}
+                codeHashShort={
+                  showCode ? shortHash(generatedCode?.code_hash) : undefined
+                }
               />
             </RightPanel>
           </ResizablePanel>

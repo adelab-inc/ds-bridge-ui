@@ -1,6 +1,8 @@
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field, model_validator
+
+from app.core.hashing import content_hash, short_hash
 
 
 class Message(BaseModel):
@@ -497,6 +499,30 @@ class MessageDocument(BaseModel):
     question_created_at: int = Field(..., description="질문 생성 시간 (ms timestamp)")
     answer_created_at: int = Field(..., description="응답 생성 시간 (ms timestamp)")
     status: Literal["GENERATING", "DONE", "ERROR"] = Field(..., description="응답 상태")
+    code_hash: str | None = Field(
+        default=None,
+        description=(
+            "`content`(React 코드)의 SHA-256 해시(hex, 64자). DB 저장 컬럼(생성 컬럼)에서 옴. "
+            "코드가 없으면 null. 코드 변경 시 해시도 바뀌어 전체 diff 없이 변경 탐지 가능. "
+            "런타임허브 뱃지는 앞 7자만 표시하면 됨."
+        ),
+    )
+
+    @model_validator(mode="after")
+    def _fill_code_hash(self) -> "MessageDocument":
+        """저장 컬럼이 비어있을 때(마이그레이션 적용 전 등)만 content 로 즉석 계산.
+
+        저장값과 동일하므로 마이그레이션 적용 후엔 항상 DB 저장 컬럼을 그대로 사용한다.
+        """
+        if self.code_hash is None and self.content:
+            self.code_hash = content_hash(self.content)
+        return self
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def code_hash_short(self) -> str | None:
+        """`code_hash` 의 git 약식 형태(앞 7자). 화면 뱃지 표시용 — 비교/식별은 풀 해시로."""
+        return short_hash(self.code_hash)
 
 
 class PaginatedMessagesResponse(BaseModel):
