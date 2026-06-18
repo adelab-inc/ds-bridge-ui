@@ -10,6 +10,7 @@ import type {
   DescriptionVersionSummary,
 } from '@ds-hub/shared-types/typescript/database/description';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { STALE_TIME } from '@/lib/query/cache-config';
 
 // --- Query Keys ---
 
@@ -67,7 +68,7 @@ export function useLatestDescription(
     },
     enabled: !!roomId,
     retry: false,
-    staleTime: 0,
+    staleTime: STALE_TIME.DESCRIPTION,
     ...queryOptions,
   });
 }
@@ -115,7 +116,7 @@ export function useDescriptionVersions(
     },
     enabled: !!roomId,
     retry: false,
-    staleTime: 0,
+    staleTime: STALE_TIME.DESCRIPTION,
     ...queryOptions,
   });
 }
@@ -164,7 +165,7 @@ export function useDescriptionVersion(
     },
     enabled: !!roomId && !!id,
     retry: false,
-    staleTime: 0,
+    staleTime: STALE_TIME.DESCRIPTION,
     ...queryOptions,
   });
 }

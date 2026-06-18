@@ -1,9 +1,12 @@
 'use client';
 
 import * as React from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { useChatStream } from '@/hooks/useChatStream';
 import { useRoomChannel } from '@/hooks/supabase/useRoomChannel';
+import { roomKeys } from '@/hooks/api/roomKeys';
+import { descriptionKeys } from '@/hooks/api/useDescriptionQuery';
 import { useStreamingStore } from '@/stores/useStreamingStore';
 import { sendDebugLog } from '@/lib/debug-log';
 import type { CodeEvent } from '@/types/chat';
@@ -61,6 +64,8 @@ export function useChatStreamLifecycle({
   onStreamEnd,
   onCodeGenerated,
 }: UseChatStreamLifecycleArgs) {
+  const queryClient = useQueryClient();
+
   const streamingMessage = useStreamingStore((s) => s.message);
   const setStreamingMessage = useStreamingStore((s) => s.setMessage);
   const updateStreamingMessage = useStreamingStore((s) => s.updateMessage);
@@ -384,6 +389,13 @@ export function useChatStreamLifecycle({
         refetchMessages()
           .then(() => setStreamingMessage(null))
           .catch(() => setStreamingMessage(null));
+
+        // 스트림 완료 시 AI 서버가 룸 메타/디스크립션을 갱신했을 수 있어
+        // 해당 캐시를 무효화한다 (broadcast payload엔 status가 없어 blanket invalidate).
+        queryClient.invalidateQueries({ queryKey: roomKeys.detail(roomId) });
+        queryClient.invalidateQueries({
+          queryKey: descriptionKeys.latest(roomId),
+        });
       },
       onError: (payload) => {
         expectingStartRef.current = false;
