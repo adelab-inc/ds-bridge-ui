@@ -4,7 +4,7 @@ from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 
-from app.core.auth import verify_api_key
+from app.core.auth import get_current_user_id, verify_api_key
 from app.core.config import get_settings
 from app.schemas.chat import (
     CreateRoomRequest,
@@ -572,26 +572,27 @@ async def get_room_messages(
 )
 async def delete_room(
     room_id: str,
-    user_id: str | None = Query(None, description="요청 사용자 ID (소유자 검증·삭제자 기록용)"),
     room: RoomData = Depends(get_room_or_404),
+    uid: str | None = Depends(get_current_user_id),
 ) -> dict:
     """채팅방 삭제 (메시지도 CASCADE 삭제).
 
-    user_id가 주어지면 방 소유자와 일치하는지 검증하고(불일치 시 403),
-    삭제 로그에 삭제자를 남긴다.
+    제로트러스트: 소유권은 클라가 보낸 값이 아니라 검증된 JWT 의 uid 로 판단한다.
+    JWT 검증이 활성(SUPABASE_JWT_SECRET 설정)이고 방 소유자와 다르면 403.
+    검증 비활성(개발 모드, uid=None)이면 기존처럼 삭제.
     """
     owner_id = room.get("user_id")
-    if user_id is not None and owner_id and owner_id != user_id:
+    if uid is not None and owner_id and owner_id != uid:
         logger.warning(
             "Room delete forbidden (not owner)",
-            extra={"room_id": room_id, "owner_id": owner_id, "requester_id": user_id},
+            extra={"room_id": room_id, "owner_id": owner_id, "requester_id": uid},
         )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="본인 소유의 채팅방만 삭제할 수 있습니다.",
         )
     try:
-        await delete_chat_room(room_id, deleted_by=user_id)
+        await delete_chat_room(room_id, deleted_by=uid)
         return {"message": f"Room {room_id} deleted successfully"}
     except DatabaseError as e:
         logger.error("Failed to delete room", extra={"room_id": room_id, "error": str(e)})
@@ -616,12 +617,25 @@ async def delete_room(
 async def delete_message(
     room_id: str,
     message_id: str,
-    user_id: str | None = Query(None, description="요청 사용자 ID (삭제자 기록용)"),
-    _room: RoomData = Depends(get_room_or_404),
+    room: RoomData = Depends(get_room_or_404),
+    uid: str | None = Depends(get_current_user_id),
 ) -> dict:
-    """개별 메시지 삭제 (삭제 전 아카이브 보관)"""
+    """개별 메시지 삭제 (삭제 전 아카이브 보관).
+
+    제로트러스트: 검증된 JWT 의 uid 가 방 소유자와 다르면 403 (검증 비활성 시 스킵).
+    """
+    owner_id = room.get("user_id")
+    if uid is not None and owner_id and owner_id != uid:
+        logger.warning(
+            "Message delete forbidden (not owner)",
+            extra={"room_id": room_id, "message_id": message_id, "owner_id": owner_id, "requester_id": uid},
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="본인 소유의 채팅방 메시지만 삭제할 수 있습니다.",
+        )
     try:
-        deleted = await delete_chat_message(message_id, deleted_by=user_id)
+        deleted = await delete_chat_message(message_id, deleted_by=uid)
         if not deleted:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
