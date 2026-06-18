@@ -12,7 +12,7 @@ interface UseMessageDeleteArgs {
   displayMessages: ChatMessage[];
   updateSelectedMessageId: (messageId: string | null) => void;
   refetchMessages: () => unknown;
-  onCodeGenerated?: (code: CodeEvent) => void;
+  onCodeGenerated?: (code: CodeEvent, roomId: string) => void;
 }
 
 /**
@@ -60,11 +60,14 @@ export function useMessageDelete({
               .find((msg) => msg.content && msg.content.trim());
             if (lastWithContent) {
               updateSelectedMessageId(lastWithContent.id);
-              onCodeGenerated?.({
-                type: 'code',
-                content: lastWithContent.content,
-                path: lastWithContent.path,
-              });
+              onCodeGenerated?.(
+                {
+                  type: 'code',
+                  content: lastWithContent.content,
+                  path: lastWithContent.path,
+                },
+                roomId
+              );
             } else {
               updateSelectedMessageId(null);
             }
