@@ -40,10 +40,12 @@ class Settings(BaseSettings):
     # Supabase
     supabase_url: str = ""
     supabase_service_role_key: str = ""
-    # Supabase JWT Secret (대시보드 Settings → API → JWT Secret).
-    # 설정 시 보호 엔드포인트(방/메시지 삭제)에서 사용자 토큰(JWT)을 검증해 소유권을 강제한다.
-    # 미설정(빈 값)이면 JWT 검증 비활성(개발 모드) — X-API-Key 검증과 동일한 패턴.
-    supabase_jwt_secret: str = ""
+    # 사용자 JWT 검증 ON/OFF 스위치 (무중단 롤아웃용 마스터 스위치).
+    # True 면 보호 엔드포인트(방/메시지 삭제)에서 Supabase 사용자 토큰을 검증해 소유권을 강제한다.
+    # 토큰은 Supabase JWKS(공개키, ES256)로 검증하므로 별도 시크릿이 필요 없다
+    # (이 프로젝트는 비대칭 ES256/P-256 서명. JWKS = {SUPABASE_URL}/auth/v1/.well-known/jwks.json).
+    # 켜기 전 FE/BFF가 Authorization: Bearer 토큰을 forward 하도록 먼저 배포할 것.
+    jwt_verify_enabled: bool = False
 
     # Supabase Storage Bucket Names
     storage_bucket_uploads: str = "user-uploads"
