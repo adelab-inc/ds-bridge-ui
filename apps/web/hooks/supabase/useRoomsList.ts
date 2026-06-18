@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { ChatRoom } from '@packages/shared-types/typescript/database/types';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { roomKeys } from '@/hooks/api/useCreateRoom';
+import { roomKeys } from '@/hooks/api/roomKeys';
 
 interface UseRoomsListReturn {
   rooms: ChatRoom[];

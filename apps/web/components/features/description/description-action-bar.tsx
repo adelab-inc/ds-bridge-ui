@@ -36,13 +36,21 @@ function DescriptionActionBar({ roomId, hasMessages }: DescriptionActionBarProps
   const versions = useDescriptionStore((s) => s.versions);
 
   const isGeneratingCode = useCodeGenerationStore((s) => s.isGeneratingCode);
+  const generatingRoomId = useCodeGenerationStore((s) => s.generatingRoomId);
   const generatedCode = useCodeGenerationStore((s) => s.generatedCode);
+  const generatedRoomId = useCodeGenerationStore((s) => s.generatedRoomId);
+
+  // 이 룸에서 생성 중일 때만 적용 (다른 룸 스트림이 이 룸 버튼을 잠그지 않도록)
+  const isGeneratingThisRoom = isGeneratingCode && generatingRoomId === roomId;
 
   const extractMutation = useExtractDescription();
 
   // 추출 버튼 비활성화 조건
   const isExtractDisabled =
-    !hasMessages || isGeneratingCode || isExtracting || extractMutation.isPending;
+    !hasMessages ||
+    isGeneratingThisRoom ||
+    isExtracting ||
+    extractMutation.isPending;
 
   // 이력 버튼 표시 조건 (1회 이상 추출 완료)
   const showHistoryButton = uiState !== 'idle' && versions.length > 0;
@@ -60,8 +68,8 @@ function DescriptionActionBar({ roomId, hasMessages }: DescriptionActionBarProps
       room_id: roomId,
     };
 
-    // 최신 생성 코드 포함
-    if (generatedCode) {
+    // 최신 생성 코드 포함 (이 룸 코드일 때만 — 다른 룸 코드 오염 방지)
+    if (generatedCode && generatedRoomId === roomId) {
       payload.current_code = generatedCode.content;
       payload.current_code_path = generatedCode.path;
     }
@@ -85,6 +93,7 @@ function DescriptionActionBar({ roomId, hasMessages }: DescriptionActionBarProps
   }, [
     roomId,
     generatedCode,
+    generatedRoomId,
     editHistory,
     extractMutation,
     setIsExtracting,

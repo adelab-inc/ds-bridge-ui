@@ -28,9 +28,9 @@ interface UseChatStreamLifecycleArgs {
   selectedMessageId: string | null;
   refetchMessages: () => Promise<unknown>;
   updateSelectedMessageId: (messageId: string | null) => void;
-  onStreamStart?: () => void;
+  onStreamStart?: (roomId: string) => void;
   onStreamEnd?: () => void;
-  onCodeGenerated?: (code: CodeEvent) => void;
+  onCodeGenerated?: (code: CodeEvent, roomId: string) => void;
 }
 
 /**
@@ -351,11 +351,14 @@ export function useChatStreamLifecycle({
         if (payload.type === 'code' && payload.content) {
           const msgId = activeMessageIdRef.current;
           if (msgId) updateSelectedMessageId(msgId);
-          onCodeGenerated?.({
-            type: 'code',
-            content: payload.content,
-            path: payload.path ?? '',
-          });
+          onCodeGenerated?.(
+            {
+              type: 'code',
+              content: payload.content,
+              path: payload.path ?? '',
+            },
+            roomId
+          );
         }
 
         resetInactivityTimer();
@@ -450,8 +453,8 @@ export function useChatStreamLifecycle({
       // 이미지 초기화 (전송 후)
       clearImages();
 
-      // 부모 컴포넌트에 스트리밍 시작 알림
-      onStreamStart?.();
+      // 부모 컴포넌트에 스트리밍 시작 알림 (현재 룸 귀속)
+      onStreamStart?.(roomId);
 
       // 타임아웃 설정
       // - inactivity: broadcast 이벤트 간 150초 무음 → 소프트 지연 모드

@@ -4,7 +4,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { roomKeys } from './useRoomQuery';
+import { roomKeys } from './roomKeys';
 
 /** 동시에 실행할 최대 DELETE 요청 수 (AI 서버 부하 보호) */
 const DELETE_CONCURRENCY = 4;

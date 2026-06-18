@@ -41,7 +41,9 @@ function DesktopLayout() {
   // Zustand 스토어에서 상태 및 핸들러 가져오기
   const {
     generatedCode,
+    generatedRoomId,
     isGeneratingCode,
+    generatingRoomId,
     onStreamStart,
     onStreamEnd,
     onCodeGenerated,
@@ -49,6 +51,10 @@ function DesktopLayout() {
   } = useCodeGenerationStore();
 
   const resetDescription = useDescriptionStore((s) => s.reset);
+
+  // 현재 룸과 일치할 때만 코드/생성중 표시 (룸 전환 시 오염 방지)
+  const showCode = generatedRoomId === roomId;
+  const showGenerating = generatingRoomId === roomId && isGeneratingCode;
 
   // roomId 변경 시 프리뷰 + 디스크립션 상태 초기화
   React.useEffect(() => {
@@ -123,9 +129,9 @@ function DesktopLayout() {
           >
             <RightPanel>
               <PreviewSection
-                aiCode={generatedCode?.content}
-                aiFilePath={generatedCode?.path}
-                isGeneratingCode={isGeneratingCode}
+                aiCode={showCode ? generatedCode?.content : undefined}
+                aiFilePath={showCode ? generatedCode?.path : undefined}
+                isGeneratingCode={showGenerating}
               />
             </RightPanel>
           </ResizablePanel>
