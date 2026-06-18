@@ -5,6 +5,7 @@ import {
 } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { deleteErrorMessage } from '@/lib/utils';
+import { messageKeys } from './messageKeys';
 
 interface DeleteMessageParams {
   roomId: string;
@@ -49,7 +50,7 @@ export function useDeleteMessage(mutationOptions?: UseDeleteMessageOptions) {
     },
     onSuccess: (_data, { roomId }) => {
       queryClient.invalidateQueries({
-        queryKey: ['paginatedMessages', roomId],
+        queryKey: messageKeys.byRoom(roomId),
       });
     },
     ...mutationOptions,

@@ -11,7 +11,7 @@ interface UseMessageBookmarksArgs {
   dbMessages: ChatMessage[];
   streamingMessage: ChatMessage | null;
   updateSelectedMessageId: (messageId: string | null) => void;
-  onCodeGenerated?: (code: CodeEvent) => void;
+  onCodeGenerated?: (code: CodeEvent, roomId: string) => void;
 }
 
 /**
@@ -79,14 +79,23 @@ export function useMessageBookmarks({
       const target = allMessages.find((msg) => msg.id === messageId);
       if (target?.content?.trim()) {
         updateSelectedMessageId(messageId);
-        onCodeGenerated?.({
-          type: 'code',
-          content: target.content,
-          path: target.path,
-        });
+        onCodeGenerated?.(
+          {
+            type: 'code',
+            content: target.content,
+            path: target.path,
+          },
+          roomId
+        );
       }
     },
-    [dbMessages, streamingMessage, updateSelectedMessageId, onCodeGenerated]
+    [
+      dbMessages,
+      streamingMessage,
+      updateSelectedMessageId,
+      onCodeGenerated,
+      roomId,
+    ]
   );
 
   return {

@@ -1,9 +1,12 @@
 'use client';
 
 import * as React from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { useChatStream } from '@/hooks/useChatStream';
 import { useRoomChannel } from '@/hooks/supabase/useRoomChannel';
+import { roomKeys } from '@/hooks/api/roomKeys';
+import { descriptionKeys } from '@/hooks/api/useDescriptionQuery';
 import { useStreamingStore } from '@/stores/useStreamingStore';
 import { sendDebugLog } from '@/lib/debug-log';
 import type { CodeEvent } from '@/types/chat';
@@ -28,9 +31,9 @@ interface UseChatStreamLifecycleArgs {
   selectedMessageId: string | null;
   refetchMessages: () => Promise<unknown>;
   updateSelectedMessageId: (messageId: string | null) => void;
-  onStreamStart?: () => void;
+  onStreamStart?: (roomId: string) => void;
   onStreamEnd?: () => void;
-  onCodeGenerated?: (code: CodeEvent) => void;
+  onCodeGenerated?: (code: CodeEvent, roomId: string) => void;
 }
 
 /**
@@ -61,6 +64,8 @@ export function useChatStreamLifecycle({
   onStreamEnd,
   onCodeGenerated,
 }: UseChatStreamLifecycleArgs) {
+  const queryClient = useQueryClient();
+
   const streamingMessage = useStreamingStore((s) => s.message);
   const setStreamingMessage = useStreamingStore((s) => s.setMessage);
   const updateStreamingMessage = useStreamingStore((s) => s.updateMessage);
@@ -351,11 +356,14 @@ export function useChatStreamLifecycle({
         if (payload.type === 'code' && payload.content) {
           const msgId = activeMessageIdRef.current;
           if (msgId) updateSelectedMessageId(msgId);
-          onCodeGenerated?.({
-            type: 'code',
-            content: payload.content,
-            path: payload.path ?? '',
-          });
+          onCodeGenerated?.(
+            {
+              type: 'code',
+              content: payload.content,
+              path: payload.path ?? '',
+            },
+            roomId
+          );
         }
 
         resetInactivityTimer();
@@ -381,6 +389,13 @@ export function useChatStreamLifecycle({
         refetchMessages()
           .then(() => setStreamingMessage(null))
           .catch(() => setStreamingMessage(null));
+
+        // 스트림 완료 시 AI 서버가 룸 메타/디스크립션을 갱신했을 수 있어
+        // 해당 캐시를 무효화한다 (broadcast payload엔 status가 없어 blanket invalidate).
+        queryClient.invalidateQueries({ queryKey: roomKeys.detail(roomId) });
+        queryClient.invalidateQueries({
+          queryKey: descriptionKeys.latest(roomId),
+        });
       },
       onError: (payload) => {
         expectingStartRef.current = false;
@@ -450,8 +465,8 @@ export function useChatStreamLifecycle({
       // 이미지 초기화 (전송 후)
       clearImages();
 
-      // 부모 컴포넌트에 스트리밍 시작 알림
-      onStreamStart?.();
+      // 부모 컴포넌트에 스트리밍 시작 알림 (현재 룸 귀속)
+      onStreamStart?.(roomId);
 
       // 타임아웃 설정
       // - inactivity: broadcast 이벤트 간 150초 무음 → 소프트 지연 모드

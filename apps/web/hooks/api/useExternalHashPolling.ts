@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { EXTERNAL_POLLING } from '@/lib/constants';
 import { descriptionKeys } from './useDescriptionQuery';
+import { messageKeys } from './messageKeys';
 
 interface ExternalCodeHashResponse {
   crid: string;
@@ -91,7 +92,7 @@ export function useExternalHashPolling(crid: string | null) {
     const prev = lastCodeHashRef.current;
     lastCodeHashRef.current = next;
     if (prev !== null && prev !== next) {
-      queryClient.invalidateQueries({ queryKey: ['paginatedMessages', crid] });
+      queryClient.invalidateQueries({ queryKey: messageKeys.byRoom(crid) });
     }
   }, [codeHash, crid, queryClient]);
 
