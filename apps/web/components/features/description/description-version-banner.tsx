@@ -69,18 +69,18 @@ function DescriptionVersionBanner({
           최신
         </Badge>
       )}
+      <span className="text-muted-foreground text-xs">
+        {reasonLabels[reason]}
+      </span>
       {descriptionHashShort && (
         <Badge
           variant="outline"
-          className="font-mono text-[10px]"
+          className="ml-auto font-mono text-[10px]"
           title="디스크립션 콘텐츠 해시 (SHA-256 앞 7자)"
         >
           {descriptionHashShort}
         </Badge>
       )}
-      <span className="text-muted-foreground text-xs">
-        {reasonLabels[reason]}
-      </span>
     </div>
   );
 }

@@ -54,7 +54,7 @@ export function LoginForm() {
           <CardTitle>이메일을 확인해주세요</CardTitle>
           <CardDescription>
             <strong>{email}</strong>로 로그인 링크를 보냈습니다. 이메일의 링크를
-            클릭하여 로그인하세요.
+            클릭하여 로그인하세요. <strong>스팸 메일함도 확인해주세요.</strong>
           </CardDescription>
         </CardHeader>
         <CardContent>
