@@ -34,7 +34,7 @@ jobs:
           echo "MEMORY=1Gi" >> $GITHUB_ENV
           echo "MIN_INSTANCES=1" >> $GITHUB_ENV
           echo "MAX_INSTANCES=5" >> $GITHUB_ENV
-          echo "JWT_VERIFY_ENABLED=false" >> $GITHUB_ENV   # prod: FE 토큰 forward 준비 후 true로
+          echo "JWT_VERIFY_ENABLED=true" >> $GITHUB_ENV    # prod: 삭제 소유권 검증 활성 (FE 토큰 forward 선행 필요)
 
       - name: Set environment (dev)
         if: github.ref == 'refs/heads/develop'
