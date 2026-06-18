@@ -17,6 +17,7 @@ import {
 import { cn } from '@/lib/utils';
 import { HeaderLogo } from '@/components/layout/header-logo';
 import { ClientOnly } from '@/components/ui/client-only';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 // import {
@@ -58,6 +59,7 @@ import {
   type DeleteRoomsResult,
 } from '@/hooks/api/useDeleteRooms';
 import { useUpdateRoom } from '@/hooks/api/useUpdateRoom';
+import { useIsRoomOwner } from '@/hooks/useIsRoomOwner';
 import { useAuthStore } from '@/stores/useAuthStore';
 import type { ChatRoom } from '@packages/shared-types/typescript/database/types';
 
@@ -106,6 +108,9 @@ function Header({
 
   const currentRoomId = searchParams.get('crid');
   const currentRoom = rooms.find((r) => r.id === currentRoomId);
+
+  // crid로 직접 조회한 room (내 목록에 없는 공유 링크도 포함) + 소유권 판별
+  const { room: fetchedRoom, isShared } = useIsRoomOwner(currentRoomId);
 
   const [createDialog, setCreateDialog] = React.useState(false);
   const [createProjectName, setCreateProjectName] = React.useState('');
@@ -338,14 +343,26 @@ function Header({
         <TooltipProvider>
           {/* 프로젝트 이름 */}
           <div className="border-border mx-1 h-5 w-px shrink-0 bg-current opacity-20" />
+          {/* 공유된 링크 뱃지 — 남이 만든 프로젝트(crid)일 때만 노출 */}
+          {isShared && (
+            <Badge
+              variant="secondary"
+              className="border-amber-300 bg-amber-100 text-amber-800 dark:border-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+            >
+              공유된 링크
+            </Badge>
+          )}
           <div className="flex min-w-0 flex-1 items-center">
             <span className="text-foreground truncate text-sm font-semibold">
               {(() => {
-                if (!currentRoom?.storybook_url) return '새 프로젝트';
+                // 내 목록(currentRoom)에 없으면 직접 조회한 room을 fallback으로 사용
+                const storybookUrl =
+                  currentRoom?.storybook_url ?? fetchedRoom?.storybook_url;
+                if (!storybookUrl) return '새 프로젝트';
                 try {
-                  return new URL(currentRoom.storybook_url).hostname;
+                  return new URL(storybookUrl).hostname;
                 } catch {
-                  return currentRoom.storybook_url;
+                  return storybookUrl;
                 }
               })()}
             </span>
