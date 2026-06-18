@@ -168,7 +168,46 @@ function Header({
     }
   }, []);
 
+  // 목록 스크롤 컨테이너 ref + 모드 전환 시 스크롤 위치 보존
+  const listScrollRef = React.useRef<HTMLDivElement | null>(null);
+  const pendingScrollTopRef = React.useRef<number | null>(null);
+
+  const captureListScroll = () => {
+    pendingScrollTopRef.current = listScrollRef.current?.scrollTop ?? null;
+  };
+
+  // deleteMode 전환 시 Base UI Menu가 포커스를 아이템으로 옮기며 일으키는
+  // scrollIntoView 점프를 캡처해 둔 위치로 되돌린다.
+  // 포커스-스크롤이 paint 이후 비동기로 발생하므로 동기 복원만으로는 부족하다.
+  // → 동기 복원 + 짧은 구간 동안 scroll 가드 + rAF 로 어느 타이밍이든 상쇄한다.
+  React.useLayoutEffect(() => {
+    const top = pendingScrollTopRef.current;
+    pendingScrollTopRef.current = null;
+    const el = listScrollRef.current;
+    if (top == null || !el) return;
+
+    // 1) 즉시 복원 — 첫 페인트를 올바른 위치로
+    el.scrollTop = top;
+
+    // 2) 전환 직후 발생하는 비동기 점프(포커스 scrollIntoView)를 되돌린다.
+    const restore = () => {
+      el.scrollTop = top;
+    };
+    el.addEventListener('scroll', restore);
+    const raf = requestAnimationFrame(restore);
+    const timer = window.setTimeout(() => {
+      el.removeEventListener('scroll', restore);
+    }, 150);
+
+    return () => {
+      el.removeEventListener('scroll', restore);
+      cancelAnimationFrame(raf);
+      clearTimeout(timer);
+    };
+  }, [deleteMode]);
+
   const toggleDeleteMode = () => {
+    captureListScroll();
     setDeleteMode((prev) => {
       const next = !prev;
       if (!next) setSelectedIds(new Set());
@@ -177,6 +216,7 @@ function Header({
   };
 
   const exitDeleteMode = () => {
+    captureListScroll();
     setDeleteMode(false);
     setSelectedIds(new Set());
   };
@@ -427,7 +467,10 @@ function Header({
                   )}
                 </div>
                 {/* (B) 스크롤 영역 — 목록만 스크롤 */}
-                <div className="flex-1 min-h-0 overflow-y-auto p-1">
+                <div
+                  ref={listScrollRef}
+                  className="flex-1 min-h-0 overflow-y-auto p-1"
+                >
                   {isRoomsLoading ? (
                     <div className="text-muted-foreground px-2 py-3 text-center text-sm">
                       불러오는 중...
