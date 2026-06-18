@@ -35,6 +35,7 @@ from app.core.hashing import content_hash
 from app.schemas.external import (
     ExternalCodeHashResponse,
     ExternalCodeResponse,
+    ExternalDescriptionHashResponse,
     ExternalDescriptionResponse,
     ExternalErrorResponse,
 )
@@ -238,6 +239,54 @@ async def get_external_description(
         description_hash=record.get("description_hash"),  # DB 저장 컬럼 (없으면 validator가 content로 계산)
         version=record.get("version", 0),
         is_edited=is_edited,
+        updated_at=record.get("created_at", 0),
+    )
+
+
+@router.get(
+    "/description/hash/{crid}",
+    response_model=ExternalDescriptionHashResponse,
+    summary="디스크립션 해시만 조회 (경량)",
+    description=(
+        "지정한 채팅방(`crid`)의 최신 디스크립션에 대한 **해시만** 반환합니다. 전체 본문(Markdown)은 "
+        "포함하지 않으므로 변경 탐지 폴링에 토큰/대역폭 효율적입니다.\n\n"
+        "**사용법**\n"
+        "- 주기적으로 본 EP를 호출해 `description_hash` 를 직전 값과 비교\n"
+        "- 값이 다르면 디스크립션이 변경된 것 → 그때만 `/description/{crid}` 로 전체 본문 수신\n\n"
+        "**응답 필드**\n"
+        "- `description_hash` — 최신 디스크립션(편집본 우선) 본문의 SHA-256 해시(hex, 64자)\n"
+        "- `description_hash_short` — git 약식(앞 7자, 표시용)\n"
+        "- `version` / `updated_at` — 버전·생성 시각\n\n"
+        "**에러** — `/description/{crid}` 와 동일 (404/422/401/403/500)"
+    ),
+    response_description="채팅방 최신 디스크립션의 해시와 버전/시각",
+)
+async def get_external_description_hash(
+    crid: UUID = Path(
+        ...,
+        description=(
+            "채팅방 ID. UUID v4 형식. "
+            "런타임 허브 URL 의 `?crid=...` 파라미터와 동일한 값."
+        ),
+        examples=["5169a302-629f-4759-8568-c0a7849f4439"],
+    ),
+) -> ExternalDescriptionHashResponse:
+    crid_str = str(crid)
+    record = await get_latest_description(crid_str)
+    if record is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No description found for crid: {crid_str}",
+        )
+
+    edited = record.get("edited_content")
+    content = edited if edited else record.get("content", "")
+    # DB 저장 컬럼 우선, 없으면(마이그레이션 적용 전) 표시 본문으로 즉석 계산
+    description_hash = record.get("description_hash") or content_hash(content)
+    return ExternalDescriptionHashResponse(
+        crid=crid_str,
+        description_hash=description_hash,
+        version=record.get("version", 0),
         updated_at=record.get("created_at", 0),
     )
 
