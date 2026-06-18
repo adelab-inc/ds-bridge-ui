@@ -5,7 +5,6 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { PlayIcon, LayoutIcon, SparklesIcon } from '@hugeicons/core-free-icons';
 
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StorybookIframe } from './storybook-iframe';
 import {
@@ -101,17 +100,6 @@ function PreviewSection({
 
           {/* 뷰 모드 선택기 - AI Generated 탭 활성화 시에만 표시 */}
           <div className="flex items-center gap-2">
-            {/* 코드 해시 뱃지 (git 약식 7자) - 표시 전용, 비교는 풀 해시 */}
-            {activeTab === 'ai-generated' && codeHashShort && (
-              <Badge
-                variant="outline"
-                className="font-mono text-[10px]"
-                title="코드 콘텐츠 해시 (SHA-256 앞 7자)"
-              >
-                {codeHashShort}
-              </Badge>
-            )}
-
             {activeTab === 'ai-generated' && (aiCode || isGeneratingCode) && (
               <div className="flex items-center rounded-md bg-muted p-0.5 text-xs">
                 {(
@@ -179,6 +167,7 @@ function PreviewSection({
                 <CodePreviewIframe
                   code={aiCode!}
                   filePath={aiFilePath}
+                  codeHashShort={codeHashShort}
                   viewMode={viewMode}
                 />
               )}
