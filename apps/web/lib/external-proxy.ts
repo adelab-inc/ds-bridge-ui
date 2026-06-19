@@ -69,12 +69,18 @@ export async function proxyExternalGet(
 
     // 상태/본문을 그대로 전파 (401·403·404·422·200 + 해시 JSON)
     const body = await aiResponse.text();
+    const headers: Record<string, string> = {
+      'content-type':
+        aiResponse.headers.get('content-type') ?? 'application/json',
+    };
+    // 성공(2xx) 응답만 짧게 캐시 — 멀티탭 중복·잔여 버스트 흡수용.
+    // 사용자별 인증 응답이므로 private(공유/CDN 캐시 금지). 4xx 등 전이 상태는 캐시하지 않음.
+    if (aiResponse.ok) {
+      headers['Cache-Control'] = 'private, max-age=10';
+    }
     return new NextResponse(body, {
       status: aiResponse.status,
-      headers: {
-        'content-type':
-          aiResponse.headers.get('content-type') ?? 'application/json',
-      },
+      headers,
     });
   } catch (error) {
     return NextResponse.json(

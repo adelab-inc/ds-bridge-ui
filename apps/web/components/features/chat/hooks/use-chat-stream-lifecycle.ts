@@ -66,7 +66,12 @@ export function useChatStreamLifecycle({
 }: UseChatStreamLifecycleArgs) {
   const queryClient = useQueryClient();
 
-  const streamingMessage = useStreamingStore((s) => s.message);
+  // 전역 스토어의 스트리밍 메시지를 현재 룸으로 스코핑한다.
+  // 다른 룸(또는 새 프로젝트)에서 생성 중인 메시지가 현재 룸 화면에
+  // 새는 것을 막는다. 메시지가 현재 룸 것이 아니면 null로 취급.
+  const rawStreamingMessage = useStreamingStore((s) => s.message);
+  const streamingMessage =
+    rawStreamingMessage?.room_id === roomId ? rawStreamingMessage : null;
   const setStreamingMessage = useStreamingStore((s) => s.setMessage);
   const updateStreamingMessage = useStreamingStore((s) => s.updateMessage);
   const setDelayState = useStreamingStore((s) => s.setDelayState);
