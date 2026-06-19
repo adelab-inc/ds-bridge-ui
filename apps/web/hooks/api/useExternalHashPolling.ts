@@ -60,6 +60,9 @@ export function useExternalHashPolling(crid: string | null) {
     retry: false,
     refetchInterval: EXTERNAL_POLLING.HASH_INTERVAL_MS,
     refetchIntervalInBackground: false,
+    // 정주기 폴링만 유지 — 포커스/재연결 시 추가 버스트 요청 차단
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   const { data: descHash } = useQuery({
@@ -73,6 +76,9 @@ export function useExternalHashPolling(crid: string | null) {
     retry: false,
     refetchInterval: EXTERNAL_POLLING.HASH_INTERVAL_MS,
     refetchIntervalInBackground: false,
+    // 정주기 폴링만 유지 — 포커스/재연결 시 추가 버스트 요청 차단
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   // 직전 폴링 해시(비교 기준). 풀 해시(64자)로 비교한다.
