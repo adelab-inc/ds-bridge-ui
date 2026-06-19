@@ -15,16 +15,19 @@ settings = get_settings()
 logger = logging.getLogger(__name__)
 
 
-# 정상 종료로 간주하는 finish_reason (그 외 RECITATION/SAFETY/OTHER 등은 비정상)
-_NORMAL_FINISH_REASONS = {"STOP", "MAX_TOKENS", "FINISH_REASON_UNSPECIFIED"}
+# 정상 종료로 간주하는 finish_reason. MAX_TOKENS(출력 잘림)는 비정상으로 격상해 관측한다
+# (그 외 RECITATION/SAFETY/OTHER 등도 비정상).
+_NORMAL_FINISH_REASONS = {"STOP", "FINISH_REASON_UNSPECIFIED"}
 
 
 def _check_gemini_finish(response_or_chunk: Any) -> None:
-    """Gemini 응답의 비정상 종료 신호(RECITATION/SAFETY 등)·프롬프트 차단을 로깅.
+    """Gemini 종료 신호(finish_reason)·프롬프트 차단·usage(thinking 토큰)를 로깅.
 
-    recitation 환각처럼 모델이 작업을 이탈해도 text는 정상으로 흘러 서버가
-    모르고 저장하는 것을 막기 위한 관측 지점. 로깅 실패가 스트림을 깨면 안 되므로
-    모든 예외는 무시한다.
+    - RECITATION/SAFETY 등 비정상 종료, MAX_TOKENS(출력 잘림) → WARNING.
+    - finish_reason이 실린 청크에서 usage_metadata(thoughts/candidates 토큰)도 함께 로깅 →
+      thinking 폭주(정상 ~2k → 60k+)로 인한 MAX_TOKENS 절단을 운영 로그만으로 식별 가능.
+    recitation 환각처럼 모델이 작업을 이탈해도 text는 정상으로 흘러 서버가 모르고 저장하는
+    것을 막기 위한 관측 지점. 로깅 실패가 스트림을 깨면 안 되므로 모든 예외는 무시한다.
     """
     try:
         fb = getattr(response_or_chunk, "prompt_feedback", None)
@@ -36,8 +39,20 @@ def _check_gemini_finish(response_or_chunk: Any) -> None:
             if fr is None:
                 continue
             name = getattr(fr, "name", str(fr))
-            if name not in _NORMAL_FINISH_REASONS:
-                logger.warning("Gemini abnormal finish_reason", extra={"finish_reason": name})
+            usage = getattr(response_or_chunk, "usage_metadata", None)
+            extra: dict[str, Any] = {"finish_reason": name}
+            if usage is not None:
+                extra["thoughts_tokens"] = getattr(usage, "thoughts_token_count", None)
+                extra["candidates_tokens"] = getattr(usage, "candidates_token_count", None)
+                extra["total_tokens"] = getattr(usage, "total_token_count", None)
+            if name == "MAX_TOKENS":
+                logger.warning(
+                    "Gemini output truncated (MAX_TOKENS) — likely thinking overflow", extra=extra
+                )
+            elif name not in _NORMAL_FINISH_REASONS:
+                logger.warning("Gemini abnormal finish_reason", extra=extra)
+            else:
+                logger.info("Gemini finish", extra=extra)
     except Exception:
         logger.debug("finish_reason check failed", exc_info=True)
 
@@ -251,6 +266,8 @@ class AnthropicProvider(AIProvider):
                 yield text
 
 
+# ⚠️ "off"는 None → thinking_config 미전달 → Gemini 3은 기본 dynamic thinking(ON)으로 동작한다.
+#    즉 "off"는 thinking을 끄지 못한다(폭주 위험). 실제로 줄이려면 "minimal"/"low"를 명시하라.
 _THINKING_LEVEL_MAP: dict[str, types.ThinkingLevel | None] = {
     "off": None,
     "minimal": types.ThinkingLevel.MINIMAL,
@@ -290,6 +307,7 @@ class GeminiProvider(AIProvider):
             system_instruction=system_instruction,
             thinking_config=thinking_config,
             temperature=0.5,
+            max_output_tokens=settings.gemini_max_output_tokens,
         )
 
         response = await self.client.aio.models.generate_content(
@@ -330,6 +348,7 @@ class GeminiProvider(AIProvider):
             system_instruction=system_instruction,
             thinking_config=self._thinking_config,
             temperature=0.5,
+            max_output_tokens=settings.gemini_max_output_tokens,
         )
 
         stream = await self.client.aio.models.generate_content_stream(
@@ -382,6 +401,7 @@ class GeminiProvider(AIProvider):
             system_instruction=system_instruction,
             thinking_config=self._thinking_config,
             temperature=0.5,
+            max_output_tokens=settings.gemini_max_output_tokens,
         )
 
         stream = await self.client.aio.models.generate_content_stream(
