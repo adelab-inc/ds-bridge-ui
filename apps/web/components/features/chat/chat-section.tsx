@@ -83,7 +83,7 @@ function ChatSection({
     uploadedUrls,
   } = useImageUpload(roomId);
 
-  const streamingDelayState = useStreamingStore((s) => s.delayState);
+  const rawDelayState = useStreamingStore((s) => s.delayState);
 
   const {
     handleSend,
@@ -103,6 +103,10 @@ function ChatSection({
     onStreamEnd,
     onCodeGenerated,
   });
+
+  // streamingMessage(훅에서 이미 현재 룸으로 스코핑됨)가 있을 때만
+  // delayState를 적용 — 다른 룸의 지연 상태가 새지 않도록 게이트.
+  const streamingDelayState = streamingMessage ? rawDelayState : 'normal';
 
   // 메시지 클릭 시 해당 메시지의 content를 미리보기에 표시
   const handleMessageClick = React.useCallback(
