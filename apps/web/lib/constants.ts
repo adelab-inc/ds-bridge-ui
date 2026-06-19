@@ -37,8 +37,8 @@ export const LAYOUT = {
  * 외부 조회 API(/external/*) 폴링 설정
  */
 export const EXTERNAL_POLLING = {
-  /** 해시 전용 EP 폴링 주기 (ms). 경량이므로 짧게 잡되 백그라운드 탭에서는 정지 */
-  HASH_INTERVAL_MS: 15_000,
+  /** 해시 전용 EP 폴링 주기 (ms). 운영 부하 완화를 위해 30초. 백그라운드 탭에서는 정지 */
+  HASH_INTERVAL_MS: 30_000,
 } as const;
 
 /**
