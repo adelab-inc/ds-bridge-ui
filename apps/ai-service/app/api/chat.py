@@ -1214,63 +1214,99 @@ async def _run_broadcast_generation(
         heartbeat_task = asyncio.create_task(_heartbeat_loop())
         chunk_sender_task = asyncio.create_task(_chunk_sender())
 
-        async with asyncio.timeout(600):  # 10분 타임아웃
-            # Figma / Vision / 일반 모드에 따라 스트리밍 호출
-            if figma_url and system_prompt and user_message:
-                stream = run_figma_tool_calling_loop(
-                    room_id=room_id,
-                    provider=provider,
-                    system_prompt=system_prompt,
-                    user_message=user_message,
-                    figma_url=figma_url,
+        # 코드(<file>) 0건이면 재생성 (간헐적 thinking 폭주 → no-code 완화).
+        # chunk_sender는 1개 유지하고 스트림+수집만 시도별로 반복한다. 최종 DONE 메시지가
+        # 정본이므로, 재시도 중 이미 broadcast된 부분 청크는 FE가 "retry" 신호로 비우면 된다
+        # (FE가 무시해도 저장 결과는 정확 — 마지막 성공 시도의 텍스트/코드만 DONE으로 저장).
+        max_attempts = get_settings().gemini_nocode_max_retries + 1
+        for attempt in range(max_attempts):
+            if attempt > 0:
+                logger.warning(
+                    "No code produced — retrying generation",
+                    extra={
+                        "room_id": room_id,
+                        "message_id": message_id,
+                        "attempt": attempt,
+                        "prev_text_len": len(collected_text),
+                    },
                 )
-            elif is_vision_mode:
-                # Vision 미지원 프로바이더인지 확인 후 폴백
-                _supports_vision = type(provider).chat_vision_stream is not AIProvider.chat_vision_stream
-                if not _supports_vision:
-                    logger.warning(
-                        "Vision not supported, falling back to text-only",
-                        extra={"room_id": room_id, "provider": get_settings().ai_provider},
-                    )
-                    await broadcast_event(
-                        room_id,
-                        "warning",
-                        {"message": "현재 AI 프로바이더는 이미지 분석을 지원하지 않아 텍스트만으로 처리합니다."},
-                    )
-                    stream = provider.chat_stream(messages)
-                else:
-                    stream = provider.chat_vision_stream(messages, images)
-            else:
-                stream = provider.chat_stream(messages)
+                # 이전 시도 부분 출력 초기화 + FE에 재시도 신호
+                parser = StreamingParser()
+                collected_text = ""
+                collected_files = []
+                await chunk_queue.put({"type": "retry", "attempt": attempt})
 
-            async for chunk in stream:
-                events = parser.process_chunk(chunk)
-                for event in events:
-                    event_type = event.pop("type")
-                    if event_type == "chat":
-                        collected_text += event.get("text", "")
-                    elif event_type == "code":
-                        collected_files.append(event)
-                        # 코드 블록 도착 즉시 중간 저장 (timeout 시 데이터 유실 방지)
-                        first_file = collected_files[0]
-                        _fire_and_forget_save(
-                            message_id=message_id,
-                            text=collected_text.strip(),
-                            content=first_file.get("content", ""),
-                            path=first_file.get("path", ""),
+            async with asyncio.timeout(600):  # 시도당 10분 타임아웃
+                # Figma / Vision / 일반 모드에 따라 스트리밍 호출
+                if figma_url and system_prompt and user_message:
+                    stream = run_figma_tool_calling_loop(
+                        room_id=room_id,
+                        provider=provider,
+                        system_prompt=system_prompt,
+                        user_message=user_message,
+                        figma_url=figma_url,
+                    )
+                elif is_vision_mode:
+                    # Vision 미지원 프로바이더인지 확인 후 폴백
+                    _supports_vision = type(provider).chat_vision_stream is not AIProvider.chat_vision_stream
+                    if not _supports_vision:
+                        logger.warning(
+                            "Vision not supported, falling back to text-only",
+                            extra={"room_id": room_id, "provider": get_settings().ai_provider},
                         )
+                        await broadcast_event(
+                            room_id,
+                            "warning",
+                            {"message": "현재 AI 프로바이더는 이미지 분석을 지원하지 않아 텍스트만으로 처리합니다."},
+                        )
+                        stream = provider.chat_stream(messages)
+                    else:
+                        stream = provider.chat_vision_stream(messages, images)
+                else:
+                    stream = provider.chat_stream(messages)
 
-                    await chunk_queue.put({"type": event_type, **event})
+                async for chunk in stream:
+                    events = parser.process_chunk(chunk)
+                    for event in events:
+                        event_type = event.pop("type")
+                        if event_type == "chat":
+                            collected_text += event.get("text", "")
+                        elif event_type == "code":
+                            collected_files.append(event)
+                            # 코드 블록 도착 즉시 중간 저장 (timeout 시 데이터 유실 방지)
+                            first_file = collected_files[0]
+                            _fire_and_forget_save(
+                                message_id=message_id,
+                                text=collected_text.strip(),
+                                content=first_file.get("content", ""),
+                                path=first_file.get("path", ""),
+                            )
 
-        # 남은 버퍼 처리
-        final_events = parser.flush()
-        for event in final_events:
-            event_type = event.pop("type")
-            if event_type == "chat":
-                collected_text += event.get("text", "")
-            await chunk_queue.put({"type": event_type, **event})
+                        await chunk_queue.put({"type": event_type, **event})
 
-        # chunk sender 종료 대기 (남은 큐 drain, 30초 한도)
+            # 남은 버퍼 처리
+            for event in parser.flush():
+                event_type = event.pop("type")
+                if event_type == "chat":
+                    collected_text += event.get("text", "")
+                await chunk_queue.put({"type": event_type, **event})
+
+            # 파서 fallback: 모델이 <file> 대신 ```tsx 펜스로만 코드를 낸 경우 회수.
+            # (가드가 멀쩡한 펜스 코드를 탈선으로 오판하지 않도록 가드보다 먼저 시도)
+            if not collected_files:
+                recovered = _extract_fenced_code(collected_text)
+                if recovered:
+                    logger.warning(
+                        "Recovered code from markdown fence (no <file> tag)",
+                        extra={"room_id": room_id, "message_id": message_id, "path": recovered["path"]},
+                    )
+                    collected_files.append(recovered)
+                    await chunk_queue.put({"type": "code", **recovered})
+
+            if collected_files:
+                break  # 코드 확보 → 재시도 종료
+
+        # chunk sender 종료 대기 (모든 시도 후 1회, 남은 큐 drain, 30초 한도)
         await chunk_queue.put(None)
         try:
             async with asyncio.timeout(30):
@@ -1288,18 +1324,6 @@ async def _run_broadcast_generation(
                 "Chunks dropped during generation",
                 extra={"room_id": room_id, "message_id": message_id, "dropped": dropped_chunks},
             )
-
-        # 파서 fallback: 모델이 <file> 대신 ```tsx 펜스로만 코드를 낸 경우 회수.
-        # (가드가 멀쩡한 펜스 코드를 탈선으로 오판하지 않도록 가드보다 먼저 시도)
-        if not collected_files:
-            recovered = _extract_fenced_code(collected_text)
-            if recovered:
-                logger.warning(
-                    "Recovered code from markdown fence (no <file> tag)",
-                    extra={"room_id": room_id, "message_id": message_id, "path": recovered["path"]},
-                )
-                await broadcast_event(room_id, "chunk", {"type": "code", **recovered})
-                collected_files.append(recovered)
 
         # 가드: 모델이 코드(<file>)를 하나도 생성하지 않으면 탈선/실패로 간주.
         # DONE으로 저장하면 무관한 텍스트(예: 엉뚱한 기사)가 "성공"으로 노출되므로 ERROR 처리.

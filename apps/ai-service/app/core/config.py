@@ -27,7 +27,17 @@ class Settings(BaseSettings):
     # Gemini
     gemini_api_key: str = ""
     gemini_model: str = "gemini-3-flash-preview"
-    gemini_thinking_level: str = "off"  # off(비활성), minimal, low, medium, high
+    # ⚠️ "off"는 thinking을 끄지 못한다 — thinking_config 미전달 시 Gemini 3은 기본
+    #    dynamic thinking(ON)으로 동작해 thinking 토큰이 폭주(정상 ~2k → 60k+)할 수 있다.
+    #    실제로 줄이려면 "minimal"/"low" 처럼 명시 레벨을 줘야 한다.
+    #    기본 minimal — 응답 속도 우선 + thinking 폭주 위험 최소화.
+    #    (복잡 화면에서 코드 품질이 떨어지면 "low"로 상향)
+    gemini_thinking_level: str = "minimal"  # off(=실효 없음, dynamic ON), minimal, low, medium, high
+    # 출력 토큰 상한 (thinking 토큰도 이 예산에 포함). 정상 코드 출력은 ~5k라 충분하며,
+    # thinking 폭주 시 빠르게 MAX_TOKENS로 종료시켜 무한 추론을 막는다.
+    gemini_max_output_tokens: int = 16384
+    # 코드(<file>) 0건 생성 시 재생성 횟수 (간헐적 thinking 폭주 → no-code 완화). 0이면 재시도 없음.
+    gemini_nocode_max_retries: int = 1
 
     # API Authentication
     # 헤더 이름은 외부/내부 모두 X-API-Key 로 통일. 값(secret)만 분리해서 발급.
