@@ -664,12 +664,17 @@ class StreamingParser:
     # 정규식 패턴 (클래스 수준에서 미리 컴파일)
     FILE_START_PATTERN = re.compile(r'<file\s+path="([^"]+)">')
     FILE_END_PATTERN = re.compile(r"</file>")
+    EDIT_START_PATTERN = re.compile(r"<edit\b")
 
-    def __init__(self):
+    def __init__(self, mode: str = "file"):
+        self.mode = mode
         self.buffer = ""
         self.inside_file = False
         self.current_file_path: str | None = None
         self.current_file_content = ""
+        # diff 모드 전용
+        self.in_patch = False
+        self.patch_buffer = ""
 
     def process_chunk(self, chunk: str) -> list[dict]:
         """
@@ -678,6 +683,9 @@ class StreamingParser:
         Returns:
             List of events: {'type': 'chat'|'code', ...}
         """
+        if self.mode == "diff":
+            return self._process_diff_chunk(chunk)
+        # --- 이하 기존 file 모드 로직 그대로 ---
         self.buffer += chunk
         events: list[dict] = []
 
@@ -732,8 +740,45 @@ class StreamingParser:
 
         return events
 
+    def _process_diff_chunk(self, chunk: str) -> list[dict]:
+        """diff 모드: 첫 <edit 이전 텍스트만 chat으로 emit, 이후는 patch_buffer에 누적."""
+        self.buffer += chunk
+        events: list[dict] = []
+        if self.in_patch:
+            self.patch_buffer += self.buffer
+            self.buffer = ""
+            return events
+        m = self.EDIT_START_PATTERN.search(self.buffer)
+        if m:
+            before = self.buffer[: m.start()]
+            if before:
+                events.append({"type": "chat", "text": before})
+            self.patch_buffer += self.buffer[m.start() :]
+            self.buffer = ""
+            self.in_patch = True
+            return events
+        # 아직 <edit 없음: '<' 직전까지만 chat으로 보내고 부분 태그는 홀드백
+        tag_start = self.buffer.rfind("<")
+        if tag_start > 0:
+            events.append({"type": "chat", "text": self.buffer[:tag_start]})
+            self.buffer = self.buffer[tag_start:]
+        elif tag_start == -1 and self.buffer:
+            events.append({"type": "chat", "text": self.buffer})
+            self.buffer = ""
+        return events
+
+    def get_patch(self) -> str:
+        """diff 모드: 누적된 패치 텍스트 반환(스트림 종료 후 호출)."""
+        return self.patch_buffer + (self.buffer if self.in_patch else "")
+
     def flush(self) -> list[dict]:
         """남은 버퍼 처리 (스트리밍 종료 시 호출)"""
+        if self.mode == "diff":
+            events: list[dict] = []
+            if not self.in_patch and self.buffer.strip():
+                events.append({"type": "chat", "text": self.buffer.strip()})
+            return events
+        # --- 이하 기존 file 모드 flush 그대로 ---
         events: list[dict] = []
         remaining = self.buffer.strip()
         if remaining and not self.inside_file:
