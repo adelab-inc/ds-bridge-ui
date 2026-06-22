@@ -1075,6 +1075,17 @@ async def chat_stream(request: ChatRequest) -> JSONResponse:
         # 3. AI Provider 초기화
         provider = get_ai_provider()
 
+        # diff(부분 편집) 판정: 스위치 ON + 대형 수정 + figma/vision 아님
+        _settings = get_settings()
+        base_code = await resolve_base_code(request.room_id, request.from_message_id)
+        is_diff_mode = (
+            _settings.gemini_diff_edit_enabled
+            and base_code is not None
+            and len(base_code["content"]) > _settings.gemini_diff_edit_threshold_chars
+            and not is_figma_mode
+            and not is_vision_mode
+        )
+
         # 4. 시스템 프롬프트 생성 (Figma/Vision/일반 모드에 따라 분기)
         if is_figma_mode:
             system_prompt = await resolve_system_prompt(
@@ -1101,15 +1112,35 @@ async def chat_stream(request: ChatRequest) -> JSONResponse:
                 schema_key=room.get("schema_key"),
                 current_composition=request.current_composition,
                 selected_instance_id=request.selected_instance_id,
+                diff_mode=is_diff_mode,
             )
 
-        # 5. 이전 대화 내역 포함하여 메시지 빌드
+        # 5. 메시지 빌드 (diff면 base_code 재사용 + diff 지시)
         messages = await build_conversation_history(
             room_id=request.room_id,
             system_prompt=system_prompt,
             current_message=request.message,
             from_message_id=request.from_message_id,
+            base_code=base_code,
+            diff_mode=is_diff_mode,
         )
+        # diff 실패 시 폴백용 전체출력 메시지(전체 포맷 시스템 프롬프트 + 전체출력 지시)
+        fallback_messages = None
+        if is_diff_mode:
+            full_system_prompt = await resolve_system_prompt(
+                schema_key=room.get("schema_key"),
+                current_composition=request.current_composition,
+                selected_instance_id=request.selected_instance_id,
+                diff_mode=False,
+            )
+            fallback_messages = await build_conversation_history(
+                room_id=request.room_id,
+                system_prompt=full_system_prompt,
+                current_message=request.message,
+                from_message_id=request.from_message_id,
+                base_code=base_code,
+                diff_mode=False,
+            )
 
         # 6. 백그라운드 태스크로 AI 생성 + broadcast 시작
         task = asyncio.create_task(
@@ -1124,6 +1155,9 @@ async def chat_stream(request: ChatRequest) -> JSONResponse:
                 figma_url=figma_url if is_figma_mode else None,
                 system_prompt=system_prompt if is_figma_mode else None,
                 user_message=request.message if is_figma_mode else None,
+                is_diff_mode=is_diff_mode,
+                base_code=base_code,
+                fallback_messages=fallback_messages,
             ),
             name=f"broadcast:{request.room_id}:{message_id}",
         )
