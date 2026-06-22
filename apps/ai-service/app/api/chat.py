@@ -247,6 +247,7 @@ async def resolve_system_prompt(
     selected_instance_id: str | None = None,
     *,
     skip_ui_patterns: bool = False,
+    diff_mode: bool = False,
 ) -> str:
     """
     schema_key 여부에 따라 시스템 프롬프트 반환 (데이터 병렬 로드)
@@ -293,6 +294,7 @@ async def resolve_system_prompt(
         schema, design_tokens, ag_grid_schema, ag_grid_tokens, component_definitions,
         skip_ui_patterns=skip_ui_patterns,
         component_usage_map=component_usage_map,
+        diff_mode=diff_mode,
     )
 
     # 인스턴스 편집 모드면 컨텍스트 추가
