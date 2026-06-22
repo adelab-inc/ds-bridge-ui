@@ -5,11 +5,18 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChatMessage } from './chat-message';
+import { useChatScroll } from './hooks/use-chat-scroll';
 import type { ChatMessage as ChatMessageType } from '@packages/shared-types/typescript/database/types';
 import type { StreamingDelayState } from '@/stores/useStreamingStore';
 
 interface ChatMessageListProps extends React.ComponentProps<'div'> {
   messages?: ChatMessageType[];
+  /** 더 오래된 메시지 페이지가 남아 있는지 (무한 스크롤) */
+  hasMore?: boolean;
+  /** 이전 페이지 로드가 진행 중인지 */
+  isLoadingMore?: boolean;
+  /** 최상단 도달 시 더 오래된 메시지를 불러오는 콜백 */
+  onLoadMore?: () => void;
   /** 현재 선택된 메시지 ID */
   selectedMessageId?: string;
   /** 북마크된 메시지 ID 목록 */
@@ -28,6 +35,9 @@ interface ChatMessageListProps extends React.ComponentProps<'div'> {
 
 function ChatMessageList({
   messages = [],
+  hasMore = false,
+  isLoadingMore = false,
+  onLoadMore,
   selectedMessageId,
   bookmarkedMessageIds,
   streamingMessageId,
@@ -38,12 +48,13 @@ function ChatMessageList({
   className,
   ...props
 }: ChatMessageListProps) {
-  const bottomRef = React.useRef<HTMLDivElement>(null);
-
-  // Auto-scroll to bottom when messages change (new message, streaming chunk)
-  React.useEffect(() => {
-    bottomRef.current?.scrollIntoView({ block: 'end', behavior: 'instant' });
-  }, [messages]);
+  // 하단 자동 추적 + 상단 무한 스크롤 + 스크롤 위치 보존을 한 곳에서 관리
+  const { viewportRef, topSentinelRef, bottomRef } = useChatScroll({
+    messages,
+    hasMore,
+    isLoadingMore,
+    onLoadMore: onLoadMore ?? (() => {}),
+  });
 
   if (messages.length === 0) {
     return (
@@ -64,9 +75,17 @@ function ChatMessageList({
   return (
     <ScrollArea
       data-slot="chat-message-list"
+      viewportRef={viewportRef}
       className={cn('flex-1 px-1', className)}
       {...props}
     >
+      {/* 최상단 sentinel: 보이면 더 오래된 메시지 로드 트리거 */}
+      <div ref={topSentinelRef} aria-hidden />
+      {isLoadingMore && (
+        <div className="text-muted-foreground py-2 text-center text-xs">
+          이전 메시지 불러오는 중…
+        </div>
+      )}
       {messages.map((message) => {
         const hasContent = !!(message.content && message.content.trim());
         return (

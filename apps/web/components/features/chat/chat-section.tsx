@@ -43,7 +43,13 @@ function ChatSection({
   className,
   ...props
 }: ChatSectionProps) {
-  const { data, refetch: refetchMessages } = useGetPaginatedMessages({
+  const {
+    data,
+    refetch: refetchMessages,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useGetPaginatedMessages({
     roomId,
     pageSize: 20,
     infiniteQueryOptions: {
@@ -127,9 +133,14 @@ function ChatSection({
   );
 
   // DB 메시지 목록
+  // pages는 신→구 페이지 순서(각 페이지 내부는 시간 오름차순)이므로,
+  // 표시용으로 페이지 순서를 뒤집어 오래된 페이지가 위로 오게 한다.
+  // (단일 페이지에서는 결과가 동일 — 다중 페이지에서만 정렬이 교정됨)
+  // 알려진 한계: 스트리밍 후 refetch 시 새 메시지가 page0/page1 경계를 밀면
+  // 커서 페이지네이션 특성상 seam에서 중복/누락 1건이 생길 수 있음(기존 이슈, 범위 외).
   const dbMessages = React.useMemo(() => {
     if (!data) return [];
-    return data.pages.flat();
+    return [...data.pages].reverse().flat();
   }, [data]);
 
   // 표시할 메시지 목록 (DB 메시지 + 스트리밍 메시지, 중복 방지)
@@ -259,6 +270,9 @@ function ChatSection({
             {/* Messages */}
             <ChatMessageList
               messages={displayMessages}
+              hasMore={hasNextPage}
+              isLoadingMore={isFetchingNextPage}
+              onLoadMore={fetchNextPage}
               selectedMessageId={selectedMessageId ?? undefined}
               bookmarkedMessageIds={bookmarkedMessageIds}
               streamingMessageId={streamingMessage?.id}
@@ -266,7 +280,7 @@ function ChatSection({
               onMessageClick={handleMessageClick}
               onBookmarkClick={handleBookmarkIconClick}
               onDeleteClick={handleDeleteIconClick}
-              className="min-h-0 flex-1 overflow-y-auto"
+              className="min-h-0 flex-1"
             />
 
             {/* 디스크립션 액션바 */}
