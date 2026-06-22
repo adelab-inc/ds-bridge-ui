@@ -33,6 +33,7 @@ def parse_edits(text: str) -> list[tuple[str, str]]:
     - 정상 블록 0개이고 <edit 흔적이 있거나, 전혀 없으면 PatchError.
     - <edit 열림 수와 정상 블록 수가 다르면(마커 깨짐) PatchError.
     """
+    text = text.replace("\r\n", "\n")
     blocks = [(m.group("search"), m.group("replace")) for m in _EDIT_BLOCK.finditer(text)]
     opens = len(_EDIT_OPEN.findall(text))
     if not blocks:

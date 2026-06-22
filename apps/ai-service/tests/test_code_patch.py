@@ -89,3 +89,18 @@ def test_apply_indentation_preserved_internal_whitespace():
     base = "function f() {\n  return 1;\n}\n"
     out = apply_edits(base, [("  return 1;", "  return 2;")])
     assert "  return 2;" in out
+
+
+def test_parse_crlf_line_endings():
+    crlf = (
+        '<edit path="src/A.tsx">\r\n<<<<<<< SEARCH\r\nconst x = 1;\r\n'
+        "=======\r\nconst x = 2;\r\n>>>>>>> REPLACE\r\n</edit>"
+    )
+    assert parse_edits(crlf) == [("const x = 1;", "const x = 2;")]
+
+
+def test_apply_fuzzy_multiline_span():
+    # 여러 줄 매칭 + 줄 trailing 공백 차이 → 정확한 범위만 치환
+    base = "header\naaa  \nbbb\nfooter\n"
+    out = apply_edits(base, [("aaa\nbbb", "ZZZ")])
+    assert out == "header\nZZZ\nfooter\n"
