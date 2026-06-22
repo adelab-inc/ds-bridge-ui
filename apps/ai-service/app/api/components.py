@@ -2065,6 +2065,29 @@ export default Login;
 </file>
 """
 
+DIFF_RESPONSE_FORMAT_INSTRUCTIONS = """
+
+## FORMAT (부분 수정 모드)
+1. 간단한 한글 설명 (1-2문장)
+2. **변경된 부분만** 아래 SEARCH/REPLACE 형식으로 출력. `<file>` 전체 출력 절대 금지.
+
+```
+<edit path="src/...">
+<<<<<<< SEARCH
+{현재 코드에서 공백·들여쓰기까지 그대로 복사한 스니펫 — 파일에서 유일하게 식별되도록 충분한 컨텍스트 포함}
+=======
+{바뀐 스니펫}
+>>>>>>> REPLACE
+</edit>
+```
+
+### 규칙 (절대 준수)
+- SEARCH 블록은 현재 코드와 **글자 그대로** 일치해야 한다(들여쓰기 포함).
+- 변경이 없는 부분은 출력하지 말 것. 여러 곳을 고치면 `<edit>` 블록을 여러 개 낸다.
+- SEARCH는 파일에서 한 번만 매칭되도록 충분한 주변 줄을 포함한다.
+- 전체 파일이나 `<file>` 태그를 출력하지 말 것.
+"""
+
 # SYSTEM_PROMPT_FOOTER removed — consolidated into FINAL_REMINDER
 
 UI_PATTERN_EXAMPLES = """
@@ -2411,6 +2434,7 @@ def generate_system_prompt(
     component_definitions: dict | None = None,
     skip_ui_patterns: bool = False,
     component_usage_map: dict | None = None,
+    diff_mode: bool = False,
 ) -> str:
     """
     주어진 스키마로 시스템 프롬프트 동적 생성
@@ -2462,7 +2486,7 @@ def generate_system_prompt(
         + LAYOUT_GUIDE
         + usage_map_section
         + (UI_PATTERN_EXAMPLES if not skip_ui_patterns else "")
-        + RESPONSE_FORMAT_INSTRUCTIONS
+        + (DIFF_RESPONSE_FORMAT_INSTRUCTIONS if diff_mode else RESPONSE_FORMAT_INSTRUCTIONS)
         + FINAL_REMINDER
     )
 

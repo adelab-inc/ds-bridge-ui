@@ -27,6 +27,7 @@ from app.schemas.chat import (
 from app.schemas.validation import ValidationError, ValidationReport
 from app.services.ai_provider import AIProvider, get_ai_provider
 from app.services.broadcast import broadcast_event, track_broadcast_task
+from app.services.code_patch import PatchError, apply_edits, parse_edits
 from app.services.code_validator import ComponentCatalog, validate_code
 from app.services.figma_api import FigmaFetchError, FigmaRateLimitError, extract_figma_url
 from app.services.message_condenser import condense_message
@@ -247,6 +248,7 @@ async def resolve_system_prompt(
     selected_instance_id: str | None = None,
     *,
     skip_ui_patterns: bool = False,
+    diff_mode: bool = False,
 ) -> str:
     """
     schema_key 여부에 따라 시스템 프롬프트 반환 (데이터 병렬 로드)
@@ -293,6 +295,7 @@ async def resolve_system_prompt(
         schema, design_tokens, ag_grid_schema, ag_grid_tokens, component_definitions,
         skip_ui_patterns=skip_ui_patterns,
         component_usage_map=component_usage_map,
+        diff_mode=diff_mode,
     )
 
     # 인스턴스 편집 모드면 컨텍스트 추가
@@ -306,11 +309,48 @@ async def resolve_system_prompt(
     return base_prompt
 
 
+_UNSET = object()
+
+
+async def resolve_base_code(room_id: str, from_message_id: str | None = None) -> dict | None:
+    """수정의 기준 코드 1건 조회: from_message_id 우선, 없으면 방의 최신 코드 메시지.
+
+    Returns: {"path": str, "content": str} 또는 None(첫 생성).
+    """
+    if from_message_id:
+        base_message = await get_message_by_id(from_message_id)
+        if base_message is None:
+            raise ValueError(f"Message not found: {from_message_id}")
+        if base_message.get("content"):
+            base = {
+                "path": base_message.get("path", "src/Component.tsx"),
+                "content": base_message["content"],
+            }
+            logger.info(
+                "Code context from specified message",
+                extra={"from_message_id": from_message_id, "path": base["path"]},
+            )
+            return base
+        return None
+    latest_code_msg = await get_latest_code_message(room_id)
+    if latest_code_msg and latest_code_msg.get("content") and latest_code_msg.get("path"):
+        base = {"path": latest_code_msg["path"], "content": latest_code_msg["content"]}
+        logger.info(
+            "Code context from latest message",
+            extra={"room_id": room_id, "path": base["path"]},
+        )
+        return base
+    return None
+
+
 async def build_conversation_history(
     room_id: str,
     system_prompt: str,
     current_message: str,
     from_message_id: str | None = None,
+    *,
+    base_code: dict | None = _UNSET,  # type: ignore[assignment]
+    diff_mode: bool = False,
 ) -> list[Message]:
     """
     코드 기반 컨텍스트로 메시지 리스트 생성 (대화 히스토리 제거)
@@ -331,40 +371,25 @@ async def build_conversation_history(
     """
     messages = [Message(role="system", content=system_prompt)]
 
-    # 기준 코드 결정: from_message_id > 방의 마지막 메시지 코드
-    base_code: dict | None = None
-
-    if from_message_id:
-        # 명시적 기준 메시지 지정
-        base_message = await get_message_by_id(from_message_id)
-        if base_message is None:
-            raise ValueError(f"Message not found: {from_message_id}")
-        if base_message.get("content"):
-            base_code = {
-                "path": base_message.get("path", "src/Component.tsx"),
-                "content": base_message["content"],
-            }
-            logger.info(
-                "Code context from specified message",
-                extra={"from_message_id": from_message_id, "path": base_code["path"]},
-            )
-    else:
-        # 방의 최신 코드 메시지 1건만 조회 (최적화)
-        latest_code_msg = await get_latest_code_message(room_id)
-        if latest_code_msg and latest_code_msg.get("content") and latest_code_msg.get("path"):
-            base_code = {
-                "path": latest_code_msg["path"],
-                "content": latest_code_msg["content"],
-            }
-            logger.info(
-                "Code context from latest message",
-                extra={"room_id": room_id, "path": base_code["path"]},
-            )
+    # 기준 코드: 호출부가 미리 넘긴 값 우선, 아니면 직접 조회(하위호환)
+    if base_code is _UNSET:
+        base_code = await resolve_base_code(room_id, from_message_id)
 
     # 사용자 메시지 구성: 기존 코드가 있으면 포함
     if base_code:
-        final_message = f'''현재 코드:
-<file path="{base_code["path"]}">{base_code["content"]}</file>
+        code_context = f'현재 코드:\n<file path="{base_code["path"]}">{base_code["content"]}</file>'
+        if diff_mode:
+            final_message = f'''{code_context}
+
+요청: {current_message}
+
+⚠️ 부분 수정 모드 (절대 준수):
+- 변경이 필요한 부분만 SEARCH/REPLACE(<edit>) 형식으로 출력할 것
+- SEARCH 블록은 위 현재 코드와 글자 그대로(들여쓰기 포함) 일치해야 함
+- <file> 전체 출력 금지. 요청과 무관한 부분은 건드리지 말 것
+- 여러 곳을 고치면 <edit> 블록을 여러 개 낼 것'''
+        else:
+            final_message = f'''{code_context}
 
 요청: {current_message}
 
@@ -635,17 +660,27 @@ def parse_ai_response(content: str) -> ParsedResponse:
 
 
 class StreamingParser:
-    """스트리밍 응답에서 실시간으로 텍스트/코드 분리"""
+    """스트리밍 응답에서 실시간으로 텍스트/코드 분리.
+
+    mode="file"(기본): <file> 코드 블록 파싱. mode="diff": <edit> 패치를 broadcast 없이
+    누적(get_patch로 회수). 두 모드의 인스턴스 속성은 상호배타적이다
+    (file: inside_file/current_file_*, diff: in_patch/patch_buffer).
+    """
 
     # 정규식 패턴 (클래스 수준에서 미리 컴파일)
     FILE_START_PATTERN = re.compile(r'<file\s+path="([^"]+)">')
     FILE_END_PATTERN = re.compile(r"</file>")
+    EDIT_START_PATTERN = re.compile(r"<edit\b")
 
-    def __init__(self):
+    def __init__(self, mode: str = "file"):
+        self.mode = mode
         self.buffer = ""
         self.inside_file = False
         self.current_file_path: str | None = None
         self.current_file_content = ""
+        # diff 모드 전용
+        self.in_patch = False
+        self.patch_buffer = ""
 
     def process_chunk(self, chunk: str) -> list[dict]:
         """
@@ -654,6 +689,9 @@ class StreamingParser:
         Returns:
             List of events: {'type': 'chat'|'code', ...}
         """
+        if self.mode == "diff":
+            return self._process_diff_chunk(chunk)
+        # --- 이하 기존 file 모드 로직 그대로 ---
         self.buffer += chunk
         events: list[dict] = []
 
@@ -708,8 +746,47 @@ class StreamingParser:
 
         return events
 
+    def _process_diff_chunk(self, chunk: str) -> list[dict]:
+        """diff 모드: 첫 <edit 이전 텍스트만 chat으로 emit, 이후는 patch_buffer에 누적."""
+        self.buffer += chunk
+        events: list[dict] = []
+        if self.in_patch:
+            self.patch_buffer += self.buffer
+            self.buffer = ""
+            return events
+        edit_match = self.EDIT_START_PATTERN.search(self.buffer)
+        if edit_match:
+            before = self.buffer[: edit_match.start()]
+            if before:
+                events.append({"type": "chat", "text": before})
+            self.patch_buffer += self.buffer[edit_match.start() :]
+            self.buffer = ""
+            self.in_patch = True
+            return events
+        # 아직 <edit 없음: '<' 직전까지만 chat으로 보내고 부분 태그는 홀드백
+        tag_start = self.buffer.rfind("<")
+        if tag_start > 0:
+            events.append({"type": "chat", "text": self.buffer[:tag_start]})
+            self.buffer = self.buffer[tag_start:]
+        elif tag_start == -1 and self.buffer:
+            events.append({"type": "chat", "text": self.buffer})
+            self.buffer = ""
+        return events
+
+    def get_patch(self) -> str:
+        """diff 모드: 누적된 패치 텍스트 반환(스트림 종료 후 호출)."""
+        return self.patch_buffer + (self.buffer if self.in_patch else "")
+
     def flush(self) -> list[dict]:
         """남은 버퍼 처리 (스트리밍 종료 시 호출)"""
+        if self.mode == "diff":
+            events: list[dict] = []
+            # 스트림이 부분 태그(예: "<edi")로 끊기면 chat으로 그대로 노출됨 —
+            # 어차피 parse_edits 실패 → 전체출력 폴백으로 회수되므로 무해.
+            if not self.in_patch and self.buffer.strip():
+                events.append({"type": "chat", "text": self.buffer.strip()})
+            return events
+        # --- 이하 기존 file 모드 flush 그대로 ---
         events: list[dict] = []
         remaining = self.buffer.strip()
         if remaining and not self.inside_file:
@@ -998,6 +1075,17 @@ async def chat_stream(request: ChatRequest) -> JSONResponse:
         # 3. AI Provider 초기화
         provider = get_ai_provider()
 
+        # diff(부분 편집) 판정: 스위치 ON + 대형 수정 + figma/vision 아님
+        _settings = get_settings()
+        base_code = await resolve_base_code(request.room_id, request.from_message_id)
+        is_diff_mode = (
+            _settings.gemini_diff_edit_enabled
+            and base_code is not None
+            and len(base_code["content"]) > _settings.gemini_diff_edit_threshold_chars
+            and not is_figma_mode
+            and not is_vision_mode
+        )
+
         # 4. 시스템 프롬프트 생성 (Figma/Vision/일반 모드에 따라 분기)
         if is_figma_mode:
             system_prompt = await resolve_system_prompt(
@@ -1024,15 +1112,35 @@ async def chat_stream(request: ChatRequest) -> JSONResponse:
                 schema_key=room.get("schema_key"),
                 current_composition=request.current_composition,
                 selected_instance_id=request.selected_instance_id,
+                diff_mode=is_diff_mode,
             )
 
-        # 5. 이전 대화 내역 포함하여 메시지 빌드
+        # 5. 메시지 빌드 (diff면 base_code 재사용 + diff 지시)
         messages = await build_conversation_history(
             room_id=request.room_id,
             system_prompt=system_prompt,
             current_message=request.message,
             from_message_id=request.from_message_id,
+            base_code=base_code,
+            diff_mode=is_diff_mode,
         )
+        # diff 실패 시 폴백용 전체출력 메시지(전체 포맷 시스템 프롬프트 + 전체출력 지시)
+        fallback_messages = None
+        if is_diff_mode:
+            full_system_prompt = await resolve_system_prompt(
+                schema_key=room.get("schema_key"),
+                current_composition=request.current_composition,
+                selected_instance_id=request.selected_instance_id,
+                diff_mode=False,
+            )
+            fallback_messages = await build_conversation_history(
+                room_id=request.room_id,
+                system_prompt=full_system_prompt,
+                current_message=request.message,
+                from_message_id=request.from_message_id,
+                base_code=base_code,
+                diff_mode=False,
+            )
 
         # 6. 백그라운드 태스크로 AI 생성 + broadcast 시작
         task = asyncio.create_task(
@@ -1047,6 +1155,9 @@ async def chat_stream(request: ChatRequest) -> JSONResponse:
                 figma_url=figma_url if is_figma_mode else None,
                 system_prompt=system_prompt if is_figma_mode else None,
                 user_message=request.message if is_figma_mode else None,
+                is_diff_mode=is_diff_mode,
+                base_code=base_code,
+                fallback_messages=fallback_messages,
             ),
             name=f"broadcast:{request.room_id}:{message_id}",
         )
@@ -1126,6 +1237,9 @@ async def _run_broadcast_generation(
     figma_url: str | None = None,
     system_prompt: str | None = None,
     user_message: str | None = None,
+    is_diff_mode: bool = False,
+    base_code: dict | None = None,
+    fallback_messages: list | None = None,
 ) -> None:
     """백그라운드에서 AI 응답을 생성하고 broadcast 이벤트를 발행한다."""
     parser = StreamingParser()
@@ -1214,97 +1328,141 @@ async def _run_broadcast_generation(
         heartbeat_task = asyncio.create_task(_heartbeat_loop())
         chunk_sender_task = asyncio.create_task(_chunk_sender())
 
+        # diff 사전 단계: 패치만 생성 → 적용해 전체 파일 확보. 실패 시 전체출력으로 폴백.
+        # 주의: PatchError(파싱/적용 실패)만 폴백한다. 스트림 타임아웃/예외는 의도적으로
+        # 잡지 않고 바깥 try의 TimeoutError/Exception 핸들러로 전파(표준 루프와 동일 처리).
+        if is_diff_mode and base_code:
+            diff_parser = StreamingParser(mode="diff")
+            try:
+                async with asyncio.timeout(600):
+                    async for chunk in provider.chat_stream(messages):
+                        for event in diff_parser.process_chunk(chunk):
+                            etype = event.pop("type")
+                            if etype == "chat":
+                                collected_text += event.get("text", "")
+                            await chunk_queue.put({"type": etype, **event})
+                for event in diff_parser.flush():
+                    etype = event.pop("type")
+                    if etype == "chat":
+                        collected_text += event.get("text", "")
+                    await chunk_queue.put({"type": etype, **event})
+
+                edits = parse_edits(diff_parser.get_patch())
+                full_content = apply_edits(base_code["content"], edits)
+                collected_files = [{"path": base_code["path"], "content": full_content}]
+                logger.info(
+                    "Diff edit applied",
+                    extra={
+                        "room_id": room_id, "message_id": message_id,
+                        "edits": len(edits), "result_len": len(full_content),
+                    },
+                )
+            except PatchError as e:
+                logger.warning(
+                    "Diff patch failed — falling back to full output",
+                    extra={"room_id": room_id, "message_id": message_id, "error": str(e)},
+                )
+                is_diff_mode = False
+                if fallback_messages is not None:
+                    messages = fallback_messages
+                parser = StreamingParser()
+                collected_text = ""
+                collected_files = []
+                await chunk_queue.put({"type": "retry", "attempt": 1})
+
         # 코드(<file>) 0건이면 재생성 (간헐적 thinking 폭주 → no-code 완화).
         # chunk_sender는 1개 유지하고 스트림+수집만 시도별로 반복한다. 최종 DONE 메시지가
         # 정본이므로, 재시도 중 이미 broadcast된 부분 청크는 FE가 "retry" 신호로 비우면 된다
         # (FE가 무시해도 저장 결과는 정확 — 마지막 성공 시도의 텍스트/코드만 DONE으로 저장).
-        max_attempts = get_settings().gemini_nocode_max_retries + 1
-        for attempt in range(max_attempts):
-            if attempt > 0:
-                logger.warning(
-                    "No code produced — retrying generation",
-                    extra={
-                        "room_id": room_id,
-                        "message_id": message_id,
-                        "attempt": attempt,
-                        "prev_text_len": len(collected_text),
-                    },
-                )
-                # 이전 시도 부분 출력 초기화 + FE에 재시도 신호
-                parser = StreamingParser()
-                collected_text = ""
-                collected_files = []
-                await chunk_queue.put({"type": "retry", "attempt": attempt})
-
-            async with asyncio.timeout(600):  # 시도당 10분 타임아웃
-                # Figma / Vision / 일반 모드에 따라 스트리밍 호출
-                if figma_url and system_prompt and user_message:
-                    stream = run_figma_tool_calling_loop(
-                        room_id=room_id,
-                        provider=provider,
-                        system_prompt=system_prompt,
-                        user_message=user_message,
-                        figma_url=figma_url,
-                    )
-                elif is_vision_mode:
-                    # Vision 미지원 프로바이더인지 확인 후 폴백
-                    _supports_vision = type(provider).chat_vision_stream is not AIProvider.chat_vision_stream
-                    if not _supports_vision:
-                        logger.warning(
-                            "Vision not supported, falling back to text-only",
-                            extra={"room_id": room_id, "provider": get_settings().ai_provider},
-                        )
-                        await broadcast_event(
-                            room_id,
-                            "warning",
-                            {"message": "현재 AI 프로바이더는 이미지 분석을 지원하지 않아 텍스트만으로 처리합니다."},
-                        )
-                        stream = provider.chat_stream(messages)
-                    else:
-                        stream = provider.chat_vision_stream(messages, images)
-                else:
-                    stream = provider.chat_stream(messages)
-
-                async for chunk in stream:
-                    events = parser.process_chunk(chunk)
-                    for event in events:
-                        event_type = event.pop("type")
-                        if event_type == "chat":
-                            collected_text += event.get("text", "")
-                        elif event_type == "code":
-                            collected_files.append(event)
-                            # 코드 블록 도착 즉시 중간 저장 (timeout 시 데이터 유실 방지)
-                            first_file = collected_files[0]
-                            _fire_and_forget_save(
-                                message_id=message_id,
-                                text=collected_text.strip(),
-                                content=first_file.get("content", ""),
-                                path=first_file.get("path", ""),
-                            )
-
-                        await chunk_queue.put({"type": event_type, **event})
-
-            # 남은 버퍼 처리
-            for event in parser.flush():
-                event_type = event.pop("type")
-                if event_type == "chat":
-                    collected_text += event.get("text", "")
-                await chunk_queue.put({"type": event_type, **event})
-
-            # 파서 fallback: 모델이 <file> 대신 ```tsx 펜스로만 코드를 낸 경우 회수.
-            # (가드가 멀쩡한 펜스 코드를 탈선으로 오판하지 않도록 가드보다 먼저 시도)
-            if not collected_files:
-                recovered = _extract_fenced_code(collected_text)
-                if recovered:
+        # diff 성공 시 collected_files가 이미 채워져 표준 루프를 건너뛴다.
+        if not collected_files:
+            max_attempts = get_settings().gemini_nocode_max_retries + 1
+            for attempt in range(max_attempts):
+                if attempt > 0:
                     logger.warning(
-                        "Recovered code from markdown fence (no <file> tag)",
-                        extra={"room_id": room_id, "message_id": message_id, "path": recovered["path"]},
+                        "No code produced — retrying generation",
+                        extra={
+                            "room_id": room_id,
+                            "message_id": message_id,
+                            "attempt": attempt,
+                            "prev_text_len": len(collected_text),
+                        },
                     )
-                    collected_files.append(recovered)
-                    await chunk_queue.put({"type": "code", **recovered})
+                    # 이전 시도 부분 출력 초기화 + FE에 재시도 신호
+                    parser = StreamingParser()
+                    collected_text = ""
+                    collected_files = []
+                    await chunk_queue.put({"type": "retry", "attempt": attempt})
 
-            if collected_files:
-                break  # 코드 확보 → 재시도 종료
+                async with asyncio.timeout(600):  # 시도당 10분 타임아웃
+                    # Figma / Vision / 일반 모드에 따라 스트리밍 호출
+                    if figma_url and system_prompt and user_message:
+                        stream = run_figma_tool_calling_loop(
+                            room_id=room_id,
+                            provider=provider,
+                            system_prompt=system_prompt,
+                            user_message=user_message,
+                            figma_url=figma_url,
+                        )
+                    elif is_vision_mode:
+                        # Vision 미지원 프로바이더인지 확인 후 폴백
+                        _supports_vision = type(provider).chat_vision_stream is not AIProvider.chat_vision_stream
+                        if not _supports_vision:
+                            logger.warning(
+                                "Vision not supported, falling back to text-only",
+                                extra={"room_id": room_id, "provider": get_settings().ai_provider},
+                            )
+                            await broadcast_event(
+                                room_id,
+                                "warning",
+                                {"message": "현재 AI 프로바이더는 이미지 분석을 지원하지 않아 텍스트만으로 처리합니다."},
+                            )
+                            stream = provider.chat_stream(messages)
+                        else:
+                            stream = provider.chat_vision_stream(messages, images)
+                    else:
+                        stream = provider.chat_stream(messages)
+
+                    async for chunk in stream:
+                        events = parser.process_chunk(chunk)
+                        for event in events:
+                            event_type = event.pop("type")
+                            if event_type == "chat":
+                                collected_text += event.get("text", "")
+                            elif event_type == "code":
+                                collected_files.append(event)
+                                # 코드 블록 도착 즉시 중간 저장 (timeout 시 데이터 유실 방지)
+                                first_file = collected_files[0]
+                                _fire_and_forget_save(
+                                    message_id=message_id,
+                                    text=collected_text.strip(),
+                                    content=first_file.get("content", ""),
+                                    path=first_file.get("path", ""),
+                                )
+
+                            await chunk_queue.put({"type": event_type, **event})
+
+                # 남은 버퍼 처리
+                for event in parser.flush():
+                    event_type = event.pop("type")
+                    if event_type == "chat":
+                        collected_text += event.get("text", "")
+                    await chunk_queue.put({"type": event_type, **event})
+
+                # 파서 fallback: 모델이 <file> 대신 ```tsx 펜스로만 코드를 낸 경우 회수.
+                # (가드가 멀쩡한 펜스 코드를 탈선으로 오판하지 않도록 가드보다 먼저 시도)
+                if not collected_files:
+                    recovered = _extract_fenced_code(collected_text)
+                    if recovered:
+                        logger.warning(
+                            "Recovered code from markdown fence (no <file> tag)",
+                            extra={"room_id": room_id, "message_id": message_id, "path": recovered["path"]},
+                        )
+                        collected_files.append(recovered)
+                        await chunk_queue.put({"type": "code", **recovered})
+
+                if collected_files:
+                    break  # 코드 확보 → 재시도 종료
 
         # chunk sender 종료 대기 (모든 시도 후 1회, 남은 큐 drain).
         # 대형 파일(예: ~115KB 코드 청크)이 큐 후반에 있으면 30초로는 flush 전에 취소돼
