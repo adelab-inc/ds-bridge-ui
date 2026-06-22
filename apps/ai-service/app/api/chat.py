@@ -1164,8 +1164,8 @@ async def _run_broadcast_generation(
         'code' 등 비-chat 이벤트는 순서 보장을 위해 chat 버퍼를 먼저 flush한 뒤 그대로 전송.
         """
         nonlocal dropped_chunks
-        flush_interval = 0.2  # 초 (idle 시 주기 flush → 스트리밍 끊김 없이 ~5fps)
-        flush_chars = 400
+        flush_interval = 0.4  # 초 (idle 시 주기 flush → ~2.5fps; broadcast POST 수 절감)
+        flush_chars = 2000    # 버스트 코얼레싱 강화 → 대형 생성 시 broadcast 백로그/드레인 부담↓
         chat_buf = ""
 
         async def _send(payload: dict) -> None:
@@ -1306,10 +1306,12 @@ async def _run_broadcast_generation(
             if collected_files:
                 break  # 코드 확보 → 재시도 종료
 
-        # chunk sender 종료 대기 (모든 시도 후 1회, 남은 큐 drain, 30초 한도)
+        # chunk sender 종료 대기 (모든 시도 후 1회, 남은 큐 drain).
+        # 대형 파일(예: ~115KB 코드 청크)이 큐 후반에 있으면 30초로는 flush 전에 취소돼
+        # "drain timed out, cancelling"으로 코드 청크가 전달 안 됨(미리보기 빈 화면) → 120초로 상향.
         await chunk_queue.put(None)
         try:
-            async with asyncio.timeout(30):
+            async with asyncio.timeout(120):
                 await chunk_sender_task
         except TimeoutError:
             logger.warning(
