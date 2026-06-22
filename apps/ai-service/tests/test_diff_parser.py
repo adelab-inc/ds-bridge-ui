@@ -43,3 +43,21 @@ def test_file_mode_unchanged():
     p = StreamingParser()  # 기본 file 모드
     events = _feed(p, '설명 <file path="src/A.tsx">const a=1;</file>')
     assert any(e["type"] == "code" for e in events)
+
+
+def test_diff_edit_tag_split_across_chunks():
+    # <edit 태그가 청크 경계에서 쪼개져도 부분 태그를 chat으로 흘리지 않고
+    # 패치는 <edit부터 깨끗하게 시작해야 한다.
+    p = StreamingParser(mode="diff")
+    chat = ""
+    chunks = [
+        "설명입니다<",
+        'edit path="src/A.tsx">\n<<<<<<< SEARCH\nx\n=======\ny\n>>>>>>> REPLACE\n</edit>',
+    ]
+    for c in chunks:
+        for e in p.process_chunk(c):
+            if e["type"] == "chat":
+                chat += e["text"]
+    chat += "".join(e["text"] for e in p.flush() if e["type"] == "chat")
+    assert "<" not in chat  # 부분 태그가 새지 않음
+    assert p.get_patch().startswith("<edit")

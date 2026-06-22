@@ -659,7 +659,12 @@ def parse_ai_response(content: str) -> ParsedResponse:
 
 
 class StreamingParser:
-    """스트리밍 응답에서 실시간으로 텍스트/코드 분리"""
+    """스트리밍 응답에서 실시간으로 텍스트/코드 분리.
+
+    mode="file"(기본): <file> 코드 블록 파싱. mode="diff": <edit> 패치를 broadcast 없이
+    누적(get_patch로 회수). 두 모드의 인스턴스 속성은 상호배타적이다
+    (file: inside_file/current_file_*, diff: in_patch/patch_buffer).
+    """
 
     # 정규식 패턴 (클래스 수준에서 미리 컴파일)
     FILE_START_PATTERN = re.compile(r'<file\s+path="([^"]+)">')
@@ -748,12 +753,12 @@ class StreamingParser:
             self.patch_buffer += self.buffer
             self.buffer = ""
             return events
-        m = self.EDIT_START_PATTERN.search(self.buffer)
-        if m:
-            before = self.buffer[: m.start()]
+        edit_match = self.EDIT_START_PATTERN.search(self.buffer)
+        if edit_match:
+            before = self.buffer[: edit_match.start()]
             if before:
                 events.append({"type": "chat", "text": before})
-            self.patch_buffer += self.buffer[m.start() :]
+            self.patch_buffer += self.buffer[edit_match.start() :]
             self.buffer = ""
             self.in_patch = True
             return events
@@ -775,6 +780,8 @@ class StreamingParser:
         """남은 버퍼 처리 (스트리밍 종료 시 호출)"""
         if self.mode == "diff":
             events: list[dict] = []
+            # 스트림이 부분 태그(예: "<edi")로 끊기면 chat으로 그대로 노출됨 —
+            # 어차피 parse_edits 실패 → 전체출력 폴백으로 회수되므로 무해.
             if not self.in_patch and self.buffer.strip():
                 events.append({"type": "chat", "text": self.buffer.strip()})
             return events
