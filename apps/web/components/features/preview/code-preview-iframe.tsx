@@ -842,25 +842,54 @@ function CodePreviewIframe({
           const target = function () {};
           const blocked = new Set([
             'then',          // thenable 로 오인되어 Promise 처리되는 것 방지
-            '$$typeof',      // React element 판별
+            '$$typeof',      // React element 판별 (절대 흉내내지 않음 — React 가 진짜 element 로 순회하면 더 위험)
             'asymmetricMatch',
             'nodeType', 'tagName',
           ]);
+          // 누락된 "리스트형" prop 에 대한 배열 메서드 완화.
+          // AI 코드가 흔히 items.map(...) 형태로 prop 을 렌더하는데, items 가
+          // 미주입이면 safeProxy(=함수) 가 반환되고 .map() 결과도 프록시라
+          // React 가 "유효하지 않은 자식" 으로 크래시한다. 진짜 빈 배열을 돌려주면
+          // "빈 목록" 으로 자연스럽게 렌더된다. (length/산술은 toPrimitive 로 이미 0)
+          const arrayEmpty = new Set([
+            'map', 'filter', 'slice', 'concat', 'flat', 'flatMap',
+            'sort', 'reverse', 'splice', 'fill', 'keys', 'values', 'entries',
+          ]);
           return new Proxy(target, {
             get: function (_t, prop) {
-              if (prop === Symbol.toPrimitive) return function () { return ''; };
+              // hint 인지: 숫자 문맥이면 0, 그 외엔 빈 문자열
+              if (prop === Symbol.toPrimitive) return function (hint) { return hint === 'number' ? 0 : ''; };
               if (prop === Symbol.iterator) return function* () {};
               if (prop === Symbol.toStringTag) return 'String';
               if (prop === 'toString' || prop === 'valueOf') return function () { return ''; };
               if (typeof prop === 'symbol') return undefined;
               if (blocked.has(prop)) return undefined;
+              // ── 배열 유사 접근 완화 (catch-all 보다 먼저) ──
+              if (prop === 'length') return 0;
+              if (arrayEmpty.has(prop)) return function () { return []; };
+              if (prop === 'forEach') return function () {};
+              if (prop === 'reduce' || prop === 'reduceRight') return function (_fn, init) { return init; };
+              if (prop === 'join') return function () { return ''; };
+              if (prop === 'includes') return function () { return false; };
+              if (prop === 'indexOf' || prop === 'lastIndexOf' || prop === 'findIndex') return function () { return -1; };
+              if (prop === 'find') return function () { return undefined; };
+              if (prop === 'some') return function () { return false; };
+              if (prop === 'every') return function () { return true; };
               return createSafeProxy();
             },
             apply: function () { return createSafeProxy(); },
             construct: function () { return createSafeProxy(); },
             has: function () { return false; },
-            ownKeys: function () { return []; },
-            getOwnPropertyDescriptor: function () { return undefined; },
+            // ownKeys 는 타깃(function)에 위임해야 한다. 빈 배열을 반환하면
+            // 함수의 non-configurable own prop 'prototype' 이 누락되어
+            // Object.keys(proxy) 호출 시 "'ownKeys' on proxy: trap result did
+            // not include 'prototype'" TypeError 가 발생한다. 함수의 own key
+            // (length/name/prototype)는 모두 non-enumerable 이므로 Reflect 위임
+            // 후에도 Object.keys() 결과는 그대로 [] 가 유지된다.
+            ownKeys: function (t) { return Reflect.ownKeys(t); },
+            getOwnPropertyDescriptor: function (t, prop) {
+              return Reflect.getOwnPropertyDescriptor(t, prop);
+            },
           });
         }
 
