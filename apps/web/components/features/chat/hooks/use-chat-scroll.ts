@@ -37,6 +37,10 @@ export function useChatScroll({
   // 초기 하단 스크롤이 끝났는지 — 끝나기 전에는 상단 옵저버가 동작하지 않음
   // (20+ 룸 진입 시 sentinel이 잠깐 상단에 보여 page2를 자동 당기는 것 방지)
   const didInitialScrollRef = React.useRef(false);
+  // 사용자가 하단 근처에 있는지 — 하단 추적(scrollIntoView)을 이 경우에만 수행.
+  // prepend 직후엔 상단 근처라 false가 되므로, 플래그 타이밍 레이스로 else 분기가
+  // 잘못 실행돼도 위치를 하단으로 끌어내리지 않는다. 초기값 true(최초 하단 스크롤용).
+  const isNearBottomRef = React.useRef(true);
   // prepend(이전 메시지 로드)가 진행 중인지 — anchoring 복원 대상 표시
   const isPrependingRef = React.useRef(false);
   // prepend 직전 viewport.scrollHeight (복원 기준값)
@@ -54,6 +58,7 @@ export function useChatScroll({
 
   const firstId = messages[0]?.id;
   const len = messages.length;
+  const hasMessages = len > 0;
 
   // 스크롤 위치 제어: prepend 진행 중이면 anchoring, 그 외 모든 변경은 하단 추적
   React.useLayoutEffect(() => {
@@ -75,8 +80,10 @@ export function useChatScroll({
       if (!isLoadingMore) {
         isPrependingRef.current = false;
       }
-    } else if (len > 0) {
-      // 초기 로드 / 하단 새 메시지 / 스트리밍 청크(내용만 증가) 모두 하단으로.
+    } else if (len > 0 && (!didInitialScrollRef.current || isNearBottomRef.current)) {
+      // 초기 1회는 무조건 하단으로. 이후엔 사용자가 하단 근처일 때만 추적
+      // (하단 새 메시지 / 스트리밍 청크). 위로 스크롤해 히스토리를 읽는 중엔
+      // 새 메시지가 와도 끌려 내려가지 않는다.
       bottomRef.current?.scrollIntoView({ block: 'end', behavior: 'instant' });
       didInitialScrollRef.current = true;
     }
@@ -111,6 +118,26 @@ export function useChatScroll({
     observer.observe(sentinel);
     return () => observer.disconnect();
   }, [hasMore, isLoadingMore]);
+
+  // 사용자의 하단 근접 여부 추적 — 하단 추적 게이트(isNearBottomRef)에 사용.
+  // 하단에서 80px 이내면 "하단 근처"로 본다.
+  React.useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+
+    const NEAR_BOTTOM_THRESHOLD = 80;
+    const update = () => {
+      isNearBottomRef.current =
+        viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight <
+        NEAR_BOTTOM_THRESHOLD;
+    };
+
+    update(); // 초기값 1회 계산
+    viewport.addEventListener('scroll', update, { passive: true });
+    return () => viewport.removeEventListener('scroll', update);
+    // hasMessages 전환 시 재실행 — viewport는 메시지가 생긴 뒤에야 마운트되므로
+    // (빈 상태에선 ScrollArea 미렌더) 첫 메시지 도착 시 리스너를 붙인다.
+  }, [hasMessages]);
 
   return { viewportRef, topSentinelRef, bottomRef };
 }
