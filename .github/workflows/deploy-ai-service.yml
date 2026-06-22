@@ -35,7 +35,7 @@ jobs:
           echo "MIN_INSTANCES=1" >> $GITHUB_ENV
           echo "MAX_INSTANCES=5" >> $GITHUB_ENV
           echo "JWT_VERIFY_ENABLED=true" >> $GITHUB_ENV    # prod: 삭제 소유권 검증 활성 (FE 토큰 forward 선행 필요)
-          echo "GEMINI_DIFF_EDIT_ENABLED=false" >> $GITHUB_ENV  # prod: diff 편집 비활성 (dev 검증 후 별도 활성)
+          echo "GEMINI_DIFF_EDIT_ENABLED=true" >> $GITHUB_ENV   # prod: diff 편집 활성 (dev 30/30 성공·폴백0 검증 후)
 
       - name: Set environment (dev)
         if: github.ref == 'refs/heads/develop'
