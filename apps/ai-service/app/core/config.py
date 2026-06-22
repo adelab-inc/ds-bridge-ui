@@ -42,6 +42,9 @@ class Settings(BaseSettings):
     gemini_max_output_tokens: int = 65536
     # 코드(<file>) 0건 생성 시 재생성 횟수 (간헐적 thinking 폭주 → no-code 완화). 0이면 재시도 없음.
     gemini_nocode_max_retries: int = 1
+    # diff(search/replace) 부분 편집 — 대형 파일 수정 시 변경분만 출력
+    gemini_diff_edit_enabled: bool = False  # 마스터 스위치(무중단 롤아웃, 기본 off)
+    gemini_diff_edit_threshold_chars: int = 24000  # base 코드 len(content) 초과 시 diff 적용(≈8k 토큰)
 
     # API Authentication
     # 헤더 이름은 외부/내부 모두 X-API-Key 로 통일. 값(secret)만 분리해서 발급.
