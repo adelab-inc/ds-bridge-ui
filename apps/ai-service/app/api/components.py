@@ -2065,6 +2065,29 @@ export default Login;
 </file>
 """
 
+DIFF_RESPONSE_FORMAT_INSTRUCTIONS = """
+
+## FORMAT (부분 수정 모드)
+1. 간단한 한글 설명 (1-2문장)
+2. **변경된 부분만** 아래 SEARCH/REPLACE 형식으로 출력. `<file>` 전체 출력 절대 금지.
+
+```
+<edit path="src/...">
+<<<<<<< SEARCH
+{현재 코드에서 공백·들여쓰기까지 그대로 복사한 스니펫 — 파일에서 유일하게 식별되도록 충분한 컨텍스트 포함}
+=======
+{바뀐 스니펫}
+>>>>>>> REPLACE
+</edit>
+```
+
+### 규칙 (절대 준수)
+- SEARCH 블록은 현재 코드와 **글자 그대로** 일치해야 한다(들여쓰기 포함).
+- 변경이 없는 부분은 출력하지 말 것. 여러 곳을 고치면 `<edit>` 블록을 여러 개 낸다.
+- SEARCH는 파일에서 한 번만 매칭되도록 충분한 주변 줄을 포함한다.
+- 전체 파일이나 `<file>` 태그를 출력하지 말 것.
+"""
+
 # SYSTEM_PROMPT_FOOTER removed — consolidated into FINAL_REMINDER
 
 UI_PATTERN_EXAMPLES = """
@@ -2411,6 +2434,7 @@ def generate_system_prompt(
     component_definitions: dict | None = None,
     skip_ui_patterns: bool = False,
     component_usage_map: dict | None = None,
+    diff_mode: bool = False,
 ) -> str:
     """
     주어진 스키마로 시스템 프롬프트 동적 생성
@@ -2462,7 +2486,7 @@ def generate_system_prompt(
         + LAYOUT_GUIDE
         + usage_map_section
         + (UI_PATTERN_EXAMPLES if not skip_ui_patterns else "")
-        + RESPONSE_FORMAT_INSTRUCTIONS
+        + (DIFF_RESPONSE_FORMAT_INSTRUCTIONS if diff_mode else RESPONSE_FORMAT_INSTRUCTIONS)
         + FINAL_REMINDER
     )
 
@@ -2607,7 +2631,7 @@ DESCRIPTION_SYSTEM_PROMPT = """\
 ### 절대 하지 말아야 할 것 (위반 시 문서 불합격):
 - 코드에 존재하는 데이터를 축약, 생략, 요약하는 모든 행위. 디스크립션은 코드의 모든 정보를 빠짐없이 1:1로 반영해야 합니다
 - 코드에 배열/목록이 N개 항목이면 디스크립션 테이블도 정확히 N행이어야 합니다. 일부만 나열하고 나머지를 한 행으로 묶는 것은 금지입니다
-- 범위 표기(N~M), 괄호 축약((생략), (기타 ...), (나머지 동일)), "등", "외 N건", "상동" 등 어떤 형태의 축약 표현도 사용 금지
+- 범위 표기(N~M), 괄호 축약((생략), (기타 ...), (나머지 동일), (이하 동일), (이하 그리드 컬럼) 등 "(이하 ~)" 형태 전부), "등", "외 N건", "상동" 등 어떤 형태의 축약 표현도 사용 금지
 - 그리드 컬럼, 드롭다운 옵션, API 필드 등 반복 데이터는 반드시 1행 = 1항목으로 개별 나열하세요
 
 ### 도메인 일관성 규칙:

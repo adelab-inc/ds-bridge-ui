@@ -33,11 +33,18 @@ class Settings(BaseSettings):
     #    기본 minimal — 응답 속도 우선 + thinking 폭주 위험 최소화.
     #    (복잡 화면에서 코드 품질이 떨어지면 "low"로 상향)
     gemini_thinking_level: str = "minimal"  # off(=실효 없음, dynamic ON), minimal, low, medium, high
-    # 출력 토큰 상한 (thinking 토큰도 이 예산에 포함). 정상 코드 출력은 ~5k라 충분하며,
-    # thinking 폭주 시 빠르게 MAX_TOKENS로 종료시켜 무한 추론을 막는다.
-    gemini_max_output_tokens: int = 16384
+    # 출력 토큰 상한. thinking 폭주는 thinking_level=minimal 이 막으므로(이게 1차 가드),
+    # 이 값은 "정상 코드 재출력"을 위한 천장 역할만 한다.
+    # ⚠️ 16384는 너무 낮았다 — 누적 편집으로 커진 대형 파일(예: ~115KB ≈ 40k 출력토큰)을
+    #    매 수정마다 "전체 재출력"하다 16384에서 잘려 MAX_TOKENS→no-code 회귀 발생(room f94ab53f).
+    #    minimal로 thinking이 ~0이라 천장을 올려도 폭주는 재발하지 않으므로 모델 한도로 상향.
+    #    (근본 해법은 전체 재출력 → diff/부분수정으로 출력량 자체를 줄이는 것)
+    gemini_max_output_tokens: int = 65536
     # 코드(<file>) 0건 생성 시 재생성 횟수 (간헐적 thinking 폭주 → no-code 완화). 0이면 재시도 없음.
     gemini_nocode_max_retries: int = 1
+    # diff(search/replace) 부분 편집 — 대형 파일 수정 시 변경분만 출력
+    gemini_diff_edit_enabled: bool = False  # 마스터 스위치(무중단 롤아웃, 기본 off)
+    gemini_diff_edit_threshold_chars: int = 24000  # base 코드 len(content) 초과 시 diff 적용(≈8k 토큰)
 
     # API Authentication
     # 헤더 이름은 외부/내부 모두 X-API-Key 로 통일. 값(secret)만 분리해서 발급.

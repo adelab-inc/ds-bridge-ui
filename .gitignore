@@ -153,3 +153,6 @@ storybook-standalone/apps/web/
 
 # Migration data (uid 매핑 등 민감 정보)
 apps/ai-service/scripts/migration_data/
+
+# superpowers 설계/계획 문서 — 로컬 전용, 커밋 제외
+docs/superpowers/
