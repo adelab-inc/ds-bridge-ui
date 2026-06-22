@@ -254,6 +254,24 @@ function CodePreviewIframe({
           ''
         );
 
+      // 3-1. 잔여 import 전량 제거 (blanket-strip)
+      // 위 화이트리스트(@/components, react, ag-grid, @aplus/ui)에서 못 잡은
+      // 임의 모듈 import(예: `import X from '@/components/Sub'` 같은 서브경로
+      // default import, 로컬 모듈, 외부 라이브러리, side-effect/type import)를
+      // specifier 무관하게 제거한다. Sucrase는 'imports' 트랜스폼을 켜지 않아
+      // 살아남은 import 구문을 그대로 통과시키는데, 이것이 일반 <script>에
+      // 주입되면 "Cannot use import statement outside a module" 파싱 에러로
+      // 스크립트 전체(try/catch·onerror 방어 포함)가 죽어 무음 실패가 된다.
+      // 바인딩 스팬을 [^;]*? 로 제한 — `;`(구문 경계)를 넘지 않게 하여,
+      // `from` 없는 side-effect import 가 뒤따르는 import 의 `from` 까지
+      // 삼키며 그 사이 코드를 통째로 지우는 오버매칭을 방지한다.
+      // ([^;] 는 줄바꿈 포함이므로 멀티라인 named import 도 안전.)
+      processedCode = processedCode
+        // `import ... from '...';` (default / named / namespace / mixed / type)
+        .replace(/import\s+[^;]*?\s+from\s+['"][^'"]+['"]\s*;?\n?/g, '')
+        // `import '...';` (side-effect)
+        .replace(/import\s+['"][^'"]+['"]\s*;?\n?/g, '');
+
       // 4. 컴포넌트 이름 추출 및 export 처리 (다양한 패턴 지원)
       let componentName = 'App';
 
@@ -327,6 +345,30 @@ function CodePreviewIframe({
         .filter((c) => AVAILABLE_APLUS_COMPONENTS.includes(c))
         .filter((c) => !explicitlyMapped.includes(c))
         .filter((c) => !agGridRelatedExports.includes(c))
+        .filter((c) => !locallyDeclared.has(c));
+
+      // 5-1-1. 미해결 컴포넌트 감지 (blanket-strip으로 import가 사라진 로컬 모듈 등)
+      // 잔여 import 제거(3-1) 후, 사용은 됐지만 어디에도 정의/매핑되지 않은
+      // PascalCase 컴포넌트(예: `import X from '@/components/Sub'` 의 X, 외부
+      // 라이브러리 컴포넌트)는 `React.createElement(undefined)` 크래시를 낸다.
+      // @aplus/ui 폴백과 동일하게 점선 placeholder 박스로 stub 하여 페이지
+      // 골격은 best-effort 렌더되게 한다(무음 실패 대신 가시적 placeholder).
+      // React/AG Grid 래퍼 주입 식별자·루트 컴포넌트명은 const 중복 선언을
+      // 피하기 위해 반드시 제외.
+      const RESERVED_GLOBAL_IDENTIFIERS = [
+        'React', 'ReactDOM', 'Fragment', 'StrictMode',
+        'Suspense', 'Profiler', 'Children',
+      ];
+      const agGridInjectedIdentifiers = [
+        'AgGridReact', 'ModuleRegistry', 'AllCommunityModule',
+      ];
+      const unresolvedComponents = [...usedComponents]
+        .filter((c) => !AVAILABLE_APLUS_COMPONENTS.includes(c))
+        .filter((c) => !explicitlyMapped.includes(c))
+        .filter((c) => !agGridRelatedExports.includes(c))
+        .filter((c) => !agGridInjectedIdentifiers.includes(c))
+        .filter((c) => !RESERVED_GLOBAL_IDENTIFIERS.includes(c))
+        .filter((c) => c !== componentName)
         .filter((c) => !locallyDeclared.has(c));
 
       // 명시 import 매핑도 사용자 로컬 선언과 충돌 방지를 위해 동일 필터 적용
@@ -763,6 +805,7 @@ function CodePreviewIframe({
         // AG Grid 관련 컴포넌트는 커스텀 래퍼로 주입되므로 제외
         const AplusUI = window.AplusUI || {};
         const missingComponents = [];
+        const unresolvedStubs = [];
         ${
           importedToInject.length > 0
             ? importedToInject
@@ -798,8 +841,25 @@ function CodePreviewIframe({
             : ''
         }
 
+        // 미해결 컴포넌트 stub (blanket-strip으로 import가 제거된 로컬 모듈/외부
+        // 라이브러리 컴포넌트). @aplus/ui 폴백과 달리 AplusUI 조회 없이 곧장
+        // 점선 placeholder 박스로 대체 → React.createElement(undefined) 크래시 방지.
+        ${
+          unresolvedComponents.length > 0
+            ? unresolvedComponents
+                .map(
+                  (comp) =>
+                    `const ${comp} = (function() { unresolvedStubs.push('${comp}'); return function(props) { return React.createElement('div', { style: { padding: '8px', border: '1px dashed #ccc', borderRadius: '4px', background: '#f9f9f9' }, ...props }, props.children || '[${comp}]'); }; })();`
+                )
+                .join('\n        ')
+            : ''
+        }
+
         if (missingComponents.length > 0) {
           console.warn('[Preview] Missing components from @aplus/ui:', missingComponents.join(', '));
+        }
+        if (unresolvedStubs.length > 0) {
+          console.warn('[Preview] 미해결 컴포넌트 (로컬 모듈/외부 라이브러리로 추정) — placeholder로 대체:', unresolvedStubs.join(', '));
         }
 
         // Compound component 서브 프로퍼티 fallback (예: Dialog.Header 등)
@@ -840,6 +900,11 @@ function CodePreviewIframe({
         // 래퍼(__PreviewWrapper)를 거쳐, 그 안에서 Proxy 를 입혀 전달한다.
         function createSafeProxy() {
           const target = function () {};
+          // 동일 키의 자식 접근은 같은 proxy 인스턴스를 반환해야 한다.
+          // 매 접근마다 새 proxy 를 만들면 (예: items.first.x) 사용자 코드가
+          // 그 값을 useEffect/useMemo 의존성 배열에 넣었을 때 identity 가 매
+          // 렌더 달라져 effect 가 무한 재실행된다. 키별 캐싱으로 안정화.
+          const childCache = {};
           const blocked = new Set([
             'then',          // thenable 로 오인되어 Promise 처리되는 것 방지
             '$$typeof',      // React element 판별 (절대 흉내내지 않음 — React 가 진짜 element 로 순회하면 더 위험)
@@ -875,6 +940,11 @@ function CodePreviewIframe({
               if (prop === 'find') return function () { return undefined; };
               if (prop === 'some') return function () { return false; };
               if (prop === 'every') return function () { return true; };
+              // 키별 안정 identity (위 childCache 주석 참조)
+              if (typeof prop === 'string') {
+                if (!(prop in childCache)) childCache[prop] = createSafeProxy();
+                return childCache[prop];
+              }
               return createSafeProxy();
             },
             apply: function () { return createSafeProxy(); },
@@ -920,6 +990,25 @@ function CodePreviewIframe({
             '데이터를 사용 중일 수 있습니다.'
           );
         }
+        // 누락 top-level prop 의 safeProxy 를 prop 이름별로 캐싱.
+        // 매 렌더 새 proxy 를 반환하면, 사용자 코드가 그 prop 을
+        // useEffect/useMemo 의존성 배열에 넣었을 때(예: [open, initialData])
+        // identity 가 렌더마다 달라져 effect 가 무한 재실행 → setState →
+        // 무한 리렌더 루프가 된다. 프리뷰는 컴포넌트 인스턴스가 1개라 모듈
+        // 스코프 캐시가 안전하다.
+        // 주의: proxy 는 객체라 항상 truthy 다(if(prop) 은 'present' 분기를
+        // 탄다). 이는 본질적 한계로, 루프는 제거되지만 누락 prop 을 기반으로
+        // 한 조건 분기는 1회 실행될 수 있다(루프 아님).
+        const __missingPropCache = {};
+        function __getMissingProp(prop) {
+          if (typeof prop === 'string') {
+            if (!(prop in __missingPropCache)) {
+              __missingPropCache[prop] = createSafeProxy();
+            }
+            return __missingPropCache[prop];
+          }
+          return createSafeProxy();
+        }
         function __PreviewWrapper(realProps) {
           const base = realProps || {};
           const safeProps = new Proxy(base, {
@@ -927,7 +1016,7 @@ function CodePreviewIframe({
               if (typeof prop === 'symbol') return t[prop];
               if (prop in t) return t[prop];
               __reportMissingProp(prop);
-              return createSafeProxy();
+              return __getMissingProp(prop);
             },
             has: function (t, prop) { return prop in t; },
             ownKeys: function (t) { return Reflect.ownKeys(t); },
