@@ -308,11 +308,48 @@ async def resolve_system_prompt(
     return base_prompt
 
 
+_UNSET = object()
+
+
+async def resolve_base_code(room_id: str, from_message_id: str | None = None) -> dict | None:
+    """수정의 기준 코드 1건 조회: from_message_id 우선, 없으면 방의 최신 코드 메시지.
+
+    Returns: {"path": str, "content": str} 또는 None(첫 생성).
+    """
+    if from_message_id:
+        base_message = await get_message_by_id(from_message_id)
+        if base_message is None:
+            raise ValueError(f"Message not found: {from_message_id}")
+        if base_message.get("content"):
+            base = {
+                "path": base_message.get("path", "src/Component.tsx"),
+                "content": base_message["content"],
+            }
+            logger.info(
+                "Code context from specified message",
+                extra={"from_message_id": from_message_id, "path": base["path"]},
+            )
+            return base
+        return None
+    latest_code_msg = await get_latest_code_message(room_id)
+    if latest_code_msg and latest_code_msg.get("content") and latest_code_msg.get("path"):
+        base = {"path": latest_code_msg["path"], "content": latest_code_msg["content"]}
+        logger.info(
+            "Code context from latest message",
+            extra={"room_id": room_id, "path": base["path"]},
+        )
+        return base
+    return None
+
+
 async def build_conversation_history(
     room_id: str,
     system_prompt: str,
     current_message: str,
     from_message_id: str | None = None,
+    *,
+    base_code: dict | None = _UNSET,  # type: ignore[assignment]
+    diff_mode: bool = False,
 ) -> list[Message]:
     """
     코드 기반 컨텍스트로 메시지 리스트 생성 (대화 히스토리 제거)
@@ -333,40 +370,25 @@ async def build_conversation_history(
     """
     messages = [Message(role="system", content=system_prompt)]
 
-    # 기준 코드 결정: from_message_id > 방의 마지막 메시지 코드
-    base_code: dict | None = None
-
-    if from_message_id:
-        # 명시적 기준 메시지 지정
-        base_message = await get_message_by_id(from_message_id)
-        if base_message is None:
-            raise ValueError(f"Message not found: {from_message_id}")
-        if base_message.get("content"):
-            base_code = {
-                "path": base_message.get("path", "src/Component.tsx"),
-                "content": base_message["content"],
-            }
-            logger.info(
-                "Code context from specified message",
-                extra={"from_message_id": from_message_id, "path": base_code["path"]},
-            )
-    else:
-        # 방의 최신 코드 메시지 1건만 조회 (최적화)
-        latest_code_msg = await get_latest_code_message(room_id)
-        if latest_code_msg and latest_code_msg.get("content") and latest_code_msg.get("path"):
-            base_code = {
-                "path": latest_code_msg["path"],
-                "content": latest_code_msg["content"],
-            }
-            logger.info(
-                "Code context from latest message",
-                extra={"room_id": room_id, "path": base_code["path"]},
-            )
+    # 기준 코드: 호출부가 미리 넘긴 값 우선, 아니면 직접 조회(하위호환)
+    if base_code is _UNSET:
+        base_code = await resolve_base_code(room_id, from_message_id)
 
     # 사용자 메시지 구성: 기존 코드가 있으면 포함
     if base_code:
-        final_message = f'''현재 코드:
-<file path="{base_code["path"]}">{base_code["content"]}</file>
+        code_context = f'현재 코드:\n<file path="{base_code["path"]}">{base_code["content"]}</file>'
+        if diff_mode:
+            final_message = f'''{code_context}
+
+요청: {current_message}
+
+⚠️ 부분 수정 모드 (절대 준수):
+- 변경이 필요한 부분만 SEARCH/REPLACE(<edit>) 형식으로 출력할 것
+- SEARCH 블록은 위 현재 코드와 글자 그대로(들여쓰기 포함) 일치해야 함
+- <file> 전체 출력 금지. 요청과 무관한 부분은 건드리지 말 것
+- 여러 곳을 고치면 <edit> 블록을 여러 개 낼 것'''
+        else:
+            final_message = f'''{code_context}
 
 요청: {current_message}
 
