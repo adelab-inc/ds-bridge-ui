@@ -1662,6 +1662,7 @@ Always respond in Korean.
    - 조건부 disabled 초기 상태 = false(편집 가능). 데모 확인용
 9. Component Whitelist: Available Components만 사용. DatePicker→`<Field type="date" />`, Input→`<Field type="text" />`
 10. HTML Void Elements(`<input>`, `<br>`, `<hr>`, `<img>`) = `/>` self-closing 필수
+11. Link에 `onClick`/`label` = CRASH. Link는 `to`(내부)/`href`(외부) 페이지 이동 전용. 클릭 동작은 요청이 "텍스트 링크"·"인라인 링크"라고 해도 전부 Button — 예: "+ 행 추가"/"+ 기간 추가" 인라인 추가도 `<Link>`가 아니라 `<Button buttonType="ghost" size="sm" label="+ 행 추가" onClick={...} />`
 
 """
 
@@ -1679,6 +1680,12 @@ COMPONENT_QUICK_REFERENCE = """
 - size: lg(폼 제출) | md(헤더,필터,Dialog) | sm(DataGrid 행, 컴팩트, 툴바)
 - **⚠️ 같은 그룹(연속/나란히 배치) 내 Button size 통일 필수**. 헤더 툴바에 "URL 복사 lg + 인쇄 md"처럼 섞으면 UI 깨짐 — 같은 행은 같은 size
 - 아이콘: `showStartIcon={true} startIcon={<Icon name="add" size={20} />}` (Button이 size 강제 변환하므로 size={16} 목록 아이콘만 안전)
+
+### Link (내비게이션 전용 — 버튼 아님)
+- 내부 이동: `<Link to="/policy/list" size="sm">목록으로</Link>` · 외부: `<Link href="https://example.com" size="sm">외부 문서</Link>`
+- **`to`(내부 경로) 또는 `href`(외부 URL) 중 하나 필수.** 텍스트는 children으로 전달 (`label` prop 없음). `onClick` 단독 사용 금지 — 목적지 없는 Link = 런타임 CRASH (`href.startsWith` of undefined)
+- **클릭 동작(추가/삭제/열기/행추가 등)은 Link가 아니라 Button**: `<Button buttonType="ghost" size="sm" label="+ 행 추가" onClick={() => addRow()} />`
+- ❌ `<Link onClick={...}>+ 기간 추가</Link>` / `<Link label="+ 기간 추가" onClick={...} />` — label이든 children이든 **onClick + to/href 없으면 CRASH**. 클릭 액션은 Button.
 
 ### Field (self-closing — `</Field>` = CRASH)
 - `<Field type="text" label="이름" value={v} onChange={(e) => set(e.target.value)} />`
