@@ -866,6 +866,118 @@ async def restore_message_from_archive(message_id: str) -> bool:
 
 
 # ============================================================================
+# Room Copy / Move (다른 유저에게 공유·이관)
+# ============================================================================
+
+
+async def copy_room_to_user(source_room_id: str, target_user_id: str) -> RoomData:
+    """방+메시지+디스크립션을 새 room_id로 target_user_id에게 복제.
+
+    - 새 room_id/message id/description id 부여, room_id 참조 갱신
+    - 방 created_at=현재(대상 목록 상단), schema_key·storybook_url·image_urls는 원본 그대로 참조
+      (스토리지 재업로드 없음 — 원본 삭제 시 이미지 깨질 수 있음 = 알려진 한계)
+    - 메시지 question_created_at은 보존(순서 유지)
+    - 생성 컬럼(code_hash/description_hash)은 제외 (DB가 자동 계산)
+
+    Returns: 생성된 새 방 RoomData
+    Raises: RoomNotFoundError(원본 없음), DatabaseError
+    """
+    client = await get_supabase_client()
+
+    src = (await client.table("chat_rooms").select("*").eq("id", source_room_id).execute()).data
+    if not src:
+        raise RoomNotFoundError(f"Room not found: {source_room_id}")
+    src_room: dict[str, Any] = src[0]
+    messages: list[dict[str, Any]] = (
+        await client.table("chat_messages").select("*").eq("room_id", source_room_id).execute()
+    ).data
+    descriptions: list[dict[str, Any]]
+    try:
+        descriptions = (await client.table("descriptions").select("*").eq("room_id", source_room_id).execute()).data
+    except Exception:
+        descriptions = []
+
+    new_room_id = str(uuid.uuid4())
+    new_room: RoomData = {
+        "id": new_room_id,
+        "user_id": target_user_id,
+        "schema_key": src_room.get("schema_key"),
+        "storybook_url": src_room.get("storybook_url"),
+        "created_at": get_timestamp_ms(),
+    }
+    await client.table("chat_rooms").insert(new_room).execute()
+
+    if messages:
+        new_msgs = []
+        for m in messages:
+            mm = _strip_generated_columns(m)
+            mm["id"] = str(uuid.uuid4())
+            mm["room_id"] = new_room_id
+            new_msgs.append(mm)
+        await client.table("chat_messages").insert(new_msgs).execute()
+
+    if descriptions:
+        new_descs = []
+        for d in descriptions:
+            dd = _strip_generated_columns(d)
+            dd["id"] = str(uuid.uuid4())
+            dd["room_id"] = new_room_id
+            new_descs.append(dd)
+        await client.table("descriptions").insert(new_descs).execute()
+
+    logger.info(
+        "Room copied to user",
+        extra={
+            "source_room_id": source_room_id, "new_room_id": new_room_id,
+            "target_user_id": target_user_id, "messages": len(messages), "descriptions": len(descriptions),
+        },
+    )
+    return new_room
+
+
+async def move_room_to_user(room_id: str, target_user_id: str) -> RoomData:
+    """방 소유권 이전 (chat_rooms.user_id 변경). 메시지/디스크립션은 room_id로 그대로 따라감.
+
+    Returns: 업데이트된 방 RoomData
+    Raises: RoomNotFoundError(방 없음), DatabaseError
+    """
+    client = await get_supabase_client()
+    result = await client.table("chat_rooms").update({"user_id": target_user_id}).eq("id", room_id).execute()
+    if not result.data:
+        raise RoomNotFoundError(f"Room not found: {room_id}")
+    logger.info("Room moved to user", extra={"room_id": room_id, "target_user_id": target_user_id})
+    return result.data[0]  # type: ignore[return-value]
+
+
+async def list_all_users() -> list[dict]:
+    """전체 auth.users 멤버 목록 (id, email, name, avatar_url). Auth admin API 페이징 수집.
+
+    조직/멤버 테이블이 없어 auth.users 전체를 반환한다. FE에서 클라이언트 검색.
+    """
+    client = await get_supabase_client()
+    users: list[dict] = []
+    page = 1
+    per_page = 200
+    while page <= 100:  # 안전 상한(최대 2만명)
+        batch = await client.auth.admin.list_users(page=page, per_page=per_page)
+        if not batch:
+            break
+        for u in batch:
+            meta = getattr(u, "user_metadata", None) or {}
+            users.append({
+                "id": str(getattr(u, "id", "") or ""),
+                "email": getattr(u, "email", None),
+                "name": meta.get("full_name") or meta.get("name"),
+                "avatar_url": meta.get("avatar_url") or meta.get("picture"),
+            })
+        if len(batch) < per_page:
+            break
+        page += 1
+    logger.info("Listed auth users", extra={"count": len(users)})
+    return users
+
+
+# ============================================================================
 # Description CRUD
 # ============================================================================
 
