@@ -34,3 +34,23 @@ export function deleteErrorMessage(
       return `${label} 삭제에 실패했습니다. (오류 ${status})`;
   }
 }
+
+/** 방 복제(copy)/이관(move) 실패 HTTP 상태를 사용자용 한글 메시지로 변환한다. */
+export function transferErrorMessage(
+  status: number,
+  action: 'copy' | 'move'
+): string {
+  const label = action === 'copy' ? '복제' : '이관';
+  switch (status) {
+    case 400:
+      return '대상 사용자를 선택해 주세요.';
+    case 401:
+      return '로그인이 필요합니다. 다시 로그인해 주세요.';
+    case 403:
+      return `본인 소유의 방만 ${label}할 수 있습니다.`;
+    case 404:
+      return '방을 찾을 수 없습니다.';
+    default:
+      return `${label}에 실패했습니다. (오류 ${status})`;
+  }
+}
