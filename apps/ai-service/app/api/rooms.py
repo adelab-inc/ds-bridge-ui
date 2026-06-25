@@ -13,6 +13,7 @@ from app.schemas.chat import (
     ImageUploadResponse,
     PaginatedMessagesResponse,
     RoomResponse,
+    RoomTransferRequest,
     SchemaResponse,
     UpdateRoomRequest,
 )
@@ -25,12 +26,14 @@ from app.services.supabase_db import (
     DatabaseError,
     RoomData,
     RoomNotFoundError,
+    copy_room_to_user,
     create_chat_room,
     delete_chat_message,
     delete_chat_room,
     get_chat_room,
     get_messages_paginated,
     list_rooms_by_user,
+    move_room_to_user,
     update_chat_room,
 )
 
@@ -262,6 +265,125 @@ async def update_room(room_id: str, request: UpdateRoomRequest) -> RoomResponse:
             detail="An unexpected error occurred. Please try again.",
         ) from e
 
+
+
+# ============================================================================
+# Copy / Move Endpoints (다른 유저에게 공유·이관)
+# ============================================================================
+
+
+@router.post(
+    "/{room_id}/copy",
+    response_model=RoomResponse,
+    status_code=status.HTTP_201_CREATED,
+    operation_id="copyRoom",
+    summary="방 복제 (다른 유저에게)",
+    description="""
+본인 소유 방을 대상 유저에게 복제합니다 (방 + 메시지 + 디스크립션). 원본은 그대로 유지됩니다.
+
+- `target_user_id`: 대상 사용자 ID (GET /users 멤버 목록에서 선택)
+- 새 room_id로 즉시 대상 유저 목록에 생성됩니다 (수락 불필요).
+""",
+    responses={
+        201: {"description": "복제 성공 (새 방 반환)"},
+        403: {"description": "본인 소유 방이 아님"},
+        404: {"description": "방을 찾을 수 없음"},
+        500: {"description": "서버 오류"},
+    },
+)
+async def copy_room(
+    room_id: str,
+    request: RoomTransferRequest,
+    room: RoomData = Depends(get_room_or_404),
+    uid: str | None = Depends(get_current_user_id),
+) -> RoomResponse:
+    """본인 소유 방을 대상 유저에게 복제 (즉시 반영).
+
+    제로트러스트: 검증된 JWT 의 uid 가 방 소유자와 다르면 403 (검증 비활성 시 스킵).
+    """
+    owner_id = room.get("user_id")
+    if uid is not None and owner_id and owner_id != uid:
+        logger.warning(
+            "Room copy forbidden (not owner)",
+            extra={"room_id": room_id, "owner_id": owner_id, "requester_id": uid},
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="본인 소유의 채팅방만 복제할 수 있습니다.",
+        )
+    if not request.target_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="target_user_id가 필요합니다.",
+        )
+    try:
+        new_room = await copy_room_to_user(room_id, request.target_user_id)
+        return RoomResponse(**new_room)
+    except RoomNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Room not found.") from e
+    except DatabaseError as e:
+        logger.error("Failed to copy room", extra={"room_id": room_id, "error": str(e)})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database error. Please try again.",
+        ) from e
+
+
+@router.post(
+    "/{room_id}/move",
+    response_model=RoomResponse,
+    status_code=status.HTTP_200_OK,
+    operation_id="moveRoom",
+    summary="방 이관 (소유권 이전)",
+    description="""
+본인 소유 방의 소유권을 대상 유저에게 이전합니다 (방+메시지+디스크립션 그대로 이동). 이전 후 본인은 접근 권한을 잃습니다.
+
+- `target_user_id`: 대상 사용자 ID (GET /users 멤버 목록에서 선택)
+- 즉시 대상 유저 목록으로 이동합니다 (수락 불필요).
+""",
+    responses={
+        200: {"description": "이관 성공 (이관된 방 반환)"},
+        403: {"description": "본인 소유 방이 아님"},
+        404: {"description": "방을 찾을 수 없음"},
+        500: {"description": "서버 오류"},
+    },
+)
+async def move_room(
+    room_id: str,
+    request: RoomTransferRequest,
+    room: RoomData = Depends(get_room_or_404),
+    uid: str | None = Depends(get_current_user_id),
+) -> RoomResponse:
+    """본인 소유 방을 대상 유저에게 이관 (소유권 이전, 즉시 반영).
+
+    제로트러스트: 검증된 JWT 의 uid 가 방 소유자와 다르면 403 (검증 비활성 시 스킵).
+    """
+    owner_id = room.get("user_id")
+    if uid is not None and owner_id and owner_id != uid:
+        logger.warning(
+            "Room move forbidden (not owner)",
+            extra={"room_id": room_id, "owner_id": owner_id, "requester_id": uid},
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="본인 소유의 채팅방만 이관할 수 있습니다.",
+        )
+    if not request.target_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="target_user_id가 필요합니다.",
+        )
+    try:
+        updated = await move_room_to_user(room_id, request.target_user_id)
+        return RoomResponse(**updated)
+    except RoomNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Room not found.") from e
+    except DatabaseError as e:
+        logger.error("Failed to move room", extra={"room_id": room_id, "error": str(e)})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database error. Please try again.",
+        ) from e
 
 
 # ============================================================================
