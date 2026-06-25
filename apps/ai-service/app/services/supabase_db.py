@@ -955,6 +955,17 @@ async def list_all_users() -> list[dict]:
     조직/멤버 테이블이 없어 auth.users 전체를 반환한다. FE에서 클라이언트 검색.
     """
     client = await get_supabase_client()
+
+    # 운영자 표시명 오버라이드 (user_display_names). 매핑이 있으면 user_metadata.name 보다 우선.
+    # OAuth 재동기화로 metadata 이름이 덮어써지는 문제를 회피한다.
+    # 테이블 미생성(마이그레이션 005 미적용) 등으로 실패해도 graceful 폴백.
+    overrides: dict[str, str] = {}
+    try:
+        rows = (await client.table("user_display_names").select("user_id, display_name").execute()).data
+        overrides = {r["user_id"]: r["display_name"] for r in rows if r.get("display_name")}
+    except Exception as e:
+        logger.warning("user_display_names overlay skipped", extra={"error": f"{type(e).__name__}: {e}"})
+
     users: list[dict] = []
     page = 1
     per_page = 200
@@ -964,16 +975,17 @@ async def list_all_users() -> list[dict]:
             break
         for u in batch:
             meta = getattr(u, "user_metadata", None) or {}
+            uid = str(getattr(u, "id", "") or "")
             users.append({
-                "id": str(getattr(u, "id", "") or ""),
+                "id": uid,
                 "email": getattr(u, "email", None),
-                "name": meta.get("full_name") or meta.get("name"),
+                "name": overrides.get(uid) or meta.get("full_name") or meta.get("name"),
                 "avatar_url": meta.get("avatar_url") or meta.get("picture"),
             })
         if len(batch) < per_page:
             break
         page += 1
-    logger.info("Listed auth users", extra={"count": len(users)})
+    logger.info("Listed auth users", extra={"count": len(users), "overrides": len(overrides)})
     return users
 
 
