@@ -475,6 +475,32 @@ class RoomResponse(BaseModel):
     )
 
 
+class RoomTransferRequest(BaseModel):
+    """방 copy/move 요청 — 대상 유저 지정 (멤버 목록에서 선택한 user_id)."""
+
+    target_user_id: str = Field(
+        ...,
+        description="대상 사용자 ID (GET /users 멤버 목록에서 선택)",
+        json_schema_extra={"example": "550e8400-e29b-41d4-a716-446655440000"},
+    )
+
+
+class UserItem(BaseModel):
+    """멤버 목록 항목 (auth.users)."""
+
+    id: str = Field(..., description="사용자 ID (UUID)")
+    email: str | None = Field(default=None, description="이메일")
+    name: str | None = Field(default=None, description="표시 이름 (없으면 null)")
+    avatar_url: str | None = Field(default=None, description="아바타 URL (없으면 null)")
+
+
+class UserListResponse(BaseModel):
+    """전체 멤버 목록 응답 (FE에서 클라이언트 검색)."""
+
+    users: list[UserItem] = Field(default_factory=list)
+    total: int = Field(..., description="멤버 수")
+
+
 class MessageDocument(BaseModel):
     """채팅 메시지 문서"""
 

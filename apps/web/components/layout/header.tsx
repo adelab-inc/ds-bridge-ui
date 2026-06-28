@@ -12,6 +12,7 @@ import {
   Copy01Icon,
   Tick01Icon,
   PencilEdit02Icon,
+  ArrowDataTransferHorizontalIcon,
 } from '@hugeicons/core-free-icons';
 
 import { cn } from '@/lib/utils';
@@ -32,6 +33,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -61,6 +65,8 @@ import {
 import { useUpdateRoom } from '@/hooks/api/useUpdateRoom';
 import { useIsRoomOwner } from '@/hooks/useIsRoomOwner';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { TransferRoomDialog } from '@/components/features/rooms/transfer-room-dialog';
+import type { TransferAction } from '@/types/rooms';
 import type { ChatRoom } from '@packages/shared-types/typescript/database/types';
 
 /**
@@ -128,6 +134,16 @@ function Header({
     roomId: string | null;
     storybookUrl: string;
   }>({ open: false, roomId: null, storybookUrl: '' });
+  // 다른 사용자에게 복제/이관 다이얼로그 상태
+  const [transferDialog, setTransferDialog] = React.useState<{
+    open: boolean;
+    room: ChatRoom | null;
+    action: TransferAction;
+  }>({ open: false, room: null, action: 'copy' });
+
+  const openTransfer = (room: ChatRoom, action: TransferAction) => {
+    setTransferDialog({ open: true, room, action });
+  };
 
   // const handleSubmit = (e: React.FormEvent) => {
   //   e.preventDefault();
@@ -499,26 +515,29 @@ function Header({
                   ) : (
                     rooms.map((room) => {
                       const selected = selectedIds.has(room.id);
-                      return (
-                        <DropdownMenuItem
-                          key={room.id}
-                          closeOnClick={!deleteMode}
-                          onClick={() => {
-                            if (deleteMode) {
-                              toggleSelect(room.id);
-                            } else {
-                              handleSelectRoom(room.id);
-                            }
-                          }}
-                          className={cn(
-                            'flex items-center gap-2',
-                            !deleteMode &&
-                              room.id === currentRoomId &&
-                              'bg-accent',
-                            deleteMode && selected && 'bg-accent/60'
-                          )}
-                        >
-                          {deleteMode && (
+                      const roomInfo = (
+                        <div className="min-w-0 flex-1 flex flex-col gap-0.5">
+                          <span className="truncate text-sm font-medium">
+                            {getRoomName(room)}
+                          </span>
+                          <span className="text-muted-foreground text-xs">
+                            {formatDate(room.created_at)}
+                          </span>
+                        </div>
+                      );
+
+                      // 삭제 모드: 행 전체가 선택 토글 (기존 동작 유지)
+                      if (deleteMode) {
+                        return (
+                          <DropdownMenuItem
+                            key={room.id}
+                            closeOnClick={false}
+                            onClick={() => toggleSelect(room.id)}
+                            className={cn(
+                              'flex items-center gap-2',
+                              selected && 'bg-accent/60'
+                            )}
+                          >
                             <span
                               aria-hidden
                               className={cn(
@@ -536,39 +555,73 @@ function Header({
                                 />
                               )}
                             </span>
+                            {roomInfo}
+                          </DropdownMenuItem>
+                        );
+                      }
+
+                      // 일반 모드: 행 클릭=방 선택 + 우측 케밥(⋯) 서브메뉴(수정/복제/이관)
+                      return (
+                        <div
+                          key={room.id}
+                          className={cn(
+                            'flex items-center gap-0.5 rounded-md pr-0.5',
+                            room.id === currentRoomId && 'bg-accent'
                           )}
-                          <div className="min-w-0 flex-1 flex flex-col gap-0.5">
-                            <span className="truncate text-sm font-medium">
-                              {getRoomName(room)}
-                            </span>
-                            <span className="text-muted-foreground text-xs">
-                              {formatDate(room.created_at)}
-                            </span>
-                          </div>
-                          {!deleteMode && (
-                            <div className="flex shrink-0 items-center gap-0.5">
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
+                        >
+                          <DropdownMenuItem
+                            closeOnClick
+                            onClick={() => handleSelectRoom(room.id)}
+                            className="flex min-w-0 flex-1 items-center gap-2 bg-transparent"
+                          >
+                            {roomInfo}
+                          </DropdownMenuItem>
+                          <DropdownMenuSub>
+                            <DropdownMenuSubTrigger className="text-muted-foreground hover:text-foreground size-7 shrink-0 justify-center rounded-full p-0 [&>svg:last-child]:hidden">
+                              <HugeiconsIcon
+                                icon={MoreVerticalIcon}
+                                className="size-4"
+                                strokeWidth={2}
+                              />
+                              <span className="sr-only">프로젝트 메뉴</span>
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuSubContent>
+                              <DropdownMenuItem
+                                onClick={() =>
                                   setEditDialog({
                                     open: true,
                                     roomId: room.id,
                                     storybookUrl: room.storybook_url || '',
-                                  });
-                                }}
-                                className="text-muted-foreground hover:text-foreground shrink-0 rounded-full p-0.5 transition-colors cursor-pointer"
-                                aria-label="프로젝트 수정"
+                                  })
+                                }
                               >
                                 <HugeiconsIcon
                                   icon={PencilEdit02Icon}
-                                  className="size-3.5"
                                   strokeWidth={2}
                                 />
-                              </button>
-                            </div>
-                          )}
-                        </DropdownMenuItem>
+                                수정
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => openTransfer(room, 'copy')}
+                              >
+                                <HugeiconsIcon
+                                  icon={Copy01Icon}
+                                  strokeWidth={2}
+                                />
+                                다른 사용자에게 복제
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => openTransfer(room, 'move')}
+                              >
+                                <HugeiconsIcon
+                                  icon={ArrowDataTransferHorizontalIcon}
+                                  strokeWidth={2}
+                                />
+                                다른 사용자에게 이관
+                              </DropdownMenuItem>
+                            </DropdownMenuSubContent>
+                          </DropdownMenuSub>
+                        </div>
                       );
                     })
                   )}
@@ -783,6 +836,19 @@ function Header({
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
+
+            {/* Room Transfer Dialog (다른 사용자에게 복제/이관) */}
+            <TransferRoomDialog
+              open={transferDialog.open}
+              onOpenChange={(open) =>
+                setTransferDialog((prev) => ({ ...prev, open }))
+              }
+              room={transferDialog.room}
+              action={transferDialog.action}
+              onMoved={(movedRoomId) =>
+                navigateAfterDelete(new Set([movedRoomId]))
+              }
+            />
 
             {/* User Menu */}
             <UserMenu />
