@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     gemini_nocode_max_retries: int = 1
     # diff(search/replace) 부분 편집 — 대형 파일 수정 시 변경분만 출력
     gemini_diff_edit_enabled: bool = False  # 마스터 스위치(무중단 롤아웃, 기본 off)
-    gemini_diff_edit_threshold_chars: int = 24000  # base 코드 len(content) 초과 시 diff 적용(≈8k 토큰)
+    gemini_diff_edit_threshold_chars: int = 3000  # base 코드 len(content) 초과 시 diff 적용. 낮출수록 더 많은 편집이 diff(출력↓=빠름), 실패 시 풀출력 폴백
 
     # API Authentication
     # 헤더 이름은 외부/내부 모두 X-API-Key 로 통일. 값(secret)만 분리해서 발급.
