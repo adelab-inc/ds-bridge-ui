@@ -15,7 +15,9 @@ import {
   ArrowDataTransferHorizontalIcon,
 } from '@hugeicons/core-free-icons';
 
-import { cn } from '@/lib/utils';
+import { useQueryClient } from '@tanstack/react-query';
+
+import { cn, transferErrorMessage } from '@/lib/utils';
 import { HeaderLogo } from '@/components/layout/header-logo';
 import { ClientOnly } from '@/components/ui/client-only';
 import { Badge } from '@/components/ui/badge';
@@ -63,6 +65,8 @@ import {
   type DeleteRoomsResult,
 } from '@/hooks/api/useDeleteRooms';
 import { useUpdateRoom } from '@/hooks/api/useUpdateRoom';
+import { useCopyRoom } from '@/hooks/api/useCopyRoom';
+import { roomKeys } from '@/hooks/api/roomKeys';
 import { useIsRoomOwner } from '@/hooks/useIsRoomOwner';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { TransferRoomDialog } from '@/components/features/rooms/transfer-room-dialog';
@@ -143,6 +147,38 @@ function Header({
 
   const openTransfer = (room: ChatRoom, action: TransferAction) => {
     setTransferDialog({ open: true, room, action });
+  };
+
+  // 나에게 복제(자기복제): 피커 없이 빈 본문으로 copy 호출 → 내 목록에 사본 생성
+  const queryClient = useQueryClient();
+  const selfCopyMutation = useCopyRoom();
+  const [selfCopyResult, setSelfCopyResult] = React.useState<{
+    open: boolean;
+    status: 'success' | 'error';
+    newRoom: ChatRoom | null;
+    message: string;
+  }>({ open: false, status: 'success', newRoom: null, message: '' });
+
+  const handleSelfCopy = async (room: ChatRoom) => {
+    try {
+      // targetUserId 생략 → 본문이 `{}` → 서버가 owner_id로 폴백(자기복제)
+      const newRoom = await selfCopyMutation.mutateAsync({ roomId: room.id });
+      // 새 복제본이 내 목록에 생기므로 룸 목록 쿼리 무효화
+      await queryClient.invalidateQueries({ queryKey: roomKeys.all });
+      setSelfCopyResult({
+        open: true,
+        status: 'success',
+        newRoom,
+        message: '',
+      });
+    } catch (e) {
+      setSelfCopyResult({
+        open: true,
+        status: 'error',
+        newRoom: null,
+        message: e instanceof Error ? e.message : transferErrorMessage(500, 'copy'),
+      });
+    }
   };
 
   // const handleSubmit = (e: React.FormEvent) => {
@@ -599,7 +635,16 @@ function Header({
                                   icon={PencilEdit02Icon}
                                   strokeWidth={2}
                                 />
-                                수정
+                                프로젝트 이름 수정
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleSelfCopy(room)}
+                              >
+                                <HugeiconsIcon
+                                  icon={Copy01Icon}
+                                  strokeWidth={2}
+                                />
+                                나에게 복제
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => openTransfer(room, 'copy')}
@@ -849,6 +894,83 @@ function Header({
                 navigateAfterDelete(new Set([movedRoomId]))
               }
             />
+
+            {/* Self-Copy Result Dialog (나에게 복제 결과) */}
+            <AlertDialog
+              open={selfCopyResult.open}
+              onOpenChange={(open) =>
+                setSelfCopyResult((prev) => ({ ...prev, open }))
+              }
+            >
+              <AlertDialogContent>
+                {selfCopyResult.status === 'success' ? (
+                  <>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>복제 완료</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {selfCopyResult.newRoom ? (
+                          <>
+                            <span className="text-foreground font-medium">
+                              {getRoomName(selfCopyResult.newRoom)}
+                            </span>{' '}
+                            복제본이 내 목록에 생성되었습니다.
+                          </>
+                        ) : (
+                          '내 목록에 복제본이 생성되었습니다.'
+                        )}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <Button
+                        variant="outline"
+                        onClick={() =>
+                          setSelfCopyResult((prev) => ({
+                            ...prev,
+                            open: false,
+                          }))
+                        }
+                      >
+                        닫기
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          if (selfCopyResult.newRoom) {
+                            handleSelectRoom(selfCopyResult.newRoom.id);
+                          }
+                          setSelfCopyResult((prev) => ({
+                            ...prev,
+                            open: false,
+                          }));
+                        }}
+                      >
+                        새 복제본으로 이동
+                      </Button>
+                    </AlertDialogFooter>
+                  </>
+                ) : (
+                  <>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>복제 실패</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {selfCopyResult.message}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <Button
+                        onClick={() =>
+                          setSelfCopyResult((prev) => ({
+                            ...prev,
+                            open: false,
+                          }))
+                        }
+                      >
+                        닫기
+                      </Button>
+                    </AlertDialogFooter>
+                  </>
+                )}
+              </AlertDialogContent>
+            </AlertDialog>
 
             {/* User Menu */}
             <UserMenu />
