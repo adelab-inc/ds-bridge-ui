@@ -211,6 +211,11 @@ function CodePreviewIframe({
         'ImageCellRenderer',
         'DataGridProps',
       ];
+      // 2-4. 프리뷰 전용 래퍼로 오버라이드하는 컴포넌트 (자동 매핑에서 제외)
+      // Link: @aplus/ui Link 의 `to`(TanStack RouterLink) 분기는 RouterProvider
+      // 컨텍스트를 요구하나 프리뷰엔 라우터가 없어 `null.__store` 크래시가 난다.
+      // AG Grid 와 동일하게 자동 매핑에서 빼고 아래에서 전용 래퍼를 1회 주입한다.
+      const previewOverriddenComponents = ['Link'];
       const nonAgGridAplusComponents = aplusUiComponents.filter(
         (c) => !agGridRelatedExports.includes(c)
       );
@@ -345,6 +350,7 @@ function CodePreviewIframe({
         .filter((c) => AVAILABLE_APLUS_COMPONENTS.includes(c))
         .filter((c) => !explicitlyMapped.includes(c))
         .filter((c) => !agGridRelatedExports.includes(c))
+        .filter((c) => !previewOverriddenComponents.includes(c))
         .filter((c) => !locallyDeclared.has(c));
 
       // 5-1-1. 미해결 컴포넌트 감지 (blanket-strip으로 import가 사라진 로컬 모듈 등)
@@ -373,11 +379,19 @@ function CodePreviewIframe({
 
       // 명시 import 매핑도 사용자 로컬 선언과 충돌 방지를 위해 동일 필터 적용
       const importedToInject = nonAgGridImportedComponents.filter(
-        (c) => !locallyDeclared.has(c)
+        (c) => !locallyDeclared.has(c) && !previewOverriddenComponents.includes(c)
       );
       const aplusToInject = nonAgGridAplusComponents.filter(
-        (c) => !locallyDeclared.has(c)
+        (c) => !locallyDeclared.has(c) && !previewOverriddenComponents.includes(c)
       );
+
+      // Link 사용 감지 → 전용 래퍼 주입 여부. 사용자가 직접 `const Link = ...`
+      // 선언한 경우(locallyDeclared)엔 이중 선언을 피하기 위해 주입하지 않는다.
+      const usesLink =
+        (importedComponents.includes('Link') ||
+          aplusUiComponents.includes('Link') ||
+          usedComponents.has('Link')) &&
+        !locallyDeclared.has('Link');
 
       // 5-2. Compound component 서브 프로퍼티 감지 (예: Dialog.Header, Dialog.Body 등)
       const allMappedComponents = [
@@ -708,6 +722,32 @@ function CodePreviewIframe({
         `
         : '';
 
+      // Link 프리뷰 오버라이드 래퍼
+      // @aplus/ui Link 는 `to` prop 이 있으면 TanStack RouterLink 를 렌더하는데,
+      // 프리뷰 iframe 엔 RouterProvider 가 없어 useRouter() 가 null 을 돌려주고
+      // `null.__store` 런타임 에러가 난다(링크 개수만큼 반복). 프리뷰는 정적
+      // 렌더라 실제 이동이 없으므로 `to` 를 제거하고 항상 일반 <a> 분기로 보낸다.
+      // 동시에 `to`/`href` 둘 다 없는 경우(`href.startsWith(undefined)` 크래시)도
+      // href 기본값 '#' 으로 방어한다. 실제 AplusUI.Link 를 그대로 호출하므로
+      // CVA variants(size/tone/underline) 등 디자인 스타일은 보존된다.
+      const linkWrapperCode = usesLink
+        ? `
+        const Link = (function () {
+          const __AplusLink = (window.AplusUI && window.AplusUI.Link) || null;
+          return function Link(props) {
+            var next = Object.assign({}, props || {});
+            if ('to' in next) {
+              if (next.href == null) next.href = next.to;
+              delete next.to; // RouterLink 분기 진입 자체를 차단
+            }
+            if (next.href == null) next.href = '#';
+            if (__AplusLink) return React.createElement(__AplusLink, next);
+            return React.createElement('a', next, next.children); // 번들 미로딩 폴백
+          };
+        })();
+        `
+        : '';
+
       // 7. HTML 생성
       const html = `<!DOCTYPE html>
 <html>
@@ -875,6 +915,8 @@ function CodePreviewIframe({
         }
 
         ${agGridWrapperCode}
+
+        ${linkWrapperCode}
 
         // 트랜스파일된 컴포넌트 코드
         ${transpiledCode}
