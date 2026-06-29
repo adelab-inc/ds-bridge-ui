@@ -2153,7 +2153,8 @@ SYSTEM_PROMPT = (
 
 def get_system_prompt() -> str:
     """현재 시스템 프롬프트 반환 (로컬 스키마 기반, 현재 날짜/시간 포함)"""
-    current_date = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M KST")
+    # 날짜 단위(분 제거) — 시스템프롬프트 프리픽스를 안정화해 프롬프트 캐싱 적중률↑ (분 단위면 매분 캐시 미스)
+    current_date = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d (KST)")
     return SYSTEM_PROMPT.replace("{current_date}", current_date).replace(
         "{design_tokens_section}", DEFAULT_DESIGN_TOKENS_SECTION
     )
@@ -2462,7 +2463,8 @@ def generate_system_prompt(
     """
     component_docs = format_component_docs(schema)
     available_components = get_available_components_note(schema)
-    current_date = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M KST")
+    # 날짜 단위(분 제거) — 시스템프롬프트 프리픽스를 안정화해 프롬프트 캐싱 적중률↑ (분 단위면 매분 캐시 미스)
+    current_date = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d (KST)")
     design_tokens_section = format_design_tokens(design_tokens)
 
     # AG Grid 섹션 (스키마와 토큰이 있으면 추가)
@@ -2555,7 +2557,8 @@ async def get_vision_system_prompt(
     Returns:
         Vision 시스템 프롬프트 문자열
     """
-    current_date = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M KST")
+    # 날짜 단위(분 제거) — 시스템프롬프트 프리픽스를 안정화해 프롬프트 캐싱 적중률↑ (분 단위면 매분 캐시 미스)
+    current_date = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d (KST)")
 
     # 디자인 토큰 로드
     design_tokens = await fetch_design_tokens_from_storage()
