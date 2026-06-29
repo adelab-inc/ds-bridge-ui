@@ -3,7 +3,9 @@ import logging
 import time
 import uuid
 from collections.abc import Callable, Coroutine
+from datetime import datetime
 from functools import wraps
+from zoneinfo import ZoneInfo
 from typing import Any, Literal, ParamSpec, TypedDict, TypeVar
 
 from supabase import acreate_client, AsyncClient
@@ -874,8 +876,9 @@ async def copy_room_to_user(source_room_id: str, target_user_id: str) -> RoomDat
     """방+메시지+디스크립션을 새 room_id로 target_user_id에게 복제.
 
     - 새 room_id/message id/description id 부여, room_id 참조 갱신
-    - 방 created_at=현재(대상 목록 상단), schema_key·storybook_url·image_urls는 원본 그대로 참조
+    - 방 created_at=현재(대상 목록 상단), schema_key·image_urls는 원본 그대로 참조
       (스토리지 재업로드 없음 — 원본 삭제 시 이미지 깨질 수 있음 = 알려진 한계)
+    - 제목(storybook_url)엔 "(복제본 YYMMDD_HHmmss)" 접미사를 붙여 원본과 구분(원제목 보존)
     - 메시지 question_created_at은 보존(순서 유지)
     - 생성 컬럼(code_hash/description_hash)은 제외 (DB가 자동 계산)
 
@@ -898,11 +901,16 @@ async def copy_room_to_user(source_room_id: str, target_user_id: str) -> RoomDat
         descriptions = []
 
     new_room_id = str(uuid.uuid4())
+    # 복제본 구분: 제목(storybook_url)에 "(복제본 YYMMDD_HHmmss)" 접미사. 원제목은 보존.
+    # 초(ss)까지 넣어 같은 방을 연속 복제해도 사실상 이름이 겹치지 않는다(카운터/레이스 불필요).
+    src_title = src_room.get("storybook_url")
+    stamp = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%y%m%d_%H%M%S")
+    copied_title = f"{src_title} (복제본 {stamp})" if src_title else f"(복제본 {stamp})"
     new_room: RoomData = {
         "id": new_room_id,
         "user_id": target_user_id,
         "schema_key": src_room.get("schema_key"),
-        "storybook_url": src_room.get("storybook_url"),
+        "storybook_url": copied_title,
         "created_at": get_timestamp_ms(),
     }
     await client.table("chat_rooms").insert(new_room).execute()
