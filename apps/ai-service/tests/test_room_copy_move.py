@@ -16,7 +16,7 @@ _ROOM = {"id": "r1", "user_id": "owner-A", "schema_key": "k", "storybook_url": "
 _NEWROOM = {"id": "r2", "user_id": "target-X", "schema_key": "k", "storybook_url": "t", "created_at": 2}
 
 
-def _override(owner: str, uid: str | None):
+def _override(owner: str | None, uid: str | None):
     app.dependency_overrides[get_room_or_404] = lambda: {**_ROOM, "user_id": owner}
     app.dependency_overrides[get_current_user_id] = lambda: uid
 
@@ -79,6 +79,61 @@ def test_copy_dev_mode_skips_check(client, monkeypatch):
         _clear()
 
 
+def test_copy_self_when_target_omitted(client, monkeypatch):
+    """target 생략 → 본인(소유자)에게 복제. 서버가 owner_id 로 대상 결정."""
+    _override(owner="owner-A", uid="owner-A")
+    called = {}
+
+    async def fake_copy(source_room_id, target_user_id):
+        called["args"] = (source_room_id, target_user_id)
+        return {**_NEWROOM, "user_id": "owner-A"}
+
+    monkeypatch.setattr(rooms_module, "copy_room_to_user", fake_copy)
+    try:
+        resp = client.post("/rooms/r1/copy", json={})  # target_user_id 없음
+        assert resp.status_code == 201, resp.text
+        assert called["args"] == ("r1", "owner-A")  # owner 로 폴백
+        assert resp.json()["user_id"] == "owner-A"  # 본인 소유 사본
+    finally:
+        _clear()
+
+
+def test_copy_self_when_target_null(client, monkeypatch):
+    """target_user_id=null 도 생략과 동일하게 본인 복제."""
+    _override(owner="owner-A", uid="owner-A")
+    called = {}
+
+    async def fake_copy(source_room_id, target_user_id):
+        called["args"] = (source_room_id, target_user_id)
+        return {**_NEWROOM, "user_id": "owner-A"}
+
+    monkeypatch.setattr(rooms_module, "copy_room_to_user", fake_copy)
+    try:
+        resp = client.post("/rooms/r1/copy", json={"target_user_id": None})
+        assert resp.status_code == 201, resp.text
+        assert called["args"] == ("r1", "owner-A")
+    finally:
+        _clear()
+
+
+def test_copy_orphan_room_no_target_400(client, monkeypatch):
+    """소유자 없는 고아 방 + target 생략 → 대상 결정 불가 400 (None 으로 복제 방지)."""
+    _override(owner=None, uid=None)
+    called = {}
+
+    async def fake_copy(source_room_id, target_user_id):
+        called["hit"] = True
+        return _NEWROOM
+
+    monkeypatch.setattr(rooms_module, "copy_room_to_user", fake_copy)
+    try:
+        resp = client.post("/rooms/r1/copy", json={})
+        assert resp.status_code == 400, resp.text
+        assert "hit" not in called  # None 으로 복제 호출 안 됨
+    finally:
+        _clear()
+
+
 # ── move ──────────────────────────────────────────────────────
 
 def test_move_forbidden_when_not_owner(client, monkeypatch):
@@ -112,6 +167,24 @@ def test_move_ok_when_owner(client, monkeypatch):
         assert resp.status_code == 200, resp.text
         assert called["args"] == ("r1", "target-X")
         assert resp.json()["user_id"] == "target-X"  # 소유권 이전됨
+    finally:
+        _clear()
+
+
+def test_move_requires_target(client, monkeypatch):
+    """move 는 target 필수 — 자기 이관은 무의미하므로 생략 시 400."""
+    _override(owner="owner-A", uid="owner-A")
+    called = {}
+
+    async def fake_move(room_id, target_user_id):
+        called["hit"] = True
+        return {**_ROOM, "user_id": target_user_id}
+
+    monkeypatch.setattr(rooms_module, "move_room_to_user", fake_move)
+    try:
+        resp = client.post("/rooms/r1/move", json={})
+        assert resp.status_code == 400, resp.text
+        assert "hit" not in called
     finally:
         _clear()
 
