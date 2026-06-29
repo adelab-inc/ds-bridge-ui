@@ -1662,7 +1662,7 @@ Always respond in Korean.
    - 조건부 disabled 초기 상태 = false(편집 가능). 데모 확인용
 9. Component Whitelist: Available Components만 사용. DatePicker→`<Field type="date" />`, Input→`<Field type="text" />`
 10. HTML Void Elements(`<input>`, `<br>`, `<hr>`, `<img>`) = `/>` self-closing 필수
-11. Link에 `onClick`/`label` = CRASH. Link는 `to`(내부)/`href`(외부) 페이지 이동 전용. 클릭 동작은 요청이 "텍스트 링크"·"인라인 링크"라고 해도 전부 Button — 예: "+ 행 추가"/"+ 기간 추가" 인라인 추가도 `<Link>`가 아니라 `<Button buttonType="ghost" size="sm" label="+ 행 추가" onClick={...} />`
+11. Link에 `onClick`/`label` = CRASH. Link는 `to`(내부)/`href`(외부) 페이지 이동 전용. 클릭 동작은 요청이 "텍스트 링크"·"인라인 링크"라고 해도 전부 Button — 예: "+ 행 추가"/"+ 기간 추가" 인라인 추가도 `<Link>`가 아니라 `<Button buttonType="ghost" size="sm" label="+ 행 추가" onClick={...} />`. 또한 `to`는 실제 라우트 경로 전용 — 목적지가 `#`/이동 없음이면 `to` 대신 `href` (프리뷰엔 RouterProvider가 없어 `to`는 `__store` 런타임 에러)
 
 """
 
@@ -1685,7 +1685,9 @@ COMPONENT_QUICK_REFERENCE = """
 - 내부 이동: `<Link to="/policy/list" size="sm">목록으로</Link>` · 외부: `<Link href="https://example.com" size="sm">외부 문서</Link>`
 - **`to`(내부 경로) 또는 `href`(외부 URL) 중 하나 필수.** 텍스트는 children으로 전달 (`label` prop 없음). `onClick` 단독 사용 금지 — 목적지 없는 Link = 런타임 CRASH (`href.startsWith` of undefined)
 - **클릭 동작(추가/삭제/열기/행추가 등)은 Link가 아니라 Button**: `<Button buttonType="ghost" size="sm" label="+ 행 추가" onClick={() => addRow()} />`
-- ❌ `<Link onClick={...}>+ 기간 추가</Link>` / `<Link label="+ 기간 추가" onClick={...} />` — label이든 children이든 **onClick + to/href 없으면 CRASH**. 클릭 액션은 Button.
+- **이동 목적지가 `#`/placeholder(이동 없음)면 `href`** (`<Link href="#">`), **실제 라우트 경로일 때만 `to`** (`<Link to="/recruitment/123">`). 그리드 셀/표 안 텍스트 링크도 동일.
+- ❌ `<Link onClick={...}>+ 기간 추가</Link>` / `<Link label="+ 기간 추가" onClick={...} />` — onClick + to/href 없으면 CRASH(`startsWith`). 클릭 액션은 Button.
+- ❌ `<Link to="#">{name}</Link>` — 이동 없는데 `to` 사용 → 프리뷰에서 `__store` 런타임 에러. `href="#"` 사용.
 
 ### Field (self-closing — `</Field>` = CRASH)
 - `<Field type="text" label="이름" value={v} onChange={(e) => set(e.target.value)} />`
@@ -2151,7 +2153,8 @@ SYSTEM_PROMPT = (
 
 def get_system_prompt() -> str:
     """현재 시스템 프롬프트 반환 (로컬 스키마 기반, 현재 날짜/시간 포함)"""
-    current_date = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M KST")
+    # 날짜 단위(분 제거) — 시스템프롬프트 프리픽스를 안정화해 프롬프트 캐싱 적중률↑ (분 단위면 매분 캐시 미스)
+    current_date = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d (KST)")
     return SYSTEM_PROMPT.replace("{current_date}", current_date).replace(
         "{design_tokens_section}", DEFAULT_DESIGN_TOKENS_SECTION
     )
@@ -2460,7 +2463,8 @@ def generate_system_prompt(
     """
     component_docs = format_component_docs(schema)
     available_components = get_available_components_note(schema)
-    current_date = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M KST")
+    # 날짜 단위(분 제거) — 시스템프롬프트 프리픽스를 안정화해 프롬프트 캐싱 적중률↑ (분 단위면 매분 캐시 미스)
+    current_date = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d (KST)")
     design_tokens_section = format_design_tokens(design_tokens)
 
     # AG Grid 섹션 (스키마와 토큰이 있으면 추가)
@@ -2553,7 +2557,8 @@ async def get_vision_system_prompt(
     Returns:
         Vision 시스템 프롬프트 문자열
     """
-    current_date = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M KST")
+    # 날짜 단위(분 제거) — 시스템프롬프트 프리픽스를 안정화해 프롬프트 캐싱 적중률↑ (분 단위면 매분 캐시 미스)
+    current_date = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d (KST)")
 
     # 디자인 토큰 로드
     design_tokens = await fetch_design_tokens_from_storage()
