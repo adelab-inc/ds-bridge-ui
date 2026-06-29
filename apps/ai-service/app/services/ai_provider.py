@@ -45,6 +45,8 @@ def _check_gemini_finish(response_or_chunk: Any) -> None:
                 extra["thoughts_tokens"] = getattr(usage, "thoughts_token_count", None)
                 extra["candidates_tokens"] = getattr(usage, "candidates_token_count", None)
                 extra["total_tokens"] = getattr(usage, "total_token_count", None)
+                # 프롬프트 캐시 적중량(>0이면 시스템프롬프트 프리픽스가 캐시에서 재사용됨). 캐싱 효과 측정용.
+                extra["cached_tokens"] = getattr(usage, "cached_content_token_count", None)
             if name == "MAX_TOKENS":
                 logger.warning(
                     "Gemini output truncated (MAX_TOKENS) — likely thinking overflow", extra=extra
