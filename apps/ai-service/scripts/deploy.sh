@@ -196,6 +196,13 @@ deploy_simple() {
     ENV_VARS="${ENV_VARS}@ENABLE_VALIDATION=${ENABLE_VALIDATION:-false}"
     ENV_VARS="${ENV_VARS}@ENABLE_REPAIR=${ENABLE_REPAIR:-false}"
 
+    # Security / diff 편집 — 현재 운영 상태를 영구화.
+    # ⚠️ 과거엔 이 값들이 스크립트에 없어 --set-env-vars(전체 교체)가 매 배포마다 날려버렸다
+    #    (JWT 소유권 검증·diff 부분편집이 조용히 OFF로 회귀). 기본값은 현재 prod 상태(true)에 맞춤.
+    ENV_VARS="${ENV_VARS}@JWT_VERIFY_ENABLED=${JWT_VERIFY_ENABLED:-true}"
+    ENV_VARS="${ENV_VARS}@GEMINI_DIFF_EDIT_ENABLED=${GEMINI_DIFF_EDIT_ENABLED:-true}"
+    ENV_VARS="${ENV_VARS}@GEMINI_DIFF_EDIT_THRESHOLD_CHARS=${GEMINI_DIFF_EDIT_THRESHOLD_CHARS:-3000}"
+
     # Storage bucket names (prod)
     ENV_VARS="${ENV_VARS}@STORAGE_BUCKET_UPLOADS=user-uploads"
     ENV_VARS="${ENV_VARS}@STORAGE_BUCKET_EXPORTS=exports"
