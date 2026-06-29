@@ -476,11 +476,14 @@ class RoomResponse(BaseModel):
 
 
 class RoomTransferRequest(BaseModel):
-    """방 copy/move 요청 — 대상 유저 지정 (멤버 목록에서 선택한 user_id)."""
+    """방 copy/move 요청 — 대상 유저 지정 (멤버 목록에서 선택한 user_id).
 
-    target_user_id: str = Field(
-        ...,
-        description="대상 사용자 ID (GET /users 멤버 목록에서 선택)",
+    copy 는 생략 가능(생략 시 본인=방 소유자에게 복제). move 는 필수(자기 이관은 무의미).
+    """
+
+    target_user_id: str | None = Field(
+        default=None,
+        description="대상 사용자 ID (GET /users 멤버 목록에서 선택). copy 에서 생략 시 본인(방 소유자)에게 복제. move 는 필수.",
         json_schema_extra={"example": "550e8400-e29b-41d4-a716-446655440000"},
     )
 

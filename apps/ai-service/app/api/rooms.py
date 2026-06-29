@@ -277,12 +277,13 @@ async def update_room(room_id: str, request: UpdateRoomRequest) -> RoomResponse:
     response_model=RoomResponse,
     status_code=status.HTTP_201_CREATED,
     operation_id="copyRoom",
-    summary="방 복제 (다른 유저에게)",
+    summary="방 복제 (본인 또는 다른 유저에게)",
     description="""
-본인 소유 방을 대상 유저에게 복제합니다 (방 + 메시지 + 디스크립션). 원본은 그대로 유지됩니다.
+본인 소유 방을 복제합니다 (방 + 메시지 + 디스크립션). 원본은 그대로 유지됩니다.
 
-- `target_user_id`: 대상 사용자 ID (GET /users 멤버 목록에서 선택)
-- 새 room_id로 즉시 대상 유저 목록에 생성됩니다 (수락 불필요).
+- `target_user_id` **생략**: 본인(방 소유자)에게 복제 = 자기 사본.
+- `target_user_id` **지정**: 해당 유저에게 복제 (GET /users 멤버 목록에서 선택, 공유).
+- 새 room_id로 즉시 대상 목록에 생성됩니다 (수락 불필요).
 """,
     responses={
         201: {"description": "복제 성공 (새 방 반환)"},
@@ -297,8 +298,11 @@ async def copy_room(
     room: RoomData = Depends(get_room_or_404),
     uid: str | None = Depends(get_current_user_id),
 ) -> RoomResponse:
-    """본인 소유 방을 대상 유저에게 복제 (즉시 반영).
+    """본인 소유 방을 복제 (즉시 반영).
 
+    - `target_user_id` 지정: 해당 유저에게 복제(공유).
+    - `target_user_id` 생략: 본인(방 소유자)에게 복제 = 자기 사본.
+      self 를 FE 가 전달하지 않아도 서버가 owner_id 로 결정하므로 잘못된 id 전달 사고가 없다.
     제로트러스트: 검증된 JWT 의 uid 가 방 소유자와 다르면 403 (검증 비활성 시 스킵).
     """
     owner_id = room.get("user_id")
@@ -311,13 +315,15 @@ async def copy_room(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="본인 소유의 채팅방만 복제할 수 있습니다.",
         )
-    if not request.target_user_id:
+    # 생략 시 본인(소유자)에게 복제. 소유자조차 없는 고아 방은 대상 결정 불가 → 400.
+    target_user_id = request.target_user_id or owner_id
+    if not target_user_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="target_user_id가 필요합니다.",
+            detail="복제 대상을 결정할 수 없습니다 (소유자 없는 방).",
         )
     try:
-        new_room = await copy_room_to_user(room_id, request.target_user_id)
+        new_room = await copy_room_to_user(room_id, target_user_id)
         return RoomResponse(**new_room)
     except RoomNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Room not found.") from e
