@@ -119,7 +119,10 @@ function ChatMessage({
         <div className="mt-1 flex items-center gap-2">
           {timestamp > 0 && (
             <time className={cn('block text-xs opacity-60')}>
-              {new Date(timestamp).toLocaleString([], {
+              {new Date(timestamp).toLocaleString('ko-KR', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit',
               })}
