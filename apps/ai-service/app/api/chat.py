@@ -676,6 +676,18 @@ _FENCE_LEADING_RE = re.compile(r"^[ \t]*```[a-zA-Z]*[ \t]*\n?")
 _FENCE_ONLY_RE = re.compile(r"^\s*`{1,3}[a-zA-Z]*\s*$")
 
 
+def _build_balance_hint(defects: list[ValidationError]) -> str:
+    """불균형 재생성용 힌트. 무엇이 어긋났는지 알려주지 않으면 모델이 같은 실수를 반복한다."""
+    lines = [d.message for d in defects[:5]]
+    detail = "\n".join(f"- {line}" for line in lines)
+    return (
+        "이전 출력의 JSX 태그가 어긋났다:\n"
+        f"{detail}\n"
+        "전체 파일을 다시 출력하되 여는/닫는 태그의 짝을 정확히 맞춰라. "
+        "특히 최상위 래퍼를 교체했다면 파일 끝의 닫는 태그도 함께 바꿔야 한다."
+    )
+
+
 def _drop_wrapping_fence(text: str) -> str:
     """태그 직전 텍스트에서 코드블록을 감싸던 펜스 여는 줄을 제거."""
     return _FENCE_TAIL_RE.sub("", text)
@@ -1413,16 +1425,25 @@ async def _run_broadcast_generation(
         # (FE가 무시해도 저장 결과는 정확 — 마지막 성공 시도의 텍스트/코드만 DONE으로 저장).
         # diff 성공 시 collected_files가 이미 채워져 표준 루프를 건너뛴다.
         if not collected_files:
-            max_attempts = get_settings().gemini_nocode_max_retries + 1
+            _settings = get_settings()
+            nocode_retries = _settings.gemini_nocode_max_retries
+            unbalanced_retries = _settings.gemini_unbalanced_max_retries
+            max_attempts = 1 + max(nocode_retries, unbalanced_retries)
+            retry_reason = "no_code"
+            retry_hint: str | None = None
+            attempt_messages = messages
+            attempt_user_message = user_message
             for attempt in range(max_attempts):
                 if attempt > 0:
                     logger.warning(
-                        "No code produced — retrying generation",
+                        "Regenerating after failed attempt",
                         extra={
                             "room_id": room_id,
                             "message_id": message_id,
                             "attempt": attempt,
+                            "reason": retry_reason,
                             "prev_text_len": len(collected_text),
+                            "hinted": retry_hint is not None,
                         },
                     )
                     # 이전 시도 부분 출력 초기화 + FE에 재시도 신호
@@ -1430,6 +1451,14 @@ async def _run_broadcast_generation(
                     collected_text = ""
                     collected_files = []
                     await chunk_queue.put({"type": "retry", "attempt": attempt})
+                    # 불균형이면 무엇이 어긋났는지 알려준다(힌트 없는 재시도는 동일 오류 반복).
+                    # messages 경로(일반/Vision)와 user_message 경로(Figma) 양쪽에 붙인다.
+                    if retry_hint:
+                        attempt_messages = [*messages, Message(role="user", content=retry_hint)]
+                        attempt_user_message = f"{user_message}\n\n{retry_hint}" if user_message else retry_hint
+                    else:
+                        attempt_messages = messages
+                        attempt_user_message = user_message
 
                 async with asyncio.timeout(600):  # 시도당 10분 타임아웃
                     # Figma / Vision / 일반 모드에 따라 스트리밍 호출
@@ -1438,7 +1467,7 @@ async def _run_broadcast_generation(
                             room_id=room_id,
                             provider=provider,
                             system_prompt=system_prompt,
-                            user_message=user_message,
+                            user_message=attempt_user_message or user_message,
                             figma_url=figma_url,
                         )
                     elif is_vision_mode:
@@ -1456,9 +1485,9 @@ async def _run_broadcast_generation(
                             )
                             stream = provider.chat_stream(messages)
                         else:
-                            stream = provider.chat_vision_stream(messages, images)
+                            stream = provider.chat_vision_stream(attempt_messages, images)
                     else:
-                        stream = provider.chat_stream(messages)
+                        stream = provider.chat_stream(attempt_messages)
 
                     async for chunk in stream:
                         events = parser.process_chunk(chunk)
@@ -1512,10 +1541,17 @@ async def _run_broadcast_generation(
                             "first_error": defects[0].message,
                         },
                     )
-                    if attempt == max_attempts - 1:
-                        # 마지막 시도까지 불균형 — 사용자 작업을 잃지 않도록 저장하고
+                    if attempt >= unbalanced_retries:
+                        # 재시도 상한까지 불균형 — 사용자 작업을 잃지 않도록 저장하고
                         # done.validation 으로 알린다(프리뷰는 깨질 수 있음).
                         break
+                    retry_reason = "unbalanced"
+                    retry_hint = _build_balance_hint(defects)
+                elif attempt >= nocode_retries:
+                    break  # no-code 재시도 상한 — 아래 가드에서 ERROR 처리된다
+                else:
+                    retry_reason = "no_code"
+                    retry_hint = None
 
         # chunk sender 종료 대기 (모든 시도 후 1회, 남은 큐 drain).
         # 대형 파일(예: ~115KB 코드 청크)이 큐 후반에 있으면 30초로는 flush 전에 취소돼
