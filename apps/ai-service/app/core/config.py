@@ -42,6 +42,9 @@ class Settings(BaseSettings):
     gemini_max_output_tokens: int = 65536
     # 코드(<file>) 0건 생성 시 재생성 횟수 (간헐적 thinking 폭주 → no-code 완화). 0이면 재시도 없음.
     gemini_nocode_max_retries: int = 1
+    # JSX 태그 불균형 시 재생성 횟수. no-code 와 분리한 이유: 힌트 없는 재시도는 줄 번호까지
+    # 동일한 오류를 재생산했다(dev 실측 04:31~04:32). 힌트를 주고 한 번 더 기회를 준다.
+    gemini_unbalanced_max_retries: int = 2
     # diff(search/replace) 부분 편집 — 대형 파일 수정 시 변경분만 출력
     gemini_diff_edit_enabled: bool = False  # 마스터 스위치(무중단 롤아웃, 기본 off)
     gemini_diff_edit_threshold_chars: int = 3000  # base 코드 len(content) 초과 시 diff 적용. 낮출수록 더 많은 편집이 diff(출력↓=빠름), 실패 시 풀출력 폴백
