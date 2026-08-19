@@ -322,6 +322,183 @@ def scan_external_urls(source: str) -> list[UrlHit]:
     return hits
 
 
+# JSX 태그 토큰. 여는 태그는 `<` 바로 뒤에 식별자가 와야 하고(`< b` 같은 비교 연산 배제),
+# `<` 직전 문자가 식별자면 제네릭(`useState<string>`, `Array<string>`)이므로 태그가 아니다.
+_JSX_TAG_RE = re.compile(
+    r"""
+    (?P<close></(?P<cname>[A-Za-z_$][A-Za-z0-9_$.]*)?\s*>)   # </div>, </Foo.Bar>, </> (Fragment)
+  | (?P<frag><>)                                             # <> (Fragment) — 정확히 이 두 글자만
+  | (?P<open><(?P<oname>[A-Za-z_$][A-Za-z0-9_$.]*))          # <div, <Foo.Bar (이름 필수)
+    """,
+    re.VERBOSE,
+)
+
+_IDENT_CHAR_RE = re.compile(r"[A-Za-z0-9_$]")
+
+
+@dataclass(frozen=True)
+class JSXTag:
+    name: str  # Fragment는 ""
+    line: int  # 1-based
+    closing: bool
+    self_closing: bool
+
+
+def scan_jsx_tags(source: str) -> list[JSXTag]:
+    """JSX 태그(여는/닫는/self-closing)를 등장 순서대로 수집한다.
+
+    주석/문자열은 `_strip_comments_and_strings`로 먼저 제거한다. 여는 태그는 속성 구간을
+    직접 훑어 `/>` 여부를 판정하며, 속성값의 `{ ... }` 표현식 내부는 중괄호 깊이로 스킵해
+    `onChange={() => a > b}` 의 `>` 를 태그 종료로 오인하지 않는다.
+    """
+    cleaned = _strip_comments_and_strings(source)
+    tags: list[JSXTag] = []
+    pos = 0
+    length = len(cleaned)
+
+    while pos < length:
+        match = _JSX_TAG_RE.search(cleaned, pos)
+        if match is None:
+            break
+
+        start = match.start()
+        is_closing = match.group("close") is not None
+
+        # 제네릭 배제: `<` 직전이 식별자 문자면 타입 인자(`useState<string>`, `Array<string>`).
+        # 닫는 태그(`</`)는 제네릭일 수 없으므로 제외 — 텍스트 노드 직후(`2000 byte</span>`)를 놓치지 않는다.
+        if not is_closing and start > 0 and _IDENT_CHAR_RE.match(cleaned[start - 1]):
+            pos = start + 1
+            continue
+
+        line = cleaned.count("\n", 0, start) + 1
+
+        if is_closing:
+            tags.append(JSXTag(name=match.group("cname") or "", line=line, closing=True, self_closing=False))
+            pos = match.end()
+            continue
+
+        if match.group("frag") is not None:
+            tags.append(JSXTag(name="", line=line, closing=False, self_closing=False))
+            pos = match.end()
+            continue
+
+        # 여는 태그: `>` 또는 `/>` 까지 속성 구간을 훑는다 (중괄호 깊이 추적)
+        name = match.group("oname")
+        i = match.end()
+        depth = 0
+        self_closing = False
+        while i < length:
+            ch = cleaned[i]
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+            elif depth == 0 and ch == ">":
+                self_closing = cleaned[:i].rstrip().endswith("/")
+                break
+            i += 1
+        else:
+            break  # 닫히지 않은 여는 태그 — 스캔 종료
+
+        tags.append(JSXTag(name=name, line=line, closing=False, self_closing=self_closing))
+        pos = i + 1
+
+    return tags
+
+
+# SEARCH/REPLACE 패치 마커. 적용 실패/부분 적용 시 코드에 그대로 남는다.
+_PATCH_MARKER_RE = re.compile(r"^(?:<{7} SEARCH|={7}|>{7} REPLACE)\s*$", re.MULTILINE)
+
+
+def scan_patch_markers(source: str) -> list[ValidationError]:
+    """SEARCH/REPLACE 마커 잔존을 검사한다 (카테고리: `patch_marker_leak`).
+
+    주석/문자열 제거 전 원문을 본다 — 마커는 코드가 아니라 패치 프로토콜의 잔여물이다.
+    """
+    errors: list[ValidationError] = []
+    for match in _PATCH_MARKER_RE.finditer(source):
+        line = source.count("\n", 0, match.start()) + 1
+        errors.append(
+            ValidationError(
+                category="patch_marker_leak",
+                location=_format_location(line),
+                message=f"leftover patch marker {match.group(0).strip()!r} at line {line}",
+                suggested_fix="패치 마커를 제거하고 최종 코드만 남기세요",
+            )
+        )
+    return errors
+
+
+def scan_jsx_balance(source: str) -> list[ValidationError]:
+    """JSX 태그 열림/닫힘 균형을 검사한다.
+
+    카테고리: `jsx_unbalanced`
+    - 닫는 태그 이름이 스택 top과 다름 → `</div> at line 456 closes <Drawer> opened at line 151`
+    - 파일 끝까지 닫히지 않은 여는 태그 → `<div> opened at line 155 has no closing tag`
+    """
+    errors: list[ValidationError] = []
+    stack: list[JSXTag] = []
+
+    for tag in scan_jsx_tags(source):
+        if tag.self_closing:
+            continue
+        if not tag.closing:
+            stack.append(tag)
+            continue
+
+        if not stack:
+            errors.append(
+                ValidationError(
+                    category="jsx_unbalanced",
+                    location=_format_location(tag.line, tag.name or None),
+                    message=f"{_tag_repr(tag.name, closing=True)} at line {tag.line} has no matching opening tag",
+                    suggested_fix="여는 태그를 추가하거나 잘못된 닫는 태그를 제거하세요",
+                )
+            )
+            continue
+
+        opened = stack.pop()
+        if opened.name != tag.name:
+            errors.append(
+                ValidationError(
+                    category="jsx_unbalanced",
+                    location=_format_location(tag.line, tag.name or None),
+                    message=(
+                        f"{_tag_repr(tag.name, closing=True)} at line {tag.line} closes "
+                        f"{_tag_repr(opened.name)} opened at line {opened.line}"
+                    ),
+                    suggested_fix=f"{_tag_repr(opened.name, closing=True)} 로 닫거나 여는 태그를 맞추세요",
+                )
+            )
+
+    for opened in stack:
+        errors.append(
+            ValidationError(
+                category="jsx_unbalanced",
+                location=_format_location(opened.line, opened.name or None),
+                message=f"{_tag_repr(opened.name)} opened at line {opened.line} has no closing tag",
+                suggested_fix=f"{_tag_repr(opened.name, closing=True)} 를 추가하세요",
+            )
+        )
+
+    return errors
+
+
+def scan_generated_code_defects(source: str) -> list[ValidationError]:
+    """모델 출력/패치 적용 결과의 구조적 결함을 한 번에 모은다.
+
+    `enable_validation` 플래그와 무관하게 생성 경로(diff 적용 직후 / 전체출력 직후)에서
+    직접 호출한다 — 컴포넌트/prop 검증(`validate_code`)과 달리 "저장해도 되는 코드인가"를
+    가리는 게이트이기 때문이다. 마커 잔존을 먼저 본다(패치 실패의 직접 증거).
+    """
+    return scan_patch_markers(source) + scan_jsx_balance(source)
+
+
+def _tag_repr(name: str, *, closing: bool = False) -> str:
+    slash = "/" if closing else ""
+    return f"<{slash}{name}>"
+
+
 def _format_location(line: int, name: str | None = None) -> str:
     if name:
         return f"line {line}, <{name}>"

@@ -61,3 +61,40 @@ def test_diff_edit_tag_split_across_chunks():
     chat += "".join(e["text"] for e in p.flush() if e["type"] == "chat")
     assert "<" not in chat  # 부분 태그가 새지 않음
     assert p.get_patch().startswith("<edit")
+
+
+# ── 마크다운 펜스 누출 (```xml 등이 답변에 남는 문제) ──────────────────
+
+
+def test_diff_fence_wrapping_patch_is_not_leaked_to_chat():
+    """모델이 <edit> 를 ```xml 로 감싸면 여는 펜스만 chat 에 남는다 → 제거해야 한다.
+
+    닫는 펜스는 patch_buffer 로 삼켜져 답변 끝에 "```xml" 만 덩그러니 노출된다.
+    """
+    p = StreamingParser(mode="diff")
+    events = _feed(p, "버튼 영역을 삭제하였습니다.\n\n```xml\n" + PATCH + "\n```\n")
+    chat_text = "".join(e["text"] for e in events if e["type"] == "chat")
+
+    assert "삭제하였습니다" in chat_text
+    assert "```" not in chat_text, f"펜스가 답변에 남았다: {chat_text!r}"
+
+
+def test_file_fence_wrapping_code_is_not_leaked_to_chat():
+    """전체출력 모드에서 ```tsx 로 <file> 을 감싼 경우도 동일하게 제거."""
+    p = StreamingParser(mode="file")
+    body = '<file path="src/A.tsx">const A = () => null;\nexport default A;</file>'
+    events = _feed(p, "로그인 폼입니다.\n\n```tsx\n" + body + "\n```\n")
+    chat_text = "".join(e["text"] for e in events if e["type"] == "chat")
+
+    assert "로그인 폼입니다" in chat_text
+    assert "```" not in chat_text, f"펜스가 답변에 남았다: {chat_text!r}"
+
+
+def test_closed_fence_in_explanation_is_preserved():
+    """설명 안의 정상적인(열고 닫은) 코드 펜스는 건드리지 않는다."""
+    p = StreamingParser(mode="diff")
+    prose = "이렇게 씁니다:\n\n```\nconst x = 1;\n```\n\n적용했습니다.\n"
+    events = _feed(p, prose + PATCH)
+    chat_text = "".join(e["text"] for e in events if e["type"] == "chat")
+
+    assert chat_text.count("```") == 2, f"정상 펜스가 사라졌다: {chat_text!r}"

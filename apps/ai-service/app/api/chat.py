@@ -28,7 +28,7 @@ from app.schemas.validation import ValidationError, ValidationReport
 from app.services.ai_provider import AIProvider, get_ai_provider
 from app.services.broadcast import broadcast_event, track_broadcast_task
 from app.services.code_patch import PatchError, apply_edits, parse_edits
-from app.services.code_validator import ComponentCatalog, validate_code
+from app.services.code_validator import ComponentCatalog, scan_generated_code_defects, validate_code
 from app.services.figma_api import FigmaFetchError, FigmaRateLimitError, extract_figma_url
 from app.services.message_condenser import condense_message
 from app.services.supabase_db import (
@@ -138,7 +138,7 @@ def _build_done_validation_payload(collected_files: list[dict]) -> dict:
     기존 페이로드 형식을 유지한다.
     """
     settings = get_settings()
-    if not settings.enable_validation or not collected_files:
+    if not collected_files:
         return {}
 
     merged_errors: list[ValidationError] = []
@@ -148,10 +148,17 @@ def _build_done_validation_payload(collected_files: list[dict]) -> dict:
         content = f.get("content", "")
         if not content:
             continue
-        report = validate_code(content, _CODE_CATALOG)
-        merged_errors.extend(report.errors)
-        merged_warnings.extend(report.warnings)
-        elapsed_total += report.elapsed_ms
+        # 구조적 결함(jsx_unbalanced/patch_marker_leak)은 플래그와 무관하게 항상 보고한다 —
+        # "저장해도 되는 코드인가"를 가리는 게이트라 FE 안내가 필요하다.
+        merged_errors.extend(scan_generated_code_defects(content))
+        if settings.enable_validation:
+            report = validate_code(content, _CODE_CATALOG)
+            merged_errors.extend(report.errors)
+            merged_warnings.extend(report.warnings)
+            elapsed_total += report.elapsed_ms
+
+    if not settings.enable_validation and not merged_errors:
+        return {}  # 검증 off + 결함 없음 → 기존 페이로드 형식 유지
 
     report_obj = ValidationReport(
         passed=not merged_errors,
@@ -659,6 +666,33 @@ def parse_ai_response(content: str) -> ParsedResponse:
     )
 
 
+# 모델이 <file>/<edit> 블록을 마크다운 펜스로 감싸는 경우가 있다(```xml, ```tsx).
+# 블록 자체는 홀드백/누적되므로 여는 펜스만 chat 으로 새어 답변 끝에 "```xml" 이 덩그러니 남는다
+# (실측: 최근 답변 600건 중 43건). 설명 안의 정상 펜스는 보존해야 하므로 다음 두 가지만 한다.
+#   ① 태그(<file/<edit) 직전 텍스트 끝의 펜스 여는 줄 제거
+#   ② 펜스 마커 후보는 뒤에 태그가 오는지 확정될 때까지 홀드백
+_FENCE_TAIL_RE = re.compile(r"(?:^|\n)[ \t]*`{1,3}[a-zA-Z]*[ \t]*\n?$")
+_FENCE_LEADING_RE = re.compile(r"^[ \t]*```[a-zA-Z]*[ \t]*\n?")
+_FENCE_ONLY_RE = re.compile(r"^\s*`{1,3}[a-zA-Z]*\s*$")
+
+
+def _build_balance_hint(defects: list[ValidationError]) -> str:
+    """불균형 재생성용 힌트. 무엇이 어긋났는지 알려주지 않으면 모델이 같은 실수를 반복한다."""
+    lines = [d.message for d in defects[:5]]
+    detail = "\n".join(f"- {line}" for line in lines)
+    return (
+        "이전 출력의 JSX 태그가 어긋났다:\n"
+        f"{detail}\n"
+        "전체 파일을 다시 출력하되 여는/닫는 태그의 짝을 정확히 맞춰라. "
+        "특히 최상위 래퍼를 교체했다면 파일 끝의 닫는 태그도 함께 바꿔야 한다."
+    )
+
+
+def _drop_wrapping_fence(text: str) -> str:
+    """태그 직전 텍스트에서 코드블록을 감싸던 펜스 여는 줄을 제거."""
+    return _FENCE_TAIL_RE.sub("", text)
+
+
 class StreamingParser:
     """스트리밍 응답에서 실시간으로 텍스트/코드 분리.
 
@@ -682,6 +716,19 @@ class StreamingParser:
         self.in_patch = False
         self.patch_buffer = ""
 
+    def _hold_boundary(self) -> int:
+        """chat 으로 안전하게 내보낼 끝 위치. 부분 태그와 펜스 마커 후보는 홀드백한다."""
+        cut = len(self.buffer)
+        tag_start = self.buffer.rfind("<")
+        if tag_start != -1:
+            cut = tag_start
+        # 태그 앞 구간의 끝이 펜스 줄이면 그 앞까지만 — 부분 태그(<ed)가 대기 중일 때
+        # 펜스만 먼저 새어 나가는 것을 막는다.
+        fence = _FENCE_TAIL_RE.search(self.buffer[:cut])
+        if fence:
+            cut = fence.start()
+        return cut
+
     def process_chunk(self, chunk: str) -> list[dict]:
         """
         청크 처리 후 이벤트 목록 반환
@@ -701,7 +748,7 @@ class StreamingParser:
                 start_match = self.FILE_START_PATTERN.search(self.buffer)
                 if start_match:
                     # 태그 이전 텍스트 = 대화
-                    before_tag = self.buffer[: start_match.start()]
+                    before_tag = _drop_wrapping_fence(self.buffer[: start_match.start()])
                     if before_tag:
                         events.append({"type": "chat", "text": before_tag})
 
@@ -711,15 +758,11 @@ class StreamingParser:
                     self.current_file_content = ""
                     self.buffer = self.buffer[start_match.end() :]
                 else:
-                    # < 가 있으면 태그 시작일 수 있으므로 그 이전까지만 전송
-                    tag_start = self.buffer.rfind("<")
-                    if tag_start > 0:
-                        events.append({"type": "chat", "text": self.buffer[:tag_start]})
-                        self.buffer = self.buffer[tag_start:]
-                    elif tag_start == -1 and self.buffer:
-                        # < 가 없으면 전체를 대화로 즉시 전송
-                        events.append({"type": "chat", "text": self.buffer})
-                        self.buffer = ""
+                    # 부분 태그·펜스 마커 후보는 홀드백하고 그 앞까지만 전송
+                    cut = self._hold_boundary()
+                    if cut > 0:
+                        events.append({"type": "chat", "text": self.buffer[:cut]})
+                        self.buffer = self.buffer[cut:]
                     break
             else:
                 # 파일 태그 종료 감지
@@ -739,7 +782,8 @@ class StreamingParser:
                     self.inside_file = False
                     self.current_file_path = None
                     self.current_file_content = ""
-                    self.buffer = self.buffer[end_match.end() :]
+                    # </file> 뒤에 남은 닫는 펜스는 감싸기 잔여물이므로 제거
+                    self.buffer = _FENCE_LEADING_RE.sub("", self.buffer[end_match.end() :].lstrip("\n"))
                 else:
                     # 파일 내용 계속 버퍼링
                     break
@@ -756,21 +800,18 @@ class StreamingParser:
             return events
         edit_match = self.EDIT_START_PATTERN.search(self.buffer)
         if edit_match:
-            before = self.buffer[: edit_match.start()]
+            before = _drop_wrapping_fence(self.buffer[: edit_match.start()])
             if before:
                 events.append({"type": "chat", "text": before})
             self.patch_buffer += self.buffer[edit_match.start() :]
             self.buffer = ""
             self.in_patch = True
             return events
-        # 아직 <edit 없음: '<' 직전까지만 chat으로 보내고 부분 태그는 홀드백
-        tag_start = self.buffer.rfind("<")
-        if tag_start > 0:
-            events.append({"type": "chat", "text": self.buffer[:tag_start]})
-            self.buffer = self.buffer[tag_start:]
-        elif tag_start == -1 and self.buffer:
-            events.append({"type": "chat", "text": self.buffer})
-            self.buffer = ""
+        # 아직 <edit 없음: 부분 태그·펜스 마커 후보는 홀드백하고 그 앞까지만 chat 으로
+        cut = self._hold_boundary()
+        if cut > 0:
+            events.append({"type": "chat", "text": self.buffer[:cut]})
+            self.buffer = self.buffer[cut:]
         return events
 
     def get_patch(self) -> str:
@@ -783,12 +824,15 @@ class StreamingParser:
             events: list[dict] = []
             # 스트림이 부분 태그(예: "<edi")로 끊기면 chat으로 그대로 노출됨 —
             # 어차피 parse_edits 실패 → 전체출력 폴백으로 회수되므로 무해.
-            if not self.in_patch and self.buffer.strip():
-                events.append({"type": "chat", "text": self.buffer.strip()})
+            leftover = self.buffer.strip()
+            if not self.in_patch and leftover and not _FENCE_ONLY_RE.match(leftover):
+                events.append({"type": "chat", "text": leftover})
             return events
         # --- 이하 기존 file 모드 flush 그대로 ---
         events: list[dict] = []
         remaining = self.buffer.strip()
+        if _FENCE_ONLY_RE.match(remaining):
+            remaining = ""
         if remaining and not self.inside_file:
             events.append({"type": "chat", "text": remaining})
         return events
@@ -1349,6 +1393,11 @@ async def _run_broadcast_generation(
 
                 edits = parse_edits(diff_parser.get_patch())
                 full_content = apply_edits(base_code["content"], edits)
+                # 텍스트 치환은 성공해도 결과가 구문적으로 깨질 수 있다(닫는 태그만 바뀌는 등).
+                # 깨진 골격은 다음 메시지의 base로 계속 전파되므로 여기서 끊고 전체출력으로 폴백한다.
+                applied_defects = scan_generated_code_defects(full_content)
+                if applied_defects:
+                    raise PatchError(f"applied patch is structurally invalid: {applied_defects[0].message}")
                 collected_files = [{"path": base_code["path"], "content": full_content}]
                 logger.info(
                     "Diff edit applied",
@@ -1376,16 +1425,25 @@ async def _run_broadcast_generation(
         # (FE가 무시해도 저장 결과는 정확 — 마지막 성공 시도의 텍스트/코드만 DONE으로 저장).
         # diff 성공 시 collected_files가 이미 채워져 표준 루프를 건너뛴다.
         if not collected_files:
-            max_attempts = get_settings().gemini_nocode_max_retries + 1
+            _settings = get_settings()
+            nocode_retries = _settings.gemini_nocode_max_retries
+            unbalanced_retries = _settings.gemini_unbalanced_max_retries
+            max_attempts = 1 + max(nocode_retries, unbalanced_retries)
+            retry_reason = "no_code"
+            retry_hint: str | None = None
+            attempt_messages = messages
+            attempt_user_message = user_message
             for attempt in range(max_attempts):
                 if attempt > 0:
                     logger.warning(
-                        "No code produced — retrying generation",
+                        "Regenerating after failed attempt",
                         extra={
                             "room_id": room_id,
                             "message_id": message_id,
                             "attempt": attempt,
+                            "reason": retry_reason,
                             "prev_text_len": len(collected_text),
+                            "hinted": retry_hint is not None,
                         },
                     )
                     # 이전 시도 부분 출력 초기화 + FE에 재시도 신호
@@ -1393,6 +1451,14 @@ async def _run_broadcast_generation(
                     collected_text = ""
                     collected_files = []
                     await chunk_queue.put({"type": "retry", "attempt": attempt})
+                    # 불균형이면 무엇이 어긋났는지 알려준다(힌트 없는 재시도는 동일 오류 반복).
+                    # messages 경로(일반/Vision)와 user_message 경로(Figma) 양쪽에 붙인다.
+                    if retry_hint:
+                        attempt_messages = [*messages, Message(role="user", content=retry_hint)]
+                        attempt_user_message = f"{user_message}\n\n{retry_hint}" if user_message else retry_hint
+                    else:
+                        attempt_messages = messages
+                        attempt_user_message = user_message
 
                 async with asyncio.timeout(600):  # 시도당 10분 타임아웃
                     # Figma / Vision / 일반 모드에 따라 스트리밍 호출
@@ -1401,7 +1467,7 @@ async def _run_broadcast_generation(
                             room_id=room_id,
                             provider=provider,
                             system_prompt=system_prompt,
-                            user_message=user_message,
+                            user_message=attempt_user_message or user_message,
                             figma_url=figma_url,
                         )
                     elif is_vision_mode:
@@ -1419,9 +1485,9 @@ async def _run_broadcast_generation(
                             )
                             stream = provider.chat_stream(messages)
                         else:
-                            stream = provider.chat_vision_stream(messages, images)
+                            stream = provider.chat_vision_stream(attempt_messages, images)
                     else:
-                        stream = provider.chat_stream(messages)
+                        stream = provider.chat_stream(attempt_messages)
 
                     async for chunk in stream:
                         events = parser.process_chunk(chunk)
@@ -1462,7 +1528,30 @@ async def _run_broadcast_generation(
                         await chunk_queue.put({"type": "code", **recovered})
 
                 if collected_files:
-                    break  # 코드 확보 → 재시도 종료
+                    defects = scan_generated_code_defects(collected_files[0].get("content", ""))
+                    if not defects:
+                        break  # 코드 확보 → 재시도 종료
+                    logger.warning(
+                        "Generated code unbalanced — retrying",
+                        extra={
+                            "room_id": room_id,
+                            "message_id": message_id,
+                            "attempt": attempt,
+                            "defects": len(defects),
+                            "first_error": defects[0].message,
+                        },
+                    )
+                    if attempt >= unbalanced_retries:
+                        # 재시도 상한까지 불균형 — 사용자 작업을 잃지 않도록 저장하고
+                        # done.validation 으로 알린다(프리뷰는 깨질 수 있음).
+                        break
+                    retry_reason = "unbalanced"
+                    retry_hint = _build_balance_hint(defects)
+                elif attempt >= nocode_retries:
+                    break  # no-code 재시도 상한 — 아래 가드에서 ERROR 처리된다
+                else:
+                    retry_reason = "no_code"
+                    retry_hint = None
 
         # chunk sender 종료 대기 (모든 시도 후 1회, 남은 큐 drain).
         # 대형 파일(예: ~115KB 코드 청크)이 큐 후반에 있으면 30초로는 flush 전에 취소돼

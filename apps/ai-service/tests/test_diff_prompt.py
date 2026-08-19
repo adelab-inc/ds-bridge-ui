@@ -49,3 +49,13 @@ async def test_build_history_full_uses_file_instruction():
     )
     user = msgs[-1].content
     assert "전체 코드를 빠짐없이 출력" in user
+
+
+def test_diff_example_is_not_wrapped_in_markdown_fence():
+    """예시를 ``` 로 감싸면 모델이 그대로 흉내내 답변에 펜스가 새어 나온다.
+
+    실측: 최근 답변 600건 중 43건(7.2%)에서 '```xml' 등이 답변 끝에 남았다.
+    """
+    example = DIFF_RESPONSE_FORMAT_INSTRUCTIONS.split("### 규칙")[0]
+    assert "<edit path=" in example, "예시는 있어야 함"
+    assert "```" not in example, f"예시가 펜스로 감싸여 있다:\n{example}"
