@@ -1763,6 +1763,8 @@ COMPONENT_QUICK_REFERENCE = """
 - `<Drawer open={v} onClose={fn} size="md"><Drawer.Header title="제목" showSubtitle={false} /><Drawer.Body>...</Drawer.Body><Drawer.Footer>...</Drawer.Footer></Drawer>`
 - size: sm(352) | md(552) | lg(752) | xl(1152). 내장 padding — 내부 padding wrapper 불필요
 - 행 클릭→상세 = Drawer, 등록/수정 폼 = Drawer, 필드 3개+ = Drawer
+- 🚨 **기존 페이지를 Drawer/Dialog로 전환할 때**: 최상위 래퍼의 **여는 태그와 닫는 태그를 함께** 교체한다. `<div>`를 `<Drawer>`로 바꿨는데 파일 끝의 `</div>`를 그대로 남기면 JSX 태그가 어긋나 **프리뷰가 렌더되지 않는다**
+- `<Drawer>`와 `<Dialog>`를 형제로 함께 렌더할 때는 `<>...</>` Fragment로 감싼다
 
 ### Dialog (확인/알림/간단입력 전용) — "다이얼로그/모달/팝업" 요청 시
 - `<Dialog open={v} onClose={fn} size="md"><Dialog.Header title="제목" /><Dialog.Body>...</Dialog.Body><Dialog.Footer>...</Dialog.Footer></Dialog>`
@@ -2112,6 +2114,7 @@ DIFF_RESPONSE_FORMAT_INSTRUCTIONS = """
 - 변경이 없는 부분은 출력하지 말 것. 여러 곳을 고치면 `<edit>` 블록을 여러 개 낸다.
 - SEARCH는 파일에서 한 번만 매칭되도록 충분한 주변 줄을 포함한다.
 - 전체 파일이나 `<file>` 태그를 출력하지 말 것.
+- 🚨 REPLACE 적용 후에도 파일 전체의 JSX 여는/닫는 태그가 **짝이 맞아야** 한다. 여는 태그를 바꾸면 대응하는 닫는 태그도 같은 `<edit>` 또는 별도 `<edit>`으로 함께 바꿔라.
 """
 
 # SYSTEM_PROMPT_FOOTER removed — consolidated into FINAL_REMINDER
