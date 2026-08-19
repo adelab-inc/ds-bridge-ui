@@ -1243,6 +1243,7 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("#### ✅ 유일한 올바른 방법:")
     lines.append("")
     lines.append("🚨 **체크박스 중복 금지**: `rowSelection.checkboxes: true`와 columnDefs의 `checkboxSelection: true`를 **동시에 사용하면 체크박스가 2열** 생김. 반드시 하나만 사용!")
+    lines.append("🚨 **`checkboxes: false`는 반드시 `headerCheckbox: false`와 함께**: `mode: 'multiRow'`는 `headerCheckbox` 기본값이 `true`. `checkboxes: false`만 주면 헤더 체크박스가 남고, 나중에 `checkboxes: true`로 바꿔도 **바디 체크박스가 렌더되지 않는다**(selection 컬럼이 이미 있어 셀 재생성이 안 됨). 토글 UI의 OFF 분기·행 클릭 선택 모두 해당.")
     lines.append("")
     lines.append("```tsx")
     lines.append("// ⚠️ rowData는 반드시 useState로 (일반 const 변수 금지 — 리렌더 시 선택 해제됨)")
@@ -1270,15 +1271,28 @@ def format_ag_grid_component_docs(schema: dict | None) -> str:
     lines.append("  rowSelection={{ mode: 'singleRow', checkboxes: true, enableClickSelection: false }}")
     lines.append("/>")
     lines.append("")
-    lines.append("// ✅ 체크박스 없이 행 클릭으로 선택")
+    lines.append("// ✅ 체크박스 없이 행 클릭으로 선택 (checkboxes/headerCheckbox 기본값이 true라 둘 다 명시적으로 false)")
     lines.append("<DataGrid")
     lines.append("  rowData={rowData}")
     lines.append("  columnDefs={columnDefs}")
-    lines.append("  rowSelection={{ mode: 'multiRow', enableClickSelection: true }}")
+    lines.append("  rowSelection={{ mode: 'multiRow', checkboxes: false, headerCheckbox: false, enableClickSelection: true }}")
     lines.append("/>")
+    lines.append("")
+    lines.append("// ✅ 버튼으로 선택모드 ON/OFF 토글 (삭제모드 등) — OFF 분기에 headerCheckbox: false 필수")
+    lines.append("<DataGrid")
+    lines.append("  rowData={rowData}")
+    lines.append("  columnDefs={columnDefs}")
+    lines.append("  rowSelection={")
+    lines.append("    isDeleteMode")
+    lines.append("      ? { mode: 'multiRow', checkboxes: true, headerCheckbox: true, enableClickSelection: true }")
+    lines.append("      : { mode: 'multiRow', checkboxes: false, headerCheckbox: false, enableClickSelection: false }")
+    lines.append("  }")
+    lines.append("  onSelectionChanged={handleSelectionChanged}")
+    lines.append("/>")
+    lines.append("// ❌ OFF 분기에서 headerCheckbox 누락 → 평상시 헤더 체크박스 노출 + ON 전환 시 바디 체크박스 미렌더")
     lines.append("```")
     lines.append("")
-    lines.append("**요약: rowSelection은 반드시 객체 `{{ }}` 형태로 작성. 문자열 금지. suppressRowClickSelection 금지. `rowSelection.checkboxes: true` 사용 시 columnDefs에 `checkboxSelection: true` 넣지 마세요 (체크박스 2열 버그). pinned 사용 금지.**")
+    lines.append("**요약: rowSelection은 반드시 객체 `{{ }}` 형태로 작성. 문자열 금지. suppressRowClickSelection 금지. `rowSelection.checkboxes: true` 사용 시 columnDefs에 `checkboxSelection: true` 넣지 마세요 (체크박스 2열 버그). pinned 사용 금지 `checkboxes: false` 쓸 때 `headerCheckbox: false` 필수(토글 OFF 분기 포함).**")
     lines.append("")
 
     # 이벤트 핸들러
@@ -2036,18 +2050,19 @@ FINAL_REMINDER = """
 16. **체크박스 중복 금지**: `rowSelection={{ checkboxes: true }}`와 columnDefs의 `checkboxSelection: true`를 동시 사용하지 않았는가? → 체크박스 2열 버그. 하나만 사용
 17. **rowData는 useState**: `const rowData = [...]` 일반 변수 금지. 반드시 `const [rowData] = useState([...])` — 일반 변수면 리렌더 시 체크박스 선택 해제됨
 18. **Drawer/Dialog 내 DataGrid width**: Drawer/Dialog 안에 DataGrid가 있으면 `domLayout="autoHeight"` + 그리드를 감싼 **모든 래퍼 div에 `w-full`**을 줬는가? Body가 `items-start`라 `height="100%"`+`domLayout="normal"`이나 래퍼 w-full 누락 시 **그리드 너비가 0으로 붕괴**(세로선만 보임) → 금지
+19. **checkboxes:false ↔ headerCheckbox:false 짝**: `rowSelection`에 `checkboxes: false`가 있으면 같은 객체에 `headerCheckbox: false`도 있는가? (삭제모드 토글의 OFF 분기 포함) 누락 시 헤더 체크박스만 남고, ON 전환해도 바디 체크박스가 렌더되지 않음
 
 ### 🚨 FilterBar 필수 검증:
-19. **FilterBar import 확인**: `<FilterBar>`를 JSX에서 사용하면 반드시 `import { FilterBar } from '@/components'`에 포함. 누락 시 `FilterBar is not defined` CRASH
-20. **행별 col-span 합 = 12**: 각 행의 col-span 합이 정확히 12인가? (마지막 행은 필드 합 + actionSpan = 12). 12 초과 시 우측 overflow 발생
-21. **복합 필터 col-span ≥ 3**: 하나의 필터 슬롯에 컨트롤이 2개 이상(Select+DatePicker 등) 들어가는 복합 필터에 col-span-1~2를 사용하지 않았는가? → 내용물이 옆 필드와 겹침. 복합 필터는 col-span-3 이상
+20. **FilterBar import 확인**: `<FilterBar>`를 JSX에서 사용하면 반드시 `import { FilterBar } from '@/components'`에 포함. 누락 시 `FilterBar is not defined` CRASH
+21. **행별 col-span 합 = 12**: 각 행의 col-span 합이 정확히 12인가? (마지막 행은 필드 합 + actionSpan = 12). 12 초과 시 우측 overflow 발생
+22. **복합 필터 col-span ≥ 3**: 하나의 필터 슬롯에 컨트롤이 2개 이상(Select+DatePicker 등) 들어가는 복합 필터에 col-span-1~2를 사용하지 않았는가? → 내용물이 옆 필드와 겹침. 복합 필터는 col-span-3 이상
 
 ### 🚨 컴포넌트 사용 필수 검증:
-22. **Radio value**: Radio에 `value="checked"` 또는 `value="unchecked"` 쓰지 않았는가? → 이것은 Checkbox 전용. Radio는 `value="Y"`, `value="N"`, `value="all"` 등 실제 데이터 값만 사용
-23. **DS 컴포넌트 className**: Button, Badge, Select, Field, Radio, Checkbox에 `className="..."` 직접 전달하지 않았는가? → DS 컴포넌트는 자체 prop(buttonType, status 등)으로 스타일링. className은 래퍼 `<div>`에만 허용
+23. **Radio value**: Radio에 `value="checked"` 또는 `value="unchecked"` 쓰지 않았는가? → 이것은 Checkbox 전용. Radio는 `value="Y"`, `value="N"`, `value="all"` 등 실제 데이터 값만 사용
+24. **DS 컴포넌트 className**: Button, Badge, Select, Field, Radio, Checkbox에 `className="..."` 직접 전달하지 않았는가? → DS 컴포넌트는 자체 prop(buttonType, status 등)으로 스타일링. className은 래퍼 `<div>`에만 허용
 
 ### 🚨 템플릿 요소 금지:
-24. **신계약등록2/3·마이메뉴·전체 메뉴 버튼 금지**: 코드에 "신계약등록", "마이메뉴", "전체 메뉴" 등 앱 셸 요소가 있으면 **삭제하세요**. Figma JSON에 보여도 이들은 템플릿이 자동 렌더링 → 코드에 넣으면 중복
+25. **신계약등록2/3·마이메뉴·전체 메뉴 버튼 금지**: 코드에 "신계약등록", "마이메뉴", "전체 메뉴" 등 앱 셸 요소가 있으면 **삭제하세요**. Figma JSON에 보여도 이들은 템플릿이 자동 렌더링 → 코드에 넣으면 중복
 
 Create a premium, completed result.
 """
