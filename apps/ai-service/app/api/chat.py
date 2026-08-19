@@ -666,6 +666,21 @@ def parse_ai_response(content: str) -> ParsedResponse:
     )
 
 
+# 모델이 <file>/<edit> 블록을 마크다운 펜스로 감싸는 경우가 있다(```xml, ```tsx).
+# 블록 자체는 홀드백/누적되므로 여는 펜스만 chat 으로 새어 답변 끝에 "```xml" 이 덩그러니 남는다
+# (실측: 최근 답변 600건 중 43건). 설명 안의 정상 펜스는 보존해야 하므로 다음 두 가지만 한다.
+#   ① 태그(<file/<edit) 직전 텍스트 끝의 펜스 여는 줄 제거
+#   ② 펜스 마커 후보는 뒤에 태그가 오는지 확정될 때까지 홀드백
+_FENCE_TAIL_RE = re.compile(r"(?:^|\n)[ \t]*`{1,3}[a-zA-Z]*[ \t]*\n?$")
+_FENCE_LEADING_RE = re.compile(r"^[ \t]*```[a-zA-Z]*[ \t]*\n?")
+_FENCE_ONLY_RE = re.compile(r"^\s*`{1,3}[a-zA-Z]*\s*$")
+
+
+def _drop_wrapping_fence(text: str) -> str:
+    """태그 직전 텍스트에서 코드블록을 감싸던 펜스 여는 줄을 제거."""
+    return _FENCE_TAIL_RE.sub("", text)
+
+
 class StreamingParser:
     """스트리밍 응답에서 실시간으로 텍스트/코드 분리.
 
@@ -689,6 +704,19 @@ class StreamingParser:
         self.in_patch = False
         self.patch_buffer = ""
 
+    def _hold_boundary(self) -> int:
+        """chat 으로 안전하게 내보낼 끝 위치. 부분 태그와 펜스 마커 후보는 홀드백한다."""
+        cut = len(self.buffer)
+        tag_start = self.buffer.rfind("<")
+        if tag_start != -1:
+            cut = tag_start
+        # 태그 앞 구간의 끝이 펜스 줄이면 그 앞까지만 — 부분 태그(<ed)가 대기 중일 때
+        # 펜스만 먼저 새어 나가는 것을 막는다.
+        fence = _FENCE_TAIL_RE.search(self.buffer[:cut])
+        if fence:
+            cut = fence.start()
+        return cut
+
     def process_chunk(self, chunk: str) -> list[dict]:
         """
         청크 처리 후 이벤트 목록 반환
@@ -708,7 +736,7 @@ class StreamingParser:
                 start_match = self.FILE_START_PATTERN.search(self.buffer)
                 if start_match:
                     # 태그 이전 텍스트 = 대화
-                    before_tag = self.buffer[: start_match.start()]
+                    before_tag = _drop_wrapping_fence(self.buffer[: start_match.start()])
                     if before_tag:
                         events.append({"type": "chat", "text": before_tag})
 
@@ -718,15 +746,11 @@ class StreamingParser:
                     self.current_file_content = ""
                     self.buffer = self.buffer[start_match.end() :]
                 else:
-                    # < 가 있으면 태그 시작일 수 있으므로 그 이전까지만 전송
-                    tag_start = self.buffer.rfind("<")
-                    if tag_start > 0:
-                        events.append({"type": "chat", "text": self.buffer[:tag_start]})
-                        self.buffer = self.buffer[tag_start:]
-                    elif tag_start == -1 and self.buffer:
-                        # < 가 없으면 전체를 대화로 즉시 전송
-                        events.append({"type": "chat", "text": self.buffer})
-                        self.buffer = ""
+                    # 부분 태그·펜스 마커 후보는 홀드백하고 그 앞까지만 전송
+                    cut = self._hold_boundary()
+                    if cut > 0:
+                        events.append({"type": "chat", "text": self.buffer[:cut]})
+                        self.buffer = self.buffer[cut:]
                     break
             else:
                 # 파일 태그 종료 감지
@@ -746,7 +770,8 @@ class StreamingParser:
                     self.inside_file = False
                     self.current_file_path = None
                     self.current_file_content = ""
-                    self.buffer = self.buffer[end_match.end() :]
+                    # </file> 뒤에 남은 닫는 펜스는 감싸기 잔여물이므로 제거
+                    self.buffer = _FENCE_LEADING_RE.sub("", self.buffer[end_match.end() :].lstrip("\n"))
                 else:
                     # 파일 내용 계속 버퍼링
                     break
@@ -763,21 +788,18 @@ class StreamingParser:
             return events
         edit_match = self.EDIT_START_PATTERN.search(self.buffer)
         if edit_match:
-            before = self.buffer[: edit_match.start()]
+            before = _drop_wrapping_fence(self.buffer[: edit_match.start()])
             if before:
                 events.append({"type": "chat", "text": before})
             self.patch_buffer += self.buffer[edit_match.start() :]
             self.buffer = ""
             self.in_patch = True
             return events
-        # 아직 <edit 없음: '<' 직전까지만 chat으로 보내고 부분 태그는 홀드백
-        tag_start = self.buffer.rfind("<")
-        if tag_start > 0:
-            events.append({"type": "chat", "text": self.buffer[:tag_start]})
-            self.buffer = self.buffer[tag_start:]
-        elif tag_start == -1 and self.buffer:
-            events.append({"type": "chat", "text": self.buffer})
-            self.buffer = ""
+        # 아직 <edit 없음: 부분 태그·펜스 마커 후보는 홀드백하고 그 앞까지만 chat 으로
+        cut = self._hold_boundary()
+        if cut > 0:
+            events.append({"type": "chat", "text": self.buffer[:cut]})
+            self.buffer = self.buffer[cut:]
         return events
 
     def get_patch(self) -> str:
@@ -790,12 +812,15 @@ class StreamingParser:
             events: list[dict] = []
             # 스트림이 부분 태그(예: "<edi")로 끊기면 chat으로 그대로 노출됨 —
             # 어차피 parse_edits 실패 → 전체출력 폴백으로 회수되므로 무해.
-            if not self.in_patch and self.buffer.strip():
-                events.append({"type": "chat", "text": self.buffer.strip()})
+            leftover = self.buffer.strip()
+            if not self.in_patch and leftover and not _FENCE_ONLY_RE.match(leftover):
+                events.append({"type": "chat", "text": leftover})
             return events
         # --- 이하 기존 file 모드 flush 그대로 ---
         events: list[dict] = []
         remaining = self.buffer.strip()
+        if _FENCE_ONLY_RE.match(remaining):
+            remaining = ""
         if remaining and not self.inside_file:
             events.append({"type": "chat", "text": remaining})
         return events
