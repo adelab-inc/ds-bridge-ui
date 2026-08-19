@@ -419,9 +419,62 @@ function CodePreviewIframe({
       const agGridWrapperCode = needsAgGrid
         ? `
         // AG Grid 인라인 래퍼 컴포넌트 (ag-grid-react UMD가 v34에서 작동하지 않으므로 직접 구현)
+        // 마운트 이후에도 setGridOption 으로 동기화하는 옵션 목록.
+        // (진짜 ag-grid-react 는 변경된 prop 을 매 렌더 그리드에 반영한다 — 그 동작을 흉내 낸다)
+        // paginationPageSizeSelector / suppressRowTransform / getRowId 는 AG Grid initial-only 라
+        // 제외 (변경 시 DataGrid 쪽에서 key 로 리마운트).
+        var AG_GRID_SYNCED_OPTIONS = [
+          'rowSelection', 'domLayout', 'pagination', 'paginationPageSize', 'animateRows', 'theme',
+          'defaultColDef', 'pinnedTopRowData', 'pinnedBottomRowData', 'getRowStyle', 'getRowClass',
+          'headerHeight', 'rowHeight', 'quickFilterText',
+        ];
+        var AG_GRID_FORWARDED_HANDLERS = [
+          'onSelectionChanged', 'onCellClicked', 'onRowSelected', 'onFilterChanged', 'onSortChanged',
+          'onCellValueChanged', 'onColumnMoved', 'onRowDoubleClicked',
+        ];
+
+        // 생성 시점과 동기화 시점이 같은 기본값을 쓰도록 한 곳에서 해석
+        function resolveAgGridOption(name, p) {
+          switch (name) {
+            case 'paginationPageSize': return p.paginationPageSize || 20;
+            case 'animateRows': return p.animateRows !== false;
+            case 'theme': return p.theme || (window.agGrid && window.agGrid.themeQuartz) || undefined;
+            case 'defaultColDef': return p.defaultColDef || { flex: 1, filter: true, sortable: true, resizable: true };
+            default: return p[name];
+          }
+        }
+
+        // 순수 객체는 얕은 비교, 그 외(배열/함수/원시값)는 참조 비교.
+        // rowSelection={{ ... }} / defaultColDef 처럼 매 렌더 새 객체가 오는 prop 의 불필요한 갱신 방지.
+        function agGridOptionEquals(a, b) {
+          if (a === b) return true;
+          if (!a || !b || typeof a !== 'object' || typeof b !== 'object') return false;
+          if (Array.isArray(a) || Array.isArray(b)) return false;
+          if (Object.getPrototypeOf(a) !== Object.prototype || Object.getPrototypeOf(b) !== Object.prototype) return false;
+          var ka = Object.keys(a);
+          var kb = Object.keys(b);
+          if (ka.length !== kb.length) return false;
+          for (var i = 0; i < ka.length; i++) {
+            if (!Object.prototype.hasOwnProperty.call(b, ka[i]) || a[ka[i]] !== b[ka[i]]) return false;
+          }
+          return true;
+        }
+
         const AgGridReact = React.forwardRef(function AgGridReact(props, ref) {
           const containerRef = React.useRef(null);
           const gridApiRef = React.useRef(null);
+          // 매 렌더 최신 props 보관 — (1) 이벤트 핸들러 stale closure 방지, (2) 옵션 동기화 소스
+          const latestPropsRef = React.useRef(props);
+          latestPropsRef.current = props;
+          // 마지막으로 그리드에 적용한 옵션 값 (name → value)
+          const appliedOptionsRef = React.useRef(null);
+
+          function forwardHandler(name) {
+            return function(event) {
+              var fn = latestPropsRef.current[name];
+              if (typeof fn === 'function') return fn(event);
+            };
+          }
 
           // React cellRenderer → AG Grid vanilla 클래스 어댑터
           // createGrid() API는 React 컴포넌트를 직접 사용 불가하므로,
@@ -493,7 +546,7 @@ function CodePreviewIframe({
             function createGridInstance() {
               if (destroyed || !containerRef.current) return;
 
-              const { AllCommunityModule, ModuleRegistry, createGrid, themeQuartz } = window.agGrid;
+              const { AllCommunityModule, ModuleRegistry, createGrid } = window.agGrid;
 
               // 모듈 등록 (v34 필수, 한 번만 실행)
               if (!window.__AG_GRID_REGISTERED__) {
@@ -501,48 +554,41 @@ function CodePreviewIframe({
                 window.__AG_GRID_REGISTERED__ = true;
               }
 
-              var sanitizedColumnDefs = sanitizeColumnDefs(props.columnDefs);
+              // CDN 폴링 중 리렌더가 있었을 수 있으므로 마운트 시점 closure 가 아닌 최신 props 사용
+              var p = latestPropsRef.current;
+              var sanitizedColumnDefs = sanitizeColumnDefs(p.columnDefs);
 
               // 그리드 옵션 구성
               const gridOptions = {
-                rowData: props.rowData || [],
+                rowData: p.rowData || [],
                 columnDefs: sanitizedColumnDefs,
-                pagination: props.pagination,
-                paginationPageSize: props.paginationPageSize || 20,
-                paginationPageSizeSelector: props.paginationPageSizeSelector || [10, 20, 50, 100],
-                rowSelection: props.rowSelection,
-                animateRows: props.animateRows !== false,
-                theme: props.theme || themeQuartz,
-                defaultColDef: props.defaultColDef || { flex: 1, filter: true, sortable: true, resizable: true },
-
-                // rowSpan 패턴 / 합계 행 / 행 스타일 / 헤더·행 높이
-                suppressRowTransform: props.suppressRowTransform,
-                pinnedTopRowData: props.pinnedTopRowData,
-                pinnedBottomRowData: props.pinnedBottomRowData,
-                getRowStyle: props.getRowStyle,
-                getRowClass: props.getRowClass,
-                headerHeight: props.headerHeight,
-                rowHeight: props.rowHeight,
-                getRowId: props.getRowId,
-                quickFilterText: props.quickFilterText,
+                // initial-only 옵션 (변경 시 DataGrid 가 key 로 리마운트)
+                paginationPageSizeSelector: p.paginationPageSizeSelector || [10, 20, 50, 100],
+                suppressRowTransform: p.suppressRowTransform,
+                getRowId: p.getRowId,
 
                 onGridReady: function(params) {
                   gridApiRef.current = params.api;
-                  if (props.onGridReady) props.onGridReady(params);
+                  var fn = latestPropsRef.current.onGridReady;
+                  if (typeof fn === 'function') fn(params);
                 },
-                onSelectionChanged: props.onSelectionChanged,
-                onCellClicked: props.onCellClicked,
-                onRowSelected: props.onRowSelected,
-                onFilterChanged: props.onFilterChanged,
-                onSortChanged: props.onSortChanged,
-                onCellValueChanged: props.onCellValueChanged,
-                onColumnMoved: props.onColumnMoved,
-                onRowDoubleClicked: props.onRowDoubleClicked,
               };
+              // 마운트 이후에도 동기화되는 옵션 — 동일한 해석 함수로 초기값 세팅
+              var applied = {};
+              AG_GRID_SYNCED_OPTIONS.forEach(function(name) {
+                var value = resolveAgGridOption(name, p);
+                gridOptions[name] = value;
+                applied[name] = value;
+              });
+              // 이벤트 핸들러는 ref 경유 — 첫 렌더 함수가 고정되어 stale state 를 읽는 문제 방지
+              AG_GRID_FORWARDED_HANDLERS.forEach(function(name) {
+                gridOptions[name] = forwardHandler(name);
+              });
 
               // 그리드 생성
               const api = createGrid(containerRef.current, gridOptions);
               gridApiRef.current = api;
+              appliedOptionsRef.current = applied;
             }
 
             tryInit();
@@ -571,6 +617,26 @@ function CodePreviewIframe({
               gridApiRef.current.setGridOption('columnDefs', sanitized);
             }
           }, [props.columnDefs]);
+
+          // 그 외 변경 가능 옵션 동기화 (rowSelection / domLayout / getRowStyle / pinned rows / ...)
+          // deps 없이 매 렌더 실행하되, 마지막 적용값과 다를 때만 setGridOption 호출.
+          // 예: 삭제모드 토글로 rowSelection 이 바뀌면 여기서 그리드에 반영되어 체크박스가 나타남/사라짐.
+          React.useEffect(function() {
+            var api = gridApiRef.current;
+            var applied = appliedOptionsRef.current;
+            if (!api || !applied || api.isDestroyed && api.isDestroyed()) return;
+            var current = latestPropsRef.current;
+            AG_GRID_SYNCED_OPTIONS.forEach(function(name) {
+              var next = resolveAgGridOption(name, current);
+              if (agGridOptionEquals(applied[name], next)) return;
+              applied[name] = next;
+              try {
+                api.setGridOption(name, next);
+              } catch (err) {
+                console.warn('[AgGridReact] setGridOption(' + name + ') 실패:', err);
+              }
+            });
+          });
 
           return React.createElement('div', {
             ref: containerRef,
@@ -653,8 +719,16 @@ function CodePreviewIframe({
             effectiveHeight = measuredH;
           }
 
+          // AG Grid initial-only 옵션이 바뀌면 그리드를 재생성해야 하므로 key 로 리마운트
+          var initialOnlyKey = [
+            props.suppressRowTransform ? 'srt' : '',
+            props.getRowId ? 'rid' : '',
+            (function() { try { return JSON.stringify(paginationPageSizeSelector === undefined ? null : paginationPageSizeSelector); } catch (e) { return ''; } })(),
+          ].join('|');
+
           return React.createElement('div', { ref: wrapperRef, className: className, style: { height: effectiveHeight, width: width } },
             React.createElement(AgGridReact, {
+              key: initialOnlyKey,
               rowData: rowData,
               columnDefs: columnDefs,
               defaultColDef: mergedDefaultColDef,
