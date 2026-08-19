@@ -327,7 +327,8 @@ def scan_external_urls(source: str) -> list[UrlHit]:
 _JSX_TAG_RE = re.compile(
     r"""
     (?P<close></(?P<cname>[A-Za-z_$][A-Za-z0-9_$.]*)?\s*>)   # </div>, </Foo.Bar>, </> (Fragment)
-  | (?P<open><(?P<oname>[A-Za-z_$][A-Za-z0-9_$.]*)?)         # <div, <Foo.Bar, <> (Fragment)
+  | (?P<frag><>)                                             # <> (Fragment) — 정확히 이 두 글자만
+  | (?P<open><(?P<oname>[A-Za-z_$][A-Za-z0-9_$.]*))          # <div, <Foo.Bar (이름 필수)
     """,
     re.VERBOSE,
 )
@@ -376,8 +377,13 @@ def scan_jsx_tags(source: str) -> list[JSXTag]:
             pos = match.end()
             continue
 
+        if match.group("frag") is not None:
+            tags.append(JSXTag(name="", line=line, closing=False, self_closing=False))
+            pos = match.end()
+            continue
+
         # 여는 태그: `>` 또는 `/>` 까지 속성 구간을 훑는다 (중괄호 깊이 추적)
-        name = match.group("oname") or ""
+        name = match.group("oname")
         i = match.end()
         depth = 0
         self_closing = False

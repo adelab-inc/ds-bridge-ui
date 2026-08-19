@@ -115,12 +115,36 @@ def test_multiline_self_closing_tag_is_not_left_open() -> None:
     assert scan_jsx_balance(source) == []
 
 
-def test_combined_scan_reports_marker_and_balance_defects() -> None:
-    """chat.py 게이트가 쓰는 단일 진입점 — 마커 잔존과 태그 불균형을 함께 보고한다."""
+def test_combined_scan_catches_marker_leak_through_single_entry_point() -> None:
+    """chat.py 게이트가 쓰는 단일 진입점 — 마커 잔존을 잡는다.
+
+    이 파일은 typescript 파서 기준 SYNTAX_ERR 이지만 원인은 마커 자체이므로
+    `patch_marker_leak` 로 보고된다(태그 불균형은 없음).
+    """
     errors = scan_generated_code_defects(_fixture("bad_merge_marker_e64fd11b.tsx"))
 
-    assert {e.category for e in errors} == {"patch_marker_leak", "jsx_unbalanced"}
+    assert errors, "마커 잔존을 감지해야 함"
+    assert {e.category for e in errors} == {"patch_marker_leak"}
 
 
 def test_combined_scan_is_empty_for_healthy_code() -> None:
     assert scan_generated_code_defects(_fixture("ok_53_67dd47b0_pre_drawer.tsx")) == []
+
+
+def test_comparison_operators_are_not_fragment_tags() -> None:
+    """`i <= n` / `a < b` 의 `<` 를 Fragment 여는 태그로 세면 안 된다."""
+    source = """
+    export const A = () => {
+      const fields: string[] = [];
+      for (let i = 1; i <= count; i++) fields.push(String(i));
+      if (total <= 0) fields.push('none');
+      if (a < b) fields.push('lt');
+      return <div>{fields.length}</div>;
+    };
+    """
+    assert scan_jsx_balance(source) == []
+
+
+def test_real_room_code_with_comparison_operators_is_clean() -> None:
+    """실제 방(93b1e73c) 코드 — typescript 파서 기준 정상이므로 0건이어야 한다."""
+    assert scan_generated_code_defects(_fixture("ok_comparison_operator_93b1e73c.tsx")) == []
