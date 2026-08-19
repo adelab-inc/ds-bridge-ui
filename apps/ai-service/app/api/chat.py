@@ -28,7 +28,7 @@ from app.schemas.validation import ValidationError, ValidationReport
 from app.services.ai_provider import AIProvider, get_ai_provider
 from app.services.broadcast import broadcast_event, track_broadcast_task
 from app.services.code_patch import PatchError, apply_edits, parse_edits
-from app.services.code_validator import ComponentCatalog, validate_code
+from app.services.code_validator import ComponentCatalog, scan_generated_code_defects, validate_code
 from app.services.figma_api import FigmaFetchError, FigmaRateLimitError, extract_figma_url
 from app.services.message_condenser import condense_message
 from app.services.supabase_db import (
@@ -138,7 +138,7 @@ def _build_done_validation_payload(collected_files: list[dict]) -> dict:
     기존 페이로드 형식을 유지한다.
     """
     settings = get_settings()
-    if not settings.enable_validation or not collected_files:
+    if not collected_files:
         return {}
 
     merged_errors: list[ValidationError] = []
@@ -148,10 +148,17 @@ def _build_done_validation_payload(collected_files: list[dict]) -> dict:
         content = f.get("content", "")
         if not content:
             continue
-        report = validate_code(content, _CODE_CATALOG)
-        merged_errors.extend(report.errors)
-        merged_warnings.extend(report.warnings)
-        elapsed_total += report.elapsed_ms
+        # 구조적 결함(jsx_unbalanced/patch_marker_leak)은 플래그와 무관하게 항상 보고한다 —
+        # "저장해도 되는 코드인가"를 가리는 게이트라 FE 안내가 필요하다.
+        merged_errors.extend(scan_generated_code_defects(content))
+        if settings.enable_validation:
+            report = validate_code(content, _CODE_CATALOG)
+            merged_errors.extend(report.errors)
+            merged_warnings.extend(report.warnings)
+            elapsed_total += report.elapsed_ms
+
+    if not settings.enable_validation and not merged_errors:
+        return {}  # 검증 off + 결함 없음 → 기존 페이로드 형식 유지
 
     report_obj = ValidationReport(
         passed=not merged_errors,
@@ -1349,6 +1356,11 @@ async def _run_broadcast_generation(
 
                 edits = parse_edits(diff_parser.get_patch())
                 full_content = apply_edits(base_code["content"], edits)
+                # 텍스트 치환은 성공해도 결과가 구문적으로 깨질 수 있다(닫는 태그만 바뀌는 등).
+                # 깨진 골격은 다음 메시지의 base로 계속 전파되므로 여기서 끊고 전체출력으로 폴백한다.
+                applied_defects = scan_generated_code_defects(full_content)
+                if applied_defects:
+                    raise PatchError(f"applied patch is structurally invalid: {applied_defects[0].message}")
                 collected_files = [{"path": base_code["path"], "content": full_content}]
                 logger.info(
                     "Diff edit applied",
@@ -1462,7 +1474,23 @@ async def _run_broadcast_generation(
                         await chunk_queue.put({"type": "code", **recovered})
 
                 if collected_files:
-                    break  # 코드 확보 → 재시도 종료
+                    defects = scan_generated_code_defects(collected_files[0].get("content", ""))
+                    if not defects:
+                        break  # 코드 확보 → 재시도 종료
+                    logger.warning(
+                        "Generated code unbalanced — retrying",
+                        extra={
+                            "room_id": room_id,
+                            "message_id": message_id,
+                            "attempt": attempt,
+                            "defects": len(defects),
+                            "first_error": defects[0].message,
+                        },
+                    )
+                    if attempt == max_attempts - 1:
+                        # 마지막 시도까지 불균형 — 사용자 작업을 잃지 않도록 저장하고
+                        # done.validation 으로 알린다(프리뷰는 깨질 수 있음).
+                        break
 
         # chunk sender 종료 대기 (모든 시도 후 1회, 남은 큐 drain).
         # 대형 파일(예: ~115KB 코드 청크)이 큐 후반에 있으면 30초로는 flush 전에 취소돼
