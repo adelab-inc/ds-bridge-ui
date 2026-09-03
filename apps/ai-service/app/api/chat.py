@@ -688,6 +688,20 @@ def _build_balance_hint(defects: list[ValidationError]) -> str:
     )
 
 
+def _build_fallback_answer_text(collected_files: list[dict[str, Any]], edit_count: int | None) -> str:
+    """모델이 설명 없이 코드/패치만 낸 경우의 최소 답변 문구.
+
+    실측(prod): 코드는 정상인데 text 가 0자인 경우가 13.7%. 채팅이 비어 사용자는
+    "응답 없음"으로 인식한다. 재생성은 비용이 크므로 저장 직전에 사실만 채운다.
+    """
+    path = (collected_files[0].get("path") or "").strip() if collected_files else ""
+    if edit_count:
+        return f"요청 내용을 반영해 {edit_count}개 부분을 수정했습니다."
+    if path:
+        return f"요청 내용을 반영해 `{path}` 코드를 생성했습니다."
+    return "요청 내용을 반영해 코드를 생성했습니다."
+
+
 def _drop_wrapping_fence(text: str) -> str:
     """태그 직전 텍스트에서 코드블록을 감싸던 펜스 여는 줄을 제거."""
     return _FENCE_TAIL_RE.sub("", text)
@@ -1289,6 +1303,7 @@ async def _run_broadcast_generation(
     parser = StreamingParser()
     collected_text = ""
     collected_files: list[dict] = []
+    applied_edit_count: int | None = None  # diff 성공 시 적용된 edit 개수(답변 폴백 문구용)
     heartbeat_task: asyncio.Task | None = None
     chunk_sender_task: asyncio.Task | None = None
     chunk_queue: asyncio.Queue[dict | None] = asyncio.Queue()
@@ -1399,6 +1414,7 @@ async def _run_broadcast_generation(
                 if applied_defects:
                     raise PatchError(f"applied patch is structurally invalid: {applied_defects[0].message}")
                 collected_files = [{"path": base_code["path"], "content": full_content}]
+                applied_edit_count = len(edits)
                 logger.info(
                     "Diff edit applied",
                     extra={
@@ -1601,6 +1617,14 @@ async def _run_broadcast_generation(
 
         # 완료 시 DB 저장 (재시도 포함)
         first_file = collected_files[0]
+        # 모델이 설명을 생략하면 채팅이 비어 "응답 없음"으로 보인다 → 최소 문구 보완.
+        # 모델이 쓴 설명은 절대 덮어쓰지 않는다.
+        if not collected_text.strip():
+            collected_text = _build_fallback_answer_text(collected_files, applied_edit_count)
+            logger.info(
+                "Answer text was empty — filled with fallback",
+                extra={"room_id": room_id, "message_id": message_id, "edits": applied_edit_count},
+            )
         await _save_message_with_retry(
             message_id=message_id,
             text=collected_text.strip(),
