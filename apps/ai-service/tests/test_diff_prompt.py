@@ -59,3 +59,11 @@ def test_diff_example_is_not_wrapped_in_markdown_fence():
     example = DIFF_RESPONSE_FORMAT_INSTRUCTIONS.split("### 규칙")[0]
     assert "<edit path=" in example, "예시는 있어야 함"
     assert "```" not in example, f"예시가 펜스로 감싸여 있다:\n{example}"
+
+
+def test_diff_rules_require_explanation_before_edit_block():
+    """설명 생략 시 채팅이 비어 보인다 — FORMAT 목록이 아니라 '규칙' 블록에서 강제한다."""
+    rules = DIFF_RESPONSE_FORMAT_INSTRUCTIONS.split("### 규칙")[1]
+
+    assert "설명" in rules
+    assert "생략" in rules
