@@ -94,3 +94,31 @@ async def test_model_prose_is_never_overwritten(monkeypatch):
     )
 
     assert _done(saves)[-1]["text"] == "로그인 폼을 만들었습니다."
+
+
+# ── 변경이 실제로 없었던 경우 (#187 후속) ────────────────────────────────
+
+# SEARCH 와 REPLACE 가 동일 = 아무것도 바꾸지 않는 패치.
+# 실측: room 02fa4dd0 에서 같은 요청 4연속, 매번 edits=1 / result_len 46203 동일,
+# 답변 텍스트 0자 → 사용자는 아무 반응이 없어 계속 재요청했다.
+NOOP_PATCH = (
+    '<edit path="src/A.tsx">\n<<<<<<< SEARCH\n    <span>x</span>\n'
+    "=======\n    <span>x</span>\n>>>>>>> REPLACE\n</edit>"
+)
+
+
+async def test_noop_diff_says_nothing_changed(monkeypatch):
+    """적용 결과가 base 와 동일하면 '수정했다'가 아니라 '변경 없음'을 알려야 한다."""
+    provider = _FakeProvider([[NOOP_PATCH]])
+    saves, events = [], []
+    _patch(monkeypatch, saves, events)
+
+    await chat_module._run_broadcast_generation(
+        room_id="r1", message_id="m1", user_id="u1",
+        provider=provider, messages=[], images=[], is_vision_mode=False,
+        is_diff_mode=True, base_code=BASE, fallback_messages=[],
+    )
+
+    text = _done(saves)[-1]["text"]
+    assert "변경" in text and "없" in text, f"변경 없음을 알려야 함: {text!r}"
+    assert "수정했습니다" not in text, f"거짓 안내: {text!r}"
