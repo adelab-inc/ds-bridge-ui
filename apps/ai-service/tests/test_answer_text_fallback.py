@@ -122,3 +122,28 @@ async def test_noop_diff_says_nothing_changed(monkeypatch):
     text = _done(saves)[-1]["text"]
     assert "변경" in text and "없" in text, f"변경 없음을 알려야 함: {text!r}"
     assert "수정했습니다" not in text, f"거짓 안내: {text!r}"
+
+
+PROSE_NOOP = "관리자 제재 컬럼 표기를 요청하신 대로 변경하였습니다.\n" + NOOP_PATCH
+
+
+async def test_noop_diff_appends_notice_when_model_wrote_prose(monkeypatch):
+    """모델이 '변경하였습니다'라고 쓰고 실제로는 아무것도 안 바꾼 경우.
+
+    실측(room 00474737, 09-03 13:20/13:23): 같은 요청 재시도에 모델이
+    "요청하신 대로 변경하였습니다"라고 답했지만 코드는 1바이트도 안 바뀌었다.
+    모델 문구는 보존하고 사실을 덧붙인다.
+    """
+    provider = _FakeProvider([[PROSE_NOOP]])
+    saves, events = [], []
+    _patch(monkeypatch, saves, events)
+
+    await chat_module._run_broadcast_generation(
+        room_id="r1", message_id="m1", user_id="u1",
+        provider=provider, messages=[], images=[], is_vision_mode=False,
+        is_diff_mode=True, base_code=BASE, fallback_messages=[],
+    )
+
+    text = _done(saves)[-1]["text"]
+    assert "변경하였습니다" in text, "모델이 쓴 설명은 보존해야 함"
+    assert "변경된 부분이 없" in text, f"실제 변경 없음을 알려야 함: {text!r}"

@@ -688,6 +688,14 @@ def _build_balance_hint(defects: list[ValidationError]) -> str:
     )
 
 
+# 적용 결과가 base 와 동일할 때 알리는 문구. 모델이 설명을 쓴 경우엔 덮어쓰지 않고 뒤에 덧붙인다
+# (실측 room 00474737 13:20·13:23: 모델이 "변경하였습니다"라고 답했지만 코드는 1바이트도 안 바뀜).
+_NOOP_NOTICE = (
+    "요청한 내용이 이미 반영되어 있어 변경된 부분이 없습니다. "
+    "다르게 보이는 부분이 있으면 어느 항목인지 구체적으로 알려주세요."
+)
+
+
 def _build_fallback_answer_text(
     collected_files: list[dict[str, Any]],
     edit_count: int | None,
@@ -704,10 +712,7 @@ def _build_fallback_answer_text(
     """
     path = (collected_files[0].get("path") or "").strip() if collected_files else ""
     if unchanged:
-        return (
-            "요청한 내용이 이미 반영되어 있어 변경된 부분이 없습니다. "
-            "다르게 보이는 부분이 있으면 어느 항목인지 구체적으로 알려주세요."
-        )
+        return _NOOP_NOTICE
     if edit_count:
         return f"요청 내용을 반영해 {edit_count}개 부분을 수정했습니다."
     if path:
@@ -1651,6 +1656,14 @@ async def _run_broadcast_generation(
             )
             logger.info(
                 "Answer text was empty — filled with fallback",
+                extra={"room_id": room_id, "message_id": message_id, "edits": applied_edit_count},
+            )
+        elif applied_unchanged:
+            # 모델이 "변경하였습니다"라고 써도 실제 변경이 없으면 사용자가 속는다.
+            # 모델 문구는 보존하고 사실만 덧붙인다.
+            collected_text = f"{collected_text.rstrip()}\n\n⚠️ {_NOOP_NOTICE}"
+            logger.warning(
+                "Model claimed a change but content was unchanged",
                 extra={"room_id": room_id, "message_id": message_id, "edits": applied_edit_count},
             )
         await _save_message_with_retry(
