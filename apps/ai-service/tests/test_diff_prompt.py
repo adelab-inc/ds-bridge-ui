@@ -67,3 +67,15 @@ def test_diff_rules_require_explanation_before_edit_block():
 
     assert "설명" in rules
     assert "생략" in rules
+
+
+def test_diff_rules_cap_search_block_scope():
+    """SEARCH 범위가 과하면 요청하지 않은 코드까지 재작성되며 사라진다.
+
+    실측(room 02fa4dd0, 09-03 11:36): "컬럼 2개 삭제" 요청에 edits=3 으로
+    537줄이 교체되며 ActionBar·삭제 확인 Dialog 등이 함께 사라졌다.
+    """
+    rules = DIFF_RESPONSE_FORMAT_INSTRUCTIONS.split("### 규칙")[1]
+
+    assert "최소" in rules, "SEARCH 최소 범위 규칙이 없음"
+    assert "삭제" in rules, "요청에 없는 코드 삭제 금지 규칙이 없음"
