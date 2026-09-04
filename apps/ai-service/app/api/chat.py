@@ -688,6 +688,38 @@ def _build_balance_hint(defects: list[ValidationError]) -> str:
     )
 
 
+# 적용 결과가 base 와 동일할 때 알리는 문구. 모델이 설명을 쓴 경우엔 덮어쓰지 않고 뒤에 덧붙인다
+# (실측 room 00474737 13:20·13:23: 모델이 "변경하였습니다"라고 답했지만 코드는 1바이트도 안 바뀜).
+_NOOP_NOTICE = (
+    "요청한 내용이 이미 반영되어 있어 변경된 부분이 없습니다. "
+    "다르게 보이는 부분이 있으면 어느 항목인지 구체적으로 알려주세요."
+)
+
+
+def _build_fallback_answer_text(
+    collected_files: list[dict[str, Any]],
+    edit_count: int | None,
+    unchanged: bool = False,
+) -> str:
+    """모델이 설명 없이 코드/패치만 낸 경우의 최소 답변 문구.
+
+    실측(prod): 코드는 정상인데 text 가 0자인 경우가 13.7%. 채팅이 비어 사용자는
+    "응답 없음"으로 인식한다. 재생성은 비용이 크므로 저장 직전에 사실만 채운다.
+
+    `unchanged`(적용 결과가 base 와 동일)일 때 "수정했다"고 쓰면 거짓 안내가 된다 —
+    실측 room 02fa4dd0 에서 같은 요청 4연속·코드 무변화·답변 0자로 사용자가 계속
+    재요청했다. 이 경우엔 변경이 없었다는 사실을 알린다.
+    """
+    path = (collected_files[0].get("path") or "").strip() if collected_files else ""
+    if unchanged:
+        return _NOOP_NOTICE
+    if edit_count:
+        return f"요청 내용을 반영해 {edit_count}개 부분을 수정했습니다."
+    if path:
+        return f"요청 내용을 반영해 `{path}` 코드를 생성했습니다."
+    return "요청 내용을 반영해 코드를 생성했습니다."
+
+
 def _drop_wrapping_fence(text: str) -> str:
     """태그 직전 텍스트에서 코드블록을 감싸던 펜스 여는 줄을 제거."""
     return _FENCE_TAIL_RE.sub("", text)
@@ -1289,6 +1321,8 @@ async def _run_broadcast_generation(
     parser = StreamingParser()
     collected_text = ""
     collected_files: list[dict] = []
+    applied_edit_count: int | None = None  # diff 성공 시 적용된 edit 개수(답변 폴백 문구용)
+    applied_unchanged = False  # diff 적용 결과가 base 와 동일(= 실제 변경 없음)
     heartbeat_task: asyncio.Task | None = None
     chunk_sender_task: asyncio.Task | None = None
     chunk_queue: asyncio.Queue[dict | None] = asyncio.Queue()
@@ -1399,6 +1433,19 @@ async def _run_broadcast_generation(
                 if applied_defects:
                     raise PatchError(f"applied patch is structurally invalid: {applied_defects[0].message}")
                 collected_files = [{"path": base_code["path"], "content": full_content}]
+                applied_edit_count = len(edits)
+                # SEARCH==REPLACE 같은 no-op 패치는 "적용 성공"으로 기록되지만 실제 변경이 없다.
+                applied_unchanged = full_content == base_code["content"]
+                if applied_unchanged:
+                    logger.warning(
+                        "Diff applied but content unchanged (no-op patch)",
+                        extra={
+                            "room_id": room_id,
+                            "message_id": message_id,
+                            "edits": len(edits),
+                            "content_len": len(full_content),
+                        },
+                    )
                 logger.info(
                     "Diff edit applied",
                     extra={
@@ -1601,6 +1648,24 @@ async def _run_broadcast_generation(
 
         # 완료 시 DB 저장 (재시도 포함)
         first_file = collected_files[0]
+        # 모델이 설명을 생략하면 채팅이 비어 "응답 없음"으로 보인다 → 최소 문구 보완.
+        # 모델이 쓴 설명은 절대 덮어쓰지 않는다.
+        if not collected_text.strip():
+            collected_text = _build_fallback_answer_text(
+                collected_files, applied_edit_count, unchanged=applied_unchanged
+            )
+            logger.info(
+                "Answer text was empty — filled with fallback",
+                extra={"room_id": room_id, "message_id": message_id, "edits": applied_edit_count},
+            )
+        elif applied_unchanged:
+            # 모델이 "변경하였습니다"라고 써도 실제 변경이 없으면 사용자가 속는다.
+            # 모델 문구는 보존하고 사실만 덧붙인다.
+            collected_text = f"{collected_text.rstrip()}\n\n⚠️ {_NOOP_NOTICE}"
+            logger.warning(
+                "Model claimed a change but content was unchanged",
+                extra={"room_id": room_id, "message_id": message_id, "edits": applied_edit_count},
+            )
         await _save_message_with_retry(
             message_id=message_id,
             text=collected_text.strip(),
