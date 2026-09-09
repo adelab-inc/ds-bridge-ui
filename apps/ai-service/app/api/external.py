@@ -1,7 +1,7 @@
 """외부 파트너용 read-only API (sub-app)
 
-런타임 허브에서 생성된 디자인 코드와 디스크립션을 외부 시스템(보험사 백오피스 등)이
-crid(=room_id)로 조회할 수 있도록 노출합니다.
+런타임 허브에서 생성된 디자인 코드·디스크립션과 그 생성 과정의 대화 내역을
+외부 시스템(보험사 백오피스 등)이 crid(=room_id)로 조회할 수 있도록 노출합니다.
 
 ## 마운트 구조
 - 본 모듈은 별도 FastAPI sub-app(`external_app`)으로 노출됩니다.
@@ -9,7 +9,8 @@ crid(=room_id)로 조회할 수 있도록 노출합니다.
 - 결과:
   - 외부 파트너용 스웨거: `https://{host}/external/docs`
   - 외부 파트너용 OpenAPI JSON: `https://{host}/external/openapi.json`
-  - 실제 호출 URL: `/external/code/{crid}`, `/external/description/{crid}`
+  - 실제 호출 URL: `/external/code/{crid}`, `/external/description/{crid}`,
+    `/external/messages/{crid}`
 - 메인 `/docs`에는 내부 API만 노출되므로 외부 파트너에게 내부 스펙이 새지 않습니다.
 
 ## 인증
@@ -19,13 +20,16 @@ crid(=room_id)로 조회할 수 있도록 노출합니다.
 
 ## 사용 시나리오
 - 외부 시스템이 런타임 허브 URL의 `crid` 파라미터를 추출하여 본 API 호출
+- 최신 산출물만 필요하면 `/code/{crid}`, `/description/{crid}`
+- 어떤 요청으로 이 화면이 만들어졌는지 이력이 필요하면 `/messages/{crid}`
+  (코드 본문은 기본 제외 — 응답 크기 때문. `has_code`/`code_hash` 로 판별)
 - 로컬 환경 또는 사내망 사용 가정 (방화벽 이슈 없음)
 """
 import logging
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, FastAPI, HTTPException, Path, Request, status
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Path, Query, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
@@ -38,10 +42,14 @@ from app.schemas.external import (
     ExternalDescriptionHashResponse,
     ExternalDescriptionResponse,
     ExternalErrorResponse,
+    ExternalMessageItem,
+    ExternalMessagesResponse,
 )
 from app.services.supabase_db import (
+    get_chat_room,
     get_latest_code_message,
     get_latest_description,
+    get_messages_paginated,
 )
 
 logger = logging.getLogger(__name__)
@@ -298,16 +306,117 @@ async def get_external_description_hash(
 # 외부 라우터는 별도 sub-app 으로 분리합니다.
 # main.py 에서 `app.mount("/external", external_app)` 로 마운트합니다.
 
+@router.get(
+    "/messages/{crid}",
+    response_model=ExternalMessagesResponse,
+    summary="대화 내역 조회",
+    description=(
+        "지정한 채팅방(`crid`)의 대화 내역(요청/응답)을 오래된 순으로 반환합니다.\n\n"
+        "**코드 본문은 기본 제외됩니다.** 메시지당 18~24KB 라 전체를 실으면 한 페이지가 "
+        "수백 KB 가 됩니다. 코드 유무는 `has_code`, 변경 탐지는 `code_hash` 로 하고, "
+        "본문이 필요하면 `/code/{crid}`(최신 코드) 또는 `include_code=true` 를 쓰세요.\n\n"
+        "**페이지네이션** — `has_more` 가 true 면 `next_cursor` 값을 `cursor` 파라미터로 "
+        "넘겨 다음 페이지를 받습니다. 메시지가 0건인 방은 빈 배열과 `total_count: 0` 으로 "
+        "응답합니다(404 아님).\n\n"
+        "**에러**\n"
+        "- `404` — 해당 crid 의 채팅방이 존재하지 않음\n"
+        "- `422` — `crid` 가 UUID 형식이 아님\n"
+        "- `401`/`403` — 인증 실패 (`X-API-Key` 헤더 누락/불일치)\n"
+        "- `500` — 서버 내부 오류"
+    ),
+    response_description="대화 내역과 페이지네이션 정보",
+)
+async def get_external_messages(
+    crid: UUID = Path(
+        ...,
+        description=(
+            "채팅방 ID. UUID v4 형식. 런타임 허브 URL 의 `?crid=...` 파라미터와 동일한 값."
+        ),
+        examples=["5169a302-629f-4759-8568-c0a7849f4439"],
+    ),
+    limit: int = Query(50, ge=1, le=100, description="페이지당 메시지 수 (1~100)"),
+    cursor: int | None = Query(
+        None, description="페이지네이션 커서. 직전 응답의 `next_cursor` 값을 그대로 넘긴다."
+    ),
+    order: Literal["asc", "desc"] = Query(
+        "asc",
+        description="정렬 순서. `asc`(기본, 오래된 순 — 대화를 처음부터 읽는 용도) | `desc`(최신순)",
+    ),
+    include_code: bool = Query(
+        False,
+        description=(
+            "각 메시지의 TSX 코드 본문 포함 여부. 기본 false — 응답 크기가 수 MB 로 "
+            "커지는 것을 막기 위함. false 여도 `code_hash` 는 제공된다."
+        ),
+    ),
+) -> ExternalMessagesResponse:
+    crid_str = str(crid)
+    # 오타 crid 를 빈 대화로 오인하지 않도록 방 존재를 먼저 확인한다.
+    if await get_chat_room(crid_str) is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Room not found for crid: {crid_str}",
+        )
+
+    page = await get_messages_paginated(crid_str, limit=limit, cursor=cursor, order=order)
+    items = []
+    for m in page.get("messages") or []:
+        content = m.get("content") or ""
+        items.append(
+            ExternalMessageItem(
+                id=str(m.get("id", "")),
+                question=m.get("question") or "",
+                answer=(m.get("text") or None),
+                status=m.get("status") or "",
+                question_created_at=m.get("question_created_at"),
+                answer_created_at=m.get("answer_created_at"),
+                has_code=bool(content),
+                # 저장 컬럼이 비어 있으면 모델 validator 가 code 로 계산한다.
+                code_hash=m.get("code_hash") or (content_hash(content) if content else None),
+                code_path=m.get("path") or None,
+                image_count=len(m.get("image_urls") or []),
+                code=content or None if include_code else None,
+            )
+        )
+
+    logger.info(
+        "External messages fetched",
+        extra={
+            "crid": crid_str,
+            "returned": len(items),
+            "total": page.get("total_count", 0),
+            "include_code": include_code,
+        },
+    )
+
+    response = ExternalMessagesResponse(
+        crid=crid_str,
+        messages=items,
+        next_cursor=page.get("next_cursor"),
+        has_more=bool(page.get("has_more")),
+        total_count=page.get("total_count", 0),
+    )
+    if include_code:
+        return response
+    # 기본 요청에서는 code 필드를 응답에서 아예 제외한다(null 로 실어 보내지 않음).
+    return JSONResponse(  # type: ignore[return-value]
+        content=response.model_dump(mode="json", exclude={"messages": {"__all__": {"code"}}})
+    )
+
+
 external_app = FastAPI(
     title="DS-Bridge External API",
     description=(
         "외부 파트너용 read-only API.\n\n"
         "런타임 허브(`ds-bridge-ui-web`)에서 AI 채팅으로 생성된 디자인 코드와 "
-        "디스크립션을 `crid`(=room_id)로 조회합니다.\n\n"
+        "디스크립션, 그리고 그 생성 과정의 대화 내역을 `crid`(=room_id)로 조회합니다.\n\n"
         "## 사용 흐름\n"
         "1. 런타임 허브에서 채팅을 통해 코드/디스크립션 생성\n"
         "2. 런타임 허브 URL의 `?crid=<UUID>` 파라미터에서 crid 추출\n"
-        "3. 본 API 의 `/code/{crid}` 또는 `/description/{crid}` 호출\n\n"
+        "3. 본 API 호출\n"
+        "   - 최신 코드: `/code/{crid}` · 최신 디스크립션: `/description/{crid}`\n"
+        "   - 변경 탐지(경량 폴링): `/code/hash/{crid}` · `/description/hash/{crid}`\n"
+        "   - 대화 내역: `/messages/{crid}` (커서 페이지네이션, 코드 본문 기본 제외)\n\n"
         "## 인증\n"
         "모든 엔드포인트는 `X-API-Key` 헤더가 필요합니다. 외부 파트너용 키 값은 "
         "내부 BFF 키 값과 별도로 발급되며 운영 담당자로부터 안전 채널로 전달받습니다.\n\n"
@@ -315,7 +424,8 @@ external_app = FastAPI(
         "- `200` — 성공. JSON 페이로드 (각 엔드포인트별 스키마 참조)\n"
         "- `401` — `X-API-Key` 헤더 미전송\n"
         "- `403` — `X-API-Key` 값 불일치\n"
-        "- `404` — 채팅방에 해당 데이터가 아직 생성되지 않음\n"
+        "- `404` — 채팅방에 해당 데이터가 아직 생성되지 않음 "
+        "(`/messages` 는 채팅방 자체가 없을 때만 404, 대화가 0건이면 빈 배열)\n"
         "- `422` — `crid` 가 UUID 형식이 아님\n"
         "- `500` — 서버 내부 오류\n\n"
         "모든 에러 응답은 `{\"detail\": \"<message>\"}` 형식으로 통일됩니다."
