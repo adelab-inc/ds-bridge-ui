@@ -42,6 +42,7 @@ from app.schemas.external import (
     ExternalMessagesResponse,
 )
 from app.services.supabase_db import (
+    get_chat_room,
     get_latest_code_message,
     get_latest_description,
     get_messages_paginated,
@@ -306,14 +307,15 @@ async def get_external_description_hash(
     response_model=ExternalMessagesResponse,
     summary="대화 내역 조회",
     description=(
-        "지정한 채팅방(`crid`)의 대화 내역(요청/응답)을 최신순으로 반환합니다.\n\n"
-        "**코드 본문은 기본 제외됩니다.** 메시지당 수십 KB 라 전체를 실으면 응답이 수 MB 가 "
-        "되기 때문입니다. 필요하면 `include_code=true` 로 요청하세요 "
-        "(최신 코드만 필요하면 `/code/{crid}` 가 더 가볍습니다).\n\n"
+        "지정한 채팅방(`crid`)의 대화 내역(요청/응답)을 오래된 순으로 반환합니다.\n\n"
+        "**코드 본문은 기본 제외됩니다.** 메시지당 18~24KB 라 전체를 실으면 한 페이지가 "
+        "수백 KB 가 됩니다. 코드 유무는 `has_code`, 변경 탐지는 `code_hash` 로 하고, "
+        "본문이 필요하면 `/code/{crid}`(최신 코드) 또는 `include_code=true` 를 쓰세요.\n\n"
         "**페이지네이션** — `has_more` 가 true 면 `next_cursor` 값을 `cursor` 파라미터로 "
-        "넘겨 다음(더 오래된) 페이지를 받습니다.\n\n"
+        "넘겨 다음 페이지를 받습니다. 메시지가 0건인 방은 빈 배열과 `total_count: 0` 으로 "
+        "응답합니다(404 아님).\n\n"
         "**에러**\n"
-        "- `404` — 해당 crid 의 채팅방에 메시지가 없음\n"
+        "- `404` — 해당 crid 의 채팅방이 존재하지 않음\n"
         "- `422` — `crid` 가 UUID 형식이 아님\n"
         "- `401`/`403` — 인증 실패 (`X-API-Key` 헤더 누락/불일치)\n"
         "- `500` — 서버 내부 오류"
@@ -328,13 +330,13 @@ async def get_external_messages(
         ),
         examples=["5169a302-629f-4759-8568-c0a7849f4439"],
     ),
-    limit: int = Query(20, ge=1, le=100, description="페이지당 메시지 수 (최대 100)"),
+    limit: int = Query(50, ge=1, le=100, description="페이지당 메시지 수 (1~100)"),
     cursor: int | None = Query(
         None, description="페이지네이션 커서. 직전 응답의 `next_cursor` 값을 그대로 넘긴다."
     ),
     order: Literal["asc", "desc"] = Query(
-        "desc",
-        description="정렬 순서. `desc`(기본, 최신순) | `asc`(오래된 순)",
+        "asc",
+        description="정렬 순서. `asc`(기본, 오래된 순 — 대화를 처음부터 읽는 용도) | `desc`(최신순)",
     ),
     include_code: bool = Query(
         False,
@@ -345,29 +347,33 @@ async def get_external_messages(
     ),
 ) -> ExternalMessagesResponse:
     crid_str = str(crid)
-    page = await get_messages_paginated(crid_str, limit=limit, cursor=cursor, order=order)
-    messages = page.get("messages") or []
-    if not messages:
+    # 오타 crid 를 빈 대화로 오인하지 않도록 방 존재를 먼저 확인한다.
+    if await get_chat_room(crid_str) is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No messages found for crid: {crid_str}",
+            detail=f"Room not found for crid: {crid_str}",
         )
 
-    items = [
-        ExternalMessageItem(
-            id=str(m.get("id", "")),
-            question=m.get("question") or "",
-            answer=(m.get("text") or None),
-            code=(m.get("content") or None) if include_code else None,
-            code_hash=m.get("code_hash"),
-            path=m.get("path") or None,
-            status=m.get("status") or "",
-            image_count=len(m.get("image_urls") or []),
-            asked_at=m.get("question_created_at"),
-            answered_at=m.get("answer_created_at"),
+    page = await get_messages_paginated(crid_str, limit=limit, cursor=cursor, order=order)
+    items = []
+    for m in page.get("messages") or []:
+        content = m.get("content") or ""
+        items.append(
+            ExternalMessageItem(
+                id=str(m.get("id", "")),
+                question=m.get("question") or "",
+                answer=(m.get("text") or None),
+                status=m.get("status") or "",
+                question_created_at=m.get("question_created_at"),
+                answer_created_at=m.get("answer_created_at"),
+                has_code=bool(content),
+                # 저장 컬럼이 비어 있으면 모델 validator 가 code 로 계산한다.
+                code_hash=m.get("code_hash") or (content_hash(content) if content else None),
+                code_path=m.get("path") or None,
+                image_count=len(m.get("image_urls") or []),
+                code=content or None if include_code else None,
+            )
         )
-        for m in messages
-    ]
 
     logger.info(
         "External messages fetched",
@@ -379,12 +385,18 @@ async def get_external_messages(
         },
     )
 
-    return ExternalMessagesResponse(
+    response = ExternalMessagesResponse(
         crid=crid_str,
         messages=items,
         next_cursor=page.get("next_cursor"),
         has_more=bool(page.get("has_more")),
         total_count=page.get("total_count", 0),
+    )
+    if include_code:
+        return response
+    # 기본 요청에서는 code 필드를 응답에서 아예 제외한다(null 로 실어 보내지 않음).
+    return JSONResponse(  # type: ignore[return-value]
+        content=response.model_dump(mode="json", exclude={"messages": {"__all__": {"code"}}})
     )
 
 
