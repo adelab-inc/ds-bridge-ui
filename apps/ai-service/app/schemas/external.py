@@ -268,6 +268,57 @@ class ExternalDescriptionHashResponse(BaseModel):
     }
 
 
+class ExternalMessageItem(BaseModel):
+    """대화 내역의 단일 메시지 (질문 1개 + 그에 대한 응답 1개)."""
+
+    id: str = Field(..., description="메시지 ID")
+    question: str = Field(..., description="사용자가 입력한 요청 원문")
+    answer: str | None = Field(
+        default=None,
+        description=(
+            "AI 응답 설명 문구. 모델이 설명을 생략한 경우 비어 있을 수 있음 "
+            "(그 경우에도 코드는 생성되어 있다)."
+        ),
+    )
+    code: str | None = Field(
+        default=None,
+        description=(
+            "해당 메시지가 생성한 TSX 코드 본문. `include_code=false`(기본)면 항상 null. "
+            "메시지당 수십 KB 라 기본 제외한다."
+        ),
+    )
+    code_hash: str | None = Field(
+        default=None,
+        description="코드 본문의 SHA-256 해시(hex, 64자). 코드 없이 변경 탐지에 사용.",
+    )
+    path: str | None = Field(default=None, description="코드 파일 경로 (AI 추정값, 참고용)")
+    status: str = Field(..., description="처리 상태. `DONE` | `ERROR` | `PENDING`")
+    image_count: int = Field(0, description="요청에 첨부된 이미지 개수")
+    asked_at: int | None = Field(default=None, description="요청 시각 (Unix epoch ms)")
+    answered_at: int | None = Field(default=None, description="응답 완료 시각 (Unix epoch ms)")
+
+
+class ExternalMessagesResponse(BaseModel):
+    """대화 내역 조회 응답 (커서 페이지네이션).
+
+    한 방의 대화가 수십 건이 될 수 있어 커서 기반으로 나눠 받는다.
+    `has_more` 가 true 면 `next_cursor` 를 `cursor` 파라미터로 넘겨 다음 페이지를 받는다.
+    """
+
+    crid: str = Field(
+        ...,
+        description="채팅방 ID (요청 시 URL의 crid 파라미터와 동일한 값)",
+        examples=["5169a302-629f-4759-8568-c0a7849f4439"],
+    )
+    messages: list[ExternalMessageItem] = Field(..., description="메시지 목록")
+    next_cursor: int | None = Field(
+        default=None,
+        description="다음 페이지 커서(`answer_created_at`). 더 없으면 null.",
+    )
+    has_more: bool = Field(..., description="다음 페이지 존재 여부")
+    total_count: int = Field(..., description="방의 전체 메시지 수")
+
+
 class ExternalErrorResponse(BaseModel):
     """외부 API 공통 에러 응답.
 

@@ -22,10 +22,10 @@ crid(=room_id)로 조회할 수 있도록 노출합니다.
 - 로컬 환경 또는 사내망 사용 가정 (방화벽 이슈 없음)
 """
 import logging
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, FastAPI, HTTPException, Path, Request, status
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Path, Query, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
@@ -38,10 +38,13 @@ from app.schemas.external import (
     ExternalDescriptionHashResponse,
     ExternalDescriptionResponse,
     ExternalErrorResponse,
+    ExternalMessageItem,
+    ExternalMessagesResponse,
 )
 from app.services.supabase_db import (
     get_latest_code_message,
     get_latest_description,
+    get_messages_paginated,
 )
 
 logger = logging.getLogger(__name__)
@@ -297,6 +300,93 @@ async def get_external_description_hash(
 # 메인 ai-service `/docs` 에는 내부 API(rooms·chat·description·components)만 노출되도록
 # 외부 라우터는 별도 sub-app 으로 분리합니다.
 # main.py 에서 `app.mount("/external", external_app)` 로 마운트합니다.
+
+@router.get(
+    "/messages/{crid}",
+    response_model=ExternalMessagesResponse,
+    summary="대화 내역 조회",
+    description=(
+        "지정한 채팅방(`crid`)의 대화 내역(요청/응답)을 최신순으로 반환합니다.\n\n"
+        "**코드 본문은 기본 제외됩니다.** 메시지당 수십 KB 라 전체를 실으면 응답이 수 MB 가 "
+        "되기 때문입니다. 필요하면 `include_code=true` 로 요청하세요 "
+        "(최신 코드만 필요하면 `/code/{crid}` 가 더 가볍습니다).\n\n"
+        "**페이지네이션** — `has_more` 가 true 면 `next_cursor` 값을 `cursor` 파라미터로 "
+        "넘겨 다음(더 오래된) 페이지를 받습니다.\n\n"
+        "**에러**\n"
+        "- `404` — 해당 crid 의 채팅방에 메시지가 없음\n"
+        "- `422` — `crid` 가 UUID 형식이 아님\n"
+        "- `401`/`403` — 인증 실패 (`X-API-Key` 헤더 누락/불일치)\n"
+        "- `500` — 서버 내부 오류"
+    ),
+    response_description="대화 내역과 페이지네이션 정보",
+)
+async def get_external_messages(
+    crid: UUID = Path(
+        ...,
+        description=(
+            "채팅방 ID. UUID v4 형식. 런타임 허브 URL 의 `?crid=...` 파라미터와 동일한 값."
+        ),
+        examples=["5169a302-629f-4759-8568-c0a7849f4439"],
+    ),
+    limit: int = Query(20, ge=1, le=100, description="페이지당 메시지 수 (최대 100)"),
+    cursor: int | None = Query(
+        None, description="페이지네이션 커서. 직전 응답의 `next_cursor` 값을 그대로 넘긴다."
+    ),
+    order: Literal["asc", "desc"] = Query(
+        "desc",
+        description="정렬 순서. `desc`(기본, 최신순) | `asc`(오래된 순)",
+    ),
+    include_code: bool = Query(
+        False,
+        description=(
+            "각 메시지의 TSX 코드 본문 포함 여부. 기본 false — 응답 크기가 수 MB 로 "
+            "커지는 것을 막기 위함. false 여도 `code_hash` 는 제공된다."
+        ),
+    ),
+) -> ExternalMessagesResponse:
+    crid_str = str(crid)
+    page = await get_messages_paginated(crid_str, limit=limit, cursor=cursor, order=order)
+    messages = page.get("messages") or []
+    if not messages:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No messages found for crid: {crid_str}",
+        )
+
+    items = [
+        ExternalMessageItem(
+            id=str(m.get("id", "")),
+            question=m.get("question") or "",
+            answer=(m.get("text") or None),
+            code=(m.get("content") or None) if include_code else None,
+            code_hash=m.get("code_hash"),
+            path=m.get("path") or None,
+            status=m.get("status") or "",
+            image_count=len(m.get("image_urls") or []),
+            asked_at=m.get("question_created_at"),
+            answered_at=m.get("answer_created_at"),
+        )
+        for m in messages
+    ]
+
+    logger.info(
+        "External messages fetched",
+        extra={
+            "crid": crid_str,
+            "returned": len(items),
+            "total": page.get("total_count", 0),
+            "include_code": include_code,
+        },
+    )
+
+    return ExternalMessagesResponse(
+        crid=crid_str,
+        messages=items,
+        next_cursor=page.get("next_cursor"),
+        has_more=bool(page.get("has_more")),
+        total_count=page.get("total_count", 0),
+    )
+
 
 external_app = FastAPI(
     title="DS-Bridge External API",
