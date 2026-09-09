@@ -9,10 +9,13 @@ function ScrollArea({
   className,
   children,
   viewportRef,
+  viewportClassName,
   ...props
 }: ScrollAreaPrimitive.Root.Props & {
   /** 실제 스크롤이 일어나는 Viewport DOM 노드 ref (스크롤 위치 측정/제어용) */
   viewportRef?: React.Ref<HTMLDivElement>;
+  /** Viewport에 추가할 클래스 (예: overflow-anchor 제어) */
+  viewportClassName?: string;
 }) {
   return (
     <ScrollAreaPrimitive.Root
@@ -23,7 +26,10 @@ function ScrollArea({
       <ScrollAreaPrimitive.Viewport
         ref={viewportRef}
         data-slot="scroll-area-viewport"
-        className="focus-visible:ring-ring/50 size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:outline-1"
+        className={cn(
+          'focus-visible:ring-ring/50 size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:outline-1',
+          viewportClassName
+        )}
       >
         {children}
       </ScrollAreaPrimitive.Viewport>
