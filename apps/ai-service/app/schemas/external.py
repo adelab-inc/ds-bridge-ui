@@ -268,6 +268,85 @@ class ExternalDescriptionHashResponse(BaseModel):
     }
 
 
+class ExternalMessageItem(BaseModel):
+    """대화 내역의 단일 메시지 (요청 1건 + 그에 대한 응답).
+
+    코드 본문(`code`)은 기본적으로 실리지 않는다 — 메시지당 18~24KB 라 한 페이지가
+    수백 KB 가 되기 때문이다. 코드 유무는 `has_code`, 변경 탐지는 `code_hash` 로 하고,
+    본문이 필요하면 `/code/{crid}`(최신) 또는 `include_code=true` 를 쓴다.
+    """
+
+    id: str = Field(..., description="메시지 ID")
+    question: str = Field(..., description="사용자가 입력한 요청 원문")
+    answer: str | None = Field(
+        default=None,
+        description=(
+            "AI 응답 설명 문구(DB `text`). 모델이 설명을 생략하면 비어 있을 수 있으며, "
+            "그 경우에도 코드는 생성되어 있다(`has_code` 로 확인)."
+        ),
+    )
+    status: str = Field(..., description="처리 상태. `GENERATING` | `DONE` | `ERROR`")
+    question_created_at: int | None = Field(
+        default=None, description="요청 시각 (Unix epoch milliseconds)"
+    )
+    answer_created_at: int | None = Field(
+        default=None,
+        description="응답 완료 시각 (Unix epoch milliseconds). 커서 페이지네이션 기준값.",
+    )
+    has_code: bool = Field(
+        ..., description="이 메시지가 코드를 생성했는지 여부. 코드 본문 없이 판별용."
+    )
+    code_hash: str | None = Field(
+        default=None,
+        description=(
+            "코드 본문의 SHA-256 해시(hex, 64자). DB 저장 컬럼에서 오며 비어 있으면 즉석 계산된다. "
+            "코드가 바뀌면 해시도 바뀌므로 본문을 받지 않고 변경을 탐지할 수 있다."
+        ),
+    )
+    code_path: str | None = Field(
+        default=None,
+        description="코드 파일 경로 (AI 추정값, 참고용)",
+        examples=["src/pages/NewContractSpecification.tsx"],
+    )
+    image_count: int = Field(0, description="요청에 첨부된 이미지 개수")
+    code: str | None = Field(
+        default=None,
+        description=(
+            "TSX 코드 본문. `include_code=true` 로 요청했을 때만 채워지고, 기본 요청에서는 "
+            "필드 자체가 응답에서 제외된다."
+        ),
+    )
+
+    @model_validator(mode="after")
+    def _fill_code_hash(self) -> "ExternalMessageItem":
+        """저장 컬럼이 비어있을 때만 `code` 로 즉석 계산 (ExternalCodeResponse 와 동일 규칙)."""
+        if self.code_hash is None and self.code:
+            object.__setattr__(self, "code_hash", content_hash(self.code))
+        return self
+
+
+class ExternalMessagesResponse(BaseModel):
+    """대화 내역 조회 응답 (커서 페이지네이션).
+
+    한 방의 대화가 수십 건이 될 수 있어 커서 기반으로 나눠 받는다.
+    `has_more` 가 true 면 `next_cursor` 를 `cursor` 파라미터로 넘겨 다음 페이지를 받는다.
+    메시지가 0건인 방은 404 가 아니라 빈 배열과 `total_count: 0` 으로 응답한다.
+    """
+
+    crid: str = Field(
+        ...,
+        description="채팅방 ID (요청 시 URL의 crid 파라미터와 동일한 값)",
+        examples=["5169a302-629f-4759-8568-c0a7849f4439"],
+    )
+    messages: list[ExternalMessageItem] = Field(..., description="메시지 목록")
+    next_cursor: int | None = Field(
+        default=None,
+        description="다음 페이지 커서(`answer_created_at`). 더 없으면 null.",
+    )
+    has_more: bool = Field(..., description="다음 페이지 존재 여부")
+    total_count: int = Field(..., description="방의 전체 메시지 수")
+
+
 class ExternalErrorResponse(BaseModel):
     """외부 API 공통 에러 응답.
 
