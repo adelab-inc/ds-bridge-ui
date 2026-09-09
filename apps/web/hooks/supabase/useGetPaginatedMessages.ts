@@ -2,29 +2,42 @@
 
 import {
   InfiniteData,
+  QueryKey,
   UndefinedInitialDataInfiniteOptions,
   useInfiniteQuery,
 } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { TABLES } from '@packages/shared-types/typescript/database/collections';
 import type { ChatMessage } from '@packages/shared-types/typescript/database/types';
-import { messageKeys } from '@/hooks/api/messageKeys';
+import { messageKeys, type MessageCursor } from '@/hooks/api/messageKeys';
 import { STALE_TIME, GC_TIME } from '@/lib/query/cache-config';
 
 const PAGE_SIZE_DEFAULT = 20;
 
+/** 무한쿼리 한 페이지 */
+export interface MessagesPage {
+  /** 시간 오름차순 (위=오래됨, 아래=최신) */
+  messages: ChatMessage[];
+  /** 더 오래된 페이지가 있으면 그 시작 커서, 없으면 null */
+  nextCursor: MessageCursor | null;
+}
+
 /**
  * Supabase에서 페이지네이션된 메시지를 가져오는 함수
+ *
+ * - `pageSize + 1`개를 조회해 다음 페이지 존재 여부를 판정한다 (총 건수가 pageSize의
+ *   배수일 때 빈 요청이 한 번 더 나가는 것을 방지).
+ * - 커서는 (question_created_at, id) keyset — 같은 ms 메시지 누락 방지.
  */
 const fetchMessages = async ({
   roomId,
   pageSize,
-  pageParam,
+  cursor,
 }: {
   roomId: string;
   pageSize: number;
-  pageParam?: number;
-}): Promise<ChatMessage[]> => {
+  cursor?: MessageCursor;
+}): Promise<MessagesPage> => {
   const supabase = createClient();
 
   let query = supabase
@@ -32,11 +45,15 @@ const fetchMessages = async ({
     .select('*')
     .eq('room_id', roomId)
     .order('question_created_at', { ascending: false })
-    .limit(pageSize);
+    .order('id', { ascending: false })
+    .limit(pageSize + 1);
 
-  // 커서 기반 페이지네이션: 이전 페이지의 마지막 타임스탬프보다 이전 메시지만
-  if (pageParam) {
-    query = query.lt('question_created_at', pageParam);
+  // 커서 기반 페이지네이션: 이전 페이지의 가장 오래된 메시지보다 이전 메시지만.
+  // 같은 타임스탬프면 id로 2차 비교 (uuid 문자열 순 = 정렬 순).
+  if (cursor) {
+    query = query.or(
+      `question_created_at.lt.${cursor.ts},and(question_created_at.eq.${cursor.ts},id.lt.${cursor.id})`
+    );
   }
 
   const { data, error } = await query;
@@ -45,8 +62,20 @@ const fetchMessages = async ({
     throw new Error(`Failed to fetch messages: ${error.message}`);
   }
 
-  // 시간순 정렬 (desc로 가져온 것을 asc로 뒤집기)
-  return (data as ChatMessage[]).reverse();
+  const rows = (data ?? []) as ChatMessage[];
+  const hasMore = rows.length > pageSize;
+  const pageRows = hasMore ? rows.slice(0, pageSize) : rows;
+  // desc 조회 기준 마지막 = 가장 오래된 메시지
+  const oldest = pageRows[pageRows.length - 1];
+
+  return {
+    // 시간순 정렬 (desc로 가져온 것을 asc로 뒤집기)
+    messages: [...pageRows].reverse(),
+    nextCursor:
+      hasMore && oldest
+        ? { ts: oldest.question_created_at, id: oldest.id }
+        : null,
+  };
 };
 
 /**
@@ -57,6 +86,7 @@ const fetchMessages = async ({
  *   roomId: 'room-123',
  *   pageSize: 20,
  * });
+ * const messages = [...data.pages].reverse().flatMap((p) => p.messages);
  */
 export const useGetPaginatedMessages = ({
   roomId,
@@ -66,12 +96,14 @@ export const useGetPaginatedMessages = ({
 }: {
   roomId: string;
   pageSize?: number;
-  startAfter?: number;
+  startAfter?: MessageCursor;
   infiniteQueryOptions?: Partial<
     UndefinedInitialDataInfiniteOptions<
-      ChatMessage[],
+      MessagesPage,
       Error,
-      InfiniteData<ChatMessage[], unknown>
+      InfiniteData<MessagesPage, MessageCursor | undefined>,
+      QueryKey,
+      MessageCursor | undefined
     >
   >;
 }) => {
@@ -81,16 +113,9 @@ export const useGetPaginatedMessages = ({
       fetchMessages({
         roomId,
         pageSize,
-        pageParam: pageParam as number,
+        cursor: pageParam,
       }),
-    getNextPageParam: (lastPage) => {
-      if (lastPage.length < pageSize) {
-        return undefined;
-      }
-      // 가장 오래된 메시지의 타임스탬프를 다음 페이지의 시작점으로 사용
-      const oldestMessage = lastPage[0];
-      return oldestMessage?.question_created_at;
-    },
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     initialPageParam: startAfter,
     staleTime: STALE_TIME.MESSAGES,
     gcTime: GC_TIME.MESSAGES,

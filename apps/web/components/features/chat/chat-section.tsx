@@ -12,6 +12,8 @@ import { useMessageDelete } from './hooks/use-message-delete';
 import { useMessageBookmarks } from './hooks/use-message-bookmarks';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import { useGetPaginatedMessages } from '@/hooks/supabase/useGetPaginatedMessages';
+import { useGetMessageCount } from '@/hooks/supabase/useGetMessageCount';
+import { useGetMessageById } from '@/hooks/supabase/useGetMessageById';
 import { useDescriptionStore } from '@/stores/useDescriptionStore';
 import { useStreamingStore } from '@/stores/useStreamingStore';
 import type { CodeEvent } from '@/types/chat';
@@ -45,6 +47,7 @@ function ChatSection({
 }: ChatSectionProps) {
   const {
     data,
+    isPending: isMessagesPending,
     refetch: refetchMessages,
     fetchNextPage,
     hasNextPage,
@@ -56,6 +59,16 @@ function ChatSection({
       enabled: !!roomId,
     },
   });
+
+  // 총 메시지 수 (목록 상단 "표시 / 전체" 카운터용)
+  const { data: totalCount, refetch: refetchCount } =
+    useGetMessageCount(roomId);
+
+  // 스트리밍 완료는 byRoom invalidate가 아니라 refetch 호출이므로 카운터도 함께 갱신
+  const refetchMessagesAndCount = React.useCallback(
+    () => Promise.all([refetchMessages(), refetchCount()]),
+    [refetchMessages, refetchCount]
+  );
 
   const { selectedMessageId, updateSelectedMessageId } = useSelectedMessage();
 
@@ -103,7 +116,7 @@ function ChatSection({
     uploadedUrls,
     clearImages,
     selectedMessageId,
-    refetchMessages,
+    refetchMessages: refetchMessagesAndCount,
     updateSelectedMessageId,
     onStreamStart,
     onStreamEnd,
@@ -124,6 +137,7 @@ function ChatSection({
             type: 'code',
             content: message.content,
             path: message.path,
+            code_hash: message.code_hash,
           },
           roomId
         );
@@ -136,11 +150,11 @@ function ChatSection({
   // pages는 신→구 페이지 순서(각 페이지 내부는 시간 오름차순)이므로,
   // 표시용으로 페이지 순서를 뒤집어 오래된 페이지가 위로 오게 한다.
   // (단일 페이지에서는 결과가 동일 — 다중 페이지에서만 정렬이 교정됨)
-  // 알려진 한계: 스트리밍 후 refetch 시 새 메시지가 page0/page1 경계를 밀면
-  // 커서 페이지네이션 특성상 seam에서 중복/누락 1건이 생길 수 있음(기존 이슈, 범위 외).
+  // refetch는 로드된 페이지를 순서대로 다시 당기며 각 페이지의 새 nextCursor를 쓰므로
+  // 스트리밍 후 새 메시지가 page0/page1 경계를 밀어도 seam이 어긋나지 않는다.
   const dbMessages = React.useMemo(() => {
     if (!data) return [];
-    return [...data.pages].reverse().flat();
+    return [...data.pages].reverse().flatMap((page) => page.messages);
   }, [data]);
 
   // 표시할 메시지 목록 (DB 메시지 + 스트리밍 메시지, 중복 방지)
@@ -151,54 +165,86 @@ function ChatSection({
     return [...filtered, streamingMessage];
   }, [dbMessages, streamingMessage]);
 
-  // DB 메시지 로드 시 초기 메시지 선택 처리
+  // 딥링크 `?mid=`가 로드된 페이지에 없으면(첫 페이지 밖의 오래된 메시지) 단건 조회.
+  // 로드된 페이지에 있거나 mid가 없으면 비활성 — 렌더 중 파생값이라 setState 불필요.
+  // displayMessages 기준: 스트리밍 직후 선택된 새 메시지가 refetch 전까지 dbMessages에
+  // 없는 잠깐 동안 불필요한 단건 조회가 나가지 않게 한다.
+  const deepLinkId =
+    !isMessagesPending &&
+    dbMessages.length > 0 &&
+    selectedMessageId &&
+    !displayMessages.some((msg) => msg.id === selectedMessageId)
+      ? selectedMessageId
+      : null;
+  const deepLinkQuery = useGetMessageById({ roomId, messageId: deepLinkId });
+
+  // DB 메시지 로드 시 초기 메시지 선택 처리 (마운트당 1회)
   const initialSelectionRef = React.useRef(false);
   React.useEffect(() => {
     if (initialSelectionRef.current) return;
-    if (!dbMessages.length || isLoading) return;
+    if (isMessagesPending || !dbMessages.length || isLoading) return;
 
-    // URL에 mid가 이미 있으면 해당 메시지를 찾아서 프리뷰 표시
-    if (selectedMessageId) {
-      const targetMessage = dbMessages.find(
-        (msg) => msg.id === selectedMessageId
+    const select = (msg: ChatMessage, updateUrl: boolean) => {
+      if (updateUrl) updateSelectedMessageId(msg.id);
+      onCodeGenerated?.(
+        {
+          type: 'code',
+          content: msg.content,
+          path: msg.path,
+          code_hash: msg.code_hash,
+        },
+        roomId
       );
-      if (targetMessage?.content?.trim()) {
-        onCodeGenerated?.(
-          {
-            type: 'code',
-            content: targetMessage.content,
-            path: targetMessage.path,
-            code_hash: targetMessage.code_hash,
-          },
-          roomId
-        );
-        initialSelectionRef.current = true;
-        return;
+      initialSelectionRef.current = true;
+    };
+
+    // URL에 mid가 이미 있으면 해당 메시지를 찾아서 프리뷰 표시 (URL 유지)
+    if (selectedMessageId) {
+      const loaded = dbMessages.find((msg) => msg.id === selectedMessageId);
+      if (loaded) {
+        if (loaded.content?.trim()) {
+          select(loaded, false);
+          return;
+        }
+        // 로드됐지만 코드가 없는 메시지 → 아래 fallback
+      } else {
+        // 첫 페이지 밖의 오래된 메시지일 수 있음 → 단건 조회 결과를 기다린다.
+        // 조회 중에 fallback으로 넘어가면 최신 메시지로 URL이 덮어써지고 프리뷰가 깜빡이므로 금지.
+        if (deepLinkQuery.isPending) return;
+        const fetched = deepLinkQuery.data; // null=없음(삭제/다른 룸)
+        if (fetched?.content?.trim()) {
+          select(fetched, false);
+          return;
+        }
+        // 조회 실패(네트워크 등)는 "없음"과 다르다 — URL의 mid를 지우지 않고 최신 메시지를
+        // 프리뷰로만 띄운다. 새로고침하면 딥링크가 그대로 복구된다.
+        if (deepLinkQuery.isError) {
+          const latest = [...dbMessages]
+            .reverse()
+            .find((msg) => msg.content && msg.content.trim());
+          if (latest) select(latest, false);
+          return;
+        }
+        // 없거나 코드 없음 → 아래 fallback (URL의 mid를 최신 메시지로 교체)
       }
     }
 
-    // mid가 없으면 최신 content 있는 메시지 자동 선택 후 URL 업데이트
+    // mid가 없거나 유효하지 않으면 최신 content 있는 메시지 자동 선택 후 URL 업데이트
     const latestWithContent = [...dbMessages]
       .reverse()
       .find((msg) => msg.content && msg.content.trim());
 
     if (latestWithContent) {
-      updateSelectedMessageId(latestWithContent.id);
-      onCodeGenerated?.(
-        {
-          type: 'code',
-          content: latestWithContent.content,
-          path: latestWithContent.path,
-          code_hash: latestWithContent.code_hash,
-        },
-        roomId
-      );
-      initialSelectionRef.current = true;
+      select(latestWithContent, true);
     }
   }, [
     dbMessages,
+    isMessagesPending,
     isLoading,
     selectedMessageId,
+    deepLinkQuery.isPending,
+    deepLinkQuery.isError,
+    deepLinkQuery.data,
     onCodeGenerated,
     updateSelectedMessageId,
     roomId,
@@ -273,6 +319,7 @@ function ChatSection({
               hasMore={hasNextPage}
               isLoadingMore={isFetchingNextPage}
               onLoadMore={fetchNextPage}
+              totalCount={totalCount}
               selectedMessageId={selectedMessageId ?? undefined}
               bookmarkedMessageIds={bookmarkedMessageIds}
               streamingMessageId={streamingMessage?.id}
