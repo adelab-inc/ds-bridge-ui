@@ -1,7 +1,7 @@
 """외부 파트너용 read-only API (sub-app)
 
-런타임 허브에서 생성된 디자인 코드와 디스크립션을 외부 시스템(보험사 백오피스 등)이
-crid(=room_id)로 조회할 수 있도록 노출합니다.
+런타임 허브에서 생성된 디자인 코드·디스크립션과 그 생성 과정의 대화 내역을
+외부 시스템(보험사 백오피스 등)이 crid(=room_id)로 조회할 수 있도록 노출합니다.
 
 ## 마운트 구조
 - 본 모듈은 별도 FastAPI sub-app(`external_app`)으로 노출됩니다.
@@ -9,7 +9,8 @@ crid(=room_id)로 조회할 수 있도록 노출합니다.
 - 결과:
   - 외부 파트너용 스웨거: `https://{host}/external/docs`
   - 외부 파트너용 OpenAPI JSON: `https://{host}/external/openapi.json`
-  - 실제 호출 URL: `/external/code/{crid}`, `/external/description/{crid}`
+  - 실제 호출 URL: `/external/code/{crid}`, `/external/description/{crid}`,
+    `/external/messages/{crid}`
 - 메인 `/docs`에는 내부 API만 노출되므로 외부 파트너에게 내부 스펙이 새지 않습니다.
 
 ## 인증
@@ -19,6 +20,9 @@ crid(=room_id)로 조회할 수 있도록 노출합니다.
 
 ## 사용 시나리오
 - 외부 시스템이 런타임 허브 URL의 `crid` 파라미터를 추출하여 본 API 호출
+- 최신 산출물만 필요하면 `/code/{crid}`, `/description/{crid}`
+- 어떤 요청으로 이 화면이 만들어졌는지 이력이 필요하면 `/messages/{crid}`
+  (코드 본문은 기본 제외 — 응답 크기 때문. `has_code`/`code_hash` 로 판별)
 - 로컬 환경 또는 사내망 사용 가정 (방화벽 이슈 없음)
 """
 import logging
@@ -405,11 +409,14 @@ external_app = FastAPI(
     description=(
         "외부 파트너용 read-only API.\n\n"
         "런타임 허브(`ds-bridge-ui-web`)에서 AI 채팅으로 생성된 디자인 코드와 "
-        "디스크립션을 `crid`(=room_id)로 조회합니다.\n\n"
+        "디스크립션, 그리고 그 생성 과정의 대화 내역을 `crid`(=room_id)로 조회합니다.\n\n"
         "## 사용 흐름\n"
         "1. 런타임 허브에서 채팅을 통해 코드/디스크립션 생성\n"
         "2. 런타임 허브 URL의 `?crid=<UUID>` 파라미터에서 crid 추출\n"
-        "3. 본 API 의 `/code/{crid}` 또는 `/description/{crid}` 호출\n\n"
+        "3. 본 API 호출\n"
+        "   - 최신 코드: `/code/{crid}` · 최신 디스크립션: `/description/{crid}`\n"
+        "   - 변경 탐지(경량 폴링): `/code/hash/{crid}` · `/description/hash/{crid}`\n"
+        "   - 대화 내역: `/messages/{crid}` (커서 페이지네이션, 코드 본문 기본 제외)\n\n"
         "## 인증\n"
         "모든 엔드포인트는 `X-API-Key` 헤더가 필요합니다. 외부 파트너용 키 값은 "
         "내부 BFF 키 값과 별도로 발급되며 운영 담당자로부터 안전 채널로 전달받습니다.\n\n"
@@ -417,7 +424,8 @@ external_app = FastAPI(
         "- `200` — 성공. JSON 페이로드 (각 엔드포인트별 스키마 참조)\n"
         "- `401` — `X-API-Key` 헤더 미전송\n"
         "- `403` — `X-API-Key` 값 불일치\n"
-        "- `404` — 채팅방에 해당 데이터가 아직 생성되지 않음\n"
+        "- `404` — 채팅방에 해당 데이터가 아직 생성되지 않음 "
+        "(`/messages` 는 채팅방 자체가 없을 때만 404, 대화가 0건이면 빈 배열)\n"
         "- `422` — `crid` 가 UUID 형식이 아님\n"
         "- `500` — 서버 내부 오류\n\n"
         "모든 에러 응답은 `{\"detail\": \"<message>\"}` 형식으로 통일됩니다."
