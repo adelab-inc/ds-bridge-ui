@@ -27,4 +27,4 @@ jobs:
           node-version-file: ".nvmrc"
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @ds-hub/web typecheck
+      - run: pnpm --filter @ds-hub/web exec tsc --noEmit --incremental false
