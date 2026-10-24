@@ -178,6 +178,12 @@ def test_include_code_option_returns_body(monkeypatch, client):
 
 
 def test_requires_api_key(monkeypatch):
+    from types import SimpleNamespace
+
+    monkeypatch.setattr(
+        "app.core.auth.get_settings",
+        lambda: SimpleNamespace(x_external_key="dependency-test-external-key"),
+    )
     _patch(monkeypatch)
     res = TestClient(app).get(f"/external/messages/{CRID}")
 

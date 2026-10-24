@@ -1,6 +1,6 @@
 module design-tokens-cli
 
-go 1.21
+go 1.26.10
 
 require (
 	github.com/Masterminds/semver/v3 v3.4.0
