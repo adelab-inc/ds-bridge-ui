@@ -10,10 +10,10 @@
     "lottie-react": "^2.4.1",
     "tailwind-merge": "^2.0.0"
   },
-  "description": "A+ World UI 공통 UI 컴포넌트 라이브러리",
+  "description": "A+ World UI \uacf5\ud1b5 UI \ucef4\ud3ec\ub10c\ud2b8 \ub77c\uc774\ube0c\ub7ec\ub9ac",
   "devDependencies": {
-    "@storybook/react": "8.6.14",
-    "@storybook/test": "^8.6.14",
+    "@storybook/react": "8.6.19",
+    "@storybook/test": "^8.6.19",
     "@tanstack/react-router": "^1.43.0",
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
@@ -22,12 +22,14 @@
     "@types/node": "^24.3.0",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
-    "esbuild": "^0.24.0",
+    "esbuild": "^0.25.0",
     "jest-axe": "^10.0.0",
     "tailwind-scrollbar": "^4.0.2",
     "tailwindcss": "^3.4.0",
     "typescript": "^5.0.0",
-    "vitest": "3.2.4"
+    "vitest": "^4.1.11",
+    "vite-tsconfig-paths": "^6.1.1",
+    "jsdom": "^30.1.3"
   },
   "exports": {
     ".": "./src/index.ts",
@@ -61,10 +63,10 @@
     "build:css": "tailwindcss -i ./src/styles/globals.css -o ./dist/ui.css --minify",
     "clean": "rm -rf dist .turbo node_modules/.cache",
     "dev": "pnpm build --watch",
-    "lint": "echo 'UI 린트 - ESLint + @aplus/eslint-config 사용'",
+    "lint": "echo 'UI \ub9b0\ud2b8 - ESLint + @aplus/eslint-config \uc0ac\uc6a9'",
     "test": "vitest",
     "test:watch": "vitest --watch",
-    "type-check": "echo 'UI 타입 체크 - TypeScript + @aplus/tsconfig'"
+    "type-check": "echo 'UI \ud0c0\uc785 \uccb4\ud06c - TypeScript + @aplus/tsconfig'"
   },
   "types": "./dist/index.d.ts",
   "version": "0.0.2"

@@ -57,7 +57,7 @@ var designTokensGenerateCmd = &cobra.Command{
 			for _, e := range result.Errors {
 				errorMsg += fmt.Sprintf("- %s\n", e)
 			}
-			return fmt.Errorf(errorMsg)
+			return fmt.Errorf("%s", errorMsg)
 		}
 
 		fmt.Println("성공적으로 UI 시스템 관련 파일을 생성/업데이트했습니다.")
