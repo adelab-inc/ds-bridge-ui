@@ -474,7 +474,7 @@ async def upload_room_image(
 
     if len(image_data) > max_size:
         raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
             detail=f"파일 크기가 {settings.max_image_size_mb}MB를 초과합니다. ({len(image_data) / 1024 / 1024:.1f}MB)",
         )
 
